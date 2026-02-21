@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -407,10 +408,10 @@ const (
 	// NamespaceNodeLease is the namespace where node lease objects are stored.
 	NamespaceNodeLease = "kube-node-lease"
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only.
-	DefaultOwnerReadOnlyMode = 0400
+	DefaultOwnerReadOnlyMode = 0o400
 
 	// DefaultAllReadOnlyMode represents file mode with read permissions for all.
-	DefaultAllReadOnlyMode = 0444
+	DefaultAllReadOnlyMode = 0o444
 
 	// AppLabelKey defines the label key app which should be used within resources.
 	AppLabelKey = "app"
@@ -1606,7 +1607,8 @@ func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 // If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
 // one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination.
 func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster,
-	destination *kubermaticv1.BackupDestination) (*minio.Client, string, error) {
+	destination *kubermaticv1.BackupDestination,
+) (*minio.Client, string, error) {
 	secretData := make(map[string]string)
 
 	if restore.Spec.BackupDownloadCredentialsSecret != "" {
@@ -1754,14 +1756,21 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 	return DefaultClusterServicesCIDRIPv4
 }
 
+var minSupportedNFTKubernetes = semver.NewSemverOrDie("1.33.0")
+
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, version semver.Semver) string {
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
 		return IPTablesProxyMode
 	}
-	return IPVSProxyMode
+
+	if version.LessThan(minSupportedNFTKubernetes) {
+		return IPVSProxyMode
+	}
+
+	return NFTablesProxyMode
 }
 
 // GetKubeletPreferredAddressTypes returns the preferred address types in the correct order to be used when

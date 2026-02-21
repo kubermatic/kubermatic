@@ -44,10 +44,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 					Services: kubermaticv1.NetworkRanges{
 						CIDRBlocks: []string{"10.240.16.0/20"},
 					},
-					ProxyMode: "ipvs",
-					IPVS: &kubermaticv1.IPVSConfiguration{
-						StrictArp: ptr.To(true),
-					},
+					ProxyMode:                "nftables",
 					NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
 					NodeLocalDNSCacheEnabled: ptr.To(true),
 					DNSDomain:                "cluster.local",
@@ -70,10 +67,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 					Services: kubermaticv1.NetworkRanges{
 						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/108"},
 					},
-					ProxyMode: "ipvs",
-					IPVS: &kubermaticv1.IPVSConfiguration{
-						StrictArp: ptr.To(true),
-					},
+					ProxyMode:                "nftables",
 					NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
 					NodeCIDRMaskSizeIPv6:     ptr.To[int32](64),
 					NodeLocalDNSCacheEnabled: ptr.To(true),
@@ -99,10 +93,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 					Services: kubermaticv1.NetworkRanges{
 						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/108"},
 					},
-					ProxyMode: "ipvs",
-					IPVS: &kubermaticv1.IPVSConfiguration{
-						StrictArp: ptr.To(true),
-					},
+					ProxyMode:                "nftables",
 					NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
 					NodeCIDRMaskSizeIPv6:     ptr.To[int32](64),
 					NodeLocalDNSCacheEnabled: ptr.To(true),
@@ -132,10 +123,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 					Services: kubermaticv1.NetworkRanges{
 						CIDRBlocks: []string{"10.241.0.0/20", "fd02::/108"},
 					},
-					ProxyMode: "ipvs",
-					IPVS: &kubermaticv1.IPVSConfiguration{
-						StrictArp: ptr.To(true),
-					},
+					ProxyMode:                "nftables",
 					NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
 					NodeCIDRMaskSizeIPv6:     ptr.To[int32](64),
 					NodeLocalDNSCacheEnabled: ptr.To(true),
@@ -144,7 +132,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 			},
 		},
 		{
-			name: "prefilled spec ipv4",
+			name: "prefilled spec ipv4 ipvs",
 			spec: &kubermaticv1.ClusterSpec{
 				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily: "IPv4",
@@ -176,6 +164,39 @@ func TestDefaultClusterNetwork(t *testing.T) {
 					IPVS: &kubermaticv1.IPVSConfiguration{
 						StrictArp: ptr.To(false),
 					},
+					NodeCIDRMaskSizeIPv4:     ptr.To[int32](32),
+					NodeLocalDNSCacheEnabled: ptr.To(false),
+					DNSDomain:                "cluster.local.test",
+				},
+			},
+		},
+		{
+			name: "prefilled spec ipv4",
+			spec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily: "IPv4",
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"173.26.0.0/16"},
+					},
+					Services: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"11.241.17.0/20"},
+					},
+					ProxyMode:                "nftables",
+					NodeCIDRMaskSizeIPv4:     ptr.To[int32](32),
+					NodeLocalDNSCacheEnabled: ptr.To(false),
+					DNSDomain:                "cluster.local.test",
+				},
+			},
+			expectedChangedSpec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily: "IPv4",
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"173.26.0.0/16"},
+					},
+					Services: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"11.241.17.0/20"},
+					},
+					ProxyMode:                "nftables",
 					NodeCIDRMaskSizeIPv4:     ptr.To[int32](32),
 					NodeLocalDNSCacheEnabled: ptr.To(false),
 					DNSDomain:                "cluster.local.test",
@@ -227,7 +248,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, kubermaticv1.ProviderType(tc.spec.Cloud.ProviderName), tc.spec.ExposeStrategy)
+			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, kubermaticv1.ProviderType(tc.spec.Cloud.ProviderName), tc.spec.ExposeStrategy, tc.spec.Version)
 			assert.Equal(t, tc.expectedChangedSpec, tc.spec)
 		})
 	}
