@@ -1238,10 +1238,29 @@ func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) *field.Err
 	return nil
 }
 
+// validateOnlyOneEntryAdded checks if two lists (old and new) are identical
+// besides the new one having a single entry added at the end.
+func validateOnlyOneEntryAdded(list, oldList []string) bool {
+	if len(oldList)+1 != len(list) {
+		return false
+	}
+
+	for i, e := range oldList {
+		if list[i] != e {
+			return false
+		}
+	}
+
+	return true
+}
+
 func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, labels map[string]string, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if oldC.IPFamily != "" {
+	// we allow changing from IPv4-only to DualStack - no changing back, though
+	migratingToDualStack := oldC.IPFamily == kubermaticv1.IPFamilyIPv4 && c.IPFamily == kubermaticv1.IPFamilyDualStack
+
+	if oldC.IPFamily != "" && !migratingToDualStack {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 			c.IPFamily,
 			oldC.IPFamily,
@@ -1250,19 +1269,23 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	}
 
 	if len(oldC.Pods.CIDRBlocks) != 0 {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.Pods.CIDRBlocks,
-			oldC.Pods.CIDRBlocks,
-			fldPath.Child("pods", "cidrBlocks"),
-		)...)
+		if !migratingToDualStack || !validateOnlyOneEntryAdded(c.Pods.CIDRBlocks, oldC.Pods.CIDRBlocks) {
+			allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+				c.Pods.CIDRBlocks,
+				oldC.Pods.CIDRBlocks,
+				fldPath.Child("pods", "cidrBlocks"),
+			)...)
+		}
 	}
 
 	if len(oldC.Services.CIDRBlocks) != 0 {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.Services.CIDRBlocks,
-			oldC.Services.CIDRBlocks,
-			fldPath.Child("services", "cidrBlocks"),
-		)...)
+		if !migratingToDualStack || !validateOnlyOneEntryAdded(c.Services.CIDRBlocks, oldC.Services.CIDRBlocks) {
+			allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+				c.Services.CIDRBlocks,
+				oldC.Services.CIDRBlocks,
+				fldPath.Child("services", "cidrBlocks"),
+			)...)
+		}
 	}
 
 	if oldC.ProxyMode != "" {

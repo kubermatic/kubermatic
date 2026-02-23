@@ -223,6 +223,47 @@ func TestDefaultClusterNetwork(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "migrating to dual stack, default IPv6 CIDRs added",
+			spec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily: "IPv4+IPv6",
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"173.26.0.0/16"},
+					},
+					Services: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"11.241.17.0/20"},
+					},
+					ProxyMode: "proxy-test",
+					IPVS: &kubermaticv1.IPVSConfiguration{
+						StrictArp: ptr.To(false),
+					},
+					NodeCIDRMaskSizeIPv4:     ptr.To[int32](32),
+					NodeCIDRMaskSizeIPv6:     ptr.To[int32](48),
+					NodeLocalDNSCacheEnabled: ptr.To(false),
+					DNSDomain:                "cluster.local.test",
+				},
+			},
+			expectedChangedSpec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily: "IPv4+IPv6",
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"173.26.0.0/16", "fd01::/48"},
+					},
+					Services: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"11.241.17.0/20", "fd02::/120"},
+					},
+					ProxyMode: "proxy-test",
+					IPVS: &kubermaticv1.IPVSConfiguration{
+						StrictArp: ptr.To(false),
+					},
+					NodeCIDRMaskSizeIPv4:     ptr.To[int32](32),
+					NodeCIDRMaskSizeIPv6:     ptr.To[int32](48),
+					NodeLocalDNSCacheEnabled: ptr.To(false),
+					DNSDomain:                "cluster.local.test",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

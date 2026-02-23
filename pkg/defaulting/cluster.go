@@ -257,6 +257,18 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 		}
 	}
 
+	// If the cluster is configured for DualStack but has only one CIDRBlock
+	// for Pods or Services, we automatically add the default v6 ones.
+	if specClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack && (len(specClusterNetwork.Pods.CIDRBlocks) == 1 || len(specClusterNetwork.Services.CIDRBlocks) == 1) {
+		if len(specClusterNetwork.Pods.CIDRBlocks) == 1 {
+			specClusterNetwork.Pods.CIDRBlocks = append(specClusterNetwork.Pods.CIDRBlocks, resources.DefaultClusterPodsCIDRIPv6)
+		}
+
+		if len(specClusterNetwork.Services.CIDRBlocks) == 1 {
+			specClusterNetwork.Services.CIDRBlocks = append(specClusterNetwork.Services.CIDRBlocks, resources.DefaultClusterServicesCIDRIPv6)
+		}
+	}
+
 	if specClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && specClusterNetwork.Pods.HasIPv4CIDR() {
 		specClusterNetwork.NodeCIDRMaskSizeIPv4 = ptr.To[int32](resources.DefaultNodeCIDRMaskSizeIPv4)
 	}
