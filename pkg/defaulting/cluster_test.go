@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/utils/ptr"
 )
@@ -235,18 +236,20 @@ func TestDefaultClusterNetwork(t *testing.T) {
 
 func TestDefaultEventRateLimitPlugin(t *testing.T) {
 	testCases := []struct {
-		name           string
-		spec           *kubermaticv1.ClusterSpec
-		config         *kubermaticv1.KubermaticConfiguration
-		expectedPlugin bool
-		expectedConfig *kubermaticv1.EventRateLimitConfig
+		name                                     string
+		spec                                     *kubermaticv1.ClusterSpec
+		config                                   *kubermaticv1.KubermaticConfiguration
+		expectedUseEventRateLimitAdmissionPlugin bool
+		expectedAdmissionPlugins                 []string
+		expectedConfig                           *kubermaticv1.EventRateLimitConfig
 	}{
 		{
-			name:           "nil config - no change",
-			spec:           &kubermaticv1.ClusterSpec{},
-			config:         nil,
-			expectedPlugin: false,
-			expectedConfig: nil,
+			name:                                     "nil config - no change",
+			spec:                                     &kubermaticv1.ClusterSpec{},
+			config:                                   nil,
+			expectedUseEventRateLimitAdmissionPlugin: false,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
 		},
 		{
 			name: "config without admission plugins - no change",
@@ -256,8 +259,9 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{},
 				},
 			},
-			expectedPlugin: false,
-			expectedConfig: nil,
+			expectedUseEventRateLimitAdmissionPlugin: false,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
 		},
 		{
 			name: "enforced - enables plugin",
@@ -273,8 +277,9 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
-			expectedConfig: nil,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
 		},
 		{
 			name: "enabled - enables plugin",
@@ -290,8 +295,9 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
-			expectedConfig: nil,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
 		},
 		{
 			name: "enabled=false - does not enable plugin",
@@ -307,11 +313,12 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: false,
-			expectedConfig: nil,
+			expectedUseEventRateLimitAdmissionPlugin: false,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
 		},
 		{
-			name: "user already enabled - no change",
+			name: "user already enabled via dedicated field - no change",
 			spec: &kubermaticv1.ClusterSpec{
 				UseEventRateLimitAdmissionPlugin: true,
 			},
@@ -326,8 +333,49 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
-			expectedConfig: nil,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
+			expectedConfig:                           nil,
+		},
+		{
+			name: "already enabled via admissionPlugins - no change",
+			spec: &kubermaticv1.ClusterSpec{
+				AdmissionPlugins: []string{resources.EventRateLimitAdmissionPlugin},
+			},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			expectedUseEventRateLimitAdmissionPlugin: false,
+			expectedAdmissionPlugins:                 []string{resources.EventRateLimitAdmissionPlugin},
+			expectedConfig:                           nil,
+		},
+		{
+			name: "enforced with plugin already in admissionPlugins - sets boolean too",
+			spec: &kubermaticv1.ClusterSpec{
+				AdmissionPlugins: []string{resources.EventRateLimitAdmissionPlugin},
+			},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 []string{resources.EventRateLimitAdmissionPlugin},
+			expectedConfig:                           nil,
 		},
 		{
 			name: "enabled with default config - applies config",
@@ -349,7 +397,8 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
 			expectedConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -385,7 +434,8 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
 			expectedConfig: &kubermaticv1.EventRateLimitConfig{
 				Namespace: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   25,
@@ -421,7 +471,8 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 					},
 				},
 			},
-			expectedPlugin: true,
+			expectedUseEventRateLimitAdmissionPlugin: true,
+			expectedAdmissionPlugins:                 nil,
 			expectedConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -434,7 +485,8 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultEventRateLimitPlugin(tc.spec, tc.config)
-			assert.Equal(t, tc.expectedPlugin, tc.spec.UseEventRateLimitAdmissionPlugin)
+			assert.Equal(t, tc.expectedUseEventRateLimitAdmissionPlugin, tc.spec.UseEventRateLimitAdmissionPlugin)
+			assert.Equal(t, tc.expectedAdmissionPlugins, tc.spec.AdmissionPlugins)
 			assert.Equal(t, tc.expectedConfig, tc.spec.EventRateLimitConfig)
 		})
 	}

@@ -269,19 +269,19 @@ func (v *validator) validateEventRateLimitEnforcement(
 	}
 
 	isUpdate := oldCluster != nil
+	newPluginEnabled := newCluster.Spec.IsEventRateLimitAdmissionPluginEnabled()
 
 	fieldPath := field.NewPath("spec", "useEventRateLimitAdmissionPlugin")
 	if isUpdate {
 		// Prevent disabling when enforced
-		if oldCluster.Spec.UseEventRateLimitAdmissionPlugin && !newCluster.Spec.UseEventRateLimitAdmissionPlugin {
+		oldPluginEnabled := oldCluster.Spec.IsEventRateLimitAdmissionPluginEnabled()
+		if oldPluginEnabled && !newPluginEnabled {
 			return field.Invalid(fieldPath, false,
 				"EventRateLimit is enforced globally and cannot be disabled")
 		}
-	} else {
-		if !newCluster.Spec.UseEventRateLimitAdmissionPlugin {
-			return field.Invalid(fieldPath, false,
-				"EventRateLimit is enforced globally and must be enabled for new clusters")
-		}
+	} else if !newPluginEnabled {
+		return field.Invalid(fieldPath, false,
+			"EventRateLimit is enforced globally and must be enabled for new clusters")
 	}
 
 	if erl.DefaultConfig != nil && newCluster.Spec.EventRateLimitConfig != nil {

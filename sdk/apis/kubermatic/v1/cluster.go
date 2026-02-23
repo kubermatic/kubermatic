@@ -72,6 +72,11 @@ const (
 	DefaultKonnectivityKeepaliveTime = "1m"
 )
 
+const (
+	// AdmissionPluginNameEventRateLimit is the EventRateLimit admission plugin name.
+	AdmissionPluginNameEventRateLimit = "EventRateLimit"
+)
+
 // +kubebuilder:validation:Enum=standard;basic
 
 // Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
@@ -288,6 +293,17 @@ type KubernetesDashboard struct {
 
 func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
+}
+
+// HasAdmissionPlugin reports whether the given admission plugin name exists in AdmissionPlugins.
+func (c ClusterSpec) HasAdmissionPlugin(name string) bool {
+	return slices.Contains(c.AdmissionPlugins, name)
+}
+
+// IsEventRateLimitAdmissionPluginEnabled reports whether EventRateLimit is enabled either
+// via the dedicated boolean field or through AdmissionPlugins.
+func (c ClusterSpec) IsEventRateLimitAdmissionPluginEnabled() bool {
+	return c.UseEventRateLimitAdmissionPlugin || c.HasAdmissionPlugin(AdmissionPluginNameEventRateLimit)
 }
 
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
