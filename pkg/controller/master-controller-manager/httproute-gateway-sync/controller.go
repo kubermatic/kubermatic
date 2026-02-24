@@ -25,7 +25,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/events"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -45,7 +45,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	log                 *zap.SugaredLogger
-	recorder            events.EventRecorder
+	recorder            record.EventRecorder
 	namespace           string           // kubermatic namespace where Gateway lives
 	watchedNamespaceSet sets.Set[string] // namespaces to watch HTTPRoutes in
 }
@@ -60,7 +60,7 @@ func Add(
 ) error {
 	r := &Reconciler{
 		Client:              mgr.GetClient(),
-		recorder:            mgr.GetEventRecorder(ControllerName),
+		recorder:            mgr.GetEventRecorderFor(ControllerName),
 		log:                 log.Named(ControllerName),
 		namespace:           namespace,
 		watchedNamespaceSet: sets.New(watchedNamespaces...),

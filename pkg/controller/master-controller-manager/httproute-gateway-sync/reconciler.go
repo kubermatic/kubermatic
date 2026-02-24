@@ -65,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, gtw)
 	if err != nil {
-		r.recorder.Eventf(gtw, nil, corev1.EventTypeWarning, "ReconcilingFailed", "Reconciling", err.Error())
+		r.recorder.Event(gtw, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile gateway %s: %w", request.Name, err)
 	}
 
@@ -207,7 +207,7 @@ func (r *Reconciler) desiredListeners(
 			Hostname: ptr.To(gatewayapiv1.Hostname(hostname)),
 			Port:     gatewayapiv1.PortNumber(443),
 			Protocol: gatewayapiv1.HTTPSProtocolType,
-			TLS: &gatewayapiv1.ListenerTLSConfig{
+			TLS: &gatewayapiv1.GatewayTLSConfig{
 				Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
 				CertificateRefs: []gatewayapiv1.SecretObjectReference{
 					{
