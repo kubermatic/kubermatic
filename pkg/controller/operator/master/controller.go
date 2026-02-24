@@ -66,13 +66,13 @@ func Add(
 	httprouteWatchNamespaces []string,
 ) error {
 	reconciler := &Reconciler{
-		Client:            mgr.GetClient(),
-		scheme:            mgr.GetScheme(),
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
-		log:               log.Named(ControllerName),
-		workerName:        workerName,
-		versions:          kubermatic.GetVersions(),
-		gatewayAPIEnabled: enableGatewayAPI,
+		Client:                   mgr.GetClient(),
+		scheme:                   mgr.GetScheme(),
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
+		log:                      log.Named(ControllerName),
+		workerName:               workerName,
+		versions:                 kubermatic.GetVersions(),
+		gatewayAPIEnabled:        enableGatewayAPI,
 		httprouteWatchNamespaces: httprouteWatchNamespaces,
 	}
 
