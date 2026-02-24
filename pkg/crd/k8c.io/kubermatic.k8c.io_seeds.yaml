@@ -719,7 +719,7 @@ spec:
                                   Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
                                   in the dedicated infra KubeVirt cluster. They are added to the defaults.
                                 items:
-                                  description: CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
+                                  description: CustomNetworkPolicy contains a name and t he Spec of a NetworkPolicy.
                                   properties:
                                     name:
                                       description: Name is the name of the Custom Network Policy.
@@ -1330,6 +1330,25 @@ spec:
                                       items:
                                         type: string
                                       type: array
+                                  required:
+                                    - name
+                                  type: object
+                                type: array
+                              infraVolumeSnapshotClass:
+                                description: |-
+                                  Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+                                  to initialise VolumeSnapshotClasses in the tenant cluster.
+                                items:
+                                  properties:
+                                    isDefaultClass:
+                                      description: |-
+                                        Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+                                        snapshot.storage.kubernetes.io/is-default-class: true
+                                        If missing or false, annotation will be:
+                                        snapshot.storage.kubernetes.io/is-default-class: false
+                                      type: boolean
+                                    name:
+                                      type: string
                                   required:
                                     - name
                                   type: object
