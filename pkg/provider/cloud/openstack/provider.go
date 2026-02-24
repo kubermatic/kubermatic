@@ -62,6 +62,10 @@ const (
 
 	// FloatingIPPoolIDAnnotation stores the ID of the floating IP pool (external network).
 	FloatingIPPoolIDAnnotation = "kubermatic.k8c.io/openstack-floating-ip-pool-id"
+
+	// LoadBalancerFloatingIPPoolIDAnnotation stores the ID of the floating IP pool
+	// to be used for LoadBalancer floating IP allocation.
+	LoadBalancerFloatingIPPoolIDAnnotation = "kubermatic.k8c.io/openstack-loadbalancer-floating-ip-pool-id"
 )
 
 type getClientFunc func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
@@ -155,6 +159,13 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 		}
 	}
 
+	if spec.Openstack.LoadBalancerFloatingIPPool != "" {
+		_, err := getNetworkByName(netClient, spec.Openstack.LoadBalancerFloatingIPPool, true)
+		if err != nil {
+			return fmt.Errorf("failed to get load balancer floating ip pool %q: %w", spec.Openstack.LoadBalancerFloatingIPPool, err)
+		}
+	}
+
 	if spec.Openstack.IPv6SubnetPool != "" {
 		subnetPool, err := getSubnetPoolByName(netClient, spec.Openstack.IPv6SubnetPool)
 		if err != nil {
@@ -219,7 +230,10 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	// Reconciling the external Network (the floating IP pool used for machines and LBs)
+	// Reconciling the external Network
+	// By default, the same floating IP pool used for machines and LBs.
+	// Optionally, a dedicated floating IP pool can be specified for LBs, to ensure machines and LBs
+	// will use separate floating IP pools.
 	// We don't need the usual if conditional here because the reconcile function doesn't
 	// create anything.
 	cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
@@ -307,8 +321,9 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 
 func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var (
-		err        error
-		extNetwork *NetworkWithExternalExt
+		err          error
+		extNetwork   *NetworkWithExternalExt
+		lbExtNetwork *NetworkWithExternalExt
 	)
 
 	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
@@ -325,15 +340,32 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 	}
 
+	hasLBFloatingIPPool := false
+	if cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool != "" {
+		lbExtNetwork, err = getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get external network for load balancer floating IP pool by name: %w", err)
+		}
+
+		hasLBFloatingIPPool = true
+	}
+
 	// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer.
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		// This should be a noop if the floating IP pool was already correctly provided.
 		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 
 		if cluster.Annotations == nil {
 			cluster.Annotations = make(map[string]string)
 		}
+
 		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
+		// by default, the same floating IP pool is used for machines and LBs.
+		cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = extNetwork.ID
+
+		if hasLBFloatingIPPool && lbExtNetwork != nil {
+			cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool = lbExtNetwork.Name
+			cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = lbExtNetwork.ID
+		}
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
