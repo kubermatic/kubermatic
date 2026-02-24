@@ -267,6 +267,66 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 						},
 					},
 				},
+				{
+					Name:            "csi-snapshotter",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("k8s.gcr.io/sig-storage/csi-snapshotter:v4.2.1")),
+					Args: []string{
+						"--v=5",
+						"--csi-address=/csi/csi.sock",
+						"--probe-timeout=3m",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-resizer",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-resizer:v1.13.1")),
+					Args: []string{
+						"--v=5",
+						"--csi-address=/csi/csi.sock",
+						"--probe-timeout=3m",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--handle-volume-inuse-error=false",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+					},
+				},
 			}
 			d.Spec.Template.Spec.Volumes = volumes
 			return d, nil
