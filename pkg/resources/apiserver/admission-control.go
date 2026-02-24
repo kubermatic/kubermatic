@@ -125,8 +125,7 @@ func usePodNodeSelectorAdmissionPlugin(data *resources.TemplateData) bool {
 }
 
 func useEventRateLimitAdmissionPlugin(data *resources.TemplateData) bool {
-	admissionPlugins := sets.New(data.Cluster().Spec.AdmissionPlugins...)
-	return data.Cluster().Spec.UseEventRateLimitAdmissionPlugin || admissionPlugins.Has(resources.EventRateLimitAdmissionPlugin)
+	return data.Cluster().Spec.IsEventRateLimitAdmissionPluginEnabled()
 }
 
 func getPodNodeSelectorAdmissionPluginConfig(data *resources.TemplateData) (string, error) {
