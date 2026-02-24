@@ -929,6 +929,10 @@ type DatacenterSpecKubevirt struct {
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
 
+	// Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+	// to initialise VolumeSnapshotClasses in the tenant cluster.
+	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClass,omitempty"`
+
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
 
@@ -1040,7 +1044,16 @@ type KubeVirtInfraStorageClass struct {
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
 }
 
-// CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
+type KubeVirtInfraVolumeSnapshotClass struct {
+	Name string `json:"name"`
+	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+	// snapshot.storage.kubernetes.io/is-default-class: true
+	// If missing or false, annotation will be:
+	// snapshot.storage.kubernetes.io/is-default-class: false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+}
+
+// CustomNetworkPolicy contains a name and t he Spec of a NetworkPolicy.
 type CustomNetworkPolicy struct {
 	// Name is the name of the Custom Network Policy.
 	Name string `json:"name"`
