@@ -61,7 +61,7 @@ const (
 	DefaultVPARecommenderDockerRepository         = "registry.k8s.io/autoscaling/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "registry.k8s.io/autoscaling/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "registry.k8s.io/autoscaling/vpa-admission-controller"
-	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-distroless"
+	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy"
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10
 	DefaultS3Endpoint                             = "s3.amazonaws.com"

@@ -644,7 +644,7 @@ spec:
     # Envoy configures the Envoy application itself.
     envoy:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: docker.io/envoyproxy/envoy-distroless
+      dockerRepository: docker.io/envoyproxy/envoy
       loadBalancerService:
         # Annotations are used to further tweak the LoadBalancer integration with the
         # cloud provider.
