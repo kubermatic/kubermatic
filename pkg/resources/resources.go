@@ -1166,7 +1166,6 @@ type userClusterDNSPolicyAndConfigData interface {
 func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// TODO: remove,noop custom DNS resolver in not needed in Konnectivity setup
 	return corev1.DNSClusterFirst, nil, nil
-
 }
 
 // BaseAppLabels returns the minimum required labels.

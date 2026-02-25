@@ -20,22 +20,6 @@ import (
 	"fmt"
 
 	semverlib "github.com/Masterminds/semver/v3"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-)
-
-var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("20Mi"),
-			corev1.ResourceCPU:    resource.MustParse("5m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-		},
-	}
 )
 
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go

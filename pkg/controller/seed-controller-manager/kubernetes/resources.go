@@ -928,15 +928,6 @@ func (r *Reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context, dat
 	return nil
 }
 
-func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
-	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
 // ensureKonnectivityNetworkPolicyIsRemoved removes the NetworkPolicy put in place for
 // konnectivity-server -> external API server endpoint communication.
 func (r *Reconciler) ensureKonnectivityNetworkPolicyIsRemoved(ctx context.Context, data *resources.TemplateData) error {

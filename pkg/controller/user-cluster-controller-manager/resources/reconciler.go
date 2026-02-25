@@ -1342,22 +1342,6 @@ func (r *reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context) err
 	return nil
 }
 
-func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error {
-	for _, resource := range konnectivity.ResourcesForDeletion() {
-		err := r.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
-		}
-	}
-	for _, resource := range metricsserver.UserClusterResourcesForDeletion() {
-		err := r.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
 func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context) error {
 	for _, resource := range kubernetesdashboard.ResourcesForDeletion() {
 		err := r.Delete(ctx, resource)
