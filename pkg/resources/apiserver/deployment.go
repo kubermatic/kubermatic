@@ -192,16 +192,13 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				VolumeMounts: volumeMounts,
 			}
 
-			var defResourceRequirements map[string]*corev1.ResourceRequirements
-			if data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.Containers = []corev1.Container{
-					*konnectivityProxySidecar,
-					*apiserverContainer,
-				}
-				defResourceRequirements = map[string]*corev1.ResourceRequirements{
-					name:                          defaultResourceRequirements.DeepCopy(),
-					konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
-				}
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				*konnectivityProxySidecar,
+				*apiserverContainer,
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                          defaultResourceRequirements.DeepCopy(),
+				konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
 			}
 
 			overrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
