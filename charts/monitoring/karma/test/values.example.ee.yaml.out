@@ -242,7 +242,7 @@ spec:
 
           kubectl -n "$ns" get services -l 'app.kubernetes.io/name=seed-proxy' -o "custom-columns=name:{.metadata.labels['app\.kubernetes\.io/instance']}" --no-headers | while read seed; do
             echo "  - name: $seed" >> $out
-            echo "    uri: http://seed-proxy-$seed.$ns.svc.cluster.local:8001/api/v1/namespaces/monitoring/services/alertmanager:web/proxy/" >> $out
+            echo "    uri: http://seed-proxy-$seed.$ns.svc.cluster.local:8001/api/v1/namespaces/monitoring/services/alertmanager:http/proxy/" >> $out
             echo "    proxy: true" >> $out
           done
         volumeMounts:
