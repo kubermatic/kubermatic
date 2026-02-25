@@ -79,6 +79,16 @@ func csiRoleReconciler(name string) reconciling.NamedRoleReconcilerFactory {
 					Resources: []string{"virtualmachines/addvolume", "virtualmachines/removevolume"},
 					Verbs:     []string{"update"},
 				},
+				{
+					APIGroups: []string{"snapshot.storage.k8s.io"},
+					Resources: []string{"volumesnapshots"},
+					Verbs:     []string{"get", "create", "delete"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"persistentvolumeclaims"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
 			}
 
 			return r, nil
