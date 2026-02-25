@@ -142,7 +142,7 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules
 
-			cm.Data["rules.yaml"] += prometheusRuleKonnectivity
+				cm.Data["rules.yaml"] += prometheusRuleKonnectivity
 
 				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 					cm.Data["rules.yaml"] += prometheusRuleEnvoyAgentFederation
