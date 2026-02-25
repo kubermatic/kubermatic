@@ -124,13 +124,9 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				etcdrunning.Container(etcdEndpoints, data),
 			}
 
-			var konnectivityProxySidecar *corev1.Container
-
-			if data.IsKonnectivityEnabled() {
-				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
-				}
+			konnectivityProxySidecar, err := konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
 			}
 
 			flags, err := getApiserverFlags(
