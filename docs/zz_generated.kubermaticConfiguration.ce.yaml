@@ -569,7 +569,7 @@ spec:
       imageTag: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
     # used for user clusters (user cluster control plane + addons). This also applies to
-    # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
+    # the KubermaticDockerRepository field.
     overwriteRegistry: ""
     # SystemApplications contains configuration for system Applications (such as CNI).
     systemApplications:
