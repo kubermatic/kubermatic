@@ -31,7 +31,7 @@ spec:
         k8s-app: kube-proxy
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
-        checksum/config: '{{ printf "%s-%s-%v" .Cluster.Network.ProxyMode (join .Cluster.Network.PodCIDRBlocks ",") .Cluster.Network.StrictArp | sha256sum }}'
+        checksum/config: '{{ printf "%s-%s" .Cluster.Network.ProxyMode (join (sortAlpha .Cluster.Network.PodCIDRBlocks) ",") | sha256sum }}'
     spec:
       priorityClassName: system-node-critical
       containers:
