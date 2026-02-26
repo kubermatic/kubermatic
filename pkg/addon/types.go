@@ -17,7 +17,11 @@ limitations under the License.
 package addon
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"sort"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -248,6 +252,28 @@ type ClusterNetwork struct {
 	NodeCIDRMaskSizeIPv6 int32
 	IPAMAllocations      map[string]IPAMAllocation
 	NodePortRange        string
+}
+
+func (n ClusterNetwork) ConfigHash() string {
+	normalized := n
+
+	if len(n.PodCIDRBlocks) > 0 {
+		normalized.PodCIDRBlocks = append([]string(nil), n.PodCIDRBlocks...)
+		sort.Strings(normalized.PodCIDRBlocks)
+	}
+
+	if len(n.ServiceCIDRBlocks) > 0 {
+		normalized.ServiceCIDRBlocks = append([]string(nil), n.ServiceCIDRBlocks...)
+		sort.Strings(normalized.ServiceCIDRBlocks)
+	}
+
+	b, err := json.Marshal(normalized)
+	if err != nil {
+		return ""
+	}
+
+	sum := sha1.Sum(b)
+	return hex.EncodeToString(sum[:])
 }
 
 type IPAMAllocation struct {
