@@ -1056,7 +1056,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					InitContainers: []corev1.Container{
 						{
 							Name:    "copy-ro-manifest",
-							Image:   registry.Must(data.RewriteImage("registry.k8s.io/busybox:1.27.2")),
+							Image:   registry.Must(data.RewriteImage("registry.k8s.io/e2e-test-images/busybox:1.29-2")),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",
