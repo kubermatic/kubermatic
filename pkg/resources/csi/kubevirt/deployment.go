@@ -274,7 +274,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					Args: []string{
 						"--v=5",
 						"--csi-address=/csi/csi.sock",
-						"--probe-timeout=3m",
+						"--timeout=3m",
 						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
 					},
 					VolumeMounts: []corev1.VolumeMount{
@@ -301,7 +301,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					Args: []string{
 						"--v=5",
 						"--csi-address=/csi/csi.sock",
-						"--probe-timeout=3m",
+						"--timeout=3m",
 						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
 						"--handle-volume-inuse-error=false",
 					},
