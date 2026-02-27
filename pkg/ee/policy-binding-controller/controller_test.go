@@ -213,7 +213,7 @@ func TestReconcile(t *testing.T) {
 			seedObjects = append(seedObjects, tc.binding)
 
 			scheme := fake.NewScheme()
-			if err := kyvernov1.AddToScheme(scheme); err != nil {
+			if err := kyvernov1.Install(scheme); err != nil {
 				t.Fatalf("failed to add kyverno to scheme: %v", err)
 			}
 
