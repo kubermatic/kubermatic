@@ -30,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -74,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -118,7 +118,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -162,7 +162,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -206,7 +206,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -252,7 +252,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -301,7 +301,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
