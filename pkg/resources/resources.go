@@ -31,9 +31,9 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
-	"k8c.io/kubermatic/sdk/v2/semver"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
