@@ -61,4 +61,3 @@ go_test canal_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/canal \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Canal tests done."
-
