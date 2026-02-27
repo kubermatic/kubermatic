@@ -21,7 +21,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-8
           command:
             - make
           args:
@@ -71,7 +71,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-8
           command:
             - ./hack/ci/verify.sh
           resources:
@@ -90,7 +90,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-8
           command:
             - make
             - lint
@@ -131,7 +131,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-8
           command:
             - ./hack/ci/test-github-release.sh
           resources:
