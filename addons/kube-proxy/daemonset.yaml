@@ -31,6 +31,7 @@ spec:
         k8s-app: kube-proxy
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
+        checksum/config: '{{ .Cluster.Network.ConfigHash }}'
     spec:
       priorityClassName: system-node-critical
       containers:
