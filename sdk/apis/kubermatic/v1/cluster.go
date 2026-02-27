@@ -1604,6 +1604,8 @@ type KubevirtCloudSpec struct {
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks.
 	// It contains also some flag specifying which one is the default one.
 	StorageClasses []KubeVirtInfraStorageClass `json:"storageClasses,omitempty"`
+	// VolumeSnapshotClasses defines a list of volume snapshot classes for the infrastructure cluster.
+	VolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"volumeSnapshotClasses,omitempty"`
 	// ImageCloningEnabled flag enable/disable cloning for a cluster.
 	ImageCloningEnabled bool `json:"imageCloningEnabled,omitempty"`
 	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.
