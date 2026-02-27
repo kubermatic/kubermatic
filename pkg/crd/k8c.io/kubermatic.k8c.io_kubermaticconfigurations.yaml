@@ -144,10 +144,22 @@ spec:
                   properties:
                     catalogManager:
                       description: |-
-                        CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
-                        in the cluster from specified OCI registries.
-                        Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+                        CatalogManager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
+                        from ApplicationCatalog custom resources.
+                        When the ExternalApplicationCatalogManager feature gate is enabled, KKP deploys the application-catalog-manager
+                        and application-catalog-webhook, which work together to reconcile ApplicationDefinition CRs from ApplicationCatalog CRs.
+                        Note: The Application Catalog Manager requires its feature flag to be enabled.
+                        Once the ExternalApplicationCatalogManager feature gate is enabled,
+                        kubermaticconfiguration.spec.applications.defaultApplicationCatalog field becomes no-op,
+                        as the responsibility of ApplicationDefinitions is delegated to the new ApplicationCatalog Cr.
                       properties:
+                        apps:
+                          description: |-
+                            Apps is a list of application definition names that should be installed in the master cluster.
+                            If not set, all the applications from the catalog are installed.
+                          items:
+                            type: string
+                          type: array
                         image:
                           description: Image configures the container image for the application-catalog manager.
                           properties:
@@ -162,22 +174,18 @@ spec:
                           type: object
                         limit:
                           description: |-
-                            Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
-                            When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
-                            When defined, only ApplicationDefinitions matching the specified criteria are processed.
+                            Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+                            Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           properties:
                             metadataSelector:
                               description: |-
                                 MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
-                                For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
-                                specify that tier here.
-                                When multiple tiers are specified, the Application Catalog Manager uses additive logic
-                                to determine which ApplicationDefinitions to retrieve from the OCI registry.
+                                Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               properties:
                                 tiers:
                                   description: |-
                                     Tiers specifies the support tiers to filter ApplicationDefinitions.
-                                    ApplicationDefinitions matching any of the specified tiers will be selected.
+                                    Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   items:
                                     type: string
                                   type: array
@@ -185,17 +193,82 @@ spec:
                             nameSelector:
                               description: |-
                                 NameSelector defines criteria for selecting ApplicationDefinitions by name.
-                                Each name must correspond to an ApplicationDefinition's `metadata.name` field.
-                                When multiple names are specified, the Application Catalog Manager uses additive logic
-                                to retrieve all matching ApplicationDefinitions from the OCI registry.
-                                Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+                                Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               items:
                                 type: string
                               type: array
                           type: object
                         logLevel:
-                          description: LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+                          description: |-
+                            LogLevel specifies the logging verbosity level for the application-catalog manager.
+                            Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           type: string
+                        managerSettings:
+                          description: ManagerSettings configures the application-catalog manager deployment settings.
+                          properties:
+                            logLevel:
+                              description: LogLevel specifies the logging verbosity level for the application-catalog manager.
+                              type: string
+                            resources:
+                              description: Resources describes the requested and maximum allowed CPU/memory usage for application-catalog manager deployment.
+                              properties:
+                                claims:
+                                  description: |-
+                                    Claims lists the names of resources, defined in spec.resourceClaims,
+                                    that are used by this container.
+
+                                    This field depends on the
+                                    DynamicResourceAllocation feature gate.
+
+                                    This field is immutable. It can only be set for containers.
+                                  items:
+                                    description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                    properties:
+                                      name:
+                                        description: |-
+                                          Name must match the name of one entry in pod.spec.resourceClaims of
+                                          the Pod where this field is used. It makes that resource available
+                                          inside a container.
+                                        type: string
+                                      request:
+                                        description: |-
+                                          Request is the name chosen for a request in the referenced claim.
+                                          If empty, everything from the claim is made available, otherwise
+                                          only the result of this request.
+                                        type: string
+                                    required:
+                                      - name
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-map-keys:
+                                    - name
+                                  x-kubernetes-list-type: map
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  description: |-
+                                    Limits describes the maximum amount of compute resources allowed.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  description: |-
+                                    Requests describes the minimum amount of compute resources required.
+                                    If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                    otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  type: object
+                              type: object
+                          type: object
                         reconciliationInterval:
                           description: |-
                             ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
@@ -204,18 +277,18 @@ spec:
                           type: string
                         registrySettings:
                           description: |-
-                            RegistrySettings configures the OCI registry from which the Application Catalog Manager
-                            retrieves ApplicationDefinition manifests.
+                            RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+                            Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           properties:
                             credentials:
                               description: |-
                                 Credentials optionally references a secret containing Helm registry authentication credentials.
-                                Either username/password or registryConfigFile can be specified, but not both.
+                                Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               properties:
                                 password:
                                   description: |-
                                     Password references the secret containing the registry password credential.
-                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                    Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.
@@ -239,8 +312,7 @@ spec:
                                 registryConfigFile:
                                   description: |-
                                     RegistryConfigFile references the secret containing the Docker registry configuration file.
-                                    The value must be a dockercfg file following the same format as ~/.docker/config.json.
-                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                    Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.
@@ -264,7 +336,7 @@ spec:
                                 username:
                                   description: |-
                                     Username references the secret containing the registry username credential.
-                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                    Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.
@@ -289,16 +361,18 @@ spec:
                             registryURL:
                               description: |-
                                 RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
-                                Example: oci://localhost:5000/myrepo
+                                Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               type: string
                             tag:
                               description: |-
                                 Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
-                                Example: v1.0.0
+                                Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               type: string
                           type: object
                         resources:
-                          description: Resources describes the requested and maximum allowed CPU/memory usage.
+                          description: |-
+                            Resources describes the requested and maximum allowed CPU/memory usage.
+                            Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
                           properties:
                             claims:
                               description: |-
@@ -354,6 +428,72 @@ spec:
                                 If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                                 otherwise to an implementation-defined value. Requests cannot exceed Limits.
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                          type: object
+                        webhookSettings:
+                          description: WebhookSettings configures the application-catalog webhook deployment settings.
+                          properties:
+                            logLevel:
+                              description: LogLevel specifies the logging verbosity level for the application-catalog webhook.
+                              type: string
+                            resources:
+                              description: Resources describes the requested and maximum allowed CPU/memory usage for application-catalog webhook deployment.
+                              properties:
+                                claims:
+                                  description: |-
+                                    Claims lists the names of resources, defined in spec.resourceClaims,
+                                    that are used by this container.
+
+                                    This field depends on the
+                                    DynamicResourceAllocation feature gate.
+
+                                    This field is immutable. It can only be set for containers.
+                                  items:
+                                    description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                    properties:
+                                      name:
+                                        description: |-
+                                          Name must match the name of one entry in pod.spec.resourceClaims of
+                                          the Pod where this field is used. It makes that resource available
+                                          inside a container.
+                                        type: string
+                                      request:
+                                        description: |-
+                                          Request is the name chosen for a request in the referenced claim.
+                                          If empty, everything from the claim is made available, otherwise
+                                          only the result of this request.
+                                        type: string
+                                    required:
+                                      - name
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-map-keys:
+                                    - name
+                                  x-kubernetes-list-type: map
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  description: |-
+                                    Limits describes the maximum amount of compute resources allowed.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  description: |-
+                                    Requests describes the minimum amount of compute resources required.
+                                    If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                    otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  type: object
                               type: object
                           type: object
                       type: object

@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	catalogv1alpha1 "k8c.io/application-catalog-manager/pkg/apis/applicationcatalog/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
@@ -138,6 +139,10 @@ func main() {
 
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+
+	if err := catalogv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", catalogv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {

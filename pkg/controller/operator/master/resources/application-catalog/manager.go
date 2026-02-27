@@ -21,7 +21,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -56,7 +55,8 @@ var (
 
 func catalogManagerPodLabels() map[string]string {
 	return map[string]string{
-		common.NameLabel: ApplicationCatalogManagerDeploymentName,
+		common.NameLabel:      ApplicationCatalogManagerDeploymentName,
+		common.ComponentLabel: ComponentLabelValue,
 	}
 }
 
@@ -68,12 +68,12 @@ func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory
 	}
 }
 
-func catalogManagerClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
+func CatalogManagerClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-application-catalog-manager", cfg.Namespace, cfg.Name)
 }
 
 func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleReconcilerFactory {
-	name := catalogManagerClusterRoleName(cfg)
+	name := CatalogManagerClusterRoleName(cfg)
 
 	return func() (string, reconciling.ClusterRoleReconciler) {
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -81,18 +81,19 @@ func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 				{
 					APIGroups: []string{"coordination.k8s.io"},
 					Resources: []string{"leases"},
-					Verbs:     []string{"*"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 				},
-
 				{
 					APIGroups: []string{""},
 					Resources: []string{"events"},
 					Verbs:     []string{"create", "patch"},
 				},
+				// Note that the new Application Catalog manager does not delete the ApplicationDefinition resources in the cluster.
+				// If an ApplicationDefinition needs to be removed, it has to be done manually.
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
 					Resources: []string{"applicationdefinitions"},
-					Verbs:     []string{"*"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
 				},
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
@@ -102,12 +103,37 @@ func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
 					Resources: []string{"applicationdefinitions/finalizers"},
-					Verbs:     []string{"get", "update", "patch", "delete"},
+					Verbs:     []string{"update"},
 				},
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
 					Resources: []string{"kubermaticconfigurations"},
 					Verbs:     []string{"get", "update", "list", "watch", "patch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"configmaps"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+				},
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs/status"},
+					Verbs:     []string{"get", "update", "patch"},
+				},
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs/finalizers"},
+					Verbs:     []string{"update"},
 				},
 			}
 
@@ -123,7 +149,12 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 				{
 					APIGroups: []string{""},
 					Resources: []string{"secrets"},
-					Verbs:     []string{"get", "list"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"configmaps"},
+					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
 
@@ -133,7 +164,7 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 }
 
 func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	name := catalogManagerClusterRoleName(cfg)
+	name := CatalogManagerClusterRoleName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -205,7 +236,7 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 				),
 			}
 
-			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {
+			if cfg.Spec.Applications.CatalogManager.ManagerSettings.LogLevel == "debug" {
 				args = append(args, "--log-debug=true")
 			} else {
 				args = append(args, "--log-debug=false")
@@ -274,23 +305,10 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 }
 
 func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequirements {
-	if cfg.Spec.Applications.CatalogManager.Resources.Requests != nil || cfg.Spec.Applications.CatalogManager.Resources.Limits != nil {
-		return cfg.Spec.Applications.CatalogManager.Resources
+	resources := cfg.Spec.Applications.CatalogManager.ManagerSettings.Resources
+	if resources.Requests != nil || resources.Limits != nil {
+		return resources
 	}
 
 	return defaultResourceRequirements
-}
-
-func getImage(cfg *kubermaticv1.KubermaticConfiguration) string {
-	repository := defaulting.DefaultApplicationManagerImageRepository
-	if cfg.Spec.Applications.CatalogManager.Image.Repository != "" {
-		repository = cfg.Spec.Applications.CatalogManager.Image.Repository
-	}
-
-	tag := defaulting.DefaultApplicationManagerImageTag
-	if cfg.Spec.Applications.CatalogManager.Image.Tag != "" {
-		tag = cfg.Spec.Applications.CatalogManager.Image.Tag
-	}
-
-	return repository + ":" + tag
 }

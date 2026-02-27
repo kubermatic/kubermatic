@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,9 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	catalogv1alpha1 "k8c.io/application-catalog-manager/pkg/apis/applicationcatalog/v1alpha1"
+	catalogcharts "k8c.io/application-catalog-manager/pkg/charts"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -386,12 +390,6 @@ func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermati
 
 	copyKubermaticConfig := kubermaticConfig.DeepCopy()
 
-	if _, ok := copyKubermaticConfig.Spec.FeatureGates[features.ExternalApplicationCatalogManager]; ok {
-		logger.Info("🚀 Getting images for configured application catalog and its manager…")
-		imageSet.Insert(fmt.Sprintf("%s:%s", strings.Replace(copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL, "oci://", "", 1), copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.Tag))
-		imageSet.Insert(fmt.Sprintf("%s:%s", copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Repository, copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Tag))
-	}
-
 	logger.Info("🚀 Getting images from system Applications Helm charts…")
 	for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
 		if err != nil {
@@ -406,21 +404,57 @@ func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermati
 		imageSet.Insert(sysChart.WorkloadImages...)
 	}
 
-	logger.Info("🚀 Getting images from default Applications Helm charts…")
-	for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
-		if err != nil {
-			return nil, err
+	if kubermaticConfig.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		// new approach: use application-catalog-manager package
+		logger.Info("🚀 Getting images from External Application Catalog...")
+
+		for catalogChart, err := range getExternalCatalogCharts(copyKubermaticConfig) {
+			if err != nil {
+				return nil, err
+			}
+
+			// download and render Helm chart to extract workload images
+			chartPath, downloadErr := images.DownloadAppSourceChart(&catalogChart.Template.Source, "", options.HelmTimeout)
+			if downloadErr != nil {
+				return nil, fmt.Errorf("failed to download chart %s: %w", catalogChart.Template.Source.Helm.ChartName, downloadErr)
+			}
+			defer os.RemoveAll(chartPath)
+
+			chartImages, renderErr := images.GetImagesForHelmChart(logger, nil, helmClient, chartPath, "", options.RegistryPrefix, "")
+			if renderErr != nil {
+				return nil, fmt.Errorf("failed to render Helm chart %s: %w", catalogChart.Template.Source.Helm.ChartName, renderErr)
+			}
+
+			// extract OCI chart image if present
+			chartImage := fmt.Sprintf("%s/%s:%s",
+				catalogChart.Template.Source.Helm.URL,
+				catalogChart.Template.Source.Helm.ChartName,
+				catalogChart.Template.Source.Helm.ChartVersion)
+			if strings.HasPrefix(chartImage, "oci://") {
+				imageSet.Insert(chartImage[len("oci://"):])
+			}
+
+			// add workload images from rendered chart
+			imageSet.Insert(chartImages...)
 		}
-		chartImage := fmt.Sprintf("%s/%s:%s",
-			defaultChart.Template.Source.Helm.URL,
-			defaultChart.Template.Source.Helm.ChartName,
-			defaultChart.Template.Source.Helm.ChartVersion)
-		// Check if the chartImage starts with "oci://"
-		if strings.HasPrefix(chartImage, "oci://") {
-			// remove oci:// prefix and insert the chartImage into imageSet.
-			imageSet.Insert(chartImage[len("oci://"):])
+	} else {
+		// legacy approach: use embedded default application catalog
+		logger.Info("🚀 Getting images from default Applications Helm charts…")
+		for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+			if err != nil {
+				return nil, err
+			}
+			chartImage := fmt.Sprintf("%s/%s:%s",
+				defaultChart.Template.Source.Helm.URL,
+				defaultChart.Template.Source.Helm.ChartName,
+				defaultChart.Template.Source.Helm.ChartVersion)
+			// Check if the chartImage starts with "oci://"
+			if strings.HasPrefix(chartImage, "oci://") {
+				// remove oci:// prefix and insert the chartImage into imageSet.
+				imageSet.Insert(chartImage[len("oci://"):])
+			}
+			imageSet.Insert(defaultChart.WorkloadImages...)
 		}
-		imageSet.Insert(defaultChart.WorkloadImages...)
 	}
 
 	return imageSet, nil
@@ -478,4 +512,91 @@ func loadImages(ctx context.Context, logger *logrus.Logger, options *MirrorImage
 func staticImages() []string {
 	return []string{
 		resources.WEBTerminalImage}
+}
+
+// getExternalCatalogCharts returns default Helm charts from the
+// application-catalog-manager package. This is used when
+// ExternalApplicationCatalogManager feature gate is enabled.
+//
+// The function respects the Apps filter from KubermaticConfiguration
+// to match the filtering behavior of the External Catalog Manager.
+func getExternalCatalogCharts(
+	config *kubermaticv1.KubermaticConfiguration,
+) iter.Seq2[*images.AppsHelmChart, error] {
+	return func(yield func(*images.AppsHelmChart, error) bool) {
+		// get all default charts from application-catalog-manager package
+		allCharts := catalogcharts.GetDefaultCharts()
+
+		// apply filtering based on KubermaticConfiguration
+		// this matches the behavior of the External Catalog Manager webhook
+		if len(config.Spec.Applications.CatalogManager.Apps) > 0 {
+			allCharts = filterChartsByName(allCharts, config.Spec.Applications.CatalogManager.Apps)
+		}
+
+		// convert each ChartConfig to AppsHelmChart
+		for _, chart := range allCharts {
+			for _, chartVersion := range chart.ChartVersions {
+				// resolve URL using catalog's helper method
+				url := resolveChartURL(&chart, &chartVersion)
+
+				appChart := &images.AppsHelmChart{
+					WorkloadImages: []string{}, // will be filled by Helm rendering
+					ApplicationVersion: appskubermaticv1.ApplicationVersion{
+						Version: chartVersion.AppVersion,
+						Template: appskubermaticv1.ApplicationTemplate{
+							Source: appskubermaticv1.ApplicationSource{
+								Helm: &appskubermaticv1.HelmSource{
+									URL:          url,
+									ChartName:    chart.ChartName,
+									ChartVersion: chartVersion.ChartVersion,
+								},
+							},
+						},
+					},
+				}
+
+				if !yield(appChart, nil) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// filterChartsByName filters charts by name, keeping only those in the include list.
+// this mirrors the behavior of the External Catalog Manager webhook.
+func filterChartsByName(charts []catalogv1alpha1.ChartConfig, includeList []string) []catalogv1alpha1.ChartConfig {
+	if len(includeList) == 0 {
+		return charts
+	}
+
+	includeSet := make(map[string]struct{})
+	for _, name := range includeList {
+		includeSet[name] = struct{}{}
+	}
+
+	var filtered []catalogv1alpha1.ChartConfig
+	for _, chart := range charts {
+		if _, included := includeSet[chart.GetAppName()]; included {
+			filtered = append(filtered, chart)
+		}
+	}
+
+	return filtered
+}
+
+// resolveChartURL resolves the repository URL for a specific chart version.
+// this replicates the logic from ApplicationCatalog.ResolveChartURL
+// without requiring an ApplicationCatalog instance.
+func resolveChartURL(chart *catalogv1alpha1.ChartConfig, version *catalogv1alpha1.ChartVersion) string {
+	if version.RepositorySettings != nil && version.RepositorySettings.BaseURL != "" {
+		return version.RepositorySettings.BaseURL
+	}
+
+	if chart.RepositorySettings != nil && chart.RepositorySettings.BaseURL != "" {
+		return chart.RepositorySettings.BaseURL
+	}
+
+	// use default Helm repository from application-catalog-manager
+	return catalogv1alpha1.DefaultHelmRepository
 }

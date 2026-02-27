@@ -50,6 +50,7 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 annotation="kubermatic.k8c.io/location"
 declare -A locationMap=(
   ["applicationdefinitions.apps.kubermatic.k8c.io"]="master,seed"
+  ["applicationcatalogs.applicationcatalog.k8c.io"]="master,seed"
   ["applicationinstallations.apps.kubermatic.k8c.io"]="usercluster"
   ["addonconfigs.kubermatic.k8c.io"]="master"
   ["addons.kubermatic.k8c.io"]="master,seed"

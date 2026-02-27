@@ -23,16 +23,9 @@
 package applicationcatalog
 
 import (
-	"archive/tar"
 	"fmt"
 	"io"
-	"path"
-	"strings"
 
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/crane"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
@@ -41,55 +34,8 @@ import (
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/kubectl/pkg/util/slice"
 	"sigs.k8s.io/yaml"
 )
-
-const ApplicationCatalogTierAnnotationName = "apps.k8c.io/application-tier"
-
-func ExternalApplicationCatalogReconcilerFactories(
-	logger *zap.SugaredLogger,
-	config *kubermaticv1.KubermaticConfiguration,
-	mirror bool,
-) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
-	registrySettings := config.Spec.Applications.CatalogManager.RegistrySettings
-	if registrySettings.RegistryURL == "" {
-		return nil, fmt.Errorf("registry URL is not defined, its required while using external application catalog manager")
-	}
-
-	options := []crane.Option{
-		crane.WithAuthFromKeychain(authn.DefaultKeychain),
-	}
-
-	image, err := crane.Pull(strings.Replace(registrySettings.RegistryURL, "oci://", "", 1), options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to pull image %s: %w", registrySettings.RegistryURL, err)
-	}
-
-	apps, _, err := renderApplicationDefinitionsFromOCILayer(image)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render application definitions from image layer: %w", err)
-	}
-
-	filter := config.Spec.Applications.CatalogManager.Limit
-	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(apps))
-	for _, app := range apps {
-		if len(filter.MetadataSelector.Tiers) > 0 {
-			if !slice.ContainsString(filter.MetadataSelector.Tiers, app.Annotations[ApplicationCatalogTierAnnotationName], nil) {
-				continue
-			}
-		}
-		if len(filter.NameSelector) > 0 {
-			if !slice.ContainsString(filter.NameSelector, app.Name, nil) {
-				continue
-			}
-		}
-		creators = append(creators, applicationDefinitionReconcilerFactory(&app, config, mirror))
-	}
-
-	return creators, nil
-}
 
 func DefaultApplicationCatalogReconcilerFactories(
 	logger *zap.SugaredLogger,
@@ -204,88 +150,4 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.Applications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.Applications.PlainHTTP
 	}
-}
-
-func renderApplicationDefinitionsFromOCILayer(image v1.Image) (map[string]appskubermaticv1.ApplicationDefinition, map[string]string, error) {
-	apps := make(map[string]appskubermaticv1.ApplicationDefinition)
-	tiers := make(map[string]string)
-
-	layers, err := image.Layers()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting image layers: %w", err)
-	}
-
-	for _, layer := range layers {
-		mediaType, err := layer.MediaType()
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting layer media type: %w", err)
-		}
-
-		if mediaType == ocispec.MediaTypeImageLayerGzip {
-			reader, err := layer.Uncompressed()
-			if err != nil {
-				return nil, nil, fmt.Errorf("error getting uncompressed layer: %w", err)
-			}
-
-			defer reader.Close()
-			// Create a tar reader to inspect the contents of the layer.
-			tarReader := tar.NewReader(reader)
-			// Iterate through the files in the tar archive.
-			var errs []error
-			for {
-				header, err := tarReader.Next()
-				if err == io.EOF { //nolint:errorlint
-					break
-				}
-				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to read tar header: %w", err))
-					break
-				}
-
-				if header.Typeflag != tar.TypeReg {
-					continue
-				}
-
-				// Use path package for robust path manipulation.
-				// We expect a structure like "applications/<appName>/<fileName>".
-				dir, fileName := path.Split(header.Name)
-				dir = path.Clean(dir) // remove trailing slash
-
-				if path.Base(dir) == "." || path.Dir(dir) != "applications" {
-					continue
-				}
-				appName := path.Base(dir)
-
-				contentBytes, err := io.ReadAll(tarReader)
-				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to read content for %s: %w", header.Name, err))
-					continue
-				}
-
-				switch fileName {
-				case "application.yaml":
-					var appDef appskubermaticv1.ApplicationDefinition
-					if err := yaml.Unmarshal(contentBytes, &appDef); err != nil {
-						errs = append(errs, fmt.Errorf("failed to parse application.yaml for %s: %w", appName, err))
-						continue
-					}
-					apps[appName] = appDef
-				case "metadata.yaml":
-					var md struct {
-						Tier string `json:"tier"`
-					}
-					if err := yaml.Unmarshal(contentBytes, &md); err != nil {
-						errs = append(errs, fmt.Errorf("failed to parse metadata.yaml for %s: %w", appName, err))
-						continue
-					}
-					tiers[appName] = md.Tier
-				}
-			}
-
-			if len(errs) > 0 {
-				return nil, nil, fmt.Errorf("failed to read application definition manifests: %w", kerrors.NewAggregate(errs))
-			}
-		}
-	}
-	return apps, tiers, nil
 }

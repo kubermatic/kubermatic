@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
+	applicationcatalogmanager "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/application-catalog"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
@@ -520,9 +521,14 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Secrets")
 
+	var webhookSvcSANs []string
+	if cfg.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		webhookSvcSANs = append(webhookSvcSANs, applicationcatalogmanager.ApplicationCatalogWebhookServiceName)
+	}
+
 	creators := []reconciling.NamedSecretReconcilerFactory{
 		common.WebhookServingCASecretReconciler(cfg),
-		common.WebhookServingCertSecretReconciler(ctx, cfg, client),
+		common.WebhookServingCertSecretReconciler(ctx, cfg, client, webhookSvcSANs...),
 	}
 
 	if cfg.Spec.ImagePullSecret != "" {
