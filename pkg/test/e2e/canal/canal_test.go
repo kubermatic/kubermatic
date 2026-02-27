@@ -26,6 +26,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +46,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -68,6 +70,12 @@ const (
 	canalTestNs  = "canal-test"
 	nginxAppName = "nginx-canal-test"
 )
+
+var allProxyModes = []string{
+	resources.IPVSProxyMode,
+	resources.IPTablesProxyMode,
+	resources.NFTablesProxyMode,
+}
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
@@ -158,7 +166,7 @@ func TestCanalClusters(t *testing.T) {
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
-			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
+			testJig, client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
 			if cleanup != nil {
 				defer cleanup()
 			}
@@ -168,6 +176,39 @@ func TestCanalClusters(t *testing.T) {
 			}
 
 			testUserCluster(ctx, t, tLogger, client)
+
+			// Test proxy mode upgrades: switch to each of the other proxy modes
+			// on the same cluster and re-run connectivity tests.
+			migrateProxyModes := func(mode string) []string {
+				var modes []string
+				for _, upgradeMode := range allProxyModes {
+					if strings.EqualFold(upgradeMode, mode) {
+						continue
+					}
+					modes = append(modes, upgradeMode)
+				}
+				return modes
+			}(proxyMode)
+
+			currentMode := proxyMode
+			for _, upgradeMode := range migrateProxyModes {
+				upgradeLogger := tLogger.With("upgrade-to", upgradeMode)
+				upgradeLogger.Infof("Upgrading proxy mode from %s to %s...", currentMode, upgradeMode)
+
+				err := changeProxyMode(ctx, upgradeLogger, seedClient, testJig, upgradeMode)
+				if err != nil {
+					t.Fatalf("failed to change proxy mode to %s: %v", upgradeMode, err)
+				}
+
+				upgradeLogger.Info("Waiting for kube-proxy rollout after proxy mode change...")
+				err = waitForKubeProxyRollout(ctx, upgradeLogger, client)
+				if err != nil {
+					t.Fatalf("kube-proxy rollout failed after proxy mode change to %s: %v", upgradeMode, err)
+				}
+
+				testUserCluster(ctx, t, upgradeLogger, client)
+				currentMode = upgradeMode
+			}
 		})
 	}
 }
@@ -201,14 +242,21 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 
 	// --- Connectivity checks ---
 	log.Info("Running Canal connectivity tests...")
+
+	// Clean up any leftover namespace from a previous run (e.g. proxy mode upgrade).
+	log.Info("Ensuring canal-test namespace is clean...")
+	if err := cleanupConnectivityNamespace(ctx, log, client, canalTestNs); err != nil {
+		t.Fatalf("failed to clean up %q namespace: %v", canalTestNs, err)
+	}
+
 	ns := corev1.Namespace{}
 	ns.Name = canalTestNs
 	if err := client.Create(ctx, &ns); err != nil {
 		t.Fatalf("failed to create %q namespace: %v", canalTestNs, err)
 	}
 	defer func() {
-		if err := client.Delete(ctx, &ns); err != nil {
-			log.Errorw("failed to delete connectivity-test namespace", zap.Error(err))
+		if err := cleanupConnectivityNamespace(ctx, log, client, canalTestNs); err != nil {
+			log.Errorw("failed to clean up connectivity-test namespace", zap.Error(err))
 		}
 	}()
 
@@ -300,6 +348,115 @@ func verifyKubeProxyConfigHash(ctx context.Context, log *zap.SugaredLogger, clie
 
 		log.Infow("kube-proxy config hash verified", "hash", hash)
 		return nil, nil
+	})
+}
+
+// changeProxyMode updates the proxy mode on the cluster object in the seed,
+// using the unsafe-cni-migration label to bypass the immutability check.
+func changeProxyMode(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, testJig *jig.TestJig, newMode string) error {
+	return wait.PollLog(ctx, log, 2*time.Second, 2*time.Minute, func(ctx context.Context) (error, error) {
+		cluster, err := testJig.ClusterJig.Cluster(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get cluster: %w", err), nil
+		}
+
+		oldCluster := cluster.DeepCopy()
+
+		// Set the unsafe-cni-migration label to allow proxy mode change.
+		if cluster.Labels == nil {
+			cluster.Labels = map[string]string{}
+		}
+		cluster.Labels["unsafe-cni-migration"] = "true"
+		cluster.Spec.ClusterNetwork.ProxyMode = newMode
+
+		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to patch cluster proxy mode to %s: %w", newMode, err), nil
+		}
+
+		log.Infow("Proxy mode changed", "newMode", newMode)
+
+		// Remove the unsafe label after the change.
+		patched := cluster.DeepCopy()
+		delete(patched.Labels, "unsafe-cni-migration")
+		if err := seedClient.Patch(ctx, patched, ctrlruntimeclient.MergeFrom(cluster)); err != nil {
+			return fmt.Errorf("failed to remove unsafe-cni-migration label: %w", err), nil
+		}
+
+		return nil, nil
+	})
+}
+
+// waitForKubeProxyRollout waits for the kube-proxy DaemonSet to complete its
+// rollout after a proxy mode change. It checks that all pods are updated and ready.
+func waitForKubeProxyRollout(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		ds := &appsv1.DaemonSet{}
+		if err := client.Get(ctx, types.NamespacedName{Name: "kube-proxy", Namespace: "kube-system"}, ds); err != nil {
+			return fmt.Errorf("failed to get kube-proxy DaemonSet: %w", err), nil
+		}
+
+		if ds.Status.DesiredNumberScheduled == 0 {
+			return errors.New("kube-proxy DaemonSet has 0 desired pods"), nil
+		}
+
+		if ds.Status.UpdatedNumberScheduled != ds.Status.DesiredNumberScheduled {
+			return fmt.Errorf("kube-proxy rollout in progress: %d/%d updated",
+				ds.Status.UpdatedNumberScheduled, ds.Status.DesiredNumberScheduled), nil
+		}
+
+		if ds.Status.NumberReady != ds.Status.DesiredNumberScheduled {
+			return fmt.Errorf("kube-proxy pods not all ready: %d/%d ready",
+				ds.Status.NumberReady, ds.Status.DesiredNumberScheduled), nil
+		}
+
+		if ds.Status.ObservedGeneration < ds.Generation {
+			return fmt.Errorf("kube-proxy DaemonSet generation not yet observed: %d < %d",
+				ds.Status.ObservedGeneration, ds.Generation), nil
+		}
+
+		log.Infow("kube-proxy rollout complete",
+			"ready", ds.Status.NumberReady,
+			"desired", ds.Status.DesiredNumberScheduled)
+		return nil, nil
+	})
+}
+
+// cleanupConnectivityNamespace deletes the given namespace if it exists and
+// waits for it to be fully removed. Safe to call when the namespace does not exist.
+func cleanupConnectivityNamespace(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string) error {
+	ns := &corev1.Namespace{}
+	if err := client.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil // nothing to clean up
+		}
+		return fmt.Errorf("failed to check namespace existence: %w", err)
+	}
+
+	// Namespace exists — delete it if not already terminating.
+	if ns.Status.Phase != corev1.NamespaceTerminating {
+		if err := client.Delete(ctx, ns); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete namespace %s: %w", namespace, err)
+		}
+	}
+
+	// Wait for the namespace to be fully removed.
+	return waitForNamespaceDeletion(ctx, log, client, namespace)
+}
+
+// waitForNamespaceDeletion waits until the given namespace no longer exists.
+// Returns immediately if the namespace is already gone.
+func waitForNamespaceDeletion(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string) error {
+	return wait.PollLog(ctx, log, 2*time.Second, 3*time.Minute, func(ctx context.Context) (error, error) {
+		ns := &corev1.Namespace{}
+		err := client.Get(ctx, types.NamespacedName{Name: namespace}, ns)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, nil // namespace is gone
+			}
+			return fmt.Errorf("failed to get namespace %s: %w", namespace, err), nil
+		}
+
+		return fmt.Errorf("namespace %s still exists (phase: %s)", namespace, ns.Status.Phase), nil
 	})
 }
 
@@ -407,10 +564,10 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
-) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
+) (*jig.TestJig, ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
 	testAppAnnotation, err := getTestApplicationAnnotation(nginxAppName)
 	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
+		return nil, nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
 	}
 
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
@@ -433,10 +590,10 @@ func createUserCluster(
 
 	// let the magic happen
 	if _, _, err := testJig.Setup(ctx, jig.WaitForReadyPods); err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
+		return nil, nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}
 
 	clusterClient, err := testJig.ClusterClient(ctx)
 
-	return clusterClient, cleanup, log, err
+	return testJig, clusterClient, cleanup, log, err
 }
