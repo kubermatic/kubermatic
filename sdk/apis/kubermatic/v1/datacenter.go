@@ -1045,12 +1045,15 @@ type KubeVirtInfraStorageClass struct {
 }
 
 type KubeVirtInfraVolumeSnapshotClass struct {
-	Name string `json:"name"`
+	// InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+	InfraVolumeSnapshotClass string `json:"infraVolumeSnapshotClass"`
 	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
 	// snapshot.storage.kubernetes.io/is-default-class: true
 	// If missing or false, annotation will be:
 	// snapshot.storage.kubernetes.io/is-default-class: false
 	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.
+	DeletionPolicy string `json:"deletionPolicy,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and t he Spec of a NetworkPolicy.
