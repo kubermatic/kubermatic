@@ -859,20 +859,28 @@ func TestMutator(t *testing.T) {
 				t.Fatalf("Failed to create patches: %v", err)
 			}
 
-			actual := map[string]jsonpatch.JsonPatchOperation{}
-			for _, p := range patches {
-				actual[p.Path] = p
-			}
-			expected := map[string]jsonpatch.JsonPatchOperation{}
-			for _, p := range tt.wantPatches {
-				expected[p.Path] = p
-			}
-			if !diff.DeepEqual(expected, actual) {
-				t.Errorf("Diff found between expected and actual patches:\n %+v", diff.ObjectDiff(expected, actual))
-			}
-		})
+				actual := map[string]string{}
+				for _, p := range patches {
+					serialized, err := json.Marshal(p)
+					if err != nil {
+						t.Fatalf("Failed to marshal actual patch: %v", err)
+					}
+					actual[p.Path] = string(serialized)
+				}
+				expected := map[string]string{}
+				for _, p := range tt.wantPatches {
+					serialized, err := json.Marshal(p)
+					if err != nil {
+						t.Fatalf("Failed to marshal expected patch: %v", err)
+					}
+					expected[p.Path] = string(serialized)
+				}
+				if !diff.DeepEqual(expected, actual) {
+					t.Errorf("Diff found between expected and actual patches:\n %+v", diff.ObjectDiff(expected, actual))
+				}
+			})
+		}
 	}
-}
 
 type rawClusterGen struct {
 	Name                  string
