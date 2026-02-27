@@ -1174,6 +1174,17 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+    - snapshot.storage.k8s.io
+  resources:
+    - volumesnapshotclasses
+  verbs:
+    - get
+    - list
+    - create
+    - patch
+    - update
+    - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
