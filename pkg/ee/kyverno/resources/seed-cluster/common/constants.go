@@ -24,7 +24,7 @@ package common
 
 const (
 	// Kyverno version and registry.
-	KyvernoVersion  = "v1.14.1"
+	KyvernoVersion  = "v1.15.3"
 	KyvernoRegistry = "reg.kyverno.io/kyverno"
 )
 
