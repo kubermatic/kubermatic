@@ -31,6 +31,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
+	"k8c.io/kubermatic/sdk/v2/semver"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -1755,7 +1756,11 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, clusterVersion semver.Semver) string {
+	// default to nftables for Kubernetes 1.35+ as iptables is deprecated and will be removed in Kubernetes 1.36
+	if clusterVersion.Semver() != nil && clusterVersion.Semver().Minor() >= 35 {
+		return NFTablesProxyMode
+	}
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392

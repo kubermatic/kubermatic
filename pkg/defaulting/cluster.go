@@ -22,6 +22,7 @@ import (
 
 	"dario.cat/mergo"
 	"go.uber.org/zap"
+	"k8c.io/kubermatic/sdk/v2/semver"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
@@ -191,7 +192,7 @@ func DefaultClusterSpec(
 	}
 
 	// default cluster networking parameters
-	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
+	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy, spec.Version)
 	return nil
 }
 
@@ -231,7 +232,7 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
 
-func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy) kubermaticv1.ClusterNetworkingConfig {
+func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy, clusterVersion semver.Semver) kubermaticv1.ClusterNetworkingConfig {
 	if specClusterNetwork.IPFamily == "" {
 		if len(specClusterNetwork.Pods.CIDRBlocks) < 2 {
 			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)
@@ -265,7 +266,7 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 	}
 
 	if specClusterNetwork.ProxyMode == "" {
-		specClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider)
+		specClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, clusterVersion)
 	}
 
 	if specClusterNetwork.ProxyMode == resources.IPVSProxyMode {
