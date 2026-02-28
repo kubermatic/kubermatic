@@ -54,6 +54,7 @@ func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient
 	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
 		// considering the storage classes in the dc object as the only canonical truth and skip filtering storage classes.
 		spec.StorageClasses = dc.InfraStorageClasses
+		spec.VolumeSnapshotClasses = dc.InfraVolumeSnapshotClasses
 		return nil
 	}
 

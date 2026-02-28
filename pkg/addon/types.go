@@ -108,6 +108,11 @@ func NewTemplateData(
 		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.StorageClasses
 	}
 
+	var kubeVirtVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		kubeVirtVolumeSnapshotClasses = cluster.Spec.Cloud.Kubevirt.VolumeSnapshotClasses
+	}
+
 	var ipamAllocationsData map[string]IPAMAllocation
 	if ipamAllocations != nil {
 		ipamAllocationsData = make(map[string]IPAMAllocation, len(ipamAllocations.Items))
@@ -172,9 +177,10 @@ func NewTemplateData(
 				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
-			CSIMigration:                csiMigration,
-			KubeVirtInfraStorageClasses: kubeVirtStorageClasses,
-			DisableCSIDriver:            cluster.Spec.DisableCSIDriver,
+			CSIMigration:                       csiMigration,
+			KubeVirtInfraStorageClasses:        kubeVirtStorageClasses,
+			KubeVirtInfraVolumeSnapshotClasses: kubeVirtVolumeSnapshotClasses,
+			DisableCSIDriver:                   cluster.Spec.DisableCSIDriver,
 		},
 	}, nil
 }
@@ -233,6 +239,9 @@ type ClusterData struct {
 	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	KubeVirtInfraStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
+	// KubeVirtInfraVolumeSnapshotClasses is a list of volume snapshot classes from the KubeVirt infra cluster
+	// that are used for initialization of user cluster volume snapshot classes by the CSI driver kubevirt.
+	KubeVirtInfraVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
 	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
 	DisableCSIDriver bool
 }
