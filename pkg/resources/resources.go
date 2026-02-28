@@ -81,16 +81,6 @@ const (
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	// MetricsServerDeploymentName is the name for the metrics-server deployment.
 	MetricsServerDeploymentName = "metrics-server"
-	// OpenVPNServerDeploymentName is the name for the openvpn server deployment.
-	OpenVPNServerDeploymentName = "openvpn-server"
-	// DNSResolverDeploymentName is the name of the dns resolver deployment.
-	DNSResolverDeploymentName = "dns-resolver"
-	// DNSResolverConfigMapName is the name of the dns resolvers configmap.
-	DNSResolverConfigMapName = "dns-resolver"
-	// DNSResolverServiceName is the name of the dns resolvers service.
-	DNSResolverServiceName = "dns-resolver"
-	// DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb.
-	DNSResolverPodDisruptionBudetName = "dns-resolver"
 	// KubeStateMetricsDeploymentName is the name of the kube-state-metrics deployment.
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment.
@@ -135,8 +125,6 @@ const (
 	EtcdServiceName = "etcd"
 	// EtcdDefragCronJobName is the name for the defrag cronjob deployment.
 	EtcdDefragCronJobName = "etcd-defragger"
-	// OpenVPNServerServiceName is the name for the openvpn server service.
-	OpenVPNServerServiceName = "openvpn-server"
 	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service.
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService.
@@ -151,8 +139,6 @@ const (
 	// KubeLBCCMCertUsername is the name of the user coming from kubeconfig cert.
 	KubeLBCCMCertUsername = "kubermatic:kubelb-ccm"
 
-	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller.
-	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
 	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics.
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
 	// MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server.
@@ -205,12 +191,6 @@ const (
 	TokensSecretName = "tokens"
 	// ViewerTokenSecretName is the name for the secret containing the viewer token.
 	ViewerTokenSecretName = "viewer-token"
-	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA.
-	OpenVPNCASecretName = "openvpn-ca"
-	// OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates.
-	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
-	// OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates.
-	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	// CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
 	CloudConfigSecretName = "cloud-config"
 	// CSICloudConfigSecretName is the name for the secret containing the cloud-config used by the csi driver inside the user cluster.
@@ -245,10 +225,6 @@ const (
 	CloudConfigSeedSecretName = "cloud-config"
 	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
-	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
-	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
-	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
-	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	// ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism.
 	ClusterInfoConfigMapName = "cluster-info"
 	// PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config.
@@ -301,8 +277,6 @@ const (
 	CloudControllerManagerCertUsername = "system:cloud-controller-manager"
 	// SchedulerCertUsername is the name of the user coming from kubeconfig cert.
 	SchedulerCertUsername = "system:kube-scheduler"
-	// KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert.
-	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert.
 	PrometheusCertUsername = "prometheus"
 
@@ -310,11 +284,6 @@ const (
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
 	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert.
 	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
-
-	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role.
-	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
-	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding.
-	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
 	// ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap.
 	ClusterInfoReaderRoleName = "cluster-info"
@@ -553,20 +522,6 @@ const (
 	TokensSecretKey = "tokens.csv"
 	// ViewerTokenSecretKey viewersToken.
 	ViewerTokenSecretKey = "viewerToken"
-	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded.
-	OpenVPNCACertKey = CACertSecretKey
-	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded.
-	OpenVPNCAKeyKey = CAKeySecretKey
-	// OpenVPNServerKeySecretKey server.key.
-	OpenVPNServerKeySecretKey = "server.key"
-	// OpenVPNServerCertSecretKey server.crt.
-	OpenVPNServerCertSecretKey = "server.crt"
-	// OpenVPNInternalClientKeySecretKey client.key.
-	OpenVPNInternalClientKeySecretKey = "client.key"
-	// OpenVPNInternalClientCertSecretKey client.crt.
-	OpenVPNInternalClientCertSecretKey = "client.crt"
 	// EtcdTLSCertSecretKey etcd-tls.crt.
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key.
@@ -1016,7 +971,6 @@ const (
 	NetworkPolicyDefaultDenyAllEgress               = "default-deny-all-egress"
 	NetworkPolicyEtcdAllow                          = "etcd-allow"
 	NetworkPolicyDNSAllow                           = "dns-allow"
-	NetworkPolicyOpenVPNServerAllow                 = "openvpn-server-allow"
 	NetworkPolicyMachineControllerWebhookAllow      = "machine-controller-webhook-allow"
 	NetworkPolicyUserClusterWebhookAllow            = "usercluster-webhook-allow"
 	NetworkPolicyOperatingSystemManagerWebhookAllow = "operating-system-manager-webhook-allow"
@@ -1210,35 +1164,8 @@ type userClusterDNSPolicyAndConfigData interface {
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS.
 func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	if d.IsKonnectivityEnabled() {
-		// custom DNS resolver in not needed in Konnectivity setup
-		return corev1.DNSClusterFirst, nil, nil
-	}
-	// If Konnectivity is NOT enabled, we deploy a custom DNS resolver
-	// for the user cluster in Seed. To use it, we set the DNS policy to DNSNone
-	// and set the custom DNS resolver's CLusterIP in the DNSConfig.
-	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
-	if err != nil {
-		return corev1.DNSNone, nil, err
-	}
-	if len(d.Cluster().Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster().Name)
-	}
-	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{dnsConfigResolverIP},
-		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			d.Cluster().Spec.ClusterNetwork.DNSDomain,
-		},
-		Options: []corev1.PodDNSConfigOption{
-			{
-				Name:  "ndots",
-				Value: &dnsConfigOptionNdots,
-			},
-		},
-	}, nil
+	// TODO: remove,noop custom DNS resolver in not needed in Konnectivity setup
+	return corev1.DNSClusterFirst, nil, nil
 }
 
 // BaseAppLabels returns the minimum required labels.
@@ -1407,11 +1334,6 @@ func GetClusterRootCA(ctx context.Context, namespace string, client ctrlruntimec
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister.
 func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
 	return getRSAClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
-}
-
-// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister.
-func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
-	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
 }
 
 // GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister.

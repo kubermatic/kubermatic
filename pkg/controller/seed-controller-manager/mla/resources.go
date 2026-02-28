@@ -265,7 +265,7 @@ func GatewayExternalServiceReconciler(c *kubermaticv1.Cluster) reconciling.Named
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			case kubermaticv1.ExposeStrategyLoadBalancer:
 				// When using exposeStrategy==LoadBalancer, only one LB service is used to expose multiple user cluster
-				// -related services (APIServer, OpenVPN, MLAGw). NodePortProxy in namespaced mode is used to redirect
+				// -related services (APIServer, MLAGw). NodePortProxy in namespaced mode is used to redirect
 				// the traffic to the right service.
 				s.Spec.Type = corev1.ServiceTypeNodePort
 				s.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"

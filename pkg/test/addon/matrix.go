@@ -53,7 +53,6 @@ var (
 		"metallb":                      anyProvider,
 		"multus":                       anyProvider,
 		"node-exporter":                anyProvider,
-		"openvpn":                      anyProvider,
 		"pod-security-policy":          anyProvider,
 		"rbac":                         anyProvider,
 	}

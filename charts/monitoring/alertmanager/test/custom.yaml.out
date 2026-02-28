@@ -66,14 +66,6 @@ data:
       source_match_re:
         alertname: KubernetesApiserverDown
         cluster: .+
-    - equal:
-      - seed_cluster
-      - cluster
-      source_match_re:
-        alertname: OpenVPNServerDown
-        cluster: .+
-      target_match_re:
-        alertname: (CAdvisorDown|KubernetesNodeDown)
     receivers:
     - name: blackhole
     - name: default

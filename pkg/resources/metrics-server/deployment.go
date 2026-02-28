@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,8 +64,6 @@ type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 	RewriteImage(string) (string, error)
-	DNATControllerImage() string
-	DNATControllerTag() string
 	NodeAccessNetwork() string
 	IsKonnectivityEnabled() bool
 }
@@ -101,7 +98,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
+			dep.Spec.Template.Spec.Volumes = getVolumes()
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -117,7 +114,6 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 						"--kubelet-use-node-status-port",
 						"--secure-port", "10250",
 						"--metric-resolution", "15s",
-						// We use the same as the API server as we use the same dnat-controller
 						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
@@ -177,22 +173,6 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				name: defaultResourceRequirements.DeepCopy(),
 			}
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
-				}
-				dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
-					*openvpnSidecar,
-					*dnatControllerSidecar,
-				)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
-				defResourceRequirements[dnatControllerSidecar.Name] = dnatControllerSidecar.Resources.DeepCopy()
-			}
 
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
@@ -211,7 +191,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 	}
 }
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes() []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.MetricsServerKubeconfigSecretName,
@@ -229,26 +209,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		},
-	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, []corev1.Volume{
-			{
-				Name: resources.OpenVPNClientCertificatesSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.OpenVPNClientCertificatesSecretName,
-					},
-				},
-			},
-			{
-				Name: resources.KubeletDnatControllerKubeconfigSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
-					},
-				},
-			},
-		}...)
 	}
 	return vs
 }

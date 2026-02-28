@@ -61,7 +61,6 @@ type userclusterControllerData interface {
 	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
-	GetOpenVPNServerPort() (int32, error)
 	GetKonnectivityServerPort() (int32, error)
 	GetKonnectivityKeepAliveTime() string
 	GetTunnelingAgentIP() string
@@ -188,12 +187,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-konnectivity-server-host", kHost)
 				args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
 				args = append(args, "-konnectivity-keepalive-time", data.GetKonnectivityKeepAliveTime())
-			} else {
-				openvpnServerPort, err := data.GetOpenVPNServerPort()
-				if err != nil {
-					return nil, err
-				}
-				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
 			}
 
 			if data.Cluster().Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] {

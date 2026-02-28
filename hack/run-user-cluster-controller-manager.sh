@@ -86,15 +86,6 @@ if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); th
   ARGS="$ARGS -konnectivity-enabled=true"
   ARGS="$ARGS -konnectivity-server-host=${KONNECTIVITY_SERVER_HOST}"
   ARGS="$ARGS -konnectivity-server-port=${KONNECTIVITY_SERVER_PORT}"
-else
-  OPENVPN_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service openvpn-server -o json)"
-  if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
-    OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
-  else
-    OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].port')"
-    ARGS="$ARGS -tunneling-agent-ip=100.64.30.10"
-  fi
-  ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
 
 APPTMPDIR="$(mktemp -d ${TMPDIR}/application.XXXXX)"

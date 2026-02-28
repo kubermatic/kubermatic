@@ -112,6 +112,10 @@ func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[str
 	for _, addonName := range sets.List(previousAddonNames) {
 		providersToTest, exists := AddonProviderMatrix[addonName]
 		if !exists {
+			// If the addon was removed in the current version, skip it.
+			if _, currentExists := currentAddons[addonName]; !currentExists {
+				continue
+			}
 			t.Fatalf("No providers configured for addon %s, please update pkg/test/addon/matrix.go.", addonName)
 		}
 

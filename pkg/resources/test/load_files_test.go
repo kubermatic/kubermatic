@@ -502,13 +502,6 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.OpenVPNCASecretName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
 									Name:            resources.ApiserverEtcdClientCertificateSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
@@ -551,20 +544,6 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.OpenVPNServerCertificatesSecretName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
-									Name:            resources.OpenVPNClientCertificatesSecretName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
 									Name:            resources.ControllerManagerKubeconfigSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
@@ -580,13 +559,6 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.SchedulerKubeconfigSecretName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
-									Name:            resources.KubeletDnatControllerKubeconfigSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -741,13 +713,6 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.DNSResolverConfigMapName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.ConfigMap{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
 									Name:            resources.AuditConfigMapName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
@@ -778,34 +743,6 @@ func TestLoadFiles(t *testing.T) {
 										},
 									},
 									ClusterIP: "192.0.2.10",
-								},
-							},
-							&corev1.Service{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      resources.OpenVPNServerServiceName,
-									Namespace: cluster.Status.NamespaceName,
-								},
-								Spec: corev1.ServiceSpec{
-									Ports: []corev1.ServicePort{
-										{
-											NodePort: 30003,
-										},
-									},
-									ClusterIP: "192.0.2.13",
-								},
-							},
-							&corev1.Service{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      resources.DNSResolverServiceName,
-									Namespace: cluster.Status.NamespaceName,
-								},
-								Spec: corev1.ServiceSpec{
-									Ports: []corev1.ServicePort{
-										{
-											NodePort: 30003,
-										},
-									},
-									ClusterIP: "192.0.2.14",
 								},
 							},
 							&corev1.Service{
@@ -878,7 +815,6 @@ func TestLoadFiles(t *testing.T) {
 						WithOIDCIssuerClientID("kubermaticIssuer").
 						WithKubermaticImage("quay.io/kubermatic/kubermatic").
 						WithEtcdLauncherImage("quay.io/kubermatic/etcd-launcher").
-						WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").
 						WithNetworkIntfMgrImage("quay.io/kubermatic/network-interface-manager").
 						WithVersions(kubermaticVersions).
 						WithFailureDomainZoneAntiaffinity(true).

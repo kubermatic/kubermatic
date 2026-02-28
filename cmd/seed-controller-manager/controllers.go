@@ -157,7 +157,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
-		ctrlCtx.runOptions.dnatControllerImage,
 		ctrlCtx.runOptions.machineControllerImageTag,
 		ctrlCtx.runOptions.machineControllerImageRepository,
 		ctrlCtx.runOptions.tunnelingAgentIP.String(),
@@ -273,11 +272,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addonEnforceInterval,
-		map[string]interface{}{ // addonVariables
-			"openvpn": map[string]interface{}{
-				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
-			},
-		},
+		map[string]interface{}{},
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,

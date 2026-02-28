@@ -35,7 +35,6 @@ import (
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
 	csisnapshotter "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-snapshotter"
-	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
@@ -50,7 +49,6 @@ import (
 	mlaloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
 	mlamonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	operatingsystemmanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/operating-system-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
@@ -117,13 +115,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	err = r.setupNetworkingData(cluster, &data)
 	if err != nil {
 		return fmt.Errorf("failed to setup cluster networking data: %w", err)
-	}
-
-	if !r.isKonnectivityEnabled {
-		data.openVPNCACert, err = r.openVPNCA(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get openVPN CA cert: %w", err)
-		}
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -278,18 +269,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	if cluster.Spec.DisableCSIDriver {
 		if err := r.ensureCSIDriverResourcesAreRemoved(ctx); err != nil {
-			return err
-		}
-	}
-
-	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
-	// It can be removed one release after deprecating OpenVPN.
-	if r.isKonnectivityEnabled {
-		if err := r.ensureOpenVPNSetupIsRemoved(ctx); err != nil {
-			return err
-		}
-	} else {
-		if err := r.ensureKonnectivitySetupIsRemoved(ctx); err != nil {
 			return err
 		}
 	}
@@ -536,7 +515,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		kubestatemetrics.ClusterRoleReconciler(),
 		prometheus.ClusterRoleReconciler(),
 		machinecontroller.ClusterRoleReconciler(),
-		dnatcontroller.ClusterRoleReconciler(),
 		metricsserver.ClusterRoleReconciler(),
 		coredns.ClusterRoleReconciler(),
 		operatingsystemmanager.WebhookClusterRoleReconciler(),
@@ -571,7 +549,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		machinecontroller.ClusterRoleBindingReconciler(),
 		machinecontroller.NodeBootstrapperClusterRoleBindingReconciler(),
 		machinecontroller.NodeSignerClusterRoleBindingReconciler(),
-		dnatcontroller.ClusterRoleBindingReconciler(),
 		metricsserver.ClusterRoleBindingResourceReaderReconciler(r.isKonnectivityEnabled),
 		metricsserver.ClusterRoleBindingAuthDelegatorReconciler(r.isKonnectivityEnabled),
 		scheduler.ClusterRoleBindingAuthDelegatorReconciler(),
@@ -778,28 +755,13 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				},
 			},
 		}
-		if !r.isKonnectivityEnabled {
-			// add OpenVPN server port listener if Konnectivity is NOT enabled
-			envoyConfig.Listeners = append(envoyConfig.Listeners,
-				envoyagent.Listener{
-					BindAddress: r.tunnelingAgentIP.String(),
-					BindPort:    r.openvpnServerPort,
-					Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", r.namespace), "1194"),
-				})
-		}
 		creators = []reconciling.NamedConfigMapReconcilerFactory{
 			cabundle.ConfigMapReconciler(r.caBundle),
 			envoyagent.ConfigMapReconciler(envoyConfig),
 		}
-		if !r.isKonnectivityEnabled {
-			creators = append(creators, openvpn.ClientConfigConfigMapReconciler(r.tunnelingAgentIP.String(), r.openvpnServerPort))
-		}
 	} else {
 		creators = []reconciling.NamedConfigMapReconcilerFactory{
 			cabundle.ConfigMapReconciler(r.caBundle),
-		}
-		if !r.isKonnectivityEnabled {
-			creators = append(creators, openvpn.ClientConfigConfigMapReconciler(r.clusterURL.Hostname(), r.openvpnServerPort))
 		}
 	}
 
@@ -843,9 +805,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretReconcilerFactory{}
-	if !r.isKonnectivityEnabled {
-		creators = append(creators, openvpn.ClientCertificate(data.openVPNCACert))
-	} else {
+	if r.isKonnectivityEnabled {
 		// required only if metrics-server is running in user cluster
 		creators = append(creators, metricsserver.TLSServingCertSecretReconciler(
 			func() (*triple.KeyPair, error) {
@@ -1154,7 +1114,6 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 
 type reconcileData struct {
 	caCert            *triple.KeyPair
-	openVPNCACert     *resources.ECDSAKeyPair
 	mlaGatewayCACert  *resources.ECDSAKeyPair
 	userSSHKeys       map[string][]byte
 	cloudProviderName string
@@ -1378,32 +1337,6 @@ func (r *reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context) err
 		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
-	for _, resource := range openvpn.ResourcesForDeletion() {
-		err := r.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error {
-	for _, resource := range konnectivity.ResourcesForDeletion() {
-		err := r.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
-		}
-	}
-	for _, resource := range metricsserver.UserClusterResourcesForDeletion() {
-		err := r.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
 		}
 	}
 	return nil

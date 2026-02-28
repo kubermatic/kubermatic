@@ -433,17 +433,6 @@ groups:
       severity: warning
 `
 
-// prometheusRuleDNSResolverDownAlert contains the DNSResolverDown alerting rule for Prometheus.
-const prometheusRuleDNSResolverDownAlert = `
-  - alert: DNSResolverDown
-    annotations:
-      message: DNS resolver has disappeared from Prometheus target discovery.
-    expr: absent(up{job="dns-resolver"} == 1)
-    for: 15m
-    labels:
-      severity: warning
-`
-
 const prometheusRuleEnvoyAgentFederation = `
 - name: kubermatic.envoy
   rules:

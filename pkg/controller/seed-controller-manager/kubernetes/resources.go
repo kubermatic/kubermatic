@@ -39,15 +39,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
 	"k8c.io/kubermatic/v2/pkg/resources/csi"
-	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
-	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
@@ -183,18 +180,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
-	// It can be removed one release after deprecating OpenVPN.
-	if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled { //nolint:staticcheck
-		if err := r.ensureOpenVPNSetupIsRemoved(ctx, data); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
-			return nil, err
-		}
-	}
-
 	// clean up NetworkPolicy created before konnectivity-server's kubeconfig was changed
 	// to use the internal API server endpoint.
 	if data.IsKonnectivityEnabled() {
@@ -280,7 +265,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
 		WithKubermaticImage(r.kubermaticImage).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
-		WithDnatControllerImage(r.dnatControllerImage).
 		WithMachineControllerImageTag(r.machineControllerImageTag).
 		WithMachineControllerImageRepository(r.machineControllerImageRepository).
 		WithOperatingSystemManagerImageTag(config.Spec.UserCluster.OperatingSystemManager.ImageTag).
@@ -395,12 +379,6 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, konnectivity.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName))
-	} else {
-		creators = append(creators,
-			openvpn.ServiceReconciler(data.Cluster().Spec.ExposeStrategy),
-			metricsserver.ServiceReconciler(),
-			dns.ServiceReconciler(),
-		)
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -439,14 +417,6 @@ func GetDeploymentReconcilers(data *resources.TemplateData, features Features, v
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentReconciler(data))
-	}
-
-	if !data.IsKonnectivityEnabled() {
-		deployments = append(deployments,
-			openvpn.DeploymentReconciler(data),
-			metricsserver.DeploymentReconciler(data),
-			dns.DeploymentReconciler(data),
-		)
 	}
 
 	// If CCM migration is ongoing defer the deployment of the CCM to the
@@ -568,15 +538,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		creators = append(creators,
 			konnectivity.TLSServingCertificateReconciler(data),
 			resources.GetInternalKubeconfigReconciler(namespace, resources.KonnectivityKubeconfigSecretName, resources.KonnectivityKubeconfigUsername, nil, data, r.log),
-		)
-	} else {
-		creators = append(creators,
-			openvpn.CAReconciler(),
-			openvpn.TLSServingCertificateReconciler(data),
-			openvpn.InternalClientCertificateReconciler(data),
-			metricsserver.TLSServingCertSecretReconciler(data.GetRootCA),
-			resources.GetInternalKubeconfigReconciler(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data, r.log),
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data, r.log),
 		)
 	}
 
@@ -734,7 +695,6 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.ApiserverInternalAllowReconciler())
 		} else {
 			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
-				apiserver.OpenVPNServerAllowReconciler(c),
 				apiserver.MetricsServerAllowReconciler(c),
 			)
 		}
@@ -806,13 +766,7 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, apiserver.EgressSelectorConfigReconciler())
-	} else {
-		creators = append(creators,
-			openvpn.ServerClientConfigsConfigMapReconciler(data),
-			dns.ConfigMapReconciler(data),
-		)
 	}
-
 	return creators
 }
 
@@ -846,12 +800,6 @@ func GetPodDisruptionBudgetReconcilers(data *resources.TemplateData) []reconcili
 	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		etcd.PodDisruptionBudgetReconciler(data),
 		apiserver.PodDisruptionBudgetReconciler(),
-	}
-	if !data.IsKonnectivityEnabled() {
-		creators = append(creators,
-			metricsserver.PodDisruptionBudgetReconciler(),
-			dns.PodDisruptionBudgetReconciler(),
-		)
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -900,14 +848,6 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
 			resources.MachineControllerDeploymentName,
 			resources.MachineControllerWebhookDeploymentName,
-		)
-	}
-
-	if !data.IsKonnectivityEnabled() {
-		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
-			resources.OpenVPNServerDeploymentName,
-			resources.MetricsServerDeploymentName,
-			resources.DNSResolverDeploymentName,
 		)
 	}
 
@@ -983,43 +923,6 @@ func (r *Reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context, dat
 		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
-	for _, resource := range openvpn.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
-		}
-	}
-	for _, resource := range metricsserver.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
-		}
-	}
-	for _, resource := range dns.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure dns-resolver resources are removed/not present: %w", err)
-		}
-	}
-	dnatControllerSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.KubeletDnatControllerKubeconfigSecretName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}
-	if err := r.Delete(ctx, dnatControllerSecret); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure DNAT controller resources are removed/not present: %w", err)
-	}
-	return nil
-}
-
-func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
-	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
 		}
 	}
 	return nil

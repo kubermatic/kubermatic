@@ -142,13 +142,7 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules
 
-				// deploy DNSResolverDownAlert rule only if Konnectivity is disabled
-				// (custom DNS resolver in not deployed in Konnectivity setup)
-				if !data.IsKonnectivityEnabled() {
-					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
-				} else {
-					cm.Data["rules.yaml"] += prometheusRuleKonnectivity
-				}
+				cm.Data["rules.yaml"] += prometheusRuleKonnectivity
 
 				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 					cm.Data["rules.yaml"] += prometheusRuleEnvoyAgentFederation

@@ -52,7 +52,6 @@ const (
 	addonDefaultKey = ".spec.isDefault"
 
 	kubeProxyAddonName = "kube-proxy"
-	openVPNAddonName   = "openvpn"
 	CSIAddonName       = "csi"
 )
 
@@ -311,9 +310,6 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 	}
 	if addon.Name == kubeProxyAddonName && cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
 		return true // skip kube-proxy if eBPF proxy mode is used
-	}
-	if addon.Name == openVPNAddonName && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled { //nolint:staticcheck
-		return true // skip openvpn if Konnectivity is enabled
 	}
 	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver {
 		return true // skip csi driver installation if DisableCSIDriver is true

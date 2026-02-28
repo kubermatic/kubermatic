@@ -440,12 +440,6 @@ spec:
         - apiVersion: kubermatic.k8c.io/v1
           kind: Addon
           metadata:
-            name: openvpn
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
             name: rbac
             labels:
               addons.kubermatic.io/ensure: true
@@ -504,9 +498,6 @@ spec:
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
-    # DNATControllerDockerRepository is the repository containing the
-    # dnat-controller image.
-    dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
     # EtcdLauncherDockerRepository is the repository containing the Kubermatic
     # etcd-launcher image.
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
@@ -578,7 +569,7 @@ spec:
       imageTag: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
     # used for user clusters (user cluster control plane + addons). This also applies to
-    # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
+    # the KubermaticDockerRepository field.
     overwriteRegistry: ""
     # SystemApplications contains configuration for system Applications (such as CNI).
     systemApplications:
