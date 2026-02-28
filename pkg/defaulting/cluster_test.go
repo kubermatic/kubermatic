@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/utils/ptr"
@@ -31,6 +32,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 	testCases := []struct {
 		name                string
 		spec                *kubermaticv1.ClusterSpec
+		clusterVersion      semver.Semver
 		expectedChangedSpec *kubermaticv1.ClusterSpec
 	}{
 		{
@@ -224,11 +226,38 @@ func TestDefaultClusterNetwork(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "v1.35 defaults to nftables",
+			spec: &kubermaticv1.ClusterSpec{
+				Cloud: kubermaticv1.CloudSpec{
+					ProviderName: string(kubermaticv1.AWSCloudProvider),
+				},
+			},
+			clusterVersion: *semver.NewSemverOrDie("v1.35.0"),
+			expectedChangedSpec: &kubermaticv1.ClusterSpec{
+				Cloud: kubermaticv1.CloudSpec{
+					ProviderName: string(kubermaticv1.AWSCloudProvider),
+				},
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily: "IPv4",
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"172.25.0.0/16"},
+					},
+					Services: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{"10.240.16.0/20"},
+					},
+					ProxyMode:                resources.NFTablesProxyMode,
+					NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+					DNSDomain:                "cluster.local",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, kubermaticv1.ProviderType(tc.spec.Cloud.ProviderName), tc.spec.ExposeStrategy)
+			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, kubermaticv1.ProviderType(tc.spec.Cloud.ProviderName), tc.spec.ExposeStrategy, tc.clusterVersion)
 			assert.Equal(t, tc.expectedChangedSpec, tc.spec)
 		})
 	}
