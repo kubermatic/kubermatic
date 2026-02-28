@@ -1340,6 +1340,12 @@ spec:
                                   to initialise VolumeSnapshotClasses in the tenant cluster.
                                 items:
                                   properties:
+                                    deletionPolicy:
+                                      description: 'Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.'
+                                      type: string
+                                    infraVolumeSnapshotClass:
+                                      description: InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+                                      type: string
                                     isDefaultClass:
                                       description: |-
                                         Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
@@ -1347,10 +1353,8 @@ spec:
                                         If missing or false, annotation will be:
                                         snapshot.storage.kubernetes.io/is-default-class: false
                                       type: boolean
-                                    name:
-                                      type: string
                                   required:
-                                    - name
+                                    - infraVolumeSnapshotClass
                                   type: object
                                 type: array
                               matchSubnetAndStorageLocation:

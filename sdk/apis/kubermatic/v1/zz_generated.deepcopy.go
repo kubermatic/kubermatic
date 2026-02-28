@@ -5424,6 +5424,13 @@ func (in *KubevirtCloudSpec) DeepCopyInto(out *KubevirtCloudSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.VolumeSnapshotClasses != nil {
+		in, out := &in.VolumeSnapshotClasses, &out.VolumeSnapshotClasses
+		*out = make([]KubeVirtInfraVolumeSnapshotClass, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.CSIDriverOperator != nil {
 		in, out := &in.CSIDriverOperator, &out.CSIDriverOperator
 		*out = new(KubeVirtCSIDriverOperator)
