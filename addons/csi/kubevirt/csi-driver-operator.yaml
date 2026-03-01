@@ -1461,12 +1461,14 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+{{- if .Cluster.KubeVirtInfraVolumeSnapshotClasses }}
   volumeSnapshotClasses:
 {{- range .Cluster.KubeVirtInfraVolumeSnapshotClasses }}
    - infraVolumeSnapshotClass: {{ .InfraVolumeSnapshotClass }}
      isDefaultClass: {{ default false .IsDefaultClass }}
 {{- if .DeletionPolicy }}
-     deletionPolicy: {{ default "Delete" .DeletionPolicy }}
+     deletionPolicy: {{ .DeletionPolicy }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{end}}
