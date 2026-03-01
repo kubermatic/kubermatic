@@ -1,0 +1,75 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/refs/tags/1.6.0/manifests/csi-controller.yaml
+  - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/refs/tags/1.6.0/manifests/csi-driver.yaml
+  - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/refs/tags/1.6.0/manifests/csi-node.yaml
+  - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/refs/tags/1.6.0/manifests/vcloud-basic-auth.yaml
+patches:
+  # make configuration dynamic
+  - patch: |-
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: vcloud-basic-auth
+        namespace: kube-system
+      data:
+        username: "{{ .Credentials.VMwareCloudDirector.Username | b64enc }}"
+        password: "{{ .Credentials.VMwareCloudDirector.Password | b64enc }}"
+        refreshToken: "{{ .Credentials.VMwareCloudDirector.APIToken | b64enc }}"
+
+  # patch-in the missing securityContext
+  - patch: |-
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: csi-vcd-nodeplugin
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+
+  # remove CSI controller; it has been moved from user cluster to seed cluster
+  - target:
+      kind: Deployment
+      name: csi-vcd-controllerplugin
+      namespace: kube-system
+    patch: |
+      $patch: delete
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: csi-vcd-controllerplugin
+        namespace: kube-system
+
+  # bind to `kubermatic:vcloud-csi` User instead of ServiceAccount
+  - patch: |-
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: csi-attacher-binding
+      subjects:
+        - kind: User
+          name: kubermatic:vcloud-csi
+          namespace: kube-system
+  - patch: |-
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: csi-provisioner-binding
+      subjects:
+        - kind: User
+          name: kubermatic:vcloud-csi
+          namespace: kube-system
+  - patch: |-
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: csi-resizer-binding
+      subjects:
+        - kind: User
+          name: kubermatic:vcloud-csi
+          namespace: kube-system

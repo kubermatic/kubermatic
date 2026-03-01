@@ -135,6 +135,8 @@ func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, 
 }
 
 func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+	return nil
+
 	creators := []kkpreconciling.NamedUserSSHKeyReconcilerFactory{}
 
 	for i, key := range c.opts.PublicKeys {
@@ -288,15 +290,15 @@ func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.Suga
 	}
 
 	// get all the keys in the current project
-	projectKeys, err := c.getAssignedSSHKeys(ctx)
-	if err != nil {
-		return err
-	}
+	// projectKeys, err := c.getAssignedSSHKeys(ctx)
+	// if err != nil {
+	// 	return err
+	// }
 
 	publicKeys := sets.NewString()
-	for _, key := range projectKeys {
-		publicKeys.Insert(key.Spec.PublicKey)
-	}
+	// for _, key := range projectKeys {
+	// 	publicKeys.Insert(key.Spec.PublicKey)
+	// }
 
 	c.log(log).Info("Preparing MachineDeployments...")
 	var mds []clusterv1alpha1.MachineDeployment
