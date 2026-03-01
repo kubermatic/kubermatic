@@ -719,7 +719,7 @@ spec:
                                   Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
                                   in the dedicated infra KubeVirt cluster. They are added to the defaults.
                                 items:
-                                  description: CustomNetworkPolicy contains a name and t he Spec of a NetworkPolicy.
+                                  description: CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
                                   properties:
                                     name:
                                       description: Name is the name of the Custom Network Policy.
