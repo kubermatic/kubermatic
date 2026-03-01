@@ -31,12 +31,12 @@ import (
 )
 
 const (
-	kubevirtImageHTTPServerSvc      = "http://image-repo.kube-system.svc/images"
-	kubevirtVCPUs                   = 2
-	kubevirtMemory                  = "4Gi"
-	kubevirtDiskSize                = "25Gi"
-	kubevirtStorageClassName        = "local-path"
-	KubevurtVolumeSnapshotClassName = "longhorn-snapshot"
+	kubevirtImageHTTPServerSvc       = "http://image-repo.kube-system.svc/images"
+	kubevirtVCPUs                    = 2
+	kubevirtMemory                   = "4Gi"
+	kubevirtDiskSize                 = "25Gi"
+	kubevirtStorageClassName         = "local-path"
+	kubevirtVolumeSnapshotClassName  = "longhorn-snapshot"
 )
 
 type kubevirtScenario struct {
