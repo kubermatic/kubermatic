@@ -1056,7 +1056,7 @@ type KubeVirtInfraVolumeSnapshotClass struct {
 	DeletionPolicy string `json:"deletionPolicy,omitempty"`
 }
 
-// CustomNetworkPolicy contains a name and t he Spec of a NetworkPolicy.
+// CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
 type CustomNetworkPolicy struct {
 	// Name is the name of the Custom Network Policy.
 	Name string `json:"name"`
