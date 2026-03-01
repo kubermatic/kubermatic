@@ -681,6 +681,24 @@ type DatacenterSpecDigitalocean struct {
 	Region string `json:"region"`
 }
 
+// DatacenterSpecOpenstackLoadBalancerMonitor specifies the LoadBalancer monitor config.
+// Reference: https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/using-openstack-cloud-controller-manager.md#load-balancer
+type DatacenterSpecOpenstackLoadBalancerMonitor struct {
+	// Indicates whether or not to create a health monitor for the service load balancer.
+	// A health monitor required for services that declare `externalTrafficPolicy: Local`.
+	Create bool `json:"create,omitempty"`
+	// The time, in seconds, between sending probes to members of the load balancer.
+	Delay uint `json:"delay,omitempty"`
+	// The number of successful checks before changing the operating status of the load balancer member to ONLINE.
+	// A valid value is from 1 to 10.
+	MaxRetries uint `json:"maxRetries,omitempty"`
+	// The number of unsuccessful checks before changing the operating status of the load balancer member to ERROR.
+	// A valid value is from 1 to 10.
+	MaxRetriesDown uint `json:"maxRetriesDown,omitempty"`
+	// The maximum time, in seconds, that a monitor waits to connect backend before it times out.
+	Timeout uint `json:"timeout,omitempty"`
+}
+
 // DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
 	// Authentication URL
@@ -706,6 +724,8 @@ type DatacenterSpecOpenstack struct {
 	// Optional: Gets mapped to the "lb-method" setting in the cloud config.
 	// defaults to "ROUND_ROBIN".
 	LoadBalancerMethod *string `json:"loadBalancerMethod,omitempty"`
+	// DatacenterSpecOpenstackLoadBalancerMonitor specifies the LoadBalancer monitor config.
+	LoadBalancerMonitor *DatacenterSpecOpenstackLoadBalancerMonitor `json:"loadBalancerMonitor,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
 	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
 	// default with the in-tree cloud provider.

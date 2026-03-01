@@ -1445,6 +1445,24 @@ type AWSCloudSpec struct {
 	DisableIAMReconciling bool `json:"disableIAMReconciling,omitempty"` //nolint:tagliatelle
 }
 
+// OpenstackCloudLoadBalancerMonitorSpec specifies the LoadBalancer monitor config.
+// Reference: https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/using-openstack-cloud-controller-manager.md#load-balancer
+type OpenstackCloudLoadBalancerMonitorSpec struct {
+	// Indicates whether or not to create a health monitor for the service load balancer.
+	// A health monitor required for services that declare `externalTrafficPolicy: Local``.
+	Create bool `json:"create,omitempty"`
+	// The time, in seconds, between sending probes to members of the load balancer.
+	Delay uint `json:"delay,omitempty"`
+	// The number of successful checks before changing the operating status of the load balancer member to ONLINE.
+	// A valid value is from 1 to 10.
+	MaxRetries uint `json:"maxRetries,omitempty"`
+	// The number of unsuccessful checks before changing the operating status of the load balancer member to ERROR.
+	// A valid value is from 1 to 10.
+	MaxRetriesDown uint `json:"maxRetriesDown,omitempty"`
+	// The maximum time, in seconds, that a monitor waits to connect backend before it times out.
+	Timeout uint `json:"timeout,omitempty"`
+}
+
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
 type OpenstackCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
@@ -1560,6 +1578,9 @@ type OpenstackCloudSpec struct {
 	// OpenStack volume attachment limit.
 	// +optional
 	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
+
+	// LoadBalancerMonitor specifies the LoadBalancer monitor config.
+	LoadBalancerMonitor *OpenstackCloudLoadBalancerMonitorSpec `json:"loadBalancerMonitor,omitempty"`
 }
 
 // NOOP.
