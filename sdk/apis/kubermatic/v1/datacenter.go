@@ -931,7 +931,7 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
 	// to initialise VolumeSnapshotClasses in the tenant cluster.
-	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClass,omitempty"`
+	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClasses,omitempty"`
 
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
