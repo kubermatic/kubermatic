@@ -8,6 +8,19 @@
 - [v2.28.5](#v2285)
 - [v2.28.6](#v2286)
 - [v2.28.7](#v2287)
+- [v2.28.8](#v2288)
+
+## v2.28.8
+
+**GitHub release: [v2.28.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.8)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.9/v1.32.13 ([#15545](https://github.com/kubermatic/kubermatic/pull/15545))
+
+### Bugfixes
+
+- Fix alertmanager service port name reference after upstream chart migration ([#15512](https://github.com/kubermatic/kubermatic/pull/15512))
 
 ## v2.28.7
 
