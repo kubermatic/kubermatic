@@ -27,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -187,6 +188,11 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
 	cluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(c.opts.KonnectivityEnabled) //nolint:staticcheck
+
+	if c.opts.ScenarioOptions.Has("canal") {
+		cluster.Spec.CNIPlugin.Type = kubermaticv1.CNIPluginTypeCanal
+		cluster.Spec.CNIPlugin.Version = cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal)
+	}
 
 	if c.opts.DualStackEnabled {
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
