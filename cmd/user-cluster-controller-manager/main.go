@@ -299,7 +299,7 @@ func main() {
 	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := kyvernov1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := kyvernov1.Install(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kyvernov1.SchemeGroupVersion), zap.Error(err))
 	}
 
