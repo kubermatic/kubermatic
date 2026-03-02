@@ -17,13 +17,16 @@ limitations under the License.
 package defaulting
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -488,6 +491,141 @@ func TestDefaultEventRateLimitPlugin(t *testing.T) {
 			assert.Equal(t, tc.expectedUseEventRateLimitAdmissionPlugin, tc.spec.UseEventRateLimitAdmissionPlugin)
 			assert.Equal(t, tc.expectedAdmissionPlugins, tc.spec.AdmissionPlugins)
 			assert.Equal(t, tc.expectedConfig, tc.spec.EventRateLimitConfig)
+		})
+	}
+}
+
+func TestDefaultAuditLogging(t *testing.T) {
+	const dcName = "audit-test-dc"
+
+	seedAuditConfig := &kubermaticv1.AuditLoggingSettings{
+		Enabled:      true,
+		PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+	}
+
+	webhookSettings := &kubermaticv1.AuditWebhookBackendSettings{
+		AuditWebhookConfig: &corev1.SecretReference{
+			Name:      "audit-webhook-secret",
+			Namespace: "kube-system",
+		},
+	}
+
+	makeSeed := func(auditLogging *kubermaticv1.AuditLoggingSettings, enforce bool, webhookBackend *kubermaticv1.AuditWebhookBackendSettings) *kubermaticv1.Seed {
+		return &kubermaticv1.Seed{
+			Spec: kubermaticv1.SeedSpec{
+				AuditLogging: auditLogging,
+				Datacenters: map[string]kubermaticv1.Datacenter{
+					dcName: {
+						Spec: kubermaticv1.DatacenterSpec{
+							Fake:                         &kubermaticv1.DatacenterSpecFake{},
+							EnforceAuditLogging:          enforce,
+							EnforcedAuditWebhookSettings: webhookBackend,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	makeSpec := func(auditLogging *kubermaticv1.AuditLoggingSettings) *kubermaticv1.ClusterSpec {
+		return &kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: dcName,
+				ProviderName:   string(kubermaticv1.FakeCloudProvider),
+				Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+			},
+			AuditLogging: auditLogging,
+		}
+	}
+
+	testCases := []struct {
+		name                 string
+		spec                 *kubermaticv1.ClusterSpec
+		seed                 *kubermaticv1.Seed
+		annotations          map[string]string
+		expectedAuditLogging *kubermaticv1.AuditLoggingSettings
+	}{
+		{
+			name: "enforcement on with seed config: cluster gets seed config with Enabled=true",
+			spec: makeSpec(nil),
+			seed: makeSeed(seedAuditConfig, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+			},
+		},
+		{
+			name: "enforcement on with nil seed config: cluster gets bare Enabled=true",
+			spec: makeSpec(nil),
+			seed: makeSeed(nil, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+			},
+		},
+		{
+			name:                 "enforcement off with seed config: cluster audit logging untouched",
+			spec:                 makeSpec(nil),
+			seed:                 makeSeed(seedAuditConfig, false, nil),
+			expectedAuditLogging: nil,
+		},
+		{
+			name:                 "enforcement off without seed config: cluster audit logging untouched",
+			spec:                 makeSpec(nil),
+			seed:                 makeSeed(nil, false, nil),
+			expectedAuditLogging: nil,
+		},
+		{
+			name: "enforcement off, cluster has own audit logging: preserved",
+			spec: makeSpec(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+			}),
+			seed: makeSeed(seedAuditConfig, false, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+			},
+		},
+		{
+			name: "opt-out annotation set: cluster audit logging untouched despite enforcement",
+			spec: makeSpec(nil),
+			seed: makeSeed(seedAuditConfig, true, nil),
+			annotations: map[string]string{
+				kubermaticv1.SkipAuditLoggingEnforcementAnnotation: "true",
+			},
+			expectedAuditLogging: nil,
+		},
+		{
+			name: "EnforcedAuditWebhookSettings with nil spec.AuditLogging: no nil dereference",
+			spec: makeSpec(nil),
+			seed: makeSeed(nil, false, webhookSettings),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				WebhookBackend: webhookSettings,
+			},
+		},
+		{
+			name: "enforcement on with EnforcedAuditWebhookSettings: both applied",
+			spec: makeSpec(nil),
+			seed: makeSeed(seedAuditConfig, true, webhookSettings),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:        true,
+				PolicyPreset:   kubermaticv1.AuditPolicyRecommended,
+				WebhookBackend: webhookSettings,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+			err = DefaultClusterSpec(context.Background(), tc.spec, tc.annotations, nil, tc.seed, config, nil)
+			if err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+			assert.Equal(t, tc.expectedAuditLogging, tc.spec.AuditLogging)
 		})
 	}
 }

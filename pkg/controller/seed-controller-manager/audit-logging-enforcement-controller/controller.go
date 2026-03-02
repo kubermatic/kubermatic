@@ -363,25 +363,22 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	// Skip enforcement if seed has no audit logging configuration
-	// This prevents accidentally removing audit logging from clusters when the seed config is empty
+	// When enforcement is off, the controller should not touch the cluster at all.
+	// A cluster might have audit logging enabled for its own reasons.
+	if !datacenter.Spec.EnforceAuditLogging {
+		log.Debug("Audit logging enforcement is disabled for datacenter, skipping")
+		return nil
+	}
+
+	// Skip enforcement if seed has no audit logging configuration.
+	// This prevents accidentally removing audit logging from clusters when the seed config is empty.
 	seedAuditLogging := seed.Spec.AuditLogging
 	if seedAuditLogging == nil {
 		log.Debug("Seed has no audit logging configuration, skipping enforcement")
 		return nil
 	}
 
-	// Determine the desired audit logging configuration based on enforcement flag
-	var desiredAuditLogging *kubermaticv1.AuditLoggingSettings
-	if datacenter.Spec.EnforceAuditLogging {
-		// When enforcement is enabled, copy the seed's audit logging configuration
-		desiredAuditLogging = seedAuditLogging.DeepCopy()
-	} else {
-		// When enforcement is disabled, explicitly disable audit logging
-		desiredAuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: false,
-		}
-	}
+	desiredAuditLogging := seedAuditLogging.DeepCopy()
 
 	clusterAuditLogging := cluster.Spec.AuditLogging
 
@@ -391,11 +388,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Update cluster's audit logging configuration
-	if datacenter.Spec.EnforceAuditLogging {
-		log.Infow("Enforcing audit logging configuration from seed", "seed", seed.Name)
-	} else {
-		log.Infow("Disabling audit logging as enforcement is disabled for datacenter", "datacenter", cluster.Spec.Cloud.DatacenterName)
-	}
+	log.Infow("Enforcing audit logging configuration from seed", "seed", seed.Name)
 
 	oldCluster := cluster.DeepCopy()
 	cluster.Spec.AuditLogging = desiredAuditLogging
@@ -404,13 +397,12 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return fmt.Errorf("failed to update cluster audit logging configuration: %w", err)
 	}
 
-	if datacenter.Spec.EnforceAuditLogging {
-		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AuditLoggingEnforced", "Reconciling",
-			"Audit logging configuration enforced from seed %s", seed.Name)
-	} else {
-		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AuditLoggingDisabled", "Reconciling",
-			"Audit logging disabled as enforcement is disabled for datacenter %s", cluster.Spec.Cloud.DatacenterName)
-	}
+	r.recorder.Eventf(cluster, nil,
+		corev1.EventTypeNormal,
+		"AuditLoggingEnforced",
+		"Reconciling",
+		"Audit logging configuration enforced from seed %s", seed.Name,
+	)
 
 	log.Info("Successfully updated audit logging configuration")
 	return nil

@@ -75,11 +75,11 @@ func TestReconcile(t *testing.T) {
 			expectUpdate:         false,
 		},
 		{
-			name:                 "scenario 3: disable audit logging when datacenter has EnforceAuditLogging disabled",
+			name:                 "scenario 3: leave cluster unchanged when datacenter has EnforceAuditLogging disabled",
 			cluster:              genClusterWithAuditLogging(datacenterName, nil, false),
 			seed:                 genSeedWithAuditLogging(datacenterName, genAuditLoggingSettings(true, kubermaticv1.AuditPolicyRecommended), false),
-			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{Enabled: false},
-			expectUpdate:         true,
+			expectedAuditLogging: nil,
+			expectUpdate:         false,
 		},
 		{
 			name:                     "scenario 4: skip enforcement when cluster is paused",
