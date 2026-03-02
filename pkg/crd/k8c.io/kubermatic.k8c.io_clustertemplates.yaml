@@ -1235,6 +1235,27 @@ spec:
                         subnetName:
                           description: SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
                           type: string
+                        volumeSnapshotClasses:
+                          description: VolumeSnapshotClasses defines a list of volume snapshot classes for the infrastructure cluster.
+                          items:
+                            properties:
+                              deletionPolicy:
+                                description: 'Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.'
+                                type: string
+                              infraVolumeSnapshotClass:
+                                description: InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+                                type: string
+                              isDefaultClass:
+                                description: |-
+                                  Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+                                  snapshot.storage.kubernetes.io/is-default-class: true
+                                  If missing or false, annotation will be:
+                                  snapshot.storage.kubernetes.io/is-default-class: false
+                                type: boolean
+                            required:
+                              - infraVolumeSnapshotClass
+                            type: object
+                          type: array
                         vpcName:
                           description: VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.
                           type: string
