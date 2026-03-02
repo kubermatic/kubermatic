@@ -5,6 +5,30 @@
 - [v2.29.2](#v2292)
 - [v2.29.3](#v2293)
 - [v2.29.4](#v2294)
+- [v2.29.5](#v2295)
+
+## v2.29.5
+
+**GitHub release: [v2.29.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.5)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.5/v1.33.9/v1.32.13 ([#15546](https://github.com/kubermatic/kubermatic/pull/15546))
+
+### New Features
+
+- Add HTTPRoute-Gateway sync controller to enable automatic certificate provisioning via cert-manager for KKP components ([#15522](https://github.com/kubermatic/kubermatic/pull/15522))
+
+### Bugfixes
+
+- Add missing envoy-gateway-controller chart in release artifacts ([#15491](https://github.com/kubermatic/kubermatic/pull/15491))
+- Fix alertmanager service port name reference after upstream chart migration ([#15512](https://github.com/kubermatic/kubermatic/pull/15512))
+- Set `hostname` on Gateway while using cert-manager ([#15496](https://github.com/kubermatic/kubermatic/pull/15496))
+- EE: Upgraded Kyverno to v1.15.3 to address CVE-2026-22039 and regenerated user-cluster Kyverno CRDs. ([#15540](https://github.com/kubermatic/kubermatic/pull/15540))
+
+### Cleanup
+
+- Update nodeport-proxy Envoy to v1.35.8 ([#15521](https://github.com/kubermatic/kubermatic/pull/15521))
 
 ## v2.29.4
 
