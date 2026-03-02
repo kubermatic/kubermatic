@@ -1334,7 +1334,7 @@ spec:
                                     - name
                                   type: object
                                 type: array
-                              infraVolumeSnapshotClass:
+                              infraVolumeSnapshotClasses:
                                 description: |-
                                   Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
                                   to initialise VolumeSnapshotClasses in the tenant cluster.
