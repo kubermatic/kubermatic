@@ -116,6 +116,40 @@ presubmits:
             limits:
               memory: 6Gi
 
+  - name: pre-kubermatic-canal-e2e
+    run_if_changed: ".*(canal|addon|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+          command:
+            - "./hack/ci/run-canal-e2e-test.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
   - name: pre-kubermatic-gateway-api-e2e
     run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api|.prow/|gateway/|gateway\\.go)"
     decorate: true
