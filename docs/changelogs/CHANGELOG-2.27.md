@@ -12,6 +12,15 @@
 - [v2.27.9](#v2279)
 - [v2.27.10](#v22710)
 - [v2.27.11](#v22711)
+- [v2.27.12](#v22712)
+
+## v2.27.12
+
+**GitHub release: [v2.27.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.12)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.32.13 ([#15543](https://github.com/kubermatic/kubermatic/pull/15543))
 
 ## v2.27.11
 
