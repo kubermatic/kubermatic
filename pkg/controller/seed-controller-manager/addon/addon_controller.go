@@ -42,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -78,7 +77,6 @@ const (
 	pvMigrationAnnotation        = "pv.kubernetes.io/migrated-to"
 	defaultStorageClassAddonName = "default-storage-class"
 
-	kindDeployment             = "Deployment"
 	openstackCsiDeploymentName = "openstack-cinder-csi-controllerplugin"
 )
 
@@ -512,12 +510,7 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again.
-func (r *Reconciler) ensureAddonLabelOnManifests(
-	ctx context.Context,
-	cluster *kubermaticv1.Cluster,
-	addon *kubermaticv1.Addon,
-	manifests []runtime.RawExtension,
-) ([]*bytes.Buffer, error) {
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []runtime.RawExtension) ([]*bytes.Buffer, error) {
 	var rawManifests []*bytes.Buffer
 
 	wantLabels := r.getAddonLabel(addon)
@@ -537,14 +530,6 @@ func (r *Reconciler) ensureAddonLabelOnManifests(
 			existingLabels[k] = v
 		}
 		parsedUnstructuredObj.SetLabels(existingLabels)
-
-		if addon.Name == csiAddonName {
-			var err error
-			parsedUnstructuredObj, err = r.addCSIRevisionLabels(ctx, cluster, parsedUnstructuredObj)
-			if err != nil {
-				return nil, fmt.Errorf("failed to add secret revision labels to OpenStack CSI: %w", err)
-			}
-		}
 
 		jsonBuffer := &bytes.Buffer{}
 		if err := metav1unstructured.UnstructuredJSONScheme.Encode(parsedUnstructuredObj, jsonBuffer); err != nil {
@@ -617,7 +602,7 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %w", err)
 	}
 
-	rawManifests, err := r.ensureAddonLabelOnManifests(ctx, cluster, addon, manifests)
+	rawManifests, err := r.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %w", err)
 	}
@@ -701,6 +686,13 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	if lastSuccess.KubermaticVersion != ver {
 		if err := migration.PreApply(ctx, log, cluster, r, userClusterClient); err != nil {
 			return fmt.Errorf("failed to perform preApply migrations: %w", err)
+		}
+	}
+
+	if addon.Name == csiAddonName {
+		err = r.addCSIRevisionLabels(ctx, cluster, userClusterClient, addon)
+		if err != nil {
+			return fmt.Errorf("failed to add secret revision labels to OpenStack CSI: %w", err)
 		}
 	}
 
@@ -974,50 +966,23 @@ func (r *Reconciler) cleanupDefaultStorageClassAddon(ctx context.Context, cluste
 	return nil
 }
 
-// addRevisionLabels adds revision labels to the given controller-runtime Object.
-func (r *Reconciler) addRevisionLabels(ctx context.Context, cluster *kubermaticv1.Cluster, obj ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	modifiedObj, err := modifier.AddRevisionLabelsToObject(ctx, userClusterClient, obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return modifiedObj, nil
-}
-
 func (r *Reconciler) addCSIRevisionLabels(
 	ctx context.Context,
 	cluster *kubermaticv1.Cluster,
-	parsedUnstructuredObj *metav1unstructured.Unstructured,
-) (*metav1unstructured.Unstructured, error) {
+	userClusterClient ctrlruntimeclient.Client,
+	addon *kubermaticv1.Addon,
+) error {
 	if cluster == nil || cluster.Spec.Cloud.Openstack == nil ||
-		parsedUnstructuredObj == nil || parsedUnstructuredObj.GetKind() != kindDeployment ||
-		parsedUnstructuredObj.GetName() != openstackCsiDeploymentName {
+		addon.GetName() != openstackCsiDeploymentName {
 		// Currently, we add revision labels to the OpenStack CSI Drivers to restart CSI deployment pods
 		// whenever cloud-config-csi secret, which contains Application Credentials for Openstack, is updated.
-		return parsedUnstructuredObj, nil
+		return nil
 	}
 
-	deployment := &appsv1.Deployment{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(
-		parsedUnstructuredObj.Object, deployment); err != nil {
-		return nil, fmt.Errorf("failed to convert unstructured to Deployment: %w", err)
-	}
-
-	modifiedObj, err := r.addRevisionLabels(ctx, cluster, deployment)
+	_, err := modifier.AddRevisionLabelsToObject(ctx, userClusterClient, addon)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to add revision labels to object %q: %w", ctrlruntimeclient.ObjectKeyFromObject(addon), err)
 	}
 
-	unstructuredModifiedObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(modifiedObj)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert modified CSI Deployment to Unstructured: %w", err)
-	}
-
-	parsedUnstructuredObj.Object = unstructuredModifiedObj
-	return parsedUnstructuredObj, nil
+	return nil
 }
