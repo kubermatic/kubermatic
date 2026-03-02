@@ -270,7 +270,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-snapshotter",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(data.RewriteImage("k8s.gcr.io/sig-storage/csi-snapshotter:v4.2.1")),
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-snapshotter:v4.2.1")),
 					Args: []string{
 						"--v=5",
 						"--csi-address=/csi/csi.sock",
