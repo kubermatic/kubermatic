@@ -1334,6 +1334,29 @@ spec:
                                     - name
                                   type: object
                                 type: array
+                              infraVolumeSnapshotClasses:
+                                description: |-
+                                  Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+                                  to initialise VolumeSnapshotClasses in the tenant cluster.
+                                items:
+                                  properties:
+                                    deletionPolicy:
+                                      description: 'Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.'
+                                      type: string
+                                    infraVolumeSnapshotClass:
+                                      description: InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+                                      type: string
+                                    isDefaultClass:
+                                      description: |-
+                                        Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+                                        snapshot.storage.kubernetes.io/is-default-class: true
+                                        If missing or false, annotation will be:
+                                        snapshot.storage.kubernetes.io/is-default-class: false
+                                      type: boolean
+                                  required:
+                                    - infraVolumeSnapshotClass
+                                  type: object
+                                type: array
                               matchSubnetAndStorageLocation:
                                 description: |-
                                   Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For

@@ -929,6 +929,10 @@ type DatacenterSpecKubevirt struct {
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
 
+	// Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+	// to initialise VolumeSnapshotClasses in the tenant cluster.
+	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClasses,omitempty"`
+
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
 
@@ -1038,6 +1042,18 @@ type KubeVirtInfraStorageClass struct {
 	// cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
 	// image creation.
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
+}
+
+type KubeVirtInfraVolumeSnapshotClass struct {
+	// InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+	InfraVolumeSnapshotClass string `json:"infraVolumeSnapshotClass"`
+	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+	// snapshot.storage.kubernetes.io/is-default-class: true
+	// If missing or false, annotation will be:
+	// snapshot.storage.kubernetes.io/is-default-class: false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.
+	DeletionPolicy string `json:"deletionPolicy,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
