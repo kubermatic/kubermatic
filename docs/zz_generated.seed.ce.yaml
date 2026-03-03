@@ -249,6 +249,9 @@ spec:
               # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
               # for increased availability
               zones: null
+          # Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+          # to initialise VolumeSnapshotClasses in the tenant cluster.
+          infraVolumeSnapshotClasses: null
           # Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
           # example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
           # otherwise KKP will reject the creation of the machine deployment and eventually the cluster.

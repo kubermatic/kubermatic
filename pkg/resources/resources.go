@@ -484,7 +484,7 @@ const (
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
 	// EventRateLimitAdmissionPlugin defines the EventRateLimit admission plugin.
-	EventRateLimitAdmissionPlugin = "EventRateLimit"
+	EventRateLimitAdmissionPlugin = kubermaticv1.AdmissionPluginNameEventRateLimit
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"

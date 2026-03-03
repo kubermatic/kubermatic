@@ -72,6 +72,11 @@ const (
 	DefaultKonnectivityKeepaliveTime = "1m"
 )
 
+const (
+	// AdmissionPluginNameEventRateLimit is the EventRateLimit admission plugin name.
+	AdmissionPluginNameEventRateLimit = "EventRateLimit"
+)
+
 // +kubebuilder:validation:Enum=standard;basic
 
 // Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
@@ -288,6 +293,17 @@ type KubernetesDashboard struct {
 
 func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
+}
+
+// HasAdmissionPlugin reports whether the given admission plugin name exists in AdmissionPlugins.
+func (c ClusterSpec) HasAdmissionPlugin(name string) bool {
+	return slices.Contains(c.AdmissionPlugins, name)
+}
+
+// IsEventRateLimitAdmissionPluginEnabled reports whether EventRateLimit is enabled either
+// via the dedicated boolean field or through AdmissionPlugins.
+func (c ClusterSpec) IsEventRateLimitAdmissionPluginEnabled() bool {
+	return c.UseEventRateLimitAdmissionPlugin || c.HasAdmissionPlugin(AdmissionPluginNameEventRateLimit)
 }
 
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
@@ -1475,8 +1491,23 @@ type OpenstackCloudSpec struct {
 	//
 	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIPPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
+	// LoadBalancerFloatingIPPool holds the name of the external network to be used
+	// for LoadBalancer floating IP allocation.
+	//
+	// When specified, LoadBalancer type Services will receive floating IPs from this pool
+	// instead of the FloatingIPPool. This allows using different external networks for
+	// cluster infrastructure (router) vs. LoadBalancer services.
+	// If not specified, FloatingIPPool is used for LoadBalancers for backward compatibility.
+	//
+	// This field sets a cluster-wide default for LoadBalancers. Services can override
+	// this default by using the `loadbalancer.openstack.org/class` annotation to select
+	// a specific LoadBalancerClass.
+	// +optional
+	LoadBalancerFloatingIPPool string `json:"loadBalancerFloatingIPPool,omitempty"`
+
+	RouterID string `json:"routerID"`
+	SubnetID string `json:"subnetID"`
+
 	// SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
 	// didn't specify a subnet id.
 	// +optional
@@ -1573,6 +1604,8 @@ type KubevirtCloudSpec struct {
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks.
 	// It contains also some flag specifying which one is the default one.
 	StorageClasses []KubeVirtInfraStorageClass `json:"storageClasses,omitempty"`
+	// VolumeSnapshotClasses defines a list of volume snapshot classes for the infrastructure cluster.
+	VolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"volumeSnapshotClasses,omitempty"`
 	// ImageCloningEnabled flag enable/disable cloning for a cluster.
 	ImageCloningEnabled bool `json:"imageCloningEnabled,omitempty"`
 	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.

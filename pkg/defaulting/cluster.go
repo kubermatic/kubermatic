@@ -304,20 +304,24 @@ func defaultEventRateLimitPlugin(spec *kubermaticv1.ClusterSpec, config *kuberma
 	erl := config.Spec.UserCluster.AdmissionPlugins.EventRateLimit
 	isEnforced := erl.Enforced != nil && *erl.Enforced
 
+	isEnabled := spec.IsEventRateLimitAdmissionPluginEnabled()
+
 	// If enforced, enable the plugin
 	if isEnforced {
 		spec.UseEventRateLimitAdmissionPlugin = true
+		isEnabled = true
 	}
 
 	// Apply enabled default if not already enabled
-	if !spec.UseEventRateLimitAdmissionPlugin && erl.Enabled != nil && *erl.Enabled {
+	if !isEnabled && erl.Enabled != nil && *erl.Enabled {
 		spec.UseEventRateLimitAdmissionPlugin = true
+		isEnabled = true
 	}
 
 	// Apply configuration:
 	// - If enforced AND defaultConfig is set: always apply (overwrite user config)
 	// - If not enforced: only apply if user hasn't specified config
-	if spec.UseEventRateLimitAdmissionPlugin && erl.DefaultConfig != nil {
+	if isEnabled && erl.DefaultConfig != nil {
 		if isEnforced || spec.EventRateLimitConfig == nil {
 			spec.EventRateLimitConfig = erl.DefaultConfig.DeepCopy()
 		}

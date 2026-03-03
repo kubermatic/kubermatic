@@ -41,6 +41,8 @@ const (
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
 	reloaderTag       = "v0.60.1"
 
+	tmpVolumeName            = "tmp"
+	tmpVolumeMountPath       = "/tmp"
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/alloy"
 	configFileName           = "config.alloy"
@@ -125,6 +127,10 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 							Name:      podVolumeName,
 							MountPath: podVolumeMountPath,
 							ReadOnly:  true,
+						},
+						{
+							Name:      tmpVolumeName,
+							MountPath: tmpVolumeMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -255,7 +261,7 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.MLALoggingAgentCertificatesSecretName,
-							DefaultMode: ptr.To[int32](0400),
+							DefaultMode: ptr.To[int32](0o400),
 						},
 					},
 				},
@@ -284,6 +290,12 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 							Type: &hostPathUnset,
 							Path: podVolumeMountPath,
 						},
+					},
+				},
+				{
+					Name: tmpVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
 			}

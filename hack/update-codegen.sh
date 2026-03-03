@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.25-node-22-6 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.25-node-22-8 containerize ./hack/update-codegen.sh
 
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"

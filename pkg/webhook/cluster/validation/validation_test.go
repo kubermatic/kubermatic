@@ -1897,6 +1897,8 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 		config                     *kubermaticv1.KubermaticConfiguration
 		useEventRateLimitPlugin    bool
 		oldUseEventRateLimitPlugin *bool
+		admissionPlugins           []string
+		oldAdmissionPlugins        []string
 		userConfig                 *kubermaticv1.EventRateLimitConfig
 		wantAllowed                bool
 	}{
@@ -1935,7 +1937,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             false,
 		},
 		{
-			name: "Create cluster with enforcement - plugin enabled",
+			name: "Create cluster with enforcement - plugin enabled via admissionPlugins",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1952,7 +1954,8 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin: true,
+			useEventRateLimitPlugin: false,
+			admissionPlugins:        []string{resources.EventRateLimitAdmissionPlugin},
 			userConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -1979,9 +1982,9 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin:    false,
-			oldUseEventRateLimitPlugin: ptr.To(true),
-			wantAllowed:                false,
+			useEventRateLimitPlugin: false,
+			oldAdmissionPlugins:     []string{resources.EventRateLimitAdmissionPlugin},
+			wantAllowed:             false,
 		},
 		{
 			name: "Update cluster with enforcement - keep plugin enabled",
@@ -2001,8 +2004,38 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin:    true,
+			useEventRateLimitPlugin: false,
+			admissionPlugins:        []string{resources.EventRateLimitAdmissionPlugin},
+			oldAdmissionPlugins:     []string{resources.EventRateLimitAdmissionPlugin},
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
+		},
+		{
+			name: "Update cluster with enforcement - migrate from dedicated field to admissionPlugins",
+			op:   admissionv1.Update,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin:    false,
 			oldUseEventRateLimitPlugin: ptr.To(true),
+			admissionPlugins:           []string{resources.EventRateLimitAdmissionPlugin},
 			userConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -2021,9 +2054,9 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 				},
 				Spec: kubermaticv1.KubermaticConfigurationSpec{},
 			},
-			useEventRateLimitPlugin:    false,
-			oldUseEventRateLimitPlugin: ptr.To(true),
-			wantAllowed:                true,
+			useEventRateLimitPlugin: false,
+			oldAdmissionPlugins:     []string{resources.EventRateLimitAdmissionPlugin},
+			wantAllowed:             true,
 		},
 		{
 			name: "Create cluster with enforced=false - plugin not enabled",
@@ -2070,7 +2103,8 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin: true,
+			useEventRateLimitPlugin: false,
+			admissionPlugins:        []string{resources.EventRateLimitAdmissionPlugin},
 			userConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   25,
@@ -2103,7 +2137,8 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin: true,
+			useEventRateLimitPlugin: false,
+			admissionPlugins:        []string{resources.EventRateLimitAdmissionPlugin},
 			userConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -2136,7 +2171,8 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 					},
 				},
 			},
-			useEventRateLimitPlugin: true,
+			useEventRateLimitPlugin: false,
+			admissionPlugins:        []string{resources.EventRateLimitAdmissionPlugin},
 			userConfig: &kubermaticv1.EventRateLimitConfig{
 				Server: &kubermaticv1.EventRateLimitConfigItem{
 					QPS:   50,
@@ -2203,6 +2239,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			gen := baseCluster()
 			cluster := gen.Build()
 			cluster.Spec.UseEventRateLimitAdmissionPlugin = tt.useEventRateLimitPlugin
+			cluster.Spec.AdmissionPlugins = tt.admissionPlugins
 			cluster.Spec.EventRateLimitConfig = tt.userConfig
 
 			ctx := context.Background()
@@ -2217,6 +2254,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 				if tt.oldUseEventRateLimitPlugin != nil {
 					oldCluster.Spec.UseEventRateLimitAdmissionPlugin = *tt.oldUseEventRateLimitPlugin
 				}
+				oldCluster.Spec.AdmissionPlugins = tt.oldAdmissionPlugins
 				_, err = clusterValidator.ValidateUpdate(ctx, &oldCluster, &cluster)
 			}
 

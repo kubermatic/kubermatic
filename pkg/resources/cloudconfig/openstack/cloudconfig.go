@@ -135,10 +135,13 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		cc.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
 	}
 
-	// we won't throw an error here for backwards compatibility and instead simply not set
-	// the floating-ip-pool-id field if the annotation is not there.
-	if cluster.Annotations[openstack.FloatingIPPoolIDAnnotation] != "" {
-		cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.FloatingIPPoolIDAnnotation]
+	if cluster.Annotations != nil {
+		// prefer LoadBalancer-specific floating IP pool if set, otherwise fallback to the default one.
+		if cluster.Annotations[openstack.LoadBalancerFloatingIPPoolIDAnnotation] != "" {
+			cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.LoadBalancerFloatingIPPoolIDAnnotation]
+		} else if cluster.Annotations[openstack.FloatingIPPoolIDAnnotation] != "" {
+			cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.FloatingIPPoolIDAnnotation]
+		}
 	}
 
 	return cc

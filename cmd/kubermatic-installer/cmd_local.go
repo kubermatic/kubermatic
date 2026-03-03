@@ -232,6 +232,9 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 }
 
 func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, o ctrlruntimeclient.Object) {
+	if err := kubeClient.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(o), o); err == nil {
+		return
+	}
 	if err := kubeClient.Create(context.Background(), o); err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.Fatal(err)
 	}

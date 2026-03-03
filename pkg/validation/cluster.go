@@ -1397,7 +1397,7 @@ func ValidateEventRateLimitConfig(spec *kubermaticv1.ClusterSpec, fldPath *field
 	var allErrs field.ErrorList
 
 	config := spec.EventRateLimitConfig
-	pluginEnabled := spec.UseEventRateLimitAdmissionPlugin || slices.Contains(spec.AdmissionPlugins, resources.EventRateLimitAdmissionPlugin)
+	pluginEnabled := spec.IsEventRateLimitAdmissionPluginEnabled()
 
 	// Check if plugin is enabled and no limits are configured, apiserver crashes otherwise
 	hasLimits := config != nil && (config.Server != nil || config.Namespace != nil || config.User != nil || config.SourceAndObject != nil)
