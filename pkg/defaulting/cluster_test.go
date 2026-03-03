@@ -596,11 +596,21 @@ func TestDefaultAuditLogging(t *testing.T) {
 			expectedAuditLogging: nil,
 		},
 		{
-			name: "EnforcedAuditWebhookSettings with nil spec.AuditLogging: no nil dereference",
-			spec: makeSpec(nil),
-			seed: makeSeed(nil, false, webhookSettings),
+			name:                 "EnforcedAuditWebhookSettings ignored when enforcement is off",
+			spec:                 makeSpec(nil),
+			seed:                 makeSeed(nil, false, webhookSettings),
+			expectedAuditLogging: nil,
+		},
+		{
+			name: "enforcement off with webhook settings: cluster's own audit logging preserved",
+			spec: makeSpec(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+			}),
+			seed: makeSeed(seedAuditConfig, false, webhookSettings),
 			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
-				WebhookBackend: webhookSettings,
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
 			},
 		},
 		{
@@ -611,6 +621,164 @@ func TestDefaultAuditLogging(t *testing.T) {
 				Enabled:        true,
 				PolicyPreset:   kubermaticv1.AuditPolicyRecommended,
 				WebhookBackend: webhookSettings,
+			},
+		},
+		{
+			name: "enforcement on, seed.Enabled=false: Enabled overridden to true",
+			spec: makeSpec(nil),
+			seed: makeSeed(&kubermaticv1.AuditLoggingSettings{Enabled: false}, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+			},
+		},
+		{
+			name: "enforcement on, seed=nil, DC has webhook: both Enabled and webhook applied",
+			spec: makeSpec(nil),
+			seed: makeSeed(nil, true, webhookSettings),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:        true,
+				WebhookBackend: webhookSettings,
+			},
+		},
+		{
+			name: "enforcement on, seed=nil, spec has AuditLogging: Enabled set, other fields preserved",
+			spec: makeSpec(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      false,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "cluster-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			}),
+			seed: makeSeed(nil, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "cluster-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			},
+		},
+		{
+			name: "enforcement on, seed has webhook, DC has different webhook: DC webhook wins",
+			spec: makeSpec(nil),
+			seed: makeSeed(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "seed-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			}, true, &kubermaticv1.AuditWebhookBackendSettings{
+				AuditWebhookConfig: &corev1.SecretReference{
+					Name:      "dc-webhook",
+					Namespace: "kube-system",
+				},
+			}),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "dc-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			},
+		},
+		{
+			name: "enforcement on, spec and seed both non-nil: seed config replaces spec entirely",
+			spec: makeSpec(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyMinimal,
+			}),
+			seed: makeSeed(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      false,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+			}, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+			},
+		},
+		{
+			name: "opt-out annotation prevents EnforcedAuditWebhookSettings from being applied",
+			spec: makeSpec(nil),
+			seed: makeSeed(seedAuditConfig, true, webhookSettings),
+			annotations: map[string]string{
+				kubermaticv1.SkipAuditLoggingEnforcementAnnotation: "true",
+			},
+			expectedAuditLogging: nil,
+		},
+		{
+			name: "enforcement on, seed has SidecarSettings: propagated to cluster",
+			spec: makeSpec(nil),
+			seed: makeSeed(&kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+				SidecarSettings: &kubermaticv1.AuditSidecarSettings{
+					ExtraEnvs: []corev1.EnvVar{
+						{Name: "TEST_VAR", Value: "test-value"},
+					},
+				},
+			}, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+				SidecarSettings: &kubermaticv1.AuditSidecarSettings{
+					ExtraEnvs: []corev1.EnvVar{
+						{Name: "TEST_VAR", Value: "test-value"},
+					},
+				},
+			},
+		},
+		{
+			name: "annotation 'false' does not trigger opt-out, enforcement proceeds",
+			spec: makeSpec(nil),
+			seed: makeSeed(seedAuditConfig, true, nil),
+			annotations: map[string]string{
+				kubermaticv1.SkipAuditLoggingEnforcementAnnotation: "false",
+			},
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled:      true,
+				PolicyPreset: kubermaticv1.AuditPolicyRecommended,
+			},
+		},
+		{
+			name: "enforcement on, spec has old webhook, seed has new webhook: seed replaces spec",
+			spec: makeSpec(&kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "old-cluster-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			}),
+			seed: makeSeed(&kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "new-seed-webhook",
+						Namespace: "kube-system",
+					},
+				},
+			}, true, nil),
+			expectedAuditLogging: &kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+				WebhookBackend: &kubermaticv1.AuditWebhookBackendSettings{
+					AuditWebhookConfig: &corev1.SecretReference{
+						Name:      "new-seed-webhook",
+						Namespace: "kube-system",
+					},
+				},
 			},
 		},
 	}

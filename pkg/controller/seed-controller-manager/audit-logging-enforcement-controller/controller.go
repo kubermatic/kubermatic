@@ -370,15 +370,19 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	// Skip enforcement if seed has no audit logging configuration.
-	// This prevents accidentally removing audit logging from clusters when the seed config is empty.
-	seedAuditLogging := seed.Spec.AuditLogging
-	if seedAuditLogging == nil {
-		log.Debug("Seed has no audit logging configuration, skipping enforcement")
-		return nil
+	var desiredAuditLogging *kubermaticv1.AuditLoggingSettings
+	if seed.Spec.AuditLogging != nil {
+		desiredAuditLogging = seed.Spec.AuditLogging.DeepCopy()
+	} else {
+		desiredAuditLogging = &kubermaticv1.AuditLoggingSettings{}
 	}
+	desiredAuditLogging.Enabled = true
 
-	desiredAuditLogging := seedAuditLogging.DeepCopy()
+	// Also include enforced webhook backend if configured on the datacenter.
+	// This must match what the defaulting webhook does to avoid reconciliation loops.
+	if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
+		desiredAuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
+	}
 
 	clusterAuditLogging := cluster.Spec.AuditLogging
 

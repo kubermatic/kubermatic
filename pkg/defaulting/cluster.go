@@ -116,14 +116,10 @@ func DefaultClusterSpec(
 				spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
 			}
 			spec.AuditLogging.Enabled = true
-		}
 
-		// Enforce audit webhook backend
-		if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
-			if spec.AuditLogging == nil {
-				spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
+			if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
+				spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
 			}
-			spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
 		}
 	}
 
