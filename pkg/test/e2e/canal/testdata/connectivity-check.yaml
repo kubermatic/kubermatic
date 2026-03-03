@@ -1,0 +1,759 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Canal connectivity check manifests.
+# Mirrors the Cilium connectivity-check coverage:
+#   - ClusterIP service   (pod-to-a, pod-to-b-multi-node-clusterip)
+#   - Headless service    (echo-b-headless, pod-to-b-multi-node-headless)
+#   - Host networking     (echo-b-host, echo-b-host-headless)
+#   - NodePort            (pod-to-b-intra-node-nodeport, pod-to-b-multi-node-nodeport)
+#   - Cross-node          (pod-to-b-multi-node-*)
+#   - Host-to-service     (host-to-b-multi-node-clusterip, host-to-b-multi-node-headless)
+#   - External            (pod-to-external-1111, pod-to-external-fqdn-google)
+#   - NetworkPolicy allow (pod-to-a-allowed-knp) — equivalent to Cilium's pod-to-a-allowed-cnp
+#   - NetworkPolicy deny  (pod-to-a-denied-knp)  — equivalent to Cilium's pod-to-a-denied-cnp
+---
+# echo-a: basic echo server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-a
+  labels:
+    name: echo-a
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: echo-a
+  template:
+    metadata:
+      labels:
+        name: echo-a
+    spec:
+      containers:
+      - name: echo-a-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        args: ["serve-hostname", "--port", "8080"]
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-a
+  labels:
+    name: echo-a
+spec:
+  type: ClusterIP
+  selector:
+    name: echo-a
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+# echo-b: echo server with ClusterIP, headless, and NodePort services
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-b
+  labels:
+    name: echo-b
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: echo-b
+  template:
+    metadata:
+      labels:
+        name: echo-b
+    spec:
+      containers:
+      - name: echo-b-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        args: ["serve-hostname", "--port", "8080"]
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-b
+  labels:
+    name: echo-b
+spec:
+  type: ClusterIP
+  selector:
+    name: echo-b
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+# echo-b-headless: headless service for echo-b
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-b-headless
+  labels:
+    name: echo-b-headless
+spec:
+  clusterIP: None
+  selector:
+    name: echo-b
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+# echo-b-nodeport: NodePort service for echo-b
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-b-nodeport
+  labels:
+    name: echo-b-nodeport
+spec:
+  type: NodePort
+  selector:
+    name: echo-b
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 31414
+    protocol: TCP
+---
+# echo-b-host: echo server running with host networking
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-b-host
+  labels:
+    name: echo-b-host
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: echo-b-host
+  template:
+    metadata:
+      labels:
+        name: echo-b-host
+    spec:
+      hostNetwork: true
+      containers:
+      - name: echo-b-host-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        args: ["serve-hostname", "--port", "8180"]
+        ports:
+        - containerPort: 8180
+          hostPort: 8180
+        readinessProbe:
+          tcpSocket:
+            port: 8180
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+---
+# echo-b-host-headless: headless service for echo-b-host
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-b-host-headless
+  labels:
+    name: echo-b-host-headless
+spec:
+  clusterIP: None
+  selector:
+    name: echo-b-host
+  ports:
+  - port: 8180
+    targetPort: 8180
+    protocol: TCP
+---
+# pod-to-a: connects to echo-a via ClusterIP
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-a
+  labels:
+    name: pod-to-a
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-a
+  template:
+    metadata:
+      labels:
+        name: pod-to-a
+        allowed-to-echo-a: "true"
+    spec:
+      containers:
+      - name: pod-to-a-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-a:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-a:8080
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-b-multi-node-clusterip: connects to echo-b via ClusterIP (scheduled on different node)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-b-multi-node-clusterip
+  labels:
+    name: pod-to-b-multi-node-clusterip
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-b-multi-node-clusterip
+  template:
+    metadata:
+      labels:
+        name: pod-to-b-multi-node-clusterip
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: pod-to-b-multi-node-clusterip-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b:8080
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-b-multi-node-headless: connects to echo-b via headless service (scheduled on different node)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-b-multi-node-headless
+  labels:
+    name: pod-to-b-multi-node-headless
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-b-multi-node-headless
+  template:
+    metadata:
+      labels:
+        name: pod-to-b-multi-node-headless
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: pod-to-b-multi-node-headless-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-headless:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-headless:8080
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-b-multi-node-nodeport: connects to echo-b via NodePort (scheduled on different node)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-b-multi-node-nodeport
+  labels:
+    name: pod-to-b-multi-node-nodeport
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-b-multi-node-nodeport
+  template:
+    metadata:
+      labels:
+        name: pod-to-b-multi-node-nodeport
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: pod-to-b-multi-node-nodeport-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-host-headless:31414
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-host-headless:31414
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-b-intra-node-nodeport: connects to echo-b via NodePort (same node)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-b-intra-node-nodeport
+  labels:
+    name: pod-to-b-intra-node-nodeport
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-b-intra-node-nodeport
+  template:
+    metadata:
+      labels:
+        name: pod-to-b-intra-node-nodeport
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: pod-to-b-intra-node-nodeport-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-host-headless:31414
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-host-headless:31414
+            - --timeout=5s
+            - --protocol=tcp
+---
+# host-to-b-multi-node-clusterip: host-networked pod connecting to echo-b via ClusterIP
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: host-to-b-multi-node-clusterip
+  labels:
+    name: host-to-b-multi-node-clusterip
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: host-to-b-multi-node-clusterip
+  template:
+    metadata:
+      labels:
+        name: host-to-b-multi-node-clusterip
+    spec:
+      hostNetwork: true
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: host-to-b-multi-node-clusterip-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b.canal-test.svc.cluster.local:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b.canal-test.svc.cluster.local:8080
+            - --timeout=5s
+            - --protocol=tcp
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+      - operator: Exists
+---
+# host-to-b-multi-node-headless: host-networked pod connecting to echo-b via headless service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: host-to-b-multi-node-headless
+  labels:
+    name: host-to-b-multi-node-headless
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: host-to-b-multi-node-headless
+  template:
+    metadata:
+      labels:
+        name: host-to-b-multi-node-headless
+    spec:
+      hostNetwork: true
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - echo-b
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: host-to-b-multi-node-headless-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-headless.canal-test.svc.cluster.local:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-b-headless.canal-test.svc.cluster.local:8080
+            - --timeout=5s
+            - --protocol=tcp
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+      - operator: Exists
+---
+# pod-to-external-1111: verifies external connectivity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-external-1111
+  labels:
+    name: pod-to-external-1111
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-external-1111
+  template:
+    metadata:
+      labels:
+        name: pod-to-external-1111
+    spec:
+      containers:
+      - name: pod-to-external-1111-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - 1.1.1.1:443
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - 1.1.1.1:443
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-external-fqdn-google: verifies DNS resolution + external connectivity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-external-fqdn-google
+  labels:
+    name: pod-to-external-fqdn-google
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-external-fqdn-google
+  template:
+    metadata:
+      labels:
+        name: pod-to-external-fqdn-google
+    spec:
+      containers:
+      - name: pod-to-external-fqdn-google-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - www.google.com:443
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - www.google.com:443
+            - --timeout=5s
+            - --protocol=tcp
+---
+# NetworkPolicy: restrict ingress to echo-a to only pods with label "allowed-to-echo-a: true"
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-echo-a
+spec:
+  podSelector:
+    matchLabels:
+      name: echo-a
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          allowed-to-echo-a: "true"
+    ports:
+    - port: 8080
+      protocol: TCP
+---
+# pod-to-a-allowed-knp: has the "allowed-to-echo-a: true" label — should succeed
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-a-allowed-knp
+  labels:
+    name: pod-to-a-allowed-knp
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-a-allowed-knp
+  template:
+    metadata:
+      labels:
+        name: pod-to-a-allowed-knp
+        allowed-to-echo-a: "true"
+    spec:
+      containers:
+      - name: pod-to-a-allowed-knp-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-a:8080
+            - --timeout=5s
+            - --protocol=tcp
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /agnhost
+            - connect
+            - echo-a:8080
+            - --timeout=5s
+            - --protocol=tcp
+---
+# pod-to-a-denied-knp: does NOT have the label — connection should be denied.
+# Uses a negated probe: the pod becomes ready when the connection FAILS,
+# proving the NetworkPolicy deny is enforced. Same pattern as Cilium's pod-to-a-denied-cnp.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-to-a-denied-knp
+  labels:
+    name: pod-to-a-denied-knp
+    component: connectivity-check
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-to-a-denied-knp
+  template:
+    metadata:
+      labels:
+        name: pod-to-a-denied-knp
+    spec:
+      containers:
+      - name: pod-to-a-denied-knp-container
+        image: registry.k8s.io/e2e-test-images/agnhost:2.43
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "sleep 1000000000"]
+        readinessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "! /agnhost connect echo-a:8080 --timeout=3s --protocol=tcp"
+        livenessProbe:
+          timeoutSeconds: 7
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "! /agnhost connect echo-a:8080 --timeout=3s --protocol=tcp"
