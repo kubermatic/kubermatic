@@ -31,6 +31,27 @@ spec:
       source:
         helm:
           chartName: falco
+          chartVersion: 4.21.2
+          url: oci://quay.io/kubermatic-mirror/helm-charts
+    version: 0.40.0
+  - template:
+      source:
+        helm:
+          chartName: falco
+          chartVersion: 6.4.1
+          url: oci://quay.io/kubermatic-mirror/helm-charts
+    version: 0.41.3
+  - template:
+      source:
+        helm:
+          chartName: falco
+          chartVersion: 7.2.1
+          url: oci://quay.io/kubermatic-mirror/helm-charts
+    version: 0.42.1
+  - template:
+      source:
+        helm:
+          chartName: falco
           chartVersion: 8.0.1
           url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 0.43.0
