@@ -826,6 +826,25 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	}
 }
 
+// GetFilteredCloudSpecs filters the cloud specs based on the provider filter.
+// If providerFilter is nil or empty, all cloud specs are returned.
+func GetFilteredCloudSpecs(providerFilter sets.Set[string]) []kubermaticv1.CloudSpec {
+	allSpecs := GetCloudSpecs()
+
+	if providerFilter == nil || providerFilter.Len() == 0 {
+		return allSpecs
+	}
+
+	var filtered []kubermaticv1.CloudSpec
+	for _, spec := range allSpecs {
+		if providerFilter.Has(spec.ProviderName) {
+			filtered = append(filtered, spec)
+		}
+	}
+
+	return filtered
+}
+
 // list all the supported CNI plugins along with their supported versions.
 func GetCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
