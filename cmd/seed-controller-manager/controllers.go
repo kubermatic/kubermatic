@@ -39,6 +39,7 @@ import (
 	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
+	eventratelimitenforcement "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/event-rate-limit-enforcement-controller"
 	initialapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-application-installation-controller"
 	initialmachinedeployment "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/ipam"
@@ -89,6 +90,7 @@ var AllControllers = map[string]controllerCreator{
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
 	auditloggingenforcement.ControllerName:                  createAuditLoggingEnforcementController,
+	eventratelimitenforcement.ControllerName:                createEventRateLimitEnforcementController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -511,6 +513,16 @@ func createAuditLoggingEnforcementController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.seedGetter,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createEventRateLimitEnforcementController(ctrlCtx *controllerContext) error {
+	return eventratelimitenforcement.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.configGetter,
 		ctrlCtx.runOptions.workerCount,
 	)
 }
