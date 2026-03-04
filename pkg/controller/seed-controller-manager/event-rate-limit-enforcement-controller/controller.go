@@ -76,9 +76,7 @@ func Add(
 	}
 
 	// Handler to enqueue all clusters when a KubermaticConfiguration is updated
-	configHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
-		log.Debugw("KubermaticConfiguration handler triggered", "config", obj.GetName())
-
+	configHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, _ ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := reconciler.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: workerSelector}); err != nil {
 			log.Errorw("Failed to list clusters for config update", zap.Error(err))
@@ -93,7 +91,6 @@ func Add(
 			})
 		}
 
-		log.Debugw("Total clusters enqueued for reconciliation", "count", len(requests))
 		return requests
 	})
 
