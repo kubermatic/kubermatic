@@ -65,7 +65,13 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 		"machine": fmt.Sprintf("md-%s-%s", cluster.Name, rand.String(10)),
 	}
 
-	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
+	if md.Spec.Template.Labels != nil {
+		for k, v := range md.Spec.Selector.MatchLabels {
+			md.Spec.Template.Labels[k] = v
+		}
+	} else {
+		md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
+	}
 
 	// Merge MatchLabels with Template Spec Labels.
 	if md.Spec.Template.Spec.Labels == nil {
