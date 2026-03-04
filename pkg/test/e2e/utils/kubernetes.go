@@ -25,12 +25,15 @@ import (
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
+	catalogv1alpha1 "k8c.io/application-catalog-manager/pkg/apis/applicationcatalog/v1alpha1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/podexec"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -134,6 +137,18 @@ func GetClients() (ctrlruntimeclient.Client, *rest.Config, error) {
 	}
 
 	if err := gwapischeme.AddToScheme(sc); err != nil {
+		return nil, nil, err
+	}
+
+	if err := apiextensionsv1.AddToScheme(sc); err != nil {
+		return nil, nil, err
+	}
+
+	if err := catalogv1alpha1.AddToScheme(sc); err != nil {
+		return nil, nil, err
+	}
+
+	if err := appskubermaticv1.AddToScheme(sc); err != nil {
 		return nil, nil, err
 	}
 
