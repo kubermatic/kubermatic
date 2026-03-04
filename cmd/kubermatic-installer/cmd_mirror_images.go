@@ -113,7 +113,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, "Cloud providers to mirror images for (e.g., 'aws', 'azure', 'kubevirt'). Can be specified multiple times or as comma-separated values. If not specified, images for all providers will be mirrored")
+	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, fmt.Sprintf("Cloud providers to mirror images for. Valid values are: %s. Can be specified multiple times. If not specified, images for all providers will be mirrored", strings.Join(allSupportedProviderNames(), ", ")))
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
