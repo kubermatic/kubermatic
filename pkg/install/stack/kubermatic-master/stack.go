@@ -448,6 +448,7 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 		logger.Warn("reconfigure the envoy-gateway-controller Helm chart. Re-run the installer")
 		logger.Warn("to apply updated configuration afterwards.")
 		logger.Warn(err.Error())
+		return "", ""
 	}
 
 	logger.Info("The main Gateway is ready.")
@@ -558,6 +559,10 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 	return nil
 }
 
+// waitForGateway waits for the Gateway to have an address and be Programmed.
+// Per-listener conditions are not checked because HTTPS listeners depend on
+// TLS certificates that require DNS to be configured first, which only happens
+// after the installer finishes.
 func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) (*gatewayapiv1.Gateway, error) {
 	if config == nil {
 		return nil, fmt.Errorf("Invalid KubermaticConfiguration provided")
@@ -597,17 +602,6 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 
 			l.Debugf("Gateway not yet programmed: %s - %s", reason, message)
 			return false, nil
-		}
-
-		for _, listener := range gw.Status.Listeners {
-			listenerProgrammed := meta.IsStatusConditionTrue(
-				listener.Conditions,
-				string(gatewayapiv1.ListenerConditionProgrammed),
-			)
-			if !listenerProgrammed {
-				l.Debugf("Gateway listener %s not yet programmed", listener.Name)
-				return false, nil
-			}
 		}
 
 		l.Infof("Gateway is ready with %d address(es) and %d listener(s)",
