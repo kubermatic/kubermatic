@@ -53,7 +53,7 @@ var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 const (
 	// Name is the alias for `resources.MachineControllerContainerName` for backward compatibility.
 	Name = resources.MachineControllerContainerName
-	Tag  = "01ad12aa435b2644bb76081ea7ebc00c451cf0dc"
+	Tag  = "v1.65.0"
 )
 
 type machinecontrollerData interface {
