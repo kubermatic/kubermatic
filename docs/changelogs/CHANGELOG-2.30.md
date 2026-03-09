@@ -65,11 +65,11 @@ This release contains changes that require additional attention, please read the
 - Add HTTPRoute-Gateway sync controller to enable automatic certificate provisioning via cert-manager for KKP components ([#15497](https://github.com/kubermatic/kubermatic/pull/15497))
 - Introduce audit logging enforcement for user clusters via a new controller in the seed-controller-manager. Depending on the datacenter configuration, audit logging is either enforced from the seed configuration or explicitly disabled for user clusters. Enforcement is skipped when the seed does not define audit logging or when a user cluster is annotated with `kubermatic.k8c.io/skip-audit-logging-enforcement: "true"` ([#15330](https://github.com/kubermatic/kubermatic/pull/15330))
 - Users can now configure additional arguments for oauth2-proxy pods (useful for seed and user MLA) ([#15241](https://github.com/kubermatic/kubermatic/pull/15241))
-
-### API Changes
-
+- Default kube-proxy mode to nftables for Kubernetes clusters running version v1.35 and above ([#15537](https://github.com/kubermatic/kubermatic/pull/15537))
 - Add global settings for the EventRateLimit admission plugin in KubermaticConfiguration. Admins can now enable EventRateLimit by default, enforce it for all clusters, and provide default configuration values via `spec.userCluster.admissionPlugins.eventRateLimit` ([#15300](https://github.com/kubermatic/kubermatic/pull/15300))
 - MachineController deployment resources can now be customized via `cluster.spec.componentsOverride.machineController` ([#15202](https://github.com/kubermatic/kubermatic/pull/15202))
+- Make local kind installation idempotent ([#15185](https://github.com/kubermatic/kubermatic/pull/15185))
+
 
 ### Bugfixes
 
@@ -121,11 +121,6 @@ This release contains changes that require additional attention, please read the
 - Remove unused `external-admin-user` ServiceAccount and ClusterRoleBinding from user clusters ([#15280](https://github.com/kubermatic/kubermatic/pull/15280))
 - Remove cluster-autoscaler addon ([#15311](https://github.com/kubermatic/kubermatic/pull/15311))
 
-### Miscellaneous
-
-- Default kube-proxy mode to nftables for Kubernetes clusters running version v1.35 and above ([#15537](https://github.com/kubermatic/kubermatic/pull/15537))
-- Make local kind installation idempotent ([#15185](https://github.com/kubermatic/kubermatic/pull/15185))
-
 ### Dashboard and API
 
 #### Cloud Providers
@@ -174,11 +169,6 @@ This release contains changes that require additional attention, please read the
 - Add a Cluster ID tooltip to cluster and project overview pages ([#7693](https://github.com/kubermatic/dashboard/pull/7693))
 - Add cluster name to snapshot list and details ([#7695](https://github.com/kubermatic/dashboard/pull/7695))
 
-#### Deprecations
-
-- The Anexia provider is now deprecated. A warning is shown in the application to inform users ([#7767](https://github.com/kubermatic/dashboard/pull/7767))
-- Add deprecation warnings for the Kubernetes Dashboard feature, as the upstream project is no longer actively maintained ([#7810](https://github.com/kubermatic/dashboard/pull/7810))
-
 #### Bugfixes
 
 - Set nftables as the default kube-proxy mode for Kubernetes 1.35+ clusters when using non-Cilium CNI plugins ([#7906](https://github.com/kubermatic/dashboard/pull/7906))
@@ -207,3 +197,5 @@ This release contains changes that require additional attention, please read the
 
 - Migrate Angular templates to new control flow syntax and self-closing tags for code consistency and compliance with modern Angular standards ([#7675](https://github.com/kubermatic/dashboard/pull/7675))
 - Remove beta labels from Kyverno Policies UI elements ([#7746](https://github.com/kubermatic/dashboard/pull/7746))
+- The Anexia provider is now deprecated. A warning is shown in the application to inform users ([#7767](https://github.com/kubermatic/dashboard/pull/7767))
+- Add deprecation warnings for the Kubernetes Dashboard feature, as the upstream project is no longer actively maintained ([#7810](https://github.com/kubermatic/dashboard/pull/7810))
