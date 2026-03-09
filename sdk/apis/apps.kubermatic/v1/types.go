@@ -43,4 +43,9 @@ const (
 
 	// ApplicationDefaultedAnnotation marks an ApplicationInstallation as defaulted.
 	ApplicationDefaultedAnnotation = "apps.kubermatic.k8c.io/defaulted"
+
+	// ApplicationReconciliationIntervalAnnotation specifies the reconciliation interval
+	// for ApplicationInstallations created from this ApplicationDefinition.
+	// The value should be a valid Go duration string (e.g., "5m", "1h", "30s").
+	ApplicationReconciliationIntervalAnnotation = "apps.kubermatic.k8c.io/reconciliation-interval"
 )

@@ -49,7 +49,7 @@ func Add(
 	reconciler := &Reconciler{
 		log:              log.Named(ControllerName),
 		masterClient:     masterManager.GetClient(),
-		masterRecorder:   masterManager.GetEventRecorderFor(ControllerName),
+		masterRecorder:   masterManager.GetEventRecorder(ControllerName),
 		seedClientGetter: seedClientGetter,
 		workerName:       workerName,
 		versions:         kubermatic.GetVersions(),

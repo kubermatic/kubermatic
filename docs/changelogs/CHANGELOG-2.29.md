@@ -3,8 +3,74 @@
 - [v2.29.0](#v2290)
 - [v2.29.1](#v2291)
 - [v2.29.2](#v2292)
+- [v2.29.3](#v2293)
+- [v2.29.4](#v2294)
+- [v2.29.5](#v2295)
 
-## [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)
+## v2.29.5
+
+**GitHub release: [v2.29.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.5)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.5/v1.33.9/v1.32.13 ([#15546](https://github.com/kubermatic/kubermatic/pull/15546))
+
+### New Features
+
+- Add HTTPRoute-Gateway sync controller to enable automatic certificate provisioning via cert-manager for KKP components ([#15522](https://github.com/kubermatic/kubermatic/pull/15522))
+
+### Bugfixes
+
+- Add missing envoy-gateway-controller chart in release artifacts ([#15491](https://github.com/kubermatic/kubermatic/pull/15491))
+- Fix alertmanager service port name reference after upstream chart migration ([#15512](https://github.com/kubermatic/kubermatic/pull/15512))
+- Set `hostname` on Gateway while using cert-manager ([#15496](https://github.com/kubermatic/kubermatic/pull/15496))
+- EE: Upgraded Kyverno to v1.15.3 to address CVE-2026-22039 and regenerated user-cluster Kyverno CRDs. ([#15540](https://github.com/kubermatic/kubermatic/pull/15540))
+
+### Cleanup
+
+- Update nodeport-proxy Envoy to v1.35.8 ([#15521](https://github.com/kubermatic/kubermatic/pull/15521))
+
+## v2.29.4
+
+**GitHub release: [v2.29.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.4)**
+
+### Supported Kubernetes Versions
+
+- Add support of new Kubernetes patch releases v1.34.4/v1.33.8/v1.32.12 ([#15472](https://github.com/kubermatic/kubermatic/pull/15472))
+
+### New Features
+
+- Add Gateway API support to the IAP chart, allowing IAP deployments to use HTTPRoute resources instead of Ingress when migrating to Gateway API ([#15365](https://github.com/kubermatic/kubermatic/pull/15365))
+- Kubermatic now supports Gateway API for external traffic routing as an alternative to NGINX Ingress. It can be enabled via the `--enable-gateway-api` operator flag (set via `migrateGatewayAPI: true` in Helm values and `--migrate-gateway-api` in `kubermatic-installer`) ([#15402](https://github.com/kubermatic/kubermatic/pull/15402))
+- The installer now uses a consistent scheme setup for both `deploy` and `local kind` commands ([#15288](https://github.com/kubermatic/kubermatic/pull/15288))
+
+### Bugfixes
+
+- Add optional Seed setting `spec.nodeportProxy.envoy.replicas` to configure the `nodeport-proxy-envoy` replica count. If unset, existing default behavior remains (`3` replicas) ([#15464](https://github.com/kubermatic/kubermatic/pull/15464))
+
+### Updates
+
+- Update nginx-ingress-controller version to 1.14.3 ([#15364](https://github.com/kubermatic/kubermatic/pull/15364))
+
+## v2.29.3
+
+**GitHub release: [v2.29.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.3)**
+
+### New Features
+
+- Add status conditions for policy binding resources ([#15209](https://github.com/kubermatic/kubermatic/pull/15209))
+
+### Bugfixes
+
+- Fix issue where OIDC kubeconfig downloads would fail with RBAC "Forbidden" errors when the identity provider returns uppercase email addresses ([#7740](https://github.com/kubermatic/dashboard/pull/7740))
+
+### Updates
+
+- Update Go version to 1.25.6 ([#15332](https://github.com/kubermatic/kubermatic/pull/15332), [#7782](https://github.com/kubermatic/dashboard/pull/7782))
+
+## v2.29.2
+
+**GitHub release: [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)**
 
 ### Breaking Changes
 
@@ -31,7 +97,9 @@
 - Update machine-controller to [v1.64.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.1) ([#15267](https://github.com/kubermatic/kubermatic/pull/15267))
 - Add support of the latest k8s patch releases v1.34.3/v1.33.7 ([#15239](https://github.com/kubermatic/kubermatic/pull/15239))
 
-## [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)
+## v2.29.1
+
+**GitHub release: [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)**
 
 ### Supported Kubernetes Versions
 

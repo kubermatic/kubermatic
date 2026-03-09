@@ -142,7 +142,10 @@ func TestValidateCloudSpec(t *testing.T) {
 
 func TestInitializeCloudProvider(t *testing.T) {
 	provider := newCloudProvider(t)
-	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+	})
 
 	cluster, err := provider.InitializeCloudProvider(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
@@ -180,11 +183,12 @@ func TestInitializeCloudProvider(t *testing.T) {
 
 func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 	provider := newCloudProvider(t)
-	nope := "does-not-exist"
 
 	// create a cluster with lots of broken data of which we expect
 	// the InitializeCloudProvider() to NOT fix them.
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:         nope,
+		SecretAccessKey:     nope,
 		VPCID:               nope,
 		SecurityGroupID:     nope,
 		ControlPlaneRoleARN: nope,
@@ -225,7 +229,11 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 
 func TestReconcileCluster(t *testing.T) {
 	provider := newCloudProvider(t)
-	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	// Create cluster with dummy credentials for testing
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+	})
 
 	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
@@ -263,8 +271,11 @@ func TestReconcileCluster(t *testing.T) {
 
 func TestReconcileClusterFixesProblems(t *testing.T) {
 	provider := newCloudProvider(t)
+	// Create cluster with dummy credentials for testing
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-		SecurityGroupID: "does-not-exist",
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+		SecurityGroupID: nope,
 	})
 
 	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
@@ -272,14 +283,18 @@ func TestReconcileClusterFixesProblems(t *testing.T) {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
 
-	if cluster.Spec.Cloud.AWS.SecurityGroupID == "does-not-exist" {
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == nope {
 		t.Error("cloud spec should have fixed the security group ID")
 	}
 }
 
 func TestCleanUpCloudProvider(t *testing.T) {
 	provider := newCloudProvider(t)
-	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	// Create cluster with dummy credentials for testing
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+	})
 
 	// create a vanilla cluster
 	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))

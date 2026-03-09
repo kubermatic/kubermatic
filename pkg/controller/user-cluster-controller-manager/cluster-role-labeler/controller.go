@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -43,7 +43,7 @@ const (
 type reconciler struct {
 	log             *zap.SugaredLogger
 	client          ctrlruntimeclient.Client
-	recorder        record.EventRecorder
+	recorder        events.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
@@ -53,7 +53,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	r := &reconciler{
 		log:             log,
 		client:          mgr.GetClient(),
-		recorder:        mgr.GetEventRecorderFor(controllerName),
+		recorder:        mgr.GetEventRecorder(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
 
@@ -88,7 +88,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, clusterRole)
 	if err != nil {
-		r.recorder.Event(clusterRole, corev1.EventTypeWarning, "AddingLabelFailed", err.Error())
+		r.recorder.Eventf(clusterRole, nil, corev1.EventTypeWarning, "AddingLabelFailed", "Reconciling", err.Error())
 	}
 	return reconcile.Result{}, err
 }

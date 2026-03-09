@@ -72,6 +72,11 @@ const (
 	DefaultKonnectivityKeepaliveTime = "1m"
 )
 
+const (
+	// AdmissionPluginNameEventRateLimit is the EventRateLimit admission plugin name.
+	AdmissionPluginNameEventRateLimit = "EventRateLimit"
+)
+
 // +kubebuilder:validation:Enum=standard;basic
 
 // Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
@@ -288,6 +293,17 @@ type KubernetesDashboard struct {
 
 func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
+}
+
+// HasAdmissionPlugin reports whether the given admission plugin name exists in AdmissionPlugins.
+func (c ClusterSpec) HasAdmissionPlugin(name string) bool {
+	return slices.Contains(c.AdmissionPlugins, name)
+}
+
+// IsEventRateLimitAdmissionPluginEnabled reports whether EventRateLimit is enabled either
+// via the dedicated boolean field or through AdmissionPlugins.
+func (c ClusterSpec) IsEventRateLimitAdmissionPluginEnabled() bool {
+	return c.UseEventRateLimitAdmissionPlugin || c.HasAdmissionPlugin(AdmissionPluginNameEventRateLimit)
 }
 
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
@@ -766,6 +782,20 @@ type OIDCSettings struct {
 	GroupsPrefix   string `json:"groupsPrefix,omitempty"`
 }
 
+// EventRateLimitType defines the type of event rate limit.
+type EventRateLimitType string
+
+const (
+	// EventRateLimitTypeServer is a limit where one bucket is shared by all event queries.
+	EventRateLimitTypeServer EventRateLimitType = "Server"
+	// EventRateLimitTypeNamespace is a limit where one bucket is used by each namespace.
+	EventRateLimitTypeNamespace EventRateLimitType = "Namespace"
+	// EventRateLimitTypeUser is a limit where one bucket is used by each user.
+	EventRateLimitTypeUser EventRateLimitType = "User"
+	// EventRateLimitTypeSourceAndObject is a limit where one bucket is used by each source+object combination.
+	EventRateLimitTypeSourceAndObject EventRateLimitType = "SourceAndObject"
+)
+
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
@@ -776,8 +806,23 @@ type EventRateLimitConfig struct {
 }
 
 type EventRateLimitConfigItem struct {
-	QPS       int32 `json:"qps"`
-	Burst     int32 `json:"burst"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=50
+	//
+	// QPS is the queries per second allowed for this limit type.
+	QPS int32 `json:"qps"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=100
+	//
+	// Burst is the maximum burst size for this limit type.
+	Burst int32 `json:"burst"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=4096
+	// +optional
+	//
+	// CacheSize is the size of the LRU cache for this limit type.
 	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 
@@ -865,6 +910,8 @@ type ComponentSettings struct {
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
 	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
+	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -899,6 +946,11 @@ type ControllerSettings struct {
 
 type DeploymentSettings struct {
 	Replicas    *int32                       `json:"replicas,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+}
+
+type DaemonSetSettings struct {
 	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
 }
@@ -1002,10 +1054,10 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf
+	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf;nftables;
 	// +kubebuilder:default=ipvs
 
-	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf" / "nftables").
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
@@ -1019,6 +1071,7 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	//
 	// Deprecated: This field should not be used anymore, use cluster.componentsOverride.coreDNS.replicas
 	// instead. Only one of the two fields can be set at any time.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
@@ -1231,6 +1284,7 @@ type VSphereCloudSpec struct {
 	// +optional
 	Password string `json:"password"`
 	// The name of the vSphere network.
+	//
 	// Deprecated: Use networks instead.
 	// +optional
 	VMNetName string `json:"vmNetName,omitempty"`
@@ -1315,6 +1369,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	VDC string `json:"vdc,omitempty"`
 
 	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
+	//
 	// Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
 	OVDCNetwork string `json:"ovdcNetwork,omitempty"`
 
@@ -1436,8 +1491,23 @@ type OpenstackCloudSpec struct {
 	//
 	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIPPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
+	// LoadBalancerFloatingIPPool holds the name of the external network to be used
+	// for LoadBalancer floating IP allocation.
+	//
+	// When specified, LoadBalancer type Services will receive floating IPs from this pool
+	// instead of the FloatingIPPool. This allows using different external networks for
+	// cluster infrastructure (router) vs. LoadBalancer services.
+	// If not specified, FloatingIPPool is used for LoadBalancers for backward compatibility.
+	//
+	// This field sets a cluster-wide default for LoadBalancers. Services can override
+	// this default by using the `loadbalancer.openstack.org/class` annotation to select
+	// a specific LoadBalancerClass.
+	// +optional
+	LoadBalancerFloatingIPPool string `json:"loadBalancerFloatingIPPool,omitempty"`
+
+	RouterID string `json:"routerID"`
+	SubnetID string `json:"subnetID"`
+
 	// SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
 	// didn't specify a subnet id.
 	// +optional
@@ -1485,6 +1555,11 @@ type OpenstackCloudSpec struct {
 	// List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	// +optional
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 // NOOP.
@@ -1529,6 +1604,8 @@ type KubevirtCloudSpec struct {
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks.
 	// It contains also some flag specifying which one is the default one.
 	StorageClasses []KubeVirtInfraStorageClass `json:"storageClasses,omitempty"`
+	// VolumeSnapshotClasses defines a list of volume snapshot classes for the infrastructure cluster.
+	VolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"volumeSnapshotClasses,omitempty"`
 	// ImageCloningEnabled flag enable/disable cloning for a cluster.
 	ImageCloningEnabled bool `json:"imageCloningEnabled,omitempty"`
 	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.

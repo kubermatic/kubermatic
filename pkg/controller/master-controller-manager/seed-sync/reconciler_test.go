@@ -33,7 +33,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -228,7 +228,7 @@ func TestReconcilingSeed(t *testing.T) {
 
 			reconciler := Reconciler{
 				Client:   masterClient,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				log:      log,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return seedClient, nil
@@ -310,7 +310,7 @@ func TestConfigRemainsOnSharedSeedCleanup(t *testing.T) {
 	// create the reconciler
 	reconciler := Reconciler{
 		Client:   masterSeedClient,
-		recorder: record.NewFakeRecorder(10),
+		recorder: events.NewFakeRecorder(10),
 		log:      log,
 		seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 			return masterSeedClient, nil

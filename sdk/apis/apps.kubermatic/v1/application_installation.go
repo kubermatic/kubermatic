@@ -69,6 +69,7 @@ type ApplicationInstallationSpec struct {
 
 	// Values specify values overrides that are passed to helm templating. Comments are not preserved.
 	// +kubebuilder:pruning:PreserveUnknownFields
+	//
 	// Deprecated: Use ValuesBlock instead. This field was deprecated in KKP 2.25 and will be removed in KKP 2.27+.
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)

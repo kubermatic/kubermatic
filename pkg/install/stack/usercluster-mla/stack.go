@@ -26,6 +26,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -267,6 +268,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	}
 
 	v22 := semverlib.MustParse("2.22.0")
+	v30 := semverlib.MustParse("2.30.0")
 
 	if release != nil && release.Version.LessThan(v22) && !chart.Version.LessThan(v22) {
 		sublogger.Warn("Installation process will temporarily remove and then upgrade memcached instances used by Cortex.")
@@ -285,6 +287,23 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 
 	if err := ctrlruntimeclient.IgnoreAlreadyExists(kubeClient.Create(ctx, runtimeConfigMap)); err != nil {
 		return fmt.Errorf("failed to create runtime-config ConfigMap: %w", err)
+	}
+
+	// Custom Upgrade steps for KKP v2.30.0+
+	// Upgrade runtime config key from runtime-config.yaml to runtime_config.yaml after ensuring ConfigMap exists
+	// Delete few memcached services to allow Helm to recreate them with correct immutable clusterIP configuration
+	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
+		sublogger.Warn("Installation process will delete memcached services for v2.30.0+ upgrade (immutable clusterIP change).")
+
+		err = deleteCortexMemcachedServices(ctx, sublogger, kubeClient, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to delete cortex memcached services before cortex upgrade: %w", err)
+		}
+
+		err = upgradeCortexRuntimeConfigMap(ctx, sublogger, kubeClient, runtimeConfigMap)
+		if err != nil {
+			return fmt.Errorf("failed to upgrade cortex-runtime-config ConfigMap before cortex upgrade: %w", err)
+		}
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CortexNamespace, CortexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
@@ -437,6 +456,11 @@ func deployMLAIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
+	// label the namespace to allow HTTPRoute attachment to the kubermatic Gateway.
+	if err := util.EnsureNamespaceLabel(ctx, kubeClient, MLAIAPNamespace, common.GatewayAccessLabelKey, "true"); err != nil {
+		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
+	}
+
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MLAIAPNamespace, MLAIAPReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
@@ -574,5 +598,97 @@ func upgradeConsulStatefulsets(
 			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
 		}
 	}
+	return nil
+}
+
+func deleteCortexMemcachedServices(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s", release.Name, release.Version.String(), chart.Version.String())
+	logger.Info("Removing memcached services")
+
+	// List of memcached service names to delete
+	memcachedServices := []string{
+		release.Name + "-memcached-blocks",
+		release.Name + "-memcached-blocks-index",
+		release.Name + "-memcached-blocks-metadata",
+	}
+
+	for _, serviceName := range memcachedServices {
+		service := &corev1.Service{}
+		service.SetName(serviceName)
+		service.SetNamespace(CortexNamespace)
+
+		logger.Infof("Deleting service: %s", serviceName)
+		if err := kubeClient.Delete(ctx, service); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to delete service %s: %w", serviceName, err)
+		}
+	}
+
+	logger.Info("Memcached services deleted successfully, Helm will recreate them with correct configuration")
+	return nil
+}
+
+func upgradeCortexRuntimeConfigMap(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	configMap *corev1.ConfigMap,
+) error {
+	logger.Info("Upgrading runtime config ConfigMap key from runtime-config.yaml to runtime_config.yaml")
+
+	// Fetch the actual ConfigMap from the cluster
+	existingConfigMap := &corev1.ConfigMap{}
+	configMapKey := ctrlruntimeclient.ObjectKey{
+		Name:      configMap.Name,
+		Namespace: configMap.Namespace,
+	}
+
+	if err := kubeClient.Get(ctx, configMapKey, existingConfigMap); err != nil {
+		if ctrlruntimeclient.IgnoreNotFound(err) == nil {
+			logger.Info("Runtime config ConfigMap does not exist yet, no migration needed")
+			return nil
+		}
+		return fmt.Errorf("failed to get runtime config ConfigMap: %w", err)
+	}
+
+	// Check if old key exists in the actual cluster ConfigMap
+	oldKey := "runtime-config.yaml"
+	newKey := mla.RuntimeConfigFileName // This should be "runtime_config.yaml"
+
+	if oldData, hasOldKey := existingConfigMap.Data[oldKey]; hasOldKey {
+		logger.Infof("Found old key '%s', migrating to '%s'", oldKey, newKey)
+
+		// Copy data from old key to new key
+		existingConfigMap.Data[newKey] = oldData
+
+		// Remove old key
+		delete(existingConfigMap.Data, oldKey)
+
+		// Update the ConfigMap
+		if err := kubeClient.Update(ctx, existingConfigMap); err != nil {
+			return fmt.Errorf("failed to update runtime config ConfigMap: %w", err)
+		}
+
+		logger.Infof("Successfully migrated ConfigMap key from '%s' to '%s'", oldKey, newKey)
+	} else if _, hasNewKey := existingConfigMap.Data[newKey]; hasNewKey {
+		logger.Infof("ConfigMap already has correct key '%s', no migration needed", newKey)
+	} else {
+		// Neither key exists, add the new key with default value
+		logger.Infof("ConfigMap exists but has no runtime config key, adding '%s'", newKey)
+		if existingConfigMap.Data == nil {
+			existingConfigMap.Data = make(map[string]string)
+		}
+		existingConfigMap.Data[newKey] = "overrides:\n"
+
+		if err := kubeClient.Update(ctx, existingConfigMap); err != nil {
+			return fmt.Errorf("failed to update runtime config ConfigMap: %w", err)
+		}
+	}
+
 	return nil
 }

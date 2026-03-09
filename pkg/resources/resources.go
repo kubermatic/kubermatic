@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -475,6 +476,8 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+	// NFTablesProxyMode defines the nftables kube-proxy mode.
+	NFTablesProxyMode = "nftables"
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
@@ -482,7 +485,7 @@ const (
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
 	// EventRateLimitAdmissionPlugin defines the EventRateLimit admission plugin.
-	EventRateLimitAdmissionPlugin = "EventRateLimit"
+	EventRateLimitAdmissionPlugin = kubermaticv1.AdmissionPluginNameEventRateLimit
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
@@ -1528,6 +1531,10 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
+	if componentSettings.EnvoyAgent != nil && componentSettings.EnvoyAgent.Resources != nil {
+		r[EnvoyAgentDaemonSetName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+		r[EnvoyAgentAssignAddressContainerName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+	}
 	if componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 		r[KonnectivityAgentContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
@@ -1749,7 +1756,11 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, clusterVersion semver.Semver) string {
+	// default to nftables for Kubernetes 1.35+ as iptables is deprecated and will be removed in Kubernetes 1.36
+	if clusterVersion.Semver() != nil && clusterVersion.Semver().Minor() >= 35 {
+		return NFTablesProxyMode
+	}
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
@@ -1816,5 +1827,14 @@ func PSALabelsBaseline() map[string]string {
 		psaapi.EnforceLevelLabel: string(psaapi.LevelBaseline),
 		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
 		psaapi.WarnLevelLabel:    string(psaapi.LevelBaseline),
+	}
+}
+
+func AllProxyModes() []string {
+	return []string{
+		IPVSProxyMode,
+		IPTablesProxyMode,
+		EBPFProxyMode,
+		NFTablesProxyMode,
 	}
 }

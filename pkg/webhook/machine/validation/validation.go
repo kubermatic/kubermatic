@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -28,7 +27,6 @@ import (
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -65,14 +63,9 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 	}, nil
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*clusterv1alpha1.Machine] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	machine, ok := obj.(*clusterv1alpha1.Machine)
-	if !ok {
-		return nil, errors.New("object is not a Machine")
-	}
-
+func (v *validator) ValidateCreate(ctx context.Context, machine *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
@@ -88,10 +81,10 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 
 // ValidateUpdate validates Machine updates. As mutating Machine spec is disallowed by the Machine Mutating webhook,
 // no need to check anything here.
-func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(_ context.Context, _, _ *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(_ context.Context, _ *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	return nil, nil
 }

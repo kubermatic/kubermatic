@@ -16,7 +16,7 @@
 
 OUTPUT_FILE = driver.yaml
 REPO_NAME = kkp-addons-csi-aws-ebs
-CHART_VERSION = 2.47.0
+CHART_VERSION = 2.55.0
 
 .PHONY: default
 default: setup-helm build clean-helm

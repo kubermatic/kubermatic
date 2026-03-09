@@ -1,0 +1,153 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  labels:
+    app: controller-manager
+  name: controller-manager
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: controller-manager
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
+        kubermatic.k8c.io/last-restart: ""
+        prometheus.io/path: /metrics
+        prometheus.io/port: "10257"
+        prometheus.io/scrape_with_kube_cert: "true"
+      labels:
+        app: controller-manager
+        app.kubernetes.io/version: 1.35.0
+        ca-bundle-configmap-revision: "123456"
+        ca-secret-revision: "123456"
+        cloud-config-secret-revision: "123456"
+        cluster: de-test-01
+        controllermanager-kubeconfig-secret-revision: "123456"
+        service-account-key-secret-revision: "123456"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: controller-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/usr/local/bin/kube-controller-manager","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--service-account-private-key-file","/etc/kubernetes/service-account-key/sa.key","--root-ca-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-cert-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-key-file","/etc/kubernetes/pki/ca/ca.key","--controllers","*,bootstrapsigner,tokencleaner","--use-service-account-credentials","--profiling=false","--allocate-node-cidrs","--cluster-cidr","172.25.0.0/16","--service-cluster-ip-range","10.240.16.0/20","--configure-cloud-routes=false","--feature-gates","RotateKubeletServerCertificate=true","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig"]}'
+        command:
+        - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        image: registry.k8s.io/kube-controller-manager:v1.35.0
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: 10257
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: controller-manager
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10257
+            scheme: HTTPS
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
+        - mountPath: /etc/kubernetes/service-account-key
+          name: service-account-key
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: controllermanager-kubeconfig
+          readOnly: true
+        - mountPath: /sys/class/dmi/id/product_serial
+          name: cloud-config
+          readOnly: true
+          subPath: fakeVmwareUUID
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: dockercfg
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.5.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      volumes:
+      - name: ca
+        secret:
+          secretName: ca
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
+      - name: service-account-key
+        secret:
+          secretName: service-account-key
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
+      - name: controllermanager-kubeconfig
+        secret:
+          secretName: controllermanager-kubeconfig
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}

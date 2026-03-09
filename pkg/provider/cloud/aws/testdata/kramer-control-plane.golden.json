@@ -2,6 +2,7 @@
   "Statement": [
     {
       "Action": [
+        "ec2:DescribeAvailabilityZones",
         "ec2:DescribeInstances",
         "ec2:DescribeRegions",
         "ec2:DescribeRouteTables",
@@ -12,7 +13,13 @@
         "ec2:DescribeVolumesModifications",
         "ec2:ModifyInstanceAttribute",
         "ec2:ModifyVolume",
-        "ec2:DescribeVpcs"
+        "ec2:DescribeVpcs",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "elasticloadbalancing:DescribeLoadBalancerAttributes",
+        "elasticloadbalancing:DescribeListeners",
+        "elasticloadbalancing:DescribeLoadBalancerPolicies",
+        "elasticloadbalancing:DescribeTargetGroups",
+        "elasticloadbalancing:DescribeTargetHealth"
       ],
       "Effect": "Allow",
       "Resource": [
@@ -57,6 +64,20 @@
     },
     {
       "Action": [
+        "ec2:CreateTags"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "ec2:CreateAction": "CreateSecurityGroup"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:ec2:*:*:security-group/*"
+      ]
+    },
+    {
+      "Action": [
         "elasticloadbalancing:CreateLoadBalancer",
         "elasticloadbalancing:CreateLoadBalancerPolicy",
         "elasticloadbalancing:CreateLoadBalancerListeners",
@@ -81,21 +102,14 @@
         "elasticloadbalancing:ConfigureHealthCheck",
         "elasticloadbalancing:DeleteLoadBalancer",
         "elasticloadbalancing:DeleteLoadBalancerListeners",
-        "elasticloadbalancing:DescribeLoadBalancers",
-        "elasticloadbalancing:DescribeLoadBalancerAttributes",
         "elasticloadbalancing:DetachLoadBalancerFromSubnets",
         "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
         "elasticloadbalancing:ModifyLoadBalancerAttributes",
         "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
         "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-        "elasticloadbalancing:AddTags",
         "elasticloadbalancing:DeleteListener",
         "elasticloadbalancing:DeleteTargetGroup",
         "elasticloadbalancing:DeregisterTargets",
-        "elasticloadbalancing:DescribeListeners",
-        "elasticloadbalancing:DescribeLoadBalancerPolicies",
-        "elasticloadbalancing:DescribeTargetGroups",
-        "elasticloadbalancing:DescribeTargetHealth",
         "elasticloadbalancing:ModifyListener",
         "elasticloadbalancing:ModifyTargetGroup",
         "elasticloadbalancing:RegisterTargets",

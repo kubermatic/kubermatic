@@ -36,7 +36,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -59,7 +59,7 @@ type Reconciler struct {
 
 	workerName   string
 	configGetter provider.KubermaticConfigurationGetter
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 	log          *zap.SugaredLogger
 	versions     kubermatic.Versions
 
@@ -73,7 +73,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter pr
 		Client:       mgr.GetClient(),
 		workerName:   workerName,
 		configGetter: configGetter,
-		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		recorder:     mgr.GetEventRecorder(ControllerName),
 		log:          log,
 		versions:     versions,
 		cpChecker:    getCurrentControlPlaneVersions,
@@ -133,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
@@ -194,7 +194,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		log.Infow("Cluster apiserver has been updated", "version", *cpStatus.apiserver)
-		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ControlPlaneVersionChanged", "Cluster control plane has reached version %s.", *cpStatus.apiserver)
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ControlPlaneVersionChanged", "Reconciling", "Cluster control plane has reached version %s.", *cpStatus.apiserver)
 	}
 
 	// Now that we are aware of the state of the world, we can check if we already reached
@@ -257,7 +257,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		log.Infow("Updating controller-manager to match apiserver", "apiserver", versions.Apiserver, "controllerManager", versions.ControllerManager)
-		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ControllerManagerUpdated", "Kubernetes controller-manager was updated to version %s.", versions.Apiserver)
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ControllerManagerUpdated", "Reconciling", "Kubernetes controller-manager was updated to version %s.", versions.Apiserver)
 		updated = true
 	}
 
@@ -269,7 +269,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		log.Infow("Updating scheduler to match apiserver", "apiserver", versions.Apiserver, "scheduler", versions.Scheduler)
-		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "SchedulerUpdated", "Kubernetes scheduler was updated to version %s.", versions.Apiserver)
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "SchedulerUpdated", "Reconciling", "Kubernetes scheduler was updated to version %s.", versions.Apiserver)
 		updated = true
 	}
 
@@ -323,7 +323,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	log.Infow("Updating apiserver", "from", versions.Apiserver, "to", newVersion.String(), "spec", spec)
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApiserverUpdated", "Kubernetes apiserver was updated to version %s.", newVersion.String())
+	r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ApiserverUpdated", "Reconciling", "Kubernetes apiserver was updated to version %s.", newVersion.String())
 
 	return nil
 }

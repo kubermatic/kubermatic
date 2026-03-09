@@ -315,12 +315,27 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: "example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: "kubermatic-envoy-gateway",
+				},
 			},
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:  defaulting.DefaultBackupStoreContainer,
 				BackupDeleteContainer: defaulting.DefaultBackupDeleteContainer,
+			},
+			Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
+				CatalogManager: kubermaticv1.CatalogManagerConfiguration{
+					Image: kubermaticv1.CatalogManagerImageConfiguration{
+						Repository: defaulting.DefaultApplicationManagerImageRepository,
+						Tag:        defaulting.DefaultApplicationManagerImageTag,
+					},
+					Apps: []string{
+						"cert-manager",
+						"argo-cd",
+					},
+				},
 			},
 		},
 	}

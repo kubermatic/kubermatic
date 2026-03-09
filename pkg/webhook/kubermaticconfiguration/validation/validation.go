@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -27,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -40,14 +38,9 @@ func NewValidator() *validator {
 	return &validator{}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.KubermaticConfiguration] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	config, ok := obj.(*kubermaticv1.KubermaticConfiguration)
-	if !ok {
-		return nil, errors.New("object is not a KubermaticConfiguration")
-	}
-
+func (v *validator) ValidateCreate(ctx context.Context, config *kubermaticv1.KubermaticConfiguration) (admission.Warnings, error) {
 	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to apply default values: %w", err)
@@ -56,13 +49,8 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 	return nil, validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	config, ok := newObj.(*kubermaticv1.KubermaticConfiguration)
-	if !ok {
-		return nil, errors.New("new object is not a KubermaticConfiguration")
-	}
-
-	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.KubermaticConfiguration) (admission.Warnings, error) {
+	defaulted, err := defaulting.DefaultConfiguration(newObj, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to apply default values: %w", err)
 	}
@@ -70,6 +58,6 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.KubermaticConfiguration) (admission.Warnings, error) {
 	return nil, nil
 }

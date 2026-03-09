@@ -46,7 +46,7 @@ func getInstanceProfile(ctx context.Context, client *iam.Client, name string) (*
 	return profileOut.InstanceProfile, nil
 }
 
-func reconcileWorkerInstanceProfile(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileWorkerInstanceProfile(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, accessKeyID, secretAccessKey, region string) (*kubermaticv1.Cluster, error) {
 	// Even though the profile depends upon the role (the role is assigned to it),
 	// the decision whether or not to reconcile any role depends on whether KKP
 	// owns the profile. If a user-supplied profile is used, then no role will
@@ -65,7 +65,7 @@ func reconcileWorkerInstanceProfile(ctx context.Context, client *iam.Client, clu
 	// if we own the profile, we must also take care of the worker role
 	if hasIAMTag(iamOwnershipTag(cluster.Name), profile.Tags) {
 		// ensure the role exists
-		if _, err := reconcileWorkerRole(ctx, client, cluster); err != nil {
+		if _, err := reconcileWorkerRole(ctx, client, cluster, accessKeyID, secretAccessKey, region); err != nil {
 			return nil, fmt.Errorf("failed to reconcile worker role: %w", err)
 		}
 

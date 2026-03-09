@@ -29,7 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -42,7 +42,7 @@ const ControllerName = "kkp-seed-up-to-date-synchronizer"
 type reconciler struct {
 	log        *zap.SugaredLogger
 	client     ctrlruntimeclient.Client
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	workerName string
 	versions   kubermatic.Versions
 }
@@ -58,7 +58,7 @@ func Add(
 	r := &reconciler{
 		log:        log.Named(ControllerName),
 		client:     mgr.GetClient(),
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		recorder:   mgr.GetEventRecorder(ControllerName),
 		workerName: workerName,
 		versions:   versions,
 	}
@@ -94,7 +94,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here so we can emit an event on error
 	err := r.reconcile(ctx, cluster)
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

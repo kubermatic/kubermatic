@@ -342,8 +342,17 @@ func (v *vSphereSimulator) tearDown() {
 func (v *vSphereSimulator) fillClientInfo(dc *kubermaticv1.DatacenterSpecVSphere) {
 	dc.Endpoint = strings.TrimSuffix(v.server.URL.String(), "/sdk")
 	dc.InfraManagementUser = &kubermaticv1.VSphereCredentials{
-		Username: simulator.DefaultLogin.Username(),
+		Username: v.username(),
+		Password: v.password(),
 	}
-	dc.InfraManagementUser.Password, _ = simulator.DefaultLogin.Password()
 	dc.Datacenter = "DC0"
+}
+
+func (v *vSphereSimulator) username() string {
+	return simulator.DefaultLogin.Username()
+}
+
+func (v *vSphereSimulator) password() string {
+	password, _ := simulator.DefaultLogin.Password()
+	return password
 }

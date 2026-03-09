@@ -20,16 +20,17 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,6 +59,11 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, namespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	// label the `dex` namespace to allow HTTPRoute attachment to the kubermatic Gateway.
+	if err := util.EnsureNamespaceLabel(ctx, kubeClient, namespace, common.GatewayAccessLabelKey, "true"); err != nil {
+		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, namespace, releaseName)

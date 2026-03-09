@@ -63,6 +63,12 @@ spec:
         {{- if .Values.kubermaticOperator.leaderElection }}
         - -enable-leader-election
         {{- end }}
+        {{- if .Values.migrateGatewayAPI }}
+        - -enable-gateway-api
+        {{- with .Values.kubermaticOperator.httpRouteWatchNamespaces }}
+        - -httproute-watch-namespaces={{ join "," . }}
+        {{- end }}
+        {{- end }}
         env:
         - name: SSL_CERT_FILE
           value: /opt/ca-bundle/ca-bundle.pem

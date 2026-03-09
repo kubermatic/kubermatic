@@ -18,7 +18,7 @@
 # For usage instructions and details on adding new charts or mirroring new versions,
 # refer to the accompanying README.
 
-set -euo pipefail
+set -eo pipefail
 
 # ─── Default registry and repo ────────────────────────────────────────────────
 REGISTRY_HOST="${REGISTRY_HOST:-quay.io}"
@@ -33,6 +33,8 @@ declare -A CHART_URLS=(
   ["aikit"]="https://sozercan.github.io/aikit/charts/aikit-%s.tgz"
   ["argo-cd"]="https://github.com/argoproj/argo-helm/releases/download/argo-cd-%s/argo-cd-%s.tgz"
   ["cert-manager"]="https://charts.jetstack.io/charts/cert-manager-%s.tgz"
+  # envoy gateway helm charts
+  ["gateway-helm"]="oci://docker.io/envoyproxy/gateway-helm"
   ["falco"]="https://github.com/falcosecurity/charts/releases/download/falco-%s/falco-%s.tgz"
   ["flux2"]="https://github.com/fluxcd-community/helm-charts/releases/download/flux2-%s/flux2-%s.tgz"
   ["k8sgpt-operator"]="https://charts.k8sgpt.ai/k8sgpt-operator-%s.tgz"
@@ -44,34 +46,42 @@ declare -A CHART_URLS=(
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
   ["kueue"]="oci://registry.k8s.io/kueue/charts/kueue"
+  ["mcp-server-kubernetes"]="oci://ghcr.io/flux159/mcp-server-kubernetes"
+  ["velero"]="https://github.com/vmware-tanzu/velero/releases/download/velero-%s/velero-%s.tgz"
 )
 
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.18.2"
+  ["cilium"]="1.18.6"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
   ["cert-manager"]="v1.17.2"
-  ["falco"]="4.21.2"
+  ["gateway-helm"]="v1.7.0" # envoy gateway
+  ["falco"]="8.0.1"
   ["flux2"]="2.15.0"
   ["k8sgpt-operator"]="0.2.17"
   ["kube-vip"]="0.6.6"
   ["metallb"]="0.14.9"
-  ["ingress-nginx"]="4.12.2"
+  ["ingress-nginx"]="4.14.3"
   ["gpu-operator"]="v25.3.0"
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
   ["kueue"]="0.13.4"
+  ["mcp-server-kubernetes"]="2.9.9"
+  ["velero"]="1.17.1"
 )
+
+# Re-enable unset variable checking after array declarations
+set -u
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
   echo "Usage: $0 <chart-name> [version (optional)]"
   echo "Supported charts:"
-  for key in "${!CHART_CONFIGS[@]}"; do echo "  - $key"; done
+  for key in "${!CHART_URLS[@]}"; do echo "  - $key"; done
   echo
   echo "Environment overrides:"
   echo "  REGISTRY_HOST        OCI registry host (default: quay.io)"
@@ -93,7 +103,7 @@ parse_args() {
   CHART_NAME="$1"
   CHART_VERSION="${2:-}"
 
-  if [[ ! -v "CHART_URLS[$CHART_NAME]" ]]; then
+  if [[ -z "${CHART_URLS[$CHART_NAME]:-}" ]]; then
     echo "Error: Unsupported chart '$CHART_NAME'"
     usage
   fi

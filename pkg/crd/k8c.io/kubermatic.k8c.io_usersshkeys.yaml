@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
     kubermatic.k8c.io/location: master,seed
   name: usersshkeys.kubermatic.k8c.io
 spec:
@@ -71,6 +71,7 @@ spec:
                 owner:
                   description: |-
                     Owner is the name of the User object that owns this SSH key.
+
                     Deprecated: This field is not used anymore.
                   type: string
                 project:

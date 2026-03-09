@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -58,14 +58,14 @@ type Network struct {
 
 type reconciler struct {
 	ctrlruntimeclient.Client
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	cidrRanges []Network
 	log        *zap.SugaredLogger
 }
 
 func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) error {
 	reconciler := &reconciler{Client: mgr.GetClient(),
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		recorder:   mgr.GetEventRecorder(ControllerName),
 		cidrRanges: cidrRanges,
 		log:        log,
 	}
@@ -89,7 +89,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, log, machine)
 	if err != nil {
-		r.recorder.Event(machine, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(machine, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

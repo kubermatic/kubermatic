@@ -53,7 +53,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -78,7 +78,7 @@ type reconciler struct {
 	ctrlruntimeclient.Client
 
 	workerName                    string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	seedGetter                    provider.SeedGetter
 	projectsGetter                provider.ProjectsGetter
 	userClusterConnectionProvider UserClusterClientProvider
@@ -92,7 +92,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		recorder:                      mgr.GetEventRecorder(ControllerName),
 		seedGetter:                    seedGetter,
 		projectsGetter:                projectsGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
@@ -180,7 +180,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

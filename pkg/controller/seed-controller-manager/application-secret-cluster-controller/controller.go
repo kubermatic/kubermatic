@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -59,7 +59,7 @@ const (
 type reconciler struct {
 	client              ctrlruntimeclient.Client
 	log                 *zap.SugaredLogger
-	recorder            record.EventRecorder
+	recorder            events.EventRecorder
 	workerName          string
 	namespace           string
 	workerlabelSelector labels.Selector
@@ -100,7 +100,7 @@ func Add(
 		log:                 log.Named(ControllerName),
 		client:              mgr.GetClient(),
 		workerName:          workerName,
-		recorder:            mgr.GetEventRecorderFor(ControllerName),
+		recorder:            mgr.GetEventRecorder(ControllerName),
 		namespace:           namespace,
 		workerlabelSelector: workerlabelSelector,
 	}
@@ -133,7 +133,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, log, secret)
 	if err != nil {
-		r.recorder.Event(secret, corev1.EventTypeWarning, "SecretReconcileFailed", err.Error())
+		r.recorder.Eventf(secret, nil, corev1.EventTypeWarning, "SecretReconcileFailed", "Reconciling", err.Error())
 	}
 
 	log.Debug("Processed")

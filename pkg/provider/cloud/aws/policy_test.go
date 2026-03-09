@@ -28,8 +28,9 @@ import (
 )
 
 var (
-	update      = flag.Bool("update", false, "update .golden files")
-	clusterName = "kramer"
+	update         = flag.Bool("update", false, "update .golden files")
+	clusterName    = "kramer"
+	dummyAccountID = "000000000000" // Dummy AWS account ID for testing
 )
 
 func TestGetControlPlanePolicy(t *testing.T) {
@@ -48,6 +49,17 @@ func TestGetWorkerPolicy(t *testing.T) {
 	}
 
 	testGetPolicy(t, clusterName+"-worker", policy)
+}
+
+func TestGetAssumeRolePolicy(t *testing.T) {
+	t.Run("with-account-id", func(t *testing.T) {
+		policy, err := getAssumeRolePolicy(dummyAccountID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testGetPolicy(t, "assume-role-with-account", policy)
+	})
 }
 
 func testGetPolicy(t *testing.T, identifier string, policy string) {

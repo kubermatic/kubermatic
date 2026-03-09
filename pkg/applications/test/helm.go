@@ -32,7 +32,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/containerd/containerd/remotes/docker"
+	"github.com/containerd/containerd/v2/core/remotes/docker"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry"
 	"github.com/phayes/freeport"

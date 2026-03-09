@@ -21,26 +21,27 @@ package validation
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func validateCreate(_ context.Context,
-	_ runtime.Object,
+	_ *kubermaticv1.ResourceQuota,
 	_ ctrlruntimeclient.Client,
 ) error {
 	return nil
 }
 
 func validateUpdate(_ context.Context,
-	_ runtime.Object,
-	_ runtime.Object,
+	_ *kubermaticv1.ResourceQuota,
+	_ *kubermaticv1.ResourceQuota,
 ) error {
 	return nil
 }
 
 func validateDelete(_ context.Context,
-	_ runtime.Object,
+	_ *kubermaticv1.ResourceQuota,
 	_ ctrlruntimeclient.Client,
 ) error {
 	return nil

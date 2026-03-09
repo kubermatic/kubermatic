@@ -64,10 +64,14 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 
 			flags := []string{
 				"/bin/aws-cloud-controller-manager",
+				"--v=2",
+				"--cloud-provider=aws",
+				"--use-service-account-credentials=false",
+				"--configure-cloud-routes=false",
 				"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 				"--cloud-config=/etc/kubernetes/cloud/config",
-				"--cloud-provider=aws", "--configure-cloud-routes=false",
 				fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
+				"--leader-elect=true",
 			}
 
 			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
@@ -129,17 +133,17 @@ func AWSCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v130:
-		return "v1.30.3"
 	case v131:
 		return "v1.31.1"
 	case v132:
 		return "v1.32.1"
 	case v133:
-		fallthrough
+		return "v1.33.2"
 	case v134:
+		return "v1.34.0"
+	case v135:
 		fallthrough
 	default:
-		return "v1.33.0"
+		return "v1.35.0"
 	}
 }

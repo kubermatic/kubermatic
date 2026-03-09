@@ -55,7 +55,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
-	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
@@ -319,7 +318,6 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 
 func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedServiceAccountReconcilerFactory{
-		userauth.ServiceAccountReconciler(),
 		usersshkeys.ServiceAccountReconciler(),
 		coredns.ServiceAccountReconciler(),
 	}
@@ -421,7 +419,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	// default
 	creators = []reconciling.NamedRoleReconcilerFactory{
-		machinecontroller.EndpointReaderRoleReconciler(),
+		machinecontroller.EndpointSliceReaderRoleReconciler(),
 		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 
@@ -568,7 +566,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 
 func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		userauth.ClusterRoleBindingReconciler(),
 		kubestatemetrics.ClusterRoleBindingReconciler(),
 		prometheus.ClusterRoleBindingReconciler(),
 		machinecontroller.ClusterRoleBindingReconciler(),
@@ -987,7 +984,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
 		}
-		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
+		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(data.cluster, r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r); err != nil {

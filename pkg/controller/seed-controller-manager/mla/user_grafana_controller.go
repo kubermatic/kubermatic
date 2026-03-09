@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -37,9 +38,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
-	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -54,7 +54,7 @@ type userGrafanaReconciler struct {
 
 	log                   *zap.SugaredLogger
 	workerName            string
-	recorder              record.EventRecorder
+	recorder              events.EventRecorder
 	versions              kubermatic.Versions
 	userGrafanaController *userGrafanaController
 }
@@ -76,7 +76,7 @@ func newUserGrafanaReconciler(
 
 		log:                   log.Named(subname),
 		workerName:            workerName,
-		recorder:              mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:              mgr.GetEventRecorder(controllerName(subname)),
 		versions:              versions,
 		userGrafanaController: userGrafanaController,
 	}

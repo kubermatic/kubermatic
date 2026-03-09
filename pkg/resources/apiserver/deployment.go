@@ -56,6 +56,7 @@ var (
 	}
 
 	gte131, _ = semverlib.NewConstraint(">= 1.31")
+	lt135, _  = semverlib.NewConstraint("<= 1.34")
 )
 
 const (
@@ -474,9 +475,10 @@ func getApiserverFlags(
 	}
 
 	version := cluster.Status.Versions.Apiserver.Semver()
-	if gte131.Check(version) {
-		// enable recommended CEL cost feature gates (Kube 1.31+), as per
+	if gte131.Check(version) && lt135.Check(version) {
+		// enable recommended CEL cost feature gates (Kube 1.31-1.34), as per
 		// https://github.com/kubernetes/kubernetes/pull/124675
+		// Note: These feature gates were graduated to GA and removed in Kubernetes 1.35
 		featureGates = append(featureGates,
 			"StrictCostEnforcementForVAP=true",
 			"StrictCostEnforcementForWebhooks=true",

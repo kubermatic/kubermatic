@@ -6,6 +6,46 @@
 - [v2.28.3](#v2283)
 - [v2.28.4](#v2284)
 - [v2.28.5](#v2285)
+- [v2.28.6](#v2286)
+- [v2.28.7](#v2287)
+- [v2.28.8](#v2288)
+
+## v2.28.8
+
+**GitHub release: [v2.28.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.8)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.9/v1.32.13 ([#15545](https://github.com/kubermatic/kubermatic/pull/15545))
+
+### Bugfixes
+
+- Fix alertmanager service port name reference after upstream chart migration ([#15512](https://github.com/kubermatic/kubermatic/pull/15512))
+
+## v2.28.7
+
+**GitHub release: [v2.28.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.7)**
+
+### Supported Kubernetes Versions
+
+- Add support for the latest k8s patch release v1.33.8 and v1.32.12 ([#15466](https://github.com/kubermatic/kubermatic/pull/15466))
+
+### Bugfixes
+
+- Add optional Seed setting `spec.nodeportProxy.envoy.replicas` to configure the `nodeport-proxy-envoy` replica count. If unset, existing default behavior remains (`3` replicas) ([#15464](https://github.com/kubermatic/kubermatic/pull/15464))
+
+### Updates
+
+- Update nginx-ingress controller from 1.12.6 to 1.13.7 ([#15467](https://github.com/kubermatic/kubermatic/pull/15467))
+
+## v2.28.6
+
+**GitHub release: [v2.28.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.6)**
+
+### Updates
+
+- Update Go version to 1.24.12 ([#15325](https://github.com/kubermatic/kubermatic/pull/15325), [#7781](https://github.com/kubermatic/dashboard/pull/7781))
+- Users can now configure additional arguments to oauth2-proxy pods. (useful for seed and user-mla) ([#15279](https://github.com/kubermatic/kubermatic/pull/15279))
 
 ## v2.28.5
 

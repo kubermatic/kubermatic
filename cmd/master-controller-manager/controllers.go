@@ -28,6 +28,7 @@ import (
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	encryptionsecretsynchonizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/encryption-secret-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	httproutegatewaysync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/httproute-gateway-sync"
 	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
@@ -131,6 +132,12 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
+	}
+
+	if ctrlCtx.featureGates.Enabled(features.HTTPRouteGatewaySync) {
+		if err := httproutegatewaysync.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.httprouteWatchNamespaces); err != nil {
+			return fmt.Errorf("failed to create httproute-gateway-sync controller: %w", err)
+		}
 	}
 
 	// init CE/EE-only controllers

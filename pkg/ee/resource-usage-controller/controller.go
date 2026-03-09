@@ -42,7 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -57,7 +57,7 @@ type reconciler struct {
 	userClient      ctrlruntimeclient.Client
 	clusterName     string
 	caBundle        *certificates.CABundle
-	recorder        record.EventRecorder
+	recorder        events.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
@@ -71,7 +71,7 @@ func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName s
 		userClient:      userMgr.GetClient(),
 		clusterName:     clusterName,
 		caBundle:        caBundle,
-		recorder:        userMgr.GetEventRecorderFor(controllerName),
+		recorder:        userMgr.GetEventRecorder(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
 
@@ -109,7 +109,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, cluster, machines)
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ClusterResourceUsageReconcileFailed", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ClusterResourceUsageReconcileFailed", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

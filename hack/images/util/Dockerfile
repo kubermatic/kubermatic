@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.19
+FROM docker.io/alpine:3.23
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/util/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
 ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
-    KUBECTL_VERSION=v1.33.4 \
+    KUBECTL_VERSION=v1.35.0 \
     # https://github.com/helm/helm/releases
     HELM_VERSION=v3.18.5 \
     # https://github.com/hashicorp/vault/releases

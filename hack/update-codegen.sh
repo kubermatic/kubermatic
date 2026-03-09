@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.25-node-22-4 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.25-node-22-8 containerize ./hack/update-codegen.sh
 
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
@@ -50,6 +50,7 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 annotation="kubermatic.k8c.io/location"
 declare -A locationMap=(
   ["applicationdefinitions.apps.kubermatic.k8c.io"]="master,seed"
+  ["applicationcatalogs.applicationcatalog.k8c.io"]="master,seed"
   ["applicationinstallations.apps.kubermatic.k8c.io"]="usercluster"
   ["addonconfigs.kubermatic.k8c.io"]="master"
   ["addons.kubermatic.k8c.io"]="master,seed"

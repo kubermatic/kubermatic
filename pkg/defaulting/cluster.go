@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -46,7 +47,15 @@ import (
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically), but the Seed
 // does not yet need to be defaulted (to the values of the KubermaticConfiguration).
-func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
+func DefaultClusterSpec(
+	ctx context.Context,
+	spec *kubermaticv1.ClusterSpec,
+	clusterAnnotations map[string]string,
+	template *kubermaticv1.ClusterTemplate,
+	seed *kubermaticv1.Seed,
+	config *kubermaticv1.KubermaticConfiguration,
+	cloudProvider provider.CloudProvider,
+) error {
 	var err error
 
 	// Apply default values to the Seed, just in case.
@@ -95,23 +104,24 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		return fieldErr
 	}
 
-	// Set the audit logging settings
-	if seed.Spec.AuditLogging != nil {
-		spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
-		(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
-	}
+	// Set the audit logging settings (skip if cluster has opt-out annotation)
+	if clusterAnnotations[kubermaticv1.SkipAuditLoggingEnforcementAnnotation] != "true" {
+		// Only apply seed/datacenter audit logging when enforcement is enabled.
+		// Without this guard, the webhook would overwrite changes made by the
+		// audit-logging-enforcement controller when enforcement is off.
+		if datacenter.Spec.EnforceAuditLogging {
+			if seed.Spec.AuditLogging != nil {
+				spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
+				(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
+			} else if spec.AuditLogging == nil {
+				spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
+			}
+			spec.AuditLogging.Enabled = true
 
-	// Enforce audit logging
-	if datacenter.Spec.EnforceAuditLogging {
-		if spec.AuditLogging == nil {
-			spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
+			if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
+				spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
+			}
 		}
-		spec.AuditLogging.Enabled = true
-	}
-
-	// Enforce audit webhook backend
-	if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
-		spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
 	}
 
 	// Enforce PodSecurityPolicy
@@ -160,6 +170,9 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		spec.Kyverno.Enabled = true
 	}
 
+	// Default EventRateLimit admission plugin from global config
+	defaultEventRateLimitPlugin(spec, config)
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		if spec.Cloud.Edge != nil {
@@ -178,7 +191,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// default cluster networking parameters
-	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
+	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy, spec.Version)
 	return nil
 }
 
@@ -218,7 +231,7 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
 
-func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy) kubermaticv1.ClusterNetworkingConfig {
+func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy, clusterVersion semver.Semver) kubermaticv1.ClusterNetworkingConfig {
 	if specClusterNetwork.IPFamily == "" {
 		if len(specClusterNetwork.Pods.CIDRBlocks) < 2 {
 			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)
@@ -252,7 +265,7 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 	}
 
 	if specClusterNetwork.ProxyMode == "" {
-		specClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider)
+		specClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, clusterVersion)
 	}
 
 	if specClusterNetwork.ProxyMode == resources.IPVSProxyMode {
@@ -279,4 +292,38 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 	}
 
 	return specClusterNetwork
+}
+
+// defaultEventRateLimitPlugin applies global EventRateLimit admission plugin settings to the cluster spec.
+func defaultEventRateLimitPlugin(spec *kubermaticv1.ClusterSpec, config *kubermaticv1.KubermaticConfiguration) {
+	if config == nil || config.Spec.UserCluster.AdmissionPlugins == nil ||
+		config.Spec.UserCluster.AdmissionPlugins.EventRateLimit == nil {
+		return
+	}
+
+	erl := config.Spec.UserCluster.AdmissionPlugins.EventRateLimit
+	isEnforced := erl.Enforced != nil && *erl.Enforced
+
+	isEnabled := spec.IsEventRateLimitAdmissionPluginEnabled()
+
+	// If enforced, enable the plugin
+	if isEnforced {
+		spec.UseEventRateLimitAdmissionPlugin = true
+		isEnabled = true
+	}
+
+	// Apply enabled default if not already enabled
+	if !isEnabled && erl.Enabled != nil && *erl.Enabled {
+		spec.UseEventRateLimitAdmissionPlugin = true
+		isEnabled = true
+	}
+
+	// Apply configuration:
+	// - If enforced AND defaultConfig is set: always apply (overwrite user config)
+	// - If not enforced: only apply if user hasn't specified config
+	if isEnabled && erl.DefaultConfig != nil {
+		if isEnforced || spec.EventRateLimitConfig == nil {
+			spec.EventRateLimitConfig = erl.DefaultConfig.DeepCopy()
+		}
+	}
 }

@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -52,7 +52,7 @@ const (
 type reconcileServiceAccountProjectBinding struct {
 	ctrlruntimeclient.Client
 
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 	log      *zap.SugaredLogger
 }
 
@@ -60,7 +60,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	r := &reconcileServiceAccountProjectBinding{
 		Client: mgr.GetClient(),
 
-		recorder: mgr.GetEventRecorderFor(controllerName),
+		recorder: mgr.GetEventRecorder(controllerName),
 		log:      log,
 	}
 
@@ -120,7 +120,7 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, r
 
 	err := r.reconcile(ctx, log, sa)
 	if err != nil {
-		r.recorder.Event(sa, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(sa, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

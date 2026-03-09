@@ -38,7 +38,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -55,7 +55,7 @@ const controllerName = "kkp-resource-quota-label-owner-controller"
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 }
 
 func Add(
@@ -67,7 +67,7 @@ func Add(
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		recorder:     masterMgr.GetEventRecorderFor(controllerName),
+		recorder:     masterMgr.GetEventRecorder(controllerName),
 	}
 
 	_, err := builder.ControllerManagedBy(masterMgr).

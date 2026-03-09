@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -28,6 +29,7 @@ import (
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -63,6 +65,38 @@ type Options struct {
 	// When the value is less or equal than 0 the HTTP/2 CONNECT Listener is
 	// disabled and won't be configured in Envoy.
 	EnvoyTunnelingListenerPort int
+
+	// The following connection settings are optional Envoy overrides.
+	// Zero values leave the corresponding Envoy fields unset.
+	// SNIListenerIdleTimeout bounds how long inactive SNI listener downstream
+	// TCP connections are kept open.
+	SNIListenerIdleTimeout time.Duration
+	// TunnelingConnectionIdleTimeout bounds how long inactive tunneling
+	// listener downstream connections are kept open.
+	TunnelingConnectionIdleTimeout time.Duration
+	// TunnelingConnectionStreamTimeout bounds how long inactive HTTP/2 CONNECT
+	// streams on the tunneling listener are kept open.
+	TunnelingConnectionStreamTimeout time.Duration
+
+	// DownstreamTCPKeepaliveTime configures idle time before downstream
+	// listener sockets send TCP keepalive probes.
+	DownstreamTCPKeepaliveTime time.Duration
+	// DownstreamTCPKeepaliveInterval configures interval between downstream
+	// listener keepalive probes.
+	DownstreamTCPKeepaliveInterval time.Duration
+	// DownstreamTCPKeepaliveProbes configures how many unanswered downstream
+	// keepalive probes are allowed before the socket is considered dead.
+	DownstreamTCPKeepaliveProbes int
+
+	// UpstreamTCPKeepaliveTime configures idle time before upstream cluster
+	// sockets send TCP keepalive probes.
+	UpstreamTCPKeepaliveTime time.Duration
+	// UpstreamTCPKeepaliveProbeInterval configures interval between upstream
+	// keepalive probes.
+	UpstreamTCPKeepaliveProbeInterval time.Duration
+	// UpstreamTCPKeepaliveProbeAttempts configures how many unanswered upstream
+	// keepalive probes are allowed before the socket is considered dead.
+	UpstreamTCPKeepaliveProbeAttempts int
 }
 
 func (o Options) IsSNIEnabled() bool {
@@ -71,6 +105,70 @@ func (o Options) IsSNIEnabled() bool {
 
 func (o Options) IsTunnelingEnabled() bool {
 	return o.EnvoyTunnelingListenerPort > 0
+}
+
+func (o Options) HasSNIListenerIdleTimeout() bool {
+	return o.SNIListenerIdleTimeout > 0
+}
+
+func (o Options) GetSNIListenerIdleTimeout() time.Duration {
+	return o.SNIListenerIdleTimeout
+}
+
+func (o Options) HasTunnelingConnectionIdleTimeout() bool {
+	return o.TunnelingConnectionIdleTimeout > 0
+}
+
+func (o Options) GetTunnelingConnectionIdleTimeout() time.Duration {
+	return o.TunnelingConnectionIdleTimeout
+}
+
+func (o Options) HasTunnelingConnectionStreamTimeout() bool {
+	return o.TunnelingConnectionStreamTimeout > 0
+}
+
+func (o Options) GetTunnelingConnectionStreamTimeout() time.Duration {
+	return o.TunnelingConnectionStreamTimeout
+}
+
+func (o Options) HasDownstreamTCPKeepalive() bool {
+	return o.DownstreamTCPKeepaliveTime > 0 || o.DownstreamTCPKeepaliveInterval > 0 || o.DownstreamTCPKeepaliveProbes > 0
+}
+
+func (o Options) GetDownstreamTCPKeepaliveTime() time.Duration {
+	return o.DownstreamTCPKeepaliveTime
+}
+
+func (o Options) GetDownstreamTCPKeepaliveInterval() time.Duration {
+	return o.DownstreamTCPKeepaliveInterval
+}
+
+func (o Options) GetDownstreamTCPKeepaliveProbes() uint32 {
+	if o.DownstreamTCPKeepaliveProbes <= 0 {
+		return 0
+	}
+
+	return uint32(o.DownstreamTCPKeepaliveProbes)
+}
+
+func (o Options) HasUpstreamTCPKeepalive() bool {
+	return o.UpstreamTCPKeepaliveTime > 0 || o.UpstreamTCPKeepaliveProbeInterval > 0 || o.UpstreamTCPKeepaliveProbeAttempts > 0
+}
+
+func (o Options) GetUpstreamTCPKeepaliveTime() time.Duration {
+	return o.UpstreamTCPKeepaliveTime
+}
+
+func (o Options) GetUpstreamTCPKeepaliveProbeInterval() time.Duration {
+	return o.UpstreamTCPKeepaliveProbeInterval
+}
+
+func (o Options) GetUpstreamTCPKeepaliveProbeAttempts() uint32 {
+	if o.UpstreamTCPKeepaliveProbeAttempts <= 0 {
+		return 0
+	}
+
+	return uint32(o.UpstreamTCPKeepaliveProbeAttempts)
 }
 
 // NewReconciler returns a new Reconciler or an error if something goes wrong
@@ -132,16 +230,18 @@ func (r *Reconciler) sync(ctx context.Context) error {
 
 		ets := extractExposeTypes(&service, r.options.ExposeAnnotationKey)
 
-		// Get associated endpoints
-		eps := corev1.Endpoints{}
-		if err := r.client.Get(ctx, types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("failed to get endpoints for service '%s': %w", svcKey, err)
+		// Get associated endpoint slices
+		epSlices := discoveryv1.EndpointSliceList{}
+		if err := r.client.List(ctx, &epSlices,
+			ctrlruntimeclient.InNamespace(service.Namespace),
+			ctrlruntimeclient.MatchingLabels{discoveryv1.LabelServiceName: service.Name}); err != nil {
+			return fmt.Errorf("failed to list endpointslices for service '%s': %w", svcKey, err)
+		}
+		if len(epSlices.Items) == 0 {
+			continue
 		}
 		// Add service to the service builder
-		sb.addService(&service, &eps, ets)
+		sb.addService(&service, &epSlices, ets)
 	}
 
 	// Get current snapshot
@@ -206,23 +306,35 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.options.ExposeAnnotationKey, log: r.log})).
-		Watches(&corev1.Endpoints{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler())).
+		Watches(&discoveryv1.EndpointSlice{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointSliceHandler())).
 		Complete(r)
 }
 
-func (r *Reconciler) newEndpointHandler() handler.MapFunc {
+func (r *Reconciler) newEndpointSliceHandler() handler.MapFunc {
 	return func(ctx context.Context, obj ctrlruntimeclient.Object) []ctrlruntime.Request {
-		svcName := types.NamespacedName{
-			Name:      obj.GetName(),
-			Namespace: obj.GetNamespace(),
+		epSlice, ok := obj.(*discoveryv1.EndpointSlice)
+		if !ok {
+			return nil
 		}
-		// Get the service associated to the Endpoints
+
+		// Get service name from the EndpointSlice label
+		serviceName, ok := epSlice.Labels[discoveryv1.LabelServiceName]
+		if !ok {
+			return nil
+		}
+
+		svcName := types.NamespacedName{
+			Name:      serviceName,
+			Namespace: epSlice.Namespace,
+		}
+
+		// Get the service associated to the EndpointSlice
 		svc := corev1.Service{}
 		if err := r.client.Get(ctx, svcName, &svc); err != nil {
-			// Avoid enqueuing events for endpoints that do not have an associated
+			// Avoid enqueuing events for endpointslices that do not have an associated
 			// service (e.g. leader election).
 			if !apierrors.IsNotFound(err) {
-				r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+				r.log.Errorw("error occurred while mapping endpointslice to service", "endpointslice", obj.GetName())
 			}
 			return nil
 		}

@@ -28,7 +28,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -47,19 +46,16 @@ func NewValidator(seedGetter provider.SeedGetter, seedClientGetter provider.Seed
 	}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.IPAMPool] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateCreate(ctx context.Context, obj *kubermaticv1.IPAMPool) (admission.Warnings, error) {
 	return nil, v.validate(ctx, obj)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	if err := v.validate(ctx, newObj); err != nil {
+func (v *validator) ValidateUpdate(ctx context.Context, oldIPAMPool, newIPAMPool *kubermaticv1.IPAMPool) (admission.Warnings, error) {
+	if err := v.validate(ctx, newIPAMPool); err != nil {
 		return nil, err
 	}
-
-	newIPAMPool := newObj.(*kubermaticv1.IPAMPool)
-	oldIPAMPool := oldObj.(*kubermaticv1.IPAMPool)
 
 	// loop old IPAMPool datacenters
 	for dc, dcOldConfig := range oldIPAMPool.Spec.Datacenters {
@@ -100,17 +96,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, nil
 }
 
-func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(_ context.Context, _ *kubermaticv1.IPAMPool) (admission.Warnings, error) {
 	// NOP we allow delete operation
 	return nil, nil
 }
 
-func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
-	ipamPool, ok := obj.(*kubermaticv1.IPAMPool)
-	if !ok {
-		return errors.New("object is not a IPAMPool")
-	}
-
+func (v *validator) validate(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
 	for _, dcConfig := range ipamPool.Spec.Datacenters {
 		_, poolSubnet, err := net.ParseCIDR(string(dcConfig.PoolCIDR))
 		if err != nil {

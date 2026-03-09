@@ -44,7 +44,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -55,17 +55,23 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	log        *zap.SugaredLogger
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	scheme     *runtime.Scheme
 	workerName string
 	versions   kubermaticversion.Versions
+	// gatewayAPIEnabled indicates whether Gateway API resources should be created or not
+	// by kubermatic-operator controllers.
+	// It will create Gateway and HTTPRoute resources when enabled for Kubermatic API and Dashboard.
+	// It will be by default true in the future releases as Gateway API becomes the default.
+	gatewayAPIEnabled bool
+	// httprouteWatchNamespaces is a list of namespaces to watch HTTPRoutes for Gateway listener sync.
+	httprouteWatchNamespaces []string
 }
 
 // Reconcile acts upon requests and will restore the state of resources
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	// find the requested configuration
 	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -84,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, config, logger)
 	if err != nil {
-		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(config, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -108,6 +114,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	defaulted, err := defaulting.DefaultConfiguration(config, logger)
 	if err != nil {
 		return fmt.Errorf("failed to apply defaults: %w", err)
+	}
+
+	if err := r.reconcileCRDs(ctx, logger); err != nil {
+		return err
 	}
 
 	if err := r.reconcileServiceAccounts(ctx, defaulted, logger); err != nil {
@@ -154,6 +164,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileGatewayAPIResources(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	if err := r.reconcileValidatingWebhooks(ctx, defaulted, logger); err != nil {
 		return err
 	}
@@ -167,6 +181,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	if err := r.reconcileApplicationDefinitions(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
+	if err := r.reconcileApplicationCatalog(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
@@ -230,8 +248,42 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, l *zap.SugaredLogger) error {
 	l.Debug("Cleaning up application catalog manager resources")
 
+	err := applicationcatalogmanager.CleanupApplicationCatalogs(ctx, r.Client, l)
+	if err != nil {
+		return fmt.Errorf("failed to clean up ApplicationCatalogs: %w", err)
+	}
+
+	// clean up webhook configurations first to prevent blocking deletions
+	err = common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, applicationcatalogmanager.ApplicationCatalogAdmissionWebhookName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog validating webhook: %w", err)
+	}
+
+	err = common.CleanupClusterResource(ctx, r, &admissionregistrationv1.MutatingWebhookConfiguration{}, applicationcatalogmanager.ApplicationCatalogAdmissionWebhookName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog mutating webhook: %w", err)
+	}
+
+	webhookDeploymentName, _ := applicationcatalogmanager.CatalogWebhookDeploymentReconciler(cfg)()
+	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, webhookDeploymentName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog webhook Deployment: %w", err)
+	}
+
+	webhookServiceName, _ := applicationcatalogmanager.CatalogWebhookServiceReconciler(cfg)()
+	err = r.cleanupNamespacedResource(ctx, &corev1.Service{}, cfg.Namespace, webhookServiceName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog webhook Service: %w", err)
+	}
+
+	deploymentName, _ := applicationcatalogmanager.CatalogManagerDeploymentReconciler(cfg)()
+	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, deploymentName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager Deployment: %w", err)
+	}
+
 	clusterRoleName, _ := applicationcatalogmanager.ClusterRoleReconciler(cfg)()
-	err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRole{}, clusterRoleName)
+	err = common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRole{}, clusterRoleName)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to clean up application catalog manager ClusterRole: %w", err)
 	}
@@ -240,12 +292,6 @@ func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Conte
 	err = common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, clusterRoleBindingName)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
-	}
-
-	serviceAccountName, _ := applicationcatalogmanager.ServiceAccountReconciler()()
-	err = r.cleanupNamespacedResource(ctx, &corev1.ServiceAccount{}, cfg.Namespace, serviceAccountName)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to clean up application catalog manager ServiceAccount: %w", err)
 	}
 
 	roleName, _ := applicationcatalogmanager.RoleReconciler()()
@@ -260,15 +306,15 @@ func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Conte
 		return fmt.Errorf("failed to clean up application catalog manager RoleBinding: %w", err)
 	}
 
-	deploymentName, _ := applicationcatalogmanager.CatalogManagerDeploymentReconciler(cfg)()
-	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, deploymentName)
+	serviceAccountName, _ := applicationcatalogmanager.ServiceAccountReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &corev1.ServiceAccount{}, cfg.Namespace, serviceAccountName)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to clean up application catalog manager Deployment: %w", err)
+		return fmt.Errorf("failed to clean up application catalog manager ServiceAccount: %w", err)
 	}
 
-	err = r.reconcileAppDefManagementMeta(ctx)
+	err = r.reconcileAppDefCatalogLabels(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update ApplicationDefinitions metadata: %w", err)
+		return fmt.Errorf("failed to remove catalog-managed labels from ApplicationDefinitions: %w", err)
 	}
 
 	return nil
@@ -285,6 +331,19 @@ func (r *Reconciler) cleanupNamespacedResource(ctx context.Context, obj ctrlrunt
 
 	if err := r.Delete(ctx, obj); err != nil {
 		return fmt.Errorf("failed to delete %s: %w", key, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCRDs(ctx context.Context, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling CRDs")
+
+	var creators []kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory
+	creators = append(creators, applicationcatalogmanager.ApplicationCatalogCRDReconciler())
+
+	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile CRDs: %w", err)
 	}
 
 	return nil
@@ -308,9 +367,14 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermatic
 func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Secrets")
 
+	var additionalWebhookServiceNames []string
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		additionalWebhookServiceNames = append(additionalWebhookServiceNames, applicationcatalogmanager.ApplicationCatalogWebhookServiceName)
+	}
+
 	reconcilers := []reconciling.NamedSecretReconcilerFactory{
 		common.WebhookServingCASecretReconciler(config),
-		common.WebhookServingCertSecretReconciler(ctx, config, r.Client),
+		common.WebhookServingCertSecretReconciler(ctx, config, r.Client, additionalWebhookServiceNames...),
 	}
 
 	if config.Spec.ImagePullSecret != "" {
@@ -420,7 +484,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	logger.Debug("Reconciling Deployments")
 
 	reconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubermatic.MasterControllerManagerDeploymentReconciler(config, r.workerName, r.versions),
+		kubermatic.MasterControllerManagerDeploymentReconciler(config, r.workerName, r.versions, r.httprouteWatchNamespaces),
 		common.WebhookDeploymentReconciler(config, r.versions, nil, false),
 	}
 
@@ -432,7 +496,10 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	}
 
 	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
-		reconcilers = append(reconcilers, applicationcatalogmanager.CatalogManagerDeploymentReconciler(config))
+		reconcilers = append(reconcilers,
+			applicationcatalogmanager.CatalogManagerDeploymentReconciler(config),
+			applicationcatalogmanager.CatalogWebhookDeploymentReconciler(config),
+		)
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -488,6 +555,10 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 		)
 	}
 
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.CatalogWebhookServiceReconciler(config))
+	}
+
 	if err := reconciling.ReconcileServices(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
@@ -498,6 +569,11 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if config.Spec.Ingress.Disable {
 		logger.Debug("Skipping Ingress creation because it was explicitly disabled")
+		return nil
+	}
+
+	if r.gatewayAPIEnabled {
+		logger.Debug("Skipping Ingress creation because Gateway API is enabled via --enable-gateway-api flag")
 		return nil
 	}
 
@@ -514,6 +590,38 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 
 	if err := reconciling.ReconcileIngresses(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if !r.gatewayAPIEnabled {
+		logger.Debug("Skipping Gateway API resources creation because Gateway API is not enabled via --enable-gateway-api flag")
+		return nil
+	}
+
+	if config.Spec.FeatureGates[features.HeadlessInstallation] {
+		logger.Debug("Headless installation requested, skipping.")
+		return nil
+	}
+
+	logger.Debug("Reconciling Gateway API resources, Gateways and HTTPRoutes")
+
+	// Label namespace for Gateway access before reconciling Gateway/HTTPRoute
+	namespaceReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
+		kubermatic.NamespaceReconciler(config.Namespace),
+	}
+	if err := reconciling.ReconcileNamespaces(ctx, namespaceReconcilers, "", r.Client); err != nil {
+		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
+	}
+
+	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace); err != nil {
+		return fmt.Errorf("failed to reconcile Gateway: %w", err)
+	}
+
+	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace); err != nil {
+		return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 	}
 
 	return nil
@@ -537,6 +645,10 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		reconcilers = append(reconcilers, kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.ApplicationCatalogValidatingWebhookConfigurationReconciler(ctx, config, r.Client))
+	}
+
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
 	}
@@ -554,6 +666,10 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 
 	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
 		reconcilers = append(reconcilers, kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client))
+	}
+
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.ApplicationCatalogMutatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
@@ -611,11 +727,25 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	return nil
 }
 
-// reconcileAppDefManagementMeta reconciles existing ApplicationDefinition resources in the cluster
-// when the out-tree application-catalog manager is being deleted.
-// It sets "apps.k8c.io/managed-by-external-manager" annotation to false since the application-catalog
-// is being removed.
-func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
+func (r *Reconciler) reconcileApplicationCatalog(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if !config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		logger.Debug("External Application Catalog Manager is disabled, skipping ApplicationCatalog CR reconciliation")
+		return nil
+	}
+
+	logger.Debug("Reconciling default ApplicationCatalog CR")
+
+	if err := applicationcatalogmanager.ReconcileDefaultApplicationCatalog(ctx, config, r.Client, logger); err != nil {
+		return fmt.Errorf("failed to reconcile default ApplicationCatalog: %w", err)
+	}
+
+	return nil
+}
+
+// reconcileAppDefCatalogLabels removes catalog-managed labels from ApplicationDefinitions
+// when the application-catalog manager is being disabled. These labels would otherwise
+// block deletion via the ApplicationDefinition validating webhook.
+func (r *Reconciler) reconcileAppDefCatalogLabels(ctx context.Context) error {
 	apps := appskubermaticv1.ApplicationDefinitionList{}
 
 	err := r.List(ctx, &apps)
@@ -626,20 +756,21 @@ func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
 	var errs []error
 	for i := range apps.Items {
 		app := apps.Items[i]
+
+		if app.Labels == nil {
+			continue
+		}
+
+		_, hasManagedBy := app.Labels[applicationcatalogmanager.LabelManagedByApplicationCatalog]
+		_, hasCatalogName := app.Labels[applicationcatalogmanager.LabelApplicationCatalogName]
+
+		if !hasManagedBy && !hasCatalogName {
+			continue
+		}
+
 		oldApp := app.DeepCopy()
-
-		anns := app.Annotations
-		if anns == nil {
-			continue
-		}
-
-		_, exists := app.Annotations[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation]
-		if !exists {
-			continue
-		}
-
-		anns[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation] = "false"
-		app.SetAnnotations(anns)
+		delete(app.Labels, applicationcatalogmanager.LabelManagedByApplicationCatalog)
+		delete(app.Labels, applicationcatalogmanager.LabelApplicationCatalogName)
 
 		err = r.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp))
 		if err != nil {

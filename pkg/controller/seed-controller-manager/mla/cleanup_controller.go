@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +51,7 @@ func newCleanupReconciler(
 		Client:            client,
 		log:               log.Named(subname),
 		workerName:        workerName,
-		recorder:          mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:          mgr.GetEventRecorder(controllerName(subname)),
 		versions:          versions,
 		cleanupController: cleanupController,
 	}
@@ -75,7 +75,7 @@ type cleanupReconciler struct {
 	ctrlruntimeclient.Client
 	log               *zap.SugaredLogger
 	workerName        string
-	recorder          record.EventRecorder
+	recorder          events.EventRecorder
 	versions          kubermatic.Versions
 	cleanupController *cleanupController
 }

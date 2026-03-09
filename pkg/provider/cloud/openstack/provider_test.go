@@ -112,7 +112,8 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterSubnetLinkCleanupFinalizer,
 					},
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -169,7 +170,8 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterIPv6SubnetLinkCleanupFinalizer,
 					},
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -237,7 +239,8 @@ func TestInitializeCloudProvider(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-xyz",
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -301,7 +304,8 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterSubnetLinkCleanupFinalizer,
 					},
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -361,7 +365,8 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterSubnetLinkCleanupFinalizer,
 					},
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -649,7 +654,8 @@ func TestReconcile(t *testing.T) {
 						RouterSubnetLinkCleanupFinalizer,
 					},
 					Annotations: map[string]string{
-						FloatingIPPoolIDAnnotation: ostesting.ExternalNetworkFoo.ID,
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetworkFoo.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.ExternalNetworkFoo.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -663,6 +669,71 @@ func TestReconcile(t *testing.T) {
 							Network:        "kubernetes-cluster-xyz",
 							SubnetID:       ostesting.SubnetID,
 							RouterID:       ostesting.RouterID,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantRequests: map[ostesting.Request]int{
+				{Method: http.MethodPost, Path: ostesting.SecurityGroupsEndpoint}:                        1,
+				{Method: http.MethodPost, Path: ostesting.NetworksEndpoint}:                              0,
+				{Method: http.MethodPost, Path: ostesting.SubnetsEndpoint}:                               0,
+				{Method: http.MethodPost, Path: ostesting.RoutersEndpoint}:                               1,
+				{Method: http.MethodPut, Path: ostesting.AddRouterInterfaceEndpoint(ostesting.RouterID)}: 1,
+			},
+		},
+		{
+			name: "Cluster with LoadBalancer floating IP pool - should set annotation",
+			dc:   &kubermaticv1.DatacenterSpecOpenstack{},
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							Network:                    "kubernetes-cluster-xyz",
+							SubnetID:                   ostesting.SubnetID,
+							FloatingIPPool:             ostesting.ExternalNetwork.Name,
+							LoadBalancerFloatingIPPool: ostesting.SecondExternalNetwork.Name,
+						},
+					},
+				},
+			},
+			resources: []ostesting.Resource{
+				&ostesting.ExternalNetwork,
+				&ostesting.SecondExternalNetwork,
+				&ostesting.InternalNetwork,
+				&ostesting.SubnetTest,
+			},
+			wantCluster: kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+					Finalizers: []string{
+						SecurityGroupCleanupFinalizer,
+						RouterCleanupFinalizer,
+						RouterSubnetLinkCleanupFinalizer,
+					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation:             ostesting.ExternalNetwork.ID,
+						LoadBalancerFloatingIPPoolIDAnnotation: ostesting.SecondExternalNetwork.ID,
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							SecurityGroups:             "kubernetes-cluster-xyz",
+							FloatingIPPool:             ostesting.ExternalNetwork.Name,
+							LoadBalancerFloatingIPPool: ostesting.SecondExternalNetwork.Name,
+							Network:                    "kubernetes-cluster-xyz",
+							SubnetID:                   ostesting.SubnetID,
+							RouterID:                   ostesting.RouterID,
 						},
 					},
 				},

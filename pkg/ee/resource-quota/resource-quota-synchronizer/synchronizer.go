@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -55,7 +55,7 @@ type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
 	seedClients  kuberneteshelper.SeedClientMap
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 }
 
 func Add(masterMgr manager.Manager,
@@ -67,7 +67,7 @@ func Add(masterMgr manager.Manager,
 		log:          log,
 		masterClient: masterMgr.GetClient(),
 		seedClients:  kuberneteshelper.SeedClientMap{},
-		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
+		recorder:     masterMgr.GetEventRecorder(ControllerName),
 	}
 
 	for seedName, seedManager := range seedManagers {

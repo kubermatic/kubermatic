@@ -38,7 +38,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -53,7 +53,7 @@ const ControllerName = "kkp-master-resource-quota-controller"
 type reconciler struct {
 	masterClient ctrlruntimeclient.Client
 	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 	seedClients  map[string]ctrlruntimeclient.Client
 }
 
@@ -64,7 +64,7 @@ func Add(mgr manager.Manager,
 ) error {
 	reconciler := &reconciler{
 		log:          log.Named(ControllerName),
-		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		recorder:     mgr.GetEventRecorder(ControllerName),
 		masterClient: mgr.GetClient(),
 		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
@@ -107,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, resourceQuota, log)
 	if err != nil {
-		r.recorder.Event(resourceQuota, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(resourceQuota, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

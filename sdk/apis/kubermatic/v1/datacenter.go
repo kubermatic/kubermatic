@@ -17,7 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -64,8 +66,7 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var SupportedProviders = []ProviderType{
-	AKSCloudProvider,
+var InfrastructureProviders = []ProviderType{
 	AlibabaCloudProvider,
 	AnexiaCloudProvider,
 	AWSCloudProvider,
@@ -74,10 +75,7 @@ var SupportedProviders = []ProviderType{
 	BringYourOwnCloudProvider,
 	DigitaloceanCloudProvider,
 	EdgeCloudProvider,
-	EKSCloudProvider,
-	FakeCloudProvider,
 	GCPCloudProvider,
-	GKECloudProvider,
 	HetznerCloudProvider,
 	KubevirtCloudProvider,
 	NutanixCloudProvider,
@@ -85,6 +83,27 @@ var SupportedProviders = []ProviderType{
 	VMwareCloudDirectorCloudProvider,
 	VSphereCloudProvider,
 }
+
+var ManagedKubernetesProviders = []ProviderType{
+	AKSCloudProvider,
+	EKSCloudProvider,
+	GKECloudProvider,
+}
+
+var SupportedProviders = func() []ProviderType {
+	providers := append(
+		InfrastructureProviders,
+		append(
+			ManagedKubernetesProviders,
+			FakeCloudProvider,
+		)...)
+
+	slices.SortFunc(providers, func(a, b ProviderType) int {
+		return cmp.Compare(string(a), string(b))
+	})
+
+	return providers
+}()
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
@@ -381,6 +400,7 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	//
 	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
@@ -407,7 +427,57 @@ type EnvoyLoadBalancerService struct {
 }
 type NodePortProxyComponentEnvoy struct {
 	NodeportProxyComponent `json:",inline"`
-	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+	// Defaults to 3.
+	// +kubebuilder:default:=3
+	// +kubebuilder:validation:Minimum:=1
+	Replicas            *int32                   `json:"replicas,omitempty"`
+	LoadBalancerService EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// ConnectionSettings configures idle timeout and TCP keepalive settings for
+	// the nodeport-proxy Envoy listeners and upstream clusters.
+	// Zero values keep Envoy defaults (no KKP override).
+	ConnectionSettings NodePortProxyEnvoyConnectionSettings `json:"connectionSettings,omitempty"`
+}
+
+type NodePortProxyEnvoyConnectionSettings struct {
+	// SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+	// downstream connections are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	SNIListenerIdleTimeout metav1.Duration `json:"sniListenerIdleTimeout,omitempty"`
+	// TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+	// listener downstream connections are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	TunnelingConnectionIdleTimeout metav1.Duration `json:"tunnelingConnectionIdleTimeout,omitempty"`
+	// TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+	// on the tunneling listener are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	TunnelingStreamIdleTimeout metav1.Duration `json:"tunnelingStreamIdleTimeout,omitempty"`
+	// DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on downstream listener sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	DownstreamTCPKeepaliveTime metav1.Duration `json:"downstreamTCPKeepaliveTime,omitempty"`
+	// DownstreamTCPKeepaliveInterval configures the interval between TCP
+	// keepalive probes on downstream listener sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	DownstreamTCPKeepaliveInterval metav1.Duration `json:"downstreamTCPKeepaliveInterval,omitempty"`
+	// DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering downstream listener sockets dead.
+	// Set to 0 to leave unset.
+	// +kubebuilder:validation:Minimum:=1
+	DownstreamTCPKeepaliveProbes uint32 `json:"downstreamTCPKeepaliveProbes,omitempty"`
+	// UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on upstream cluster sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	UpstreamTCPKeepaliveTime metav1.Duration `json:"upstreamTCPKeepaliveTime,omitempty"`
+	// UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+	// probes on upstream cluster sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	UpstreamTCPKeepaliveInterval metav1.Duration `json:"upstreamTCPKeepaliveInterval,omitempty"`
+	// UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering upstream cluster sockets dead.
+	// Set to 0 to leave unset.
+	// +kubebuilder:validation:Minimum:=1
+	UpstreamTCPKeepaliveProbes uint32 `json:"upstreamTCPKeepaliveProbes,omitempty"`
 }
 
 type NodeportProxyComponent struct {
@@ -681,6 +751,11 @@ type DatacenterSpecOpenstack struct {
 	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRange,omitempty"`
 	// Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -852,6 +927,7 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
 	// Defaults to false.
+	//
 	// Deprecated: Use .kubevirt.usePodResourcesCPU instead.
 	EnableDedicatedCPUs bool `json:"enableDedicatedCpus,omitempty"`
 
@@ -871,6 +947,10 @@ type DatacenterSpecKubevirt struct {
 	// In the tenant cluster, the created StorageClass name will have as name:
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
+
+	// Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+	// to initialise VolumeSnapshotClasses in the tenant cluster.
+	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClasses,omitempty"`
 
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
@@ -981,6 +1061,18 @@ type KubeVirtInfraStorageClass struct {
 	// cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
 	// image creation.
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
+}
+
+type KubeVirtInfraVolumeSnapshotClass struct {
+	// InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+	InfraVolumeSnapshotClass string `json:"infraVolumeSnapshotClass"`
+	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+	// snapshot.storage.kubernetes.io/is-default-class: true
+	// If missing or false, annotation will be:
+	// snapshot.storage.kubernetes.io/is-default-class: false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.
+	DeletionPolicy string `json:"deletionPolicy,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.

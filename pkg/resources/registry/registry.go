@@ -41,6 +41,7 @@ func Must(s string, err error) string {
 type WithOverwriteFunc func(string) string
 
 // GetOverwriteFunc returns a WithOverwriteFunc based on the given override value.
+//
 // Deprecated: This function should not be used anymore. Use the much more
 // flexible GetImageRewriterFunc instead.
 func GetOverwriteFunc(overwriteRegistry string) WithOverwriteFunc {

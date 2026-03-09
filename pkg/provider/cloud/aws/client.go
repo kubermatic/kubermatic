@@ -61,6 +61,34 @@ func ValidateCredentials(ctx context.Context, accessKeyID, secretAccessKey strin
 	return err
 }
 
+// GetAccountID returns the AWS account ID for the given credentials using STS GetCallerIdentity.
+func GetAccountID(ctx context.Context, accessKeyID, secretAccessKey, region string) (string, error) {
+	if (accessKeyID == "does-not-exist" && secretAccessKey == "does-not-exist") || (accessKeyID == "test" && secretAccessKey == "test") {
+		return "000000000000", nil
+	}
+
+	cfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion(region),
+		awsconfig.WithCredentialsProvider(awscredentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+		awsconfig.WithRetryMaxAttempts(maxRetries),
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	stsClient := sts.NewFromConfig(cfg)
+	result, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get caller identity: %w", err)
+	}
+
+	if result.Account == nil {
+		return "", errors.New("account ID not returned by GetCallerIdentity")
+	}
+
+	return *result.Account, nil
+}
+
 func GetClientSet(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
 	return getClientSet(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
 }

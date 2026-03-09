@@ -118,6 +118,15 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		LoadBalancerClass: lbClassOpts,
 	}
 
+	// Set NodeVolumeAttachLimit if specified in the DC or Cluster spec
+	if dc.Spec.Openstack.NodeVolumeAttachLimit != nil {
+		cc.BlockStorage.NodeVolumeAttachLimit = *dc.Spec.Openstack.NodeVolumeAttachLimit
+	}
+	if cluster.Spec.Cloud.Openstack.NodeVolumeAttachLimit != nil {
+		cc.BlockStorage.NodeVolumeAttachLimit = *cluster.Spec.Cloud.Openstack.NodeVolumeAttachLimit
+	}
+
+	// Ingress hostname settings
 	if cluster.Spec.Cloud.Openstack.EnableIngressHostname != nil {
 		cc.LoadBalancer.EnableIngressHostname = cluster.Spec.Cloud.Openstack.EnableIngressHostname
 	}
@@ -126,10 +135,13 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		cc.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
 	}
 
-	// we won't throw an error here for backwards compatibility and instead simply not set
-	// the floating-ip-pool-id field if the annotation is not there.
-	if cluster.Annotations[openstack.FloatingIPPoolIDAnnotation] != "" {
-		cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.FloatingIPPoolIDAnnotation]
+	if cluster.Annotations != nil {
+		// prefer LoadBalancer-specific floating IP pool if set, otherwise fallback to the default one.
+		if cluster.Annotations[openstack.LoadBalancerFloatingIPPoolIDAnnotation] != "" {
+			cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.LoadBalancerFloatingIPPoolIDAnnotation]
+		} else if cluster.Annotations[openstack.FloatingIPPoolIDAnnotation] != "" {
+			cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.FloatingIPPoolIDAnnotation]
+		}
 	}
 
 	return cc

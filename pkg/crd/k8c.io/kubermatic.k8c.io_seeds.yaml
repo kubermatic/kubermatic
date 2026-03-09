@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
     kubermatic.k8c.io/location: master,seed
   name: seeds.kubermatic.k8c.io
 spec:
@@ -111,7 +111,9 @@ spec:
                             description: EnvVar represents an environment variable present in a Container.
                             properties:
                               name:
-                                description: Name of the environment variable. Must be a C_IDENTIFIER.
+                                description: |-
+                                  Name of the environment variable.
+                                  May consist of any printable ASCII characters except '='.
                                 type: string
                               value:
                                 description: |-
@@ -163,6 +165,42 @@ spec:
                                         type: string
                                     required:
                                       - fieldPath
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  fileKeyRef:
+                                    description: |-
+                                      FileKeyRef selects a key of the env file.
+                                      Requires the EnvFiles feature gate to be enabled.
+                                    properties:
+                                      key:
+                                        description: |-
+                                          The key within the env file. An invalid key will prevent the pod from starting.
+                                          The keys defined within a source may consist of any printable ASCII characters except '='.
+                                          During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                                        type: string
+                                      optional:
+                                        default: false
+                                        description: |-
+                                          Specify whether the file or its key must be defined. If the file or key
+                                          does not exist, then the env var is not published.
+                                          If optional is set to true and the specified key does not exist,
+                                          the environment variable will not be set in the Pod's containers.
+
+                                          If optional is set to false and the specified key does not exist,
+                                          an error will be returned during Pod creation.
+                                        type: boolean
+                                      path:
+                                        description: |-
+                                          The path within the volume from which to select the file.
+                                          Must be relative and may not contain the '..' path or start with '..'.
+                                        type: string
+                                      volumeName:
+                                        description: The name of the volume mount containing the env file.
+                                        type: string
+                                    required:
+                                      - key
+                                      - path
+                                      - volumeName
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   resourceFieldRef:
@@ -222,7 +260,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -1073,11 +1111,11 @@ spec:
                                         podSelector:
                                           description: |-
                                             podSelector selects the pods to which this NetworkPolicy object applies.
-                                            The array of ingress rules is applied to any pods selected by this field.
+                                            The array of rules is applied to any pods selected by this field. An empty
+                                            selector matches all pods in the policy's namespace.
                                             Multiple network policies can select the same set of pods. In this case,
                                             the ingress rules for each are combined additively.
-                                            This field is NOT optional and follows standard label selector semantics.
-                                            An empty podSelector matches all pods in this namespace.
+                                            This field is optional. If it is not specified, it defaults to an empty selector.
                                           properties:
                                             matchExpressions:
                                               description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -1139,8 +1177,6 @@ spec:
                                             type: string
                                           type: array
                                           x-kubernetes-list-type: atomic
-                                      required:
-                                        - podSelector
                                       type: object
                                   required:
                                     - name
@@ -1215,6 +1251,7 @@ spec:
                                 description: |-
                                   Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
                                   Defaults to false.
+
                                   Deprecated: Use .kubevirt.usePodResourcesCPU instead.
                                 type: boolean
                               enableDefaultNetworkPolicies:
@@ -1295,6 +1332,29 @@ spec:
                                       type: array
                                   required:
                                     - name
+                                  type: object
+                                type: array
+                              infraVolumeSnapshotClasses:
+                                description: |-
+                                  Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+                                  to initialise VolumeSnapshotClasses in the tenant cluster.
+                                items:
+                                  properties:
+                                    deletionPolicy:
+                                      description: 'Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.'
+                                      type: string
+                                    infraVolumeSnapshotClass:
+                                      description: InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+                                      type: string
+                                    isDefaultClass:
+                                      description: |-
+                                        Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+                                        snapshot.storage.kubernetes.io/is-default-class: true
+                                        If missing or false, annotation will be:
+                                        snapshot.storage.kubernetes.io/is-default-class: false
+                                      type: boolean
+                                  required:
+                                    - infraVolumeSnapshotClass
                                   type: object
                                 type: array
                               matchSubnetAndStorageLocation:
@@ -1586,6 +1646,12 @@ spec:
                                     description: VCPUs is the minimum required amount of (virtual) CPUs
                                     type: integer
                                 type: object
+                              nodeVolumeAttachLimit:
+                                description: |-
+                                  NodeVolumeAttachLimit defines the maximum number of volumes that can be
+                                  attached to a single node. If set, this value overrides the default
+                                  OpenStack volume attachment limit.
+                                type: integer
                               region:
                                 description: Authentication region name
                                 type: string
@@ -1763,7 +1829,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -1833,9 +1899,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -1889,7 +1956,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -1959,9 +2026,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -1993,7 +2061,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2063,9 +2131,112 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+                                type: string
+                              tolerationSeconds:
+                                description: |-
+                                  TolerationSeconds represents the period of time the toleration (which must be
+                                  of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                  it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                  negative values will be treated as 0 (evict immediately) by the system.
+                                format: int64
+                                type: integer
+                              value:
+                                description: |-
+                                  Value is the taint value the toleration matches to.
+                                  If the operator is Exists, the value should be empty, otherwise just a regular string.
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    envoyAgent:
+                      description: EnvoyAgent configures the envoy-agent deployed in the usercluster.
+                      properties:
+                        resources:
+                          description: ResourceRequirements describes the compute resource requirements.
+                          properties:
+                            claims:
+                              description: |-
+                                Claims lists the names of resources, defined in spec.resourceClaims,
+                                that are used by this container.
+
+                                This field depends on the
+                                DynamicResourceAllocation feature gate.
+
+                                This field is immutable. It can only be set for containers.
+                              items:
+                                description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                properties:
+                                  name:
+                                    description: |-
+                                      Name must match the name of one entry in pod.spec.resourceClaims of
+                                      the Pod where this field is used. It makes that resource available
+                                      inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
+                                    type: string
+                                required:
+                                  - name
+                                type: object
+                              type: array
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
+                            limits:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Limits describes the maximum amount of compute resources allowed.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                            requests:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Requests describes the minimum amount of compute resources required.
+                                If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                          type: object
+                        tolerations:
+                          items:
+                            description: |-
+                              The pod this Toleration is attached to tolerates any taint that matches
+                              the triple <key,value,effect> using the matching operator <operator>.
+                            properties:
+                              effect:
+                                description: |-
+                                  Effect indicates the taint effect to match. Empty means match all taint effects.
+                                  When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                                type: string
+                              key:
+                                description: |-
+                                  Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                  If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                                type: string
+                              operator:
+                                description: |-
+                                  Operator represents a key's relationship to the value.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+                                  Exists is equivalent to wildcard for value, so that a pod can
+                                  tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2132,7 +2303,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2209,9 +2380,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2261,7 +2433,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2327,7 +2499,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2397,9 +2569,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2431,7 +2604,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2501,9 +2674,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2538,7 +2712,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2643,7 +2817,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2713,9 +2887,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2747,7 +2922,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2817,9 +2992,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2873,7 +3049,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -2943,9 +3119,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -2999,7 +3176,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -3069,9 +3246,10 @@ spec:
                               operator:
                                 description: |-
                                   Operator represents a key's relationship to the value.
-                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                   Exists is equivalent to wildcard for value, so that a pod can
                                   tolerate all taints of a particular category.
+                                  Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                                 type: string
                               tolerationSeconds:
                                 description: |-
@@ -3389,6 +3567,7 @@ spec:
                       description: |-
                         Annotations are used to further tweak the LoadBalancer integration with the
                         cloud provider where the seed cluster is running.
+
                         Deprecated: Use .envoy.loadBalancerService.annotations instead.
                       type: object
                     disable:
@@ -3400,6 +3579,71 @@ spec:
                     envoy:
                       description: Envoy configures the Envoy application itself.
                       properties:
+                        connectionSettings:
+                          description: |-
+                            ConnectionSettings configures idle timeout and TCP keepalive settings for
+                            the nodeport-proxy Envoy listeners and upstream clusters.
+                            Zero values keep Envoy defaults (no KKP override).
+                          properties:
+                            downstreamTCPKeepaliveInterval:
+                              description: |-
+                                DownstreamTCPKeepaliveInterval configures the interval between TCP
+                                keepalive probes on downstream listener sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            downstreamTCPKeepaliveProbes:
+                              description: |-
+                                DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+                                probes before considering downstream listener sockets dead.
+                                Set to 0 to leave unset.
+                              format: int32
+                              minimum: 1
+                              type: integer
+                            downstreamTCPKeepaliveTime:
+                              description: |-
+                                DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+                                keepalive probe is sent on downstream listener sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            sniListenerIdleTimeout:
+                              description: |-
+                                SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+                                downstream connections are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            tunnelingConnectionIdleTimeout:
+                              description: |-
+                                TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+                                listener downstream connections are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            tunnelingStreamIdleTimeout:
+                              description: |-
+                                TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+                                on the tunneling listener are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            upstreamTCPKeepaliveInterval:
+                              description: |-
+                                UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+                                probes on upstream cluster sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            upstreamTCPKeepaliveProbes:
+                              description: |-
+                                UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+                                probes before considering upstream cluster sockets dead.
+                                Set to 0 to leave unset.
+                              format: int32
+                              minimum: 1
+                              type: integer
+                            upstreamTCPKeepaliveTime:
+                              description: |-
+                                UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+                                keepalive probe is sent on upstream cluster sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                          type: object
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
                           type: string
@@ -3422,6 +3666,14 @@ spec:
                                 type: string
                               type: array
                           type: object
+                        replicas:
+                          default: 3
+                          description: |-
+                            Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+                            Defaults to 3.
+                          format: int32
+                          minimum: 1
+                          type: integer
                         resources:
                           description: Resources describes the requested and maximum allowed CPU/memory usage.
                           properties:
@@ -3430,7 +3682,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -3496,7 +3748,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -3575,7 +3827,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.

@@ -71,6 +71,7 @@ const (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
@@ -296,6 +297,9 @@ type KubermaticUserClusterConfiguration struct {
 	// These settings apply to all user clusters unless overridden at seed or datacenter level.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// AdmissionPlugins configures global admission plugin settings for all user clusters.
+	// +optional
+	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -334,6 +338,34 @@ type KubeLBConfiguration struct {
 	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// AdmissionPluginsConfiguration contains global settings for admission plugins.
+type AdmissionPluginsConfiguration struct {
+	// EventRateLimit configures the EventRateLimit admission plugin.
+	// +optional
+	EventRateLimit *EventRateLimitPluginConfiguration `json:"eventRateLimit,omitempty"`
+}
+
+// EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global level.
+//
+// Enforcement modes:
+//   - Enforced=true: Plugin must be enabled; config cannot be overridden by users
+//   - Enabled=true: Plugin enabled by default for new clusters, users can disable
+//   - DefaultConfig: Applied when plugin is enabled and cluster has no config
+//     (always applied when Enforced=true, overwriting user config)
+type EventRateLimitPluginConfiguration struct {
+	// Enabled indicates whether EventRateLimit should be enabled by default for new clusters.
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Enforced indicates whether EventRateLimit enablement is mandatory.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
+
+	// DefaultConfig provides default configuration values for the EventRateLimit plugin.
+	// +optional
+	DefaultConfig *EventRateLimitConfig `json:"defaultConfig,omitempty"`
 }
 
 // MachineControllerConfiguration configures Machine Controller.
@@ -381,6 +413,8 @@ type KubermaticAddonsConfiguration struct {
 
 // SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
 type SystemApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
@@ -392,9 +426,25 @@ type SystemApplicationsConfiguration struct {
 
 // ApplicationsConfiguration contains configuration for default Applications configuration settings.
 type ApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// Namespace is the namespace which is set as the default for applications installed via ui
 	// If left empty the default for the application installation namespace is the name of the resource itself
 	Namespace string `json:"namespace,omitempty"`
+}
+
+// RegistryConnectionConfig contains options that control how connections
+// to OCI registries are established.
+type RegistryConnectionConfig struct {
+	// InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+	// the server's TLS certificate.
+	// This should only be used in development or testing environments.
+	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+
+	// PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+	// instead of HTTPS.
+	// This is intended for local or air-gapped setups where HTTPS is not available.
+	PlainHTTP bool `json:"plainHTTP,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
@@ -421,6 +471,18 @@ type KubermaticIngressConfiguration struct {
 	// Setting an empty name disables the automatic creation of certificates and disables
 	// the TLS settings on the Kubermatic Ingress.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+
+	// Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+	// When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+	// are managed by kubermatic-operator, instead of Ingress.
+	Gateway *KubermaticGatewayConfiguration `json:"gateway,omitempty"`
+}
+
+// KubermaticGatewayConfiguration configures the Gateway API integration.
+type KubermaticGatewayConfiguration struct {
+	// ClassName is the GatewayClass to use.
+	// +kubebuilder:default:=kubermatic-envoy-gateway
+	ClassName string `json:"className,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
@@ -568,85 +630,117 @@ type ApplicationDefinitionsConfiguration struct {
 	// DefaultApplicationCatalog contains configuration for the default application catalog.
 	DefaultApplicationCatalog DefaultApplicationCatalogSettings `json:"defaultApplicationCatalog,omitempty"`
 
-	// CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
-	// in the cluster from specified OCI registries.
-	// Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+	// CatalogManager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
+	// from ApplicationCatalog custom resources.
+	// When the ExternalApplicationCatalogManager feature gate is enabled, KKP deploys the application-catalog-manager
+	// and application-catalog-webhook, which work together to reconcile ApplicationDefinition CRs from ApplicationCatalog CRs.
+	// Note: The Application Catalog Manager requires its feature flag to be enabled.
+	// Once the ExternalApplicationCatalogManager feature gate is enabled,
+	// kubermaticconfiguration.spec.applications.defaultApplicationCatalog field becomes no-op,
+	// as the responsibility of ApplicationDefinitions is delegated to the new ApplicationCatalog Cr.
 	CatalogManager CatalogManagerConfiguration `json:"catalogManager,omitempty"`
 }
 
+// ApplicationCatalogLimit defines filtering criteria for ApplicationDefinitions.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type ApplicationCatalogLimit struct {
+	// MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	MetadataSelector ApplicationDefinitionMetadataSelector `json:"metadataSelector,omitempty"`
+	// NameSelector defines criteria for selecting ApplicationDefinitions by name.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	NameSelector []string `json:"nameSelector,omitempty"`
+}
+
+// RegistrySettings configures the OCI registry from which ApplicationDefinitions are retrieved.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type RegistrySettings struct {
+	// RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	RegistryURL string `json:"registryURL,omitempty"`
+	// Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Tag string `json:"tag,omitempty"`
+	// Credentials optionally references a secret containing Helm registry authentication credentials.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Credentials *RegistryCredentials `json:"credentials,omitempty"`
+}
+
+// RegistryCredentials holds authentication credentials for Helm registry.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type RegistryCredentials struct {
+	// Username references the secret containing the registry username credential.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
+	// Password references the secret containing the registry password credential.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
+	// RegistryConfigFile references the secret containing the Docker registry configuration file.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
+}
+
+// ApplicationDefinitionMetadataSelector defines metadata-based selection criteria for ApplicationDefinitions.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type ApplicationDefinitionMetadataSelector struct {
+	// Tiers specifies the support tiers to filter ApplicationDefinitions.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Tiers []string `json:"tiers,omitempty"`
+}
+
 type CatalogManagerConfiguration struct {
-	// LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+	// LogLevel specifies the logging verbosity level for the application-catalog manager.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	LogLevel string `json:"logLevel,omitempty"`
 
-	// RegistrySettings configures the OCI registry from which the Application Catalog Manager
-	// retrieves ApplicationDefinition manifests.
+	// RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
 
-	// Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
-	// When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
-	// When defined, only ApplicationDefinitions matching the specified criteria are processed.
+	// Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
+
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	// Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Image configures the container image for the application-catalog manager.
 	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
 
-	// Resources describes the requested and maximum allowed CPU/memory usage.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Apps is a list of application definition names that should be installed in the master cluster.
+	// If not set, all the applications from the catalog are installed.
+	Apps []string `json:"apps,omitempty"`
 
 	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
 	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
 	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
 	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
+
+	// ManagerSettings configures the application-catalog manager deployment settings.
+	ManagerSettings CatalogManagerSettings `json:"managerSettings,omitempty"`
+	// WebhookSettings configures the application-catalog webhook deployment settings.
+	WebhookSettings CatalogWebhookSettings `json:"webhookSettings,omitempty"`
 }
 
-type ApplicationCatalogLimit struct {
-	// MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
-	// For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
-	// specify that tier here.
-	// When multiple tiers are specified, the Application Catalog Manager uses additive logic
-	// to determine which ApplicationDefinitions to retrieve from the OCI registry.
-	MetadataSelector ApplicationDefinitionMetadataSelector `json:"metadataSelector,omitempty"`
-	// NameSelector defines criteria for selecting ApplicationDefinitions by name.
-	// Each name must correspond to an ApplicationDefinition's `metadata.name` field.
-	// When multiple names are specified, the Application Catalog Manager uses additive logic
-	// to retrieve all matching ApplicationDefinitions from the OCI registry.
-	// Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
-	NameSelector []string `json:"nameSelector,omitempty"`
+// CatalogManagerSettings configures the application-catalog manager deployment.
+// This component reconciles ApplicationDefinition CRs from ApplicationCatalog CRs
+// when the ExternalApplicationCatalogManager feature gate is enabled.
+type CatalogManagerSettings struct {
+	// Resources describes the requested and maximum allowed CPU/memory usage for application-catalog manager deployment.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// LogLevel specifies the logging verbosity level for the application-catalog manager.
+	LogLevel string `json:"logLevel,omitempty"`
 }
 
-type RegistrySettings struct {
-	// RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
-	// Example: oci://localhost:5000/myrepo
-	RegistryURL string `json:"registryURL,omitempty"`
-
-	// Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
-	// Example: v1.0.0
-	Tag string `json:"tag,omitempty"`
-
-	// Credentials optionally references a secret containing Helm registry authentication credentials.
-	// Either username/password or registryConfigFile can be specified, but not both.
-	Credentials *RegistryCredentials `json:"credentials,omitempty"`
-}
-
-type RegistryCredentials struct {
-	// Username references the secret containing the registry username credential.
-	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
-	Username *corev1.SecretKeySelector `json:"username,omitempty"`
-
-	// Password references the secret containing the registry password credential.
-	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
-	Password *corev1.SecretKeySelector `json:"password,omitempty"`
-
-	// RegistryConfigFile references the secret containing the Docker registry configuration file.
-	// The value must be a dockercfg file following the same format as ~/.docker/config.json.
-	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
-	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
-}
-
-type ApplicationDefinitionMetadataSelector struct {
-	// Tiers specifies the support tiers to filter ApplicationDefinitions.
-	// ApplicationDefinitions matching any of the specified tiers will be selected.
-	Tiers []string `json:"tiers,omitempty"`
+// CatalogWebhookSettings configures the application-catalog webhook deployment.
+// This component validates and mutates ApplicationCatalog and ApplicationDefinition CRs
+// when the ExternalApplicationCatalogManager feature gate is enabled.
+type CatalogWebhookSettings struct {
+	// Resources describes the requested and maximum allowed CPU/memory usage for application-catalog webhook deployment.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// LogLevel specifies the logging verbosity level for the application-catalog webhook.
+	LogLevel string `json:"logLevel,omitempty"`
 }
 
 type SystemApplicationsSettings struct {

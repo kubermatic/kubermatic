@@ -34,7 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -51,7 +51,7 @@ type Reconciler struct {
 
 	workerName                    string
 	configGetter                  provider.KubermaticConfigurationGetter
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	userClusterConnectionProvider *client.Provider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
@@ -73,7 +73,7 @@ func Add(
 		workerName:                    workerName,
 		configGetter:                  configGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		recorder:                      mgr.GetEventRecorder(ControllerName),
 		log:                           log,
 		versions:                      versions,
 	}
@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
@@ -192,7 +192,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, log *zap.SugaredLogger, clu
 				return fmt.Errorf("failed to update MachineDeployment: %w", err)
 			}
 
-			r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateMachineDeployment", "Triggered automatic update of MachineDeployment %s to version %q", identifier, target)
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AutoUpdateMachineDeployment", "Reconciling", "Triggered automatic update of MachineDeployment %s to version %q", identifier, target)
 		}
 	}
 
@@ -225,7 +225,7 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, log *zap.SugaredLo
 	}
 
 	log.Infow("Applied automatic cluster upgrade", "from", oldCluster.Spec.Version, "to", cluster.Spec.Version)
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateApplied", "Cluster was automatically updated from v%s to v%s.", oldCluster.Spec.Version, cluster.Spec.Version)
+	r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AutoUpdateApplied", "Reconciling", "Cluster was automatically updated from v%s to v%s.", oldCluster.Spec.Version, cluster.Spec.Version)
 
 	err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Invalidating the health to prevent automatic updates directly on the next processing.

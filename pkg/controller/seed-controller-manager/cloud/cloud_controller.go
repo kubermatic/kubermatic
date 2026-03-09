@@ -40,7 +40,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -60,7 +60,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	log        *zap.SugaredLogger
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	seedGetter provider.SeedGetter
 	workerName string
 	versions   kubermatic.Versions
@@ -79,7 +79,7 @@ func Add(
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
 		log:        log.Named(ControllerName),
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		recorder:   mgr.GetEventRecorder(ControllerName),
 		seedGetter: seedGetter,
 		workerName: workerName,
 		versions:   versions,
@@ -127,7 +127,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

@@ -79,7 +79,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d MachineDeployment(s) to be destroyed.", len(machineDeploymentList.Items))
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "NodeCleanup", "Reconciling", "Waiting for %d MachineDeployment(s) to be destroyed.", len(machineDeploymentList.Items))
 		return nil
 	}
 
@@ -94,7 +94,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d MachineSet(s) to be destroyed.", len(machineSetList.Items))
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "NodeCleanup", "Reconciling", "Waiting for %d MachineSet(s) to be destroyed.", len(machineSetList.Items))
 		return nil
 	}
 
@@ -108,11 +108,11 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			return fmt.Errorf("failed to delete Machines: %w", err)
 		}
 
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d Machine(s) to be destroyed.", len(machineList.Items))
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "NodeCleanup", "Reconciling", "Waiting for %d Machine(s) to be destroyed.", len(machineList.Items))
 		return nil
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "NodeCleanup", "Cleanup has been completed, all machines have been destroyed.")
+	d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "NodeCleanup", "Reconciling", "Cleanup has been completed, all machines have been destroyed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NodeDeletionFinalizer)
 }

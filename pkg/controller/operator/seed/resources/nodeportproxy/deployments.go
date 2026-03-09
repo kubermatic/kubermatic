@@ -40,6 +40,7 @@ const (
 	ServiceAccountName    = "nodeport-proxy"
 	EnvoyDeploymentName   = "nodeport-proxy-envoy"
 	UpdaterDeploymentName = "nodeport-proxy-updater"
+	DefaultEnvoyReplicas  = int32(3)
 	EnvoyPort             = 8002
 	EnvoySNIPort          = 6443
 	EnvoyTunnelingPort    = 8088
@@ -48,7 +49,11 @@ const (
 func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = ptr.To[int32](3)
+			replicas := DefaultEnvoyReplicas
+			if seed.Spec.NodeportProxy.Envoy.Replicas != nil {
+				replicas = *seed.Spec.NodeportProxy.Envoy.Replicas
+			}
+			d.Spec.Replicas = ptr.To(replicas)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: EnvoyDeploymentName,
@@ -99,6 +104,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 				fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort),
 			}
+			args = append(args, envoyManagerConnectionSettingsArgs(seed)...)
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "envoy-manager",
@@ -191,6 +197,22 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 
 			return d, nil
 		}
+	}
+}
+
+func envoyManagerConnectionSettingsArgs(seed *kubermaticv1.Seed) []string {
+	settings := seed.Spec.NodeportProxy.Envoy.ConnectionSettings
+
+	return []string{
+		fmt.Sprintf("-sni-listener-idle-timeout=%s", settings.SNIListenerIdleTimeout.Duration),
+		fmt.Sprintf("-tunneling-connection-idle-timeout=%s", settings.TunnelingConnectionIdleTimeout.Duration),
+		fmt.Sprintf("-tunneling-stream-idle-timeout=%s", settings.TunnelingStreamIdleTimeout.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-time=%s", settings.DownstreamTCPKeepaliveTime.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-interval=%s", settings.DownstreamTCPKeepaliveInterval.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-probes=%d", settings.DownstreamTCPKeepaliveProbes),
+		fmt.Sprintf("-upstream-tcp-keepalive-time=%s", settings.UpstreamTCPKeepaliveTime.Duration),
+		fmt.Sprintf("-upstream-tcp-keepalive-interval=%s", settings.UpstreamTCPKeepaliveInterval.Duration),
+		fmt.Sprintf("-upstream-tcp-keepalive-probes=%d", settings.UpstreamTCPKeepaliveProbes),
 	}
 }
 

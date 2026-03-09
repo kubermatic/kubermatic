@@ -19,11 +19,13 @@ package main
 import (
 	"context"
 	"flag"
+	"strings"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	catalogv1alpha1 "k8c.io/application-catalog-manager/pkg/apis/applicationcatalog/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
@@ -37,20 +39,25 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwapischeme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 )
 
 type controllerRunOptions struct {
-	namespace            string
-	internalAddr         string
-	workerCount          int
-	workerName           string
-	enableLeaderElection bool
+	namespace                string
+	internalAddr             string
+	workerCount              int
+	workerName               string
+	enableLeaderElection     bool
+	enableGatewayAPI         bool
+	httprouteWatchNamespaces string
 }
 
 func main() {
@@ -69,8 +76,19 @@ func main() {
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.StringVar(&opt.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.BoolVar(&opt.enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(
+		&opt.enableGatewayAPI,
+		"enable-gateway-api",
+		false,
+		"Allow watching Gateway API resources (Gateway and HTTPRoute). Requires Gateway API CRDs to exist",
+	)
+	flag.StringVar(
+		&opt.httprouteWatchNamespaces,
+		"httproute-watch-namespaces",
+		"monitoring,mla",
+		"Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync. Only used when --enable-gateway-api is set.",
+	)
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format).Named(opt.workerName)
@@ -85,6 +103,20 @@ func main() {
 
 	if len(opt.namespace) == 0 {
 		log.Fatal("-namespace is a mandatory flag")
+	}
+
+	httprouteWatchNamespaces := sets.New[string]()
+	if opt.enableGatewayAPI {
+		for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
+			ns = strings.TrimSpace(ns)
+			if ns != "" {
+				httprouteWatchNamespaces.Insert(ns)
+			}
+		}
+
+		if httprouteWatchNamespaces.Len() == 0 {
+			log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
+		}
 	}
 
 	versions := kubermatic.GetVersions()
@@ -109,12 +141,22 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
+	if err := catalogv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", catalogv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+
 	if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	if err := ciliumv2.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", ciliumv2.SchemeGroupVersion), zap.Error(err))
+	}
+
+	if opt.enableGatewayAPI {
+		if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
+			log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
+		}
 	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
@@ -134,7 +176,16 @@ func main() {
 
 	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
+	err = masterctrl.Add(
+		mgr,
+		log,
+		opt.namespace,
+		opt.workerCount,
+		opt.workerName,
+		opt.enableGatewayAPI,
+		sets.List(httprouteWatchNamespaces),
+	)
+	if err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 

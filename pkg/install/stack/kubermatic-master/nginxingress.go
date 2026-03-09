@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -38,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

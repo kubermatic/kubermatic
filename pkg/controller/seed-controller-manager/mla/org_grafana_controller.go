@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -47,7 +47,7 @@ type orgGrafanaReconciler struct {
 
 	log                  *zap.SugaredLogger
 	workerName           string
-	recorder             record.EventRecorder
+	recorder             events.EventRecorder
 	versions             kubermatic.Versions
 	orgGrafanaController *orgGrafanaController
 }
@@ -70,7 +70,7 @@ func newOrgGrafanaReconciler(
 
 		log:                  log.Named(subname),
 		workerName:           workerName,
-		recorder:             mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:             mgr.GetEventRecorder(controllerName(subname)),
 		versions:             versions,
 		orgGrafanaController: orgGrafanaController,
 	}

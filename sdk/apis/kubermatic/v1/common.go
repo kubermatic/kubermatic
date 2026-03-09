@@ -82,6 +82,11 @@ const (
 	// SkipRouterReconciliationAnnotation is used to indicate that the router reconciliation should be skipped.
 	// This annotation is currently used exclusively for OpenStack provider.
 	SkipRouterReconciliationAnnotation = "reconciliation.kubermatic.k8c.io/skip-router"
+
+	// SkipAuditLoggingEnforcementAnnotation is used to opt out of automatic audit logging enforcement.
+	// When set to "true", the cluster will not have its audit logging configuration
+	// automatically reconciled from the Seed.
+	SkipAuditLoggingEnforcementAnnotation = "kubermatic.k8c.io/skip-audit-logging-enforcement"
 )
 
 type MachineFlavorFilter struct {
