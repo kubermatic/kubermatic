@@ -144,13 +144,6 @@ This release contains changes that require additional attention, please read the
 
 #### Cloud Providers
 
-##### KubeVirt
-
-- Add a new machine deployment label option to KubeVirt machine deployments to manage labels on KubeVirt VMs ([#7866](https://github.com/kubermatic/dashboard/pull/7866))
-- Add advanced machine type selector for KubeVirt with GPU/CPU categorization and search capabilities ([#7797](https://github.com/kubermatic/dashboard/pull/7797))
-- Filter KubeVirt OSP list based on the selected OS image version ([#7747](https://github.com/kubermatic/dashboard/pull/7747))
-- Add support for listing namespaced KubeVirt VirtualMachineInstancetype objects in the KubeVirt instance type list endpoint ([#7900](https://github.com/kubermatic/dashboard/pull/7900))
-
 ##### AWS
 
 - Add advanced machine type selector for AWS with GPU filtering support ([#7771](https://github.com/kubermatic/dashboard/pull/7771))
@@ -166,6 +159,13 @@ This release contains changes that require additional attention, please read the
 ##### Hetzner
 
 - Add advanced machine type selector for Hetzner with searchable table view and categorized instance types ([#7803](https://github.com/kubermatic/dashboard/pull/7803))
+
+##### KubeVirt
+
+- Add a new machine deployment label option to KubeVirt machine deployments to manage labels on KubeVirt VMs ([#7866](https://github.com/kubermatic/dashboard/pull/7866))
+- Add advanced machine type selector for KubeVirt with GPU/CPU categorization and search capabilities ([#7797](https://github.com/kubermatic/dashboard/pull/7797))
+- Filter KubeVirt OSP list based on the selected OS image version ([#7747](https://github.com/kubermatic/dashboard/pull/7747))
+- Add support for listing namespaced KubeVirt VirtualMachineInstancetype objects in the KubeVirt instance type list endpoint ([#7900](https://github.com/kubermatic/dashboard/pull/7900))
 
 ##### OpenStack
 
