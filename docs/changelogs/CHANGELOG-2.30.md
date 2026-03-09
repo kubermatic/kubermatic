@@ -11,10 +11,12 @@
 This release contains changes that require additional attention, please read the following items carefully.
 
 - Potential BREAKING CHANGE: Add checksum-based restart for kube-proxy on cluster network changes ([#15533](https://github.com/kubermatic/kubermatic/pull/15533))
-- Fix cluster-autoscaler RBAC permissions. ⚠️ Potentially BREAKING Change: cluster-autoscaler application needs to be re-installed to force recreating the ApplicationInstallation resource in order to get the new updated default values.yaml ([#15152](https://github.com/kubermatic/kubermatic/pull/15152))
-- Update oauth2-proxy to appversion v7.14.2. ⚠️ Potentially BREAKING Change: Major Alpha Config YAML parsing has been revamped for better extensibility in preparation for v8. Please review https://github.com/oauth2-proxy/oauth2-proxy/releases/tag/v7.14.0 for more details ([#15499](https://github.com/kubermatic/kubermatic/pull/15499))
+- Fix cluster-autoscaler RBAC permissions. ([#15152](https://github.com/kubermatic/kubermatic/pull/15152))
+    - ⚠️ Potentially BREAKING Change: cluster-autoscaler application needs to be re-installed to force recreating the ApplicationInstallation resource in order to get the new updated default values.yaml
+- Update oauth2-proxy to appversion v7.14.2. ([#15499](https://github.com/kubermatic/kubermatic/pull/15499), [#15174](https://github.com/kubermatic/kubermatic/pull/15174))
+    - ⚠️ Potentially BREAKING Change: Major Alpha Config YAML parsing has been revamped for better extensibility in preparation for v8. Please review https://github.com/oauth2-proxy/oauth2-proxy/releases/tag/v7.14.0 for more details 
+    - ⚠️ Potentially BREAKING Change: If your configuration relies on matching query parameters in `skip_auth_routes` patterns, you must update your regex patterns to match paths only. Review all `skip_auth_routes` entries for potential impact. For detailed information, migration guidance, and security implications, see the upstream [security advisory](https://github.com/oauth2-proxy/oauth2-proxy/security/advisories/GHSA-7rh7-c77v-6434)
 - Update to User-Cluster MLA Cortex and Consul charts. All User-Cluster MLA Cortex and Consul pods will restart and be upgraded to the latest versions. Action required: If you had configured a startupProbe for the Cortex compactor in your values.yaml, that entire configuration must be removed, as the latest version of Cortex compactor does not include a startupProbe ([#15356](https://github.com/kubermatic/kubermatic/pull/15356))
-- Update oauth2-proxy to appversion v7.13.0. Potentially BREAKING Change: If your configuration relies on matching query parameters in `skip_auth_routes` patterns, you must update your regex patterns to match paths only. Review all `skip_auth_routes` entries for potential impact. For detailed information, migration guidance, and security implications, see the upstream [security advisory](https://github.com/oauth2-proxy/oauth2-proxy/security/advisories/GHSA-7rh7-c77v-6434) ([#15174](https://github.com/kubermatic/kubermatic/pull/15174))
 
 ### Supported Kubernetes Versions
 
@@ -24,6 +26,23 @@ This release contains changes that require additional attention, please read the
 - Add support for the latest k8s patch releases v1.35.1/v1.34.4/v1.33.8/v1.32.12 ([#15465](https://github.com/kubermatic/kubermatic/pull/15465))
 - Add support for the latest k8s patch releases v1.34.3/v1.33.7 ([#15239](https://github.com/kubermatic/kubermatic/pull/15239))
 - Add support for k8s patch releases v1.34.2/v1.33.6/v1.32.10/v1.31.14 ([#15170](https://github.com/kubermatic/kubermatic/pull/15170))
+
+#### Supported Versions
+
+- v1.35.2
+- v1.35.1
+- v1.35.0
+- v1.34.5
+- v1.34.4
+- v1.34.3
+- v1.34.2
+- v1.33.9
+- v1.33.8
+- v1.33.7
+- v1.33.6
+- v1.32.13
+- v1.32.12
+- v1.32.10
 
 ### Cloud Providers
 
