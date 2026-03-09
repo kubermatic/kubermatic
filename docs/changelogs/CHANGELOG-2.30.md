@@ -132,7 +132,8 @@ This release contains changes that require additional attention, please read the
 - Update Canal to v3.31 ([#15304](https://github.com/kubermatic/kubermatic/pull/15304))
 - Update azuredisk-csi-driver to 1.32.11 for Kubernetes 1.32 and to 1.31.12 for Kubernetes 1.31 ([#15147](https://github.com/kubermatic/kubermatic/pull/15147))
 - Add Cilium 1.18.6 and 1.17.12 ([#15305](https://github.com/kubermatic/kubermatic/pull/15305))
-
+- Update Operating System Manager to [v1.10.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.0) ([#15571](https://github.com/kubermatic/kubermatic/pull/15571))
+- Update machine-controller to [v1.65.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.0) ([#15570](https://github.com/kubermatic/kubermatic/pull/15570))
 
 ### Cleanups
 
