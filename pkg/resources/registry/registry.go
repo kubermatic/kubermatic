@@ -37,30 +37,9 @@ func Must(s string, err error) string {
 	return s
 }
 
-// WithOverwriteFunc is a function that takes a string and either returns that string or a defined override value.
-type WithOverwriteFunc func(string) string
-
-// GetOverwriteFunc returns a WithOverwriteFunc based on the given override value.
-//
-// Deprecated: This function should not be used anymore. Use the much more
-// flexible GetImageRewriterFunc instead.
-func GetOverwriteFunc(overwriteRegistry string) WithOverwriteFunc {
-	if overwriteRegistry == "" {
-		return func(s string) string {
-			return s
-		}
-	}
-
-	return func(_ string) string {
-		return overwriteRegistry
-	}
-}
-
 // ImageRewriter is a function that takes a Docker image reference
 // (for example "docker.io/repo/image:tag@sha256:abc123") and
 // potentially changes the registry to point to a local registry.
-// It's a distinct type from WithOverwriteFunc as it does not just
-// work on a registry, but a full image reference.
 type ImageRewriter func(string) (string, error)
 
 // GetImageRewriterFunc returns a ImageRewriter that will apply the given
