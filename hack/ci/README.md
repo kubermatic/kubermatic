@@ -57,16 +57,19 @@ useful as part of another script to setup KKP for testing.
 
 ## run-addons-integration-test.sh
 
-TBD
+Tests addon upgrade compatibility by verifying that addons can be successfully upgraded across versions.
+
+## run-canal-e2e-test.sh
+
+Runs Canal CNI e2e tests, verifying Canal networking and kube-proxy proxy mode handling.
 
 ## run-cilium-e2e-test.sh
 
-This script is used as a postsubmit job and updates the dev master
-cluster after every commit to main.
+Runs Cilium CNI e2e tests, verifying Cilium networking, eBPF proxy mode, and Hubble observability.
 
 ## run-cluster-backup-e2e-tests.sh
 
-TBD
+Runs cluster backup e2e tests, verifying Velero-based backup and restore functionality.
 
 ## run-conformance-tests.sh
 

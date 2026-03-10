@@ -130,7 +130,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-canal-e2e-test.sh"
           env:
