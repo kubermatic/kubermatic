@@ -168,7 +168,7 @@ spec:
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image: "velero/velero:v1.17.1"
+          image: "quay.io/kubermatic-mirror/images/velero:v1.17.1"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -366,7 +366,7 @@ spec:
       automountServiceAccountToken: true
       initContainers:
         - name: kubectl
-          image: "docker.io/bitnamilegacy/kubectl:1.33"
+          image: "quay.io/kubermatic-mirror/images/kubectl:1.33"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -378,7 +378,7 @@ spec:
               name: crds
       containers:
         - name: velero
-          image: "velero/velero:v1.17.1"
+          image: "quay.io/kubermatic-mirror/images/velero:v1.17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /tmp/sh
