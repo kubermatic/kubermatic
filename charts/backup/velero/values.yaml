@@ -13,6 +13,9 @@
 # limitations under the License.
 
 velero:
+  image:
+    repository: quay.io/kubermatic-mirror/images/velero
+
   # whether to enable etcd backups?
   # if you set this as true, you must provide valid configuration for velero.configuration.backupStorageLocation[0]
   backupsEnabled: false
@@ -101,4 +104,8 @@ velero:
   # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
   annotations: {}
   # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
+
+  kubectl:
+    image:
+      repository: quay.io/kubermatic-mirror/images/kubectl
 
