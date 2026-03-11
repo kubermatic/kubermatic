@@ -99,7 +99,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: {{ Registry "foo.io" }}/test:1.2.3
+        image: {{ Image "foo.io/test:1.2.3" }}
 `
 
 	testManifestKubeDNS = `apiVersion: v1
