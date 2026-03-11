@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	applicationsecretclustercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/audit-logging-enforcement-controller"
+	auditloggingenforcement "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/audit-logging-enforcement-controller"
 	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	clustercredentialscontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-credentials-controller"
@@ -46,7 +46,6 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	operatingsystemmanagermigrator "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-manager-migrator"
 	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
@@ -85,7 +84,6 @@ var AllControllers = map[string]controllerCreator{
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
-	operatingsystemmanagermigrator.ControllerName:           createOperatingSystemManagerMigratorController,
 	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
@@ -457,17 +455,6 @@ func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
 		ctrlCtx.runOptions.workerCount,
-	)
-}
-
-func createOperatingSystemManagerMigratorController(ctrlCtx *controllerContext) error {
-	return operatingsystemmanagermigrator.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.clientProvider,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.versions,
 	)
 }
 
