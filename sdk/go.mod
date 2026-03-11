@@ -1,13 +1,13 @@
 module k8c.io/kubermatic/sdk/v2
 
-go 1.25.6
+go 1.25.7
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/google/go-cmp v0.7.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/vmware-tanzu/velero v1.17.1
-	k8c.io/kubelb v1.3.1
+	k8c.io/kubelb v1.3.5
 	k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
