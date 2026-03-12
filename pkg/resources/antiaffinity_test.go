@@ -19,20 +19,22 @@ package resources
 import (
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
 func TestMerge(t *testing.T) {
 	a := &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution:  podAffinityTerm("app", "zone"),
-			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm("app", "zone"),
+			RequiredDuringSchedulingIgnoredDuringExecution:  podAffinityTerm(AppLabelKey, "app", "zone"),
+			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(AppLabelKey, "app", "zone"),
 		},
 	}
 	b := &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution:  podAffinityTerm("app", "zone"),
-			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm("app", "zone"),
+			RequiredDuringSchedulingIgnoredDuringExecution:  podAffinityTerm(AppLabelKey, "app", "zone"),
+			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(AppLabelKey, "app", "zone"),
 		},
 	}
 	c := MergeAffinities(a, b)
@@ -42,5 +44,23 @@ func TestMerge(t *testing.T) {
 	}
 	if len(c.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != 2 {
 		t.Errorf("Merge failed, expected length of RequiredDuringSchedulingIgnoredDuringExecution to be 2, got %d", len(a.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution))
+	}
+}
+
+func TestHostnameAntiAffinityForLabel(t *testing.T) {
+	t.Parallel()
+
+	affinity := HostnameAntiAffinityForLabel("app.kubernetes.io/name", "nodeport-proxy-envoy", kubermaticv1.AntiAffinityTypePreferred)
+	terms := affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+	if len(terms) != 1 {
+		t.Fatalf("expected 1 preferred anti-affinity term, got %d", len(terms))
+	}
+
+	got := terms[0].PodAffinityTerm.LabelSelector.MatchLabels
+	if got["app.kubernetes.io/name"] != "nodeport-proxy-envoy" {
+		t.Fatalf("unexpected label selector: got %#v", got)
+	}
+	if _, exists := got[AppLabelKey]; exists {
+		t.Fatalf("expected custom label key to be used, got %#v", got)
 	}
 }
