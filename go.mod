@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 // // TODO: Remove once we have vanity import support for application-catalog-manager
-replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.6
+replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260312121632-91dddf224f1c
 
 // required for compatibility with other OpenTelemetry dependencies
 replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.33.0
@@ -464,7 +464,7 @@ require (
 	go.opentelemetry.io/contrib/exporters/autoexport v0.57.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0 // indirect
-	go.opentelemetry.io/otel v1.38.0 // indirect
+	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.8.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.8.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.37.0 // indirect
@@ -477,11 +477,11 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.32.0 // indirect
 	go.opentelemetry.io/otel/log v0.14.0 // indirect
-	go.opentelemetry.io/otel/metric v1.38.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.38.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.14.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.38.0 // indirect
-	go.opentelemetry.io/otel/trace v1.38.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.step.sm/crypto v0.60.0 // indirect
 	go.uber.org/dig v1.17.1 // indirect
