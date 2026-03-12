@@ -818,7 +818,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-manager-e2e
-    run_if_changed: "(pkg/test/e2e/appcatalogmanager/|pkg/controller/operator/master/resources/application-catalog/|pkg/controller/operator/master/reconciler.go|pkg/validation/application_definition.go|.prow/applications-catalog.yaml|hack/ci/run-appcatalog-manager-e2e-tests.sh)"
+    run_if_changed: "(pkg/test/e2e/appcatalogmanager/|pkg/controller/operator/master/resources/application-catalog/|pkg/controller/operator/master/reconciler.go|pkg/validation/application_definition.go|.prow/applications-catalog.yaml|hack/ci/run-appcatalog-manager-e2e-tests.sh|pkg/ee/default-application-catalog/applicationdefinitions/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
