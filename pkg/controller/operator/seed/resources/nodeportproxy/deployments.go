@@ -179,10 +179,10 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
 			}
-			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinityForLabel(common.NameLabel, EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
 
 			if supportsFailureDomainZoneAntiAffinity {
-				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinityForLabel(common.NameLabel, EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
 				d.Spec.Template.Spec.Affinity = resources.MergeAffinities(d.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 

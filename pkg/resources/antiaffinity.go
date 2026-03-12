@@ -26,12 +26,23 @@ import (
 // HostnameAntiAffinity returns a simple Affinity rule to prevent* scheduling of same kind pods on the same node.
 // *if scheduling is not possible with this rule, it will be ignored.
 func HostnameAntiAffinity(app string, antiAffinityType kubermaticv1.AntiAffinityType) *corev1.Affinity {
-	return antiAffinity(app, antiAffinityType, TopologyKeyHostname)
+	return antiAffinity(AppLabelKey, app, antiAffinityType, TopologyKeyHostname)
+}
+
+// HostnameAntiAffinityForLabel returns a simple Affinity rule to prevent* scheduling of same kind pods on the same node.
+// *if scheduling is not possible with this rule, it will be ignored.
+func HostnameAntiAffinityForLabel(labelKey, labelValue string, antiAffinityType kubermaticv1.AntiAffinityType) *corev1.Affinity {
+	return antiAffinity(labelKey, labelValue, antiAffinityType, TopologyKeyHostname)
 }
 
 // FailureDomainZoneAntiAffinity ensures that same-kind pods are spread across different availability zones.
 func FailureDomainZoneAntiAffinity(app string, antiAffinityType kubermaticv1.AntiAffinityType) *corev1.Affinity {
-	return antiAffinity(app, antiAffinityType, TopologyKeyZone)
+	return antiAffinity(AppLabelKey, app, antiAffinityType, TopologyKeyZone)
+}
+
+// FailureDomainZoneAntiAffinityForLabel ensures that same-kind pods are spread across different availability zones.
+func FailureDomainZoneAntiAffinityForLabel(labelKey, labelValue string, antiAffinityType kubermaticv1.AntiAffinityType) *corev1.Affinity {
+	return antiAffinity(labelKey, labelValue, antiAffinityType, TopologyKeyZone)
 }
 
 func MergeAffinities(a *corev1.Affinity, b *corev1.Affinity) *corev1.Affinity {
@@ -55,23 +66,23 @@ func MergeAffinities(a *corev1.Affinity, b *corev1.Affinity) *corev1.Affinity {
 	return a
 }
 
-func antiAffinity(app string, antiAffinity kubermaticv1.AntiAffinityType, topologyKey string) *corev1.Affinity {
+func antiAffinity(labelKey, labelValue string, antiAffinity kubermaticv1.AntiAffinityType, topologyKey string) *corev1.Affinity {
 	if antiAffinity == kubermaticv1.AntiAffinityTypeRequired {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: podAffinityTerm(app, topologyKey),
+				RequiredDuringSchedulingIgnoredDuringExecution: podAffinityTerm(labelKey, labelValue, topologyKey),
 			},
 		}
 	}
 
 	return &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(app, topologyKey),
+			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(labelKey, labelValue, topologyKey),
 		},
 	}
 }
 
-func weightedPodAffinityTerm(app string, topologyKey string) []corev1.WeightedPodAffinityTerm {
+func weightedPodAffinityTerm(labelKey, labelValue string, topologyKey string) []corev1.WeightedPodAffinityTerm {
 	return []corev1.WeightedPodAffinityTerm{
 		// Avoid that we schedule multiple same-kind pods within the same namespace on a single node.
 		{
@@ -79,7 +90,7 @@ func weightedPodAffinityTerm(app string, topologyKey string) []corev1.WeightedPo
 			PodAffinityTerm: corev1.PodAffinityTerm{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						AppLabelKey: app,
+						labelKey: labelValue,
 					},
 				},
 				TopologyKey: topologyKey,
@@ -88,13 +99,13 @@ func weightedPodAffinityTerm(app string, topologyKey string) []corev1.WeightedPo
 	}
 }
 
-func podAffinityTerm(app string, topologyKey string) []corev1.PodAffinityTerm {
+func podAffinityTerm(labelKey, labelValue string, topologyKey string) []corev1.PodAffinityTerm {
 	return []corev1.PodAffinityTerm{
 		// Avoid that we schedule multiple same-kind pods within the same namespace on a single node.
 		{
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					AppLabelKey: app,
+					labelKey: labelValue,
 				},
 			},
 			TopologyKey: topologyKey,
