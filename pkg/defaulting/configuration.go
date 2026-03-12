@@ -77,7 +77,7 @@ const (
 
 	// Default image repository and tag.
 	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
-	DefaultApplicationManagerImageTag        = "v0.2.0-rc.8"
+	DefaultApplicationManagerImageTag        = "ec6549a69790ebf6fc9b5c98e299182aab7275da"
 )
 
 func newSemver(s string) semver.Semver {
