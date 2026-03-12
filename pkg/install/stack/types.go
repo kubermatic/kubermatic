@@ -48,8 +48,8 @@ type DeployOptions struct {
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
-
-	Versions kubermaticversion.Versions
+	SeparateSeed     bool
+	Versions         kubermaticversion.Versions
 
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool
