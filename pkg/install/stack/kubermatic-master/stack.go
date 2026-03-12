@@ -47,14 +47,6 @@ import (
 )
 
 const (
-	NginxIngressControllerChartName   = "nginx-ingress-controller"
-	NginxIngressControllerReleaseName = NginxIngressControllerChartName
-	NginxIngressControllerNamespace   = NginxIngressControllerChartName
-
-	EnvoyGatewayControllerChartName   = "envoy-gateway-controller"
-	EnvoyGatewayControllerReleaseName = EnvoyGatewayControllerChartName
-	EnvoyGatewayControllerNamespace   = EnvoyGatewayControllerChartName
-
 	CertManagerChartName   = "cert-manager"
 	CertManagerReleaseName = CertManagerChartName
 	CertManagerNamespace   = CertManagerChartName
@@ -98,12 +90,12 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 	}
 
 	if opt.MigrateToGatewayAPI {
-		err := deployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+		err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
 		if err != nil {
 			return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
 		}
 	} else {
-		err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+		err := common.DeployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
 		if err != nil {
 			return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 		}

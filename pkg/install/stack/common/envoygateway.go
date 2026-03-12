@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermaticmaster
+package common
 
 import (
 	"context"
@@ -44,9 +44,13 @@ const (
 	// created by the envoy-gateway-controller Helm chart. This must match
 	// the value set in the chart's values.yaml under gatewayClass.name.
 	GatewayClassName = "kubermatic-envoy-gateway"
+
+	EnvoyGatewayControllerChartName   = "envoy-gateway-controller"
+	EnvoyGatewayControllerReleaseName = EnvoyGatewayControllerChartName
+	EnvoyGatewayControllerNamespace   = EnvoyGatewayControllerChartName
 )
 
-func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+func DeployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, EnvoyGatewayControllerChartName) {
 		logger.Infof("⭕ Skipping %s deployment.", EnvoyGatewayControllerChartName)
 		return nil

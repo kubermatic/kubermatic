@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermaticmaster
+package common
 
 import (
 	"context"
@@ -42,7 +42,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+const (
+	NginxIngressControllerChartName   = "nginx-ingress-controller"
+	NginxIngressControllerReleaseName = NginxIngressControllerChartName
+	NginxIngressControllerNamespace   = NginxIngressControllerChartName
+)
+
+func DeployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, NginxIngressControllerChartName) {
 		logger.Infof("⭕ Skipping %s deployment.", NginxIngressControllerChartName)
 		return nil

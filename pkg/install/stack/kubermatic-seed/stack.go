@@ -69,6 +69,18 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
+	if opt.SeparateSeed {
+		if opt.MigrateToGatewayAPI {
+			if err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+				return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+			}
+		} else {
+			if err := common.DeployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+				return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
+			}
+		}
+	}
+
 	if err := deployMinio(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Minio: %w", err)
 	}

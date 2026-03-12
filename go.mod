@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 // // TODO: Remove once we have vanity import support for application-catalog-manager
-replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260312082831-ec6549a69790
+replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260312121632-91dddf224f1c
 
 // required for compatibility with other OpenTelemetry dependencies
 replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.33.0

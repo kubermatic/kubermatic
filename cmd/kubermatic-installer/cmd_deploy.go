@@ -72,6 +72,7 @@ type DeployOptions struct {
 	StorageClass       string
 	DisableTelemetry   bool
 	AllowEditionChange bool
+	SeparateSeed       bool
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
@@ -151,6 +152,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))
 	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
 	cmd.PersistentFlags().BoolVar(&opt.AllowEditionChange, "allow-edition-change", false, "allow up- or downgrading between Community and Enterprise editions")
+	cmd.PersistentFlags().BoolVar(&opt.SeparateSeed, "separate-seed", false, "deploy ingress or gateway-api master components to the seed (only applies to kubermatic-seed stack)")
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
@@ -215,6 +217,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			ForceHelmReleaseUpgrade:            opt.Force,
 			ChartsDirectory:                    opt.ChartsDirectory,
 			EnableCertManagerV2Migration:       opt.MigrateCertManager,
+			SeparateSeed:                       opt.SeparateSeed,
 			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
 			EnableNginxIngressMigration:        opt.MigrateNginx,
 			DisableTelemetry:                   opt.DisableTelemetry,
