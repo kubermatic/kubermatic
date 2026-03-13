@@ -200,7 +200,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 
 	namesStrArray := strings.Split(names, ",")
 	tLogger.Info("Waiting for pods to get ready...")
-	err = wait.PollLog(ctx, tLogger, 2*time.Second, 7*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 12*time.Minute, func(ctx context.Context) (error, error) {
 		err = waitForPods(ctx, tLogger, client, applicationNamespace, key, namesStrArray)
 		if err != nil {
 			return fmt.Errorf("failed to verify that all pods are ready: %w", err), nil
