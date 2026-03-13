@@ -669,7 +669,7 @@
       "datasource": {
         "uid": "$datasource"
       },
-      "description": "### Intervals per Query\nThe average number of splitted queries (partitioned by time) executed a single input query.\n\n",
+      "description": "### Intervals per Query\nThe average number of split queries (partitioned by time) executed a single input query.\n\n",
       "editable": true,
       "fieldConfig": {
         "defaults": {
