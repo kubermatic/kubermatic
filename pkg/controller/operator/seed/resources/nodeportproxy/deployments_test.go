@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -70,5 +71,36 @@ func TestEnvoyDeploymentReconcilerReplicas(t *testing.T) {
 				t.Fatalf("unexpected replica count: got %d, want %d", *reconciled.Spec.Replicas, tc.expectedReplicas)
 			}
 		})
+	}
+}
+
+func TestEnvoyDeploymentReconcilerAffinityUsesNameLabel(t *testing.T) {
+	t.Parallel()
+
+	seed := &kubermaticv1.Seed{}
+
+	_, reconcile := EnvoyDeploymentReconciler(&kubermaticv1.KubermaticConfiguration{}, seed, true, kubermatic.Versions{
+		KubermaticContainerTag: "v0.0.0-test",
+	})()
+
+	reconciled, err := reconcile(&appsv1.Deployment{})
+	if err != nil {
+		t.Fatalf("failed to reconcile deployment: %v", err)
+	}
+
+	if reconciled.Spec.Template.Spec.Affinity == nil || reconciled.Spec.Template.Spec.Affinity.PodAntiAffinity == nil {
+		t.Fatal("expected pod anti-affinity to be set")
+	}
+
+	terms := reconciled.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+	if len(terms) != 2 {
+		t.Fatalf("expected 2 preferred anti-affinity terms, got %d", len(terms))
+	}
+
+	for _, term := range terms {
+		matchLabels := term.PodAffinityTerm.LabelSelector.MatchLabels
+		if matchLabels[common.NameLabel] != EnvoyDeploymentName {
+			t.Fatalf("expected anti-affinity to match %q=%q, got %#v", common.NameLabel, EnvoyDeploymentName, matchLabels)
+		}
 	}
 }
