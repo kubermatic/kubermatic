@@ -1073,12 +1073,18 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  - persistentvolumeclaims/status
   verbs:
   - get
   - list
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
