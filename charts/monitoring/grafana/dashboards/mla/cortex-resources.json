@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 13,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -65,6 +39,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -192,7 +167,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "CPU",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -200,6 +177,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -327,7 +305,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Memory (workingset)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -335,6 +315,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -427,7 +408,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Memory (go heap inuse)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -461,6 +444,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -553,7 +537,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Receive Bandwidth",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -561,6 +547,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -653,7 +640,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Transmit Bandwidth",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -687,6 +676,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -779,7 +769,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Disk Writes",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -787,6 +779,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -879,7 +872,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Disk Reads",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -887,6 +882,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -979,11 +975,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Disk Space Utilization",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -991,11 +989,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -1009,15 +1003,7 @@
       },
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "mla"
-          ],
-          "value": [
-            "mla"
-          ]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -1034,7 +1020,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -1046,7 +1032,7 @@
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -1074,7 +1060,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Resources",
   "uid": "df9added6f1f4332f95848cca48ebd99",
   "version": 1,

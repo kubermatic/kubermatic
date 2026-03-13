@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 15,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -64,6 +38,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -154,13 +129,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "RPS / component",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -251,7 +229,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Error rate / component",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -284,6 +264,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -374,13 +355,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "RPS / operation",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -471,7 +455,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Error rate / operation",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -503,6 +489,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -617,13 +604,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: Get",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -738,13 +728,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: GetRange",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -859,7 +852,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: Exists",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -891,6 +886,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1005,13 +1001,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: Attributes",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1126,13 +1125,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: Upload",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1247,11 +1249,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Op: Delete",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -1259,11 +1263,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -1277,15 +1277,7 @@
       },
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -1302,7 +1294,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -1314,7 +1306,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -1342,7 +1334,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Object Store",
   "uid": "d5a3a4489d57c733b5677fb55370a723",
   "version": 1,

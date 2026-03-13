@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 56,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -64,6 +38,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -123,13 +98,16 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Active Configurations",
+      "transparent": true,
       "type": "stat"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -189,13 +167,16 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total Rules",
+      "transparent": true,
       "type": "stat"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -255,13 +236,16 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Read from Ingesters - QPS",
+      "transparent": true,
       "type": "stat"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -321,7 +305,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Write to Ingesters - QPS",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -354,6 +340,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -456,13 +443,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "EPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -553,7 +543,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -586,6 +578,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -782,13 +775,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "QPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -900,13 +896,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -997,7 +996,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per route p99 Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1030,6 +1031,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1226,13 +1228,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "QPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1347,7 +1352,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1380,6 +1387,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1576,13 +1584,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "QPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1697,7 +1708,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1730,6 +1743,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1844,13 +1858,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Number of store-gateways hit per Query",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1965,13 +1982,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Refetches of missing blocks per Query",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2063,7 +2083,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Consistency checks failed",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2096,6 +2118,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2186,13 +2209,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Delivery Errors",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2283,13 +2309,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Queue Length",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2380,7 +2409,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Dropped",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2413,6 +2444,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2503,13 +2535,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Missed Iterations",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2600,13 +2635,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2697,7 +2735,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Failures",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2730,6 +2770,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2820,7 +2861,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2853,6 +2896,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2943,13 +2987,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Operations / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3040,13 +3087,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Error rate",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3161,13 +3211,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Attributes",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3282,7 +3335,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Exists",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -3314,6 +3369,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3428,13 +3484,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Get",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3549,13 +3608,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: GetRange",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3670,13 +3732,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Upload",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3791,11 +3856,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Delete",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -3803,11 +3870,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -3821,15 +3884,7 @@
       },
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -3846,7 +3901,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -3858,7 +3913,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -3886,7 +3941,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Ruler",
   "uid": "44d12bcb1f95661c6ab6bc946dfc3473",
   "version": 1,

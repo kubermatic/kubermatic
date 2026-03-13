@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 16,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -64,6 +38,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -176,6 +151,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Slow queries",
       "transformations": [
         {
@@ -247,10 +223,11 @@
           }
         }
       ],
+      "transparent": true,
       "type": "table"
     }
   ],
-  "refresh": "",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -258,11 +235,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -275,11 +248,7 @@
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "mla",
-          "value": "mla"
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -296,7 +265,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -306,11 +275,7 @@
         "useTags": false
       },
       {
-        "current": {
-          "selected": false,
-          "text": "loki",
-          "value": "P982945308D3682D1"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Logs datasource",
@@ -367,7 +332,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -395,7 +360,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Slow Queries",
   "uid": "e6f3091e29d2636e3b8393447e925668",
   "version": 1,
