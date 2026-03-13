@@ -113,7 +113,7 @@ func TestReconcile(t *testing.T) {
 				Spec: networkingv1.NetworkPolicySpec{
 					PodSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster.x-k8s.io/cluster-name": clusterName,
+							NetworkPolicyPodSelectorLabel: clusterName,
 						},
 					},
 					Egress: []networkingv1.NetworkPolicyEgressRule{
@@ -123,7 +123,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},
@@ -221,7 +221,7 @@ func TestReconcile(t *testing.T) {
 				Spec: networkingv1.NetworkPolicySpec{
 					PodSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster.x-k8s.io/cluster-name": clusterName,
+							NetworkPolicyPodSelectorLabel: clusterName,
 						},
 					},
 					Egress: []networkingv1.NetworkPolicyEgressRule{
@@ -231,7 +231,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},
@@ -262,7 +262,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},

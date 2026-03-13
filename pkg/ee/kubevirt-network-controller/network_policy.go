@@ -143,7 +143,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 							{
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"cluster.x-k8s.io/cluster-name": cluster.Name,
+										NetworkPolicyPodSelectorLabel: cluster.Name,
 									},
 								},
 							},
