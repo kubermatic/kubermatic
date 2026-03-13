@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 21,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "aliasColors": {},
@@ -43,6 +17,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -141,12 +116,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Rollout progress",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "bargauge",
       "xaxis": {
         "mode": "time",
@@ -175,6 +152,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -257,12 +235,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Writes - 2xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -291,6 +271,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -381,12 +362,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Writes - 4xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -415,6 +398,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -501,12 +485,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Writes - 5xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -535,6 +521,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -623,12 +610,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Writes 99th Latency",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -657,6 +646,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -739,12 +729,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Reads - 2xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -773,6 +765,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -863,12 +856,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Reads - 4xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -897,6 +892,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -983,12 +979,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Reads - 5xx",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -1017,6 +1015,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1105,12 +1104,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Reads 99th Latency",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -1139,6 +1140,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1241,12 +1243,14 @@
         }
       ],
       "thresholds": [],
+      "timeRegions": [],
       "title": "Unhealthy pods",
       "tooltip": {
         "shared": false,
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "stat",
       "xaxis": {
         "mode": "time",
@@ -1271,6 +1275,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -1341,6 +1346,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Pods count per Version",
       "transformations": [
         {
@@ -1373,12 +1379,14 @@
           }
         }
       ],
+      "transparent": true,
       "type": "table"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1480,11 +1488,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency vs 24h ago",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -1492,11 +1502,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -1509,11 +1515,7 @@
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "mla",
-          "value": "mla"
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -1530,7 +1532,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -1542,7 +1544,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -1570,7 +1572,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Rollout progress",
   "uid": "7544a3a62b1be6ffd919fc990ab8ba8f",
   "version": 1,

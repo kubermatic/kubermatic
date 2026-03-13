@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 55,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -64,6 +38,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -123,13 +98,16 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total Alerts",
+      "transparent": true,
       "type": "stat"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -189,13 +167,16 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total Silences",
+      "transparent": true,
       "type": "stat"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -255,7 +236,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Tenants",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -288,6 +271,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -390,7 +374,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "APS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -423,6 +409,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -525,13 +512,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "NPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -634,13 +624,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "NPS by integration",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -755,7 +748,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -788,6 +783,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -984,13 +980,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "QPS",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1102,7 +1101,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1135,6 +1136,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1225,13 +1227,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Operations / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1322,13 +1327,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Error rate",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1443,13 +1451,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Attributes",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1564,7 +1575,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Exists",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1596,6 +1609,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1710,13 +1724,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Get",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1831,13 +1848,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: GetRange",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1952,13 +1972,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Upload",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2073,7 +2096,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Delete",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2106,6 +2131,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2196,13 +2222,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per pod Tenants",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2293,13 +2322,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per pod Alerts",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2390,7 +2422,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per pod Silences",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2423,6 +2457,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2525,13 +2560,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Syncs/sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2622,13 +2660,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Syncs/sec (By Reason)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2719,7 +2760,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Ring Check Errors/sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2752,6 +2795,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2842,13 +2886,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Initial syncs /sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2963,13 +3010,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Initial sync duration",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3072,7 +3122,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Fetch state from other alertmanagers /sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -3105,6 +3157,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3207,13 +3260,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Replicate state to other alertmanagers /sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3316,13 +3372,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Merge state from other alertmanagers /sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3425,11 +3484,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Persist state to remote storage /sec",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -3437,11 +3498,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -3455,15 +3512,7 @@
       },
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -3480,7 +3529,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -3492,7 +3541,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -3520,7 +3569,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Alertmanager",
   "uid": "a76bee5913c97c918d9e56a3cc88cc28",
   "version": 1,
