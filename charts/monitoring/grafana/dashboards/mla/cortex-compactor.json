@@ -1,38 +1,12 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 12,
-  "links": [
-    {
-      "asDropdown": true,
-      "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [
-        "cortex"
-      ],
-      "targetBlank": false,
-      "title": "Cortex Dashboards",
-      "type": "dashboards"
-    }
-  ],
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -66,6 +40,7 @@
         "uid": "$datasource"
       },
       "description": "### Per-instance runs\nNumber of times a compactor instance triggers a compaction across all tenants that it manages.\n\n",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -232,7 +207,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per-instance runs / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -240,6 +217,7 @@
         "uid": "$datasource"
       },
       "description": "### Tenants compaction progress\nIn a multi-tenant cluster, display the progress of tenants that are compacted while compaction is running.\nReset to <tt>0</tt> after the compaction run is completed for all tenants in the shard.\n\n",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -331,7 +309,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Tenants compaction progress",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -364,6 +344,7 @@
         "uid": "$datasource"
       },
       "description": "### Compacted blocks / sec\nRate of blocks that are generated as a result of a compaction operation.\n\n",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -454,7 +435,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Compacted blocks / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -462,6 +445,7 @@
         "uid": "$datasource"
       },
       "description": "### Per-block compaction duration\nDisplay the amount of time that it has taken to generate a single compacted block.\n\n",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -576,7 +560,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Per-block compaction duration",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -608,6 +594,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -698,7 +685,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Average blocks / tenant",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -706,6 +695,7 @@
         "uid": "$datasource"
       },
       "description": "### Tenants with largest number of blocks\nThe 10 tenants with the largest number of blocks.\n\n",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -796,7 +786,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Tenants with largest number of blocks",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -829,6 +821,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -919,13 +912,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Blocks marked for deletion / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1059,7 +1055,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Blocks deletions / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1092,6 +1090,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1225,13 +1224,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Metadata Syncs / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1346,7 +1348,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Metadata Sync Duration",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1379,6 +1383,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1469,13 +1474,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Operations / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1566,13 +1574,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Error rate",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1687,13 +1698,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Attributes",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1808,7 +1822,9 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Exists",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -1840,6 +1856,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1954,13 +1971,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Get",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2075,13 +2095,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: GetRange",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2196,13 +2219,16 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Upload",
+      "transparent": true,
       "type": "timeseries"
     },
     {
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2317,11 +2343,13 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Latency of Op: Delete",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "cortex"
@@ -2329,11 +2357,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "P1809F7CD0C75ACF3"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -2355,15 +2379,7 @@
       },
       {
         "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "mla"
-          ],
-          "value": [
-            "mla"
-          ]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "$datasource"
@@ -2380,7 +2396,7 @@
           "query": "label_values(cortex_build_info,namespace)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 2,
@@ -2392,7 +2408,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -2420,7 +2436,7 @@
       "30d"
     ]
   },
-  "timezone": "utc",
+  "timezone": "",
   "title": "Cortex / Compactor",
   "uid": "9c408e1d55681ecb8a22c9fab46875cc",
   "version": 1,
