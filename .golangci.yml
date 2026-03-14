@@ -170,9 +170,6 @@ linters:
         text: "SA1019: .*\\.Values is deprecated"
       - linters:
           - staticcheck
-        text: "SA1019: .*OVDCNetwork is deprecated"
-      - linters:
-          - staticcheck
         text: "SA1019: .*NodeportProxy\\.Annotations is deprecated"
       - linters:
           - staticcheck
