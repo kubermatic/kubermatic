@@ -73,6 +73,10 @@ if echo $CLUSTER_RAW | grep -i kubevirt -q; then
   ARGS="$ARGS -kv-infra-kubeconfig=${KUBEVIRT_INFRA_KUBECONFIG}"
 fi
 
+if [[ "$(echo "${CLUSTER_RAW}" | jq -r '.spec.kyverno.enabled // false')" == "true" ]]; then
+  ARGS="$ARGS -kyverno-enabled"
+fi
+
 if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
   if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
