@@ -36,7 +36,11 @@ spec:
           {{ toYaml . | nindent 10 }}
         {{- end }}
         container:
+          {{- if kindIs "string" .Values.envoyProxy.deployment.container.image }}
           image: {{ .Values.envoyProxy.deployment.container.image }}
+          {{- else }}
+          image: '{{ .Values.envoyProxy.deployment.container.image.repository }}:{{ .Values.envoyProxy.deployment.container.image.tag }}'
+          {{- end }}
           {{- with .Values.envoyProxy.deployment.container.resources }}
           resources:
             {{ toYaml . | nindent 12 }}
