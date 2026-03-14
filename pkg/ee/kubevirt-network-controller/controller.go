@@ -54,7 +54,7 @@ import (
 const (
 	ControllerName                = "kubevirt-network-controller"
 	WorkloadSubnetLabel           = "k8c.io/kubevirt-workload-subnet"
-	NetworkPolicyPodSelectorLabel = "cluster.x-k8s.io/cluster-name"
+	NetworkPolicyPodSelectorLabel = "cluster.x-k8s.io/cluster-id"
 	NetworkPolicyCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubevirt-infra-network-policy"
 )
 
