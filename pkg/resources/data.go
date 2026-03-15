@@ -85,7 +85,6 @@ type TemplateData struct {
 	oidcIssuerURL                         string
 	oidcIssuerClientID                    string
 	kubermaticImage                       string
-	dnatControllerImage                   string
 	networkIntfMgrImage                   string
 	machineControllerImageTag             string
 	machineControllerImageRepository      string
@@ -230,11 +229,6 @@ func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.C
 
 func (td *TemplateDataBuilder) WithEtcdBackupDestination(destination *kubermaticv1.BackupDestination) *TemplateDataBuilder {
 	td.data.etcdBackupDestination = destination
-	return td
-}
-
-func (td *TemplateDataBuilder) WithDnatControllerImage(image string) *TemplateDataBuilder {
-	td.data.dnatControllerImage = image
 	return td
 }
 
@@ -518,29 +512,9 @@ func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
 	return GetClusterFrontProxyCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetOpenVPNCA returns the root ca for the OpenVPN.
-func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
-	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
-}
-
 // GetMLAGatewayCA returns the root CA for the MLA Gateway.
 func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
 	return GetMLAGatewayCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
-}
-
-// GetOpenVPNServerPort returns the nodeport of the external apiserver service.
-func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
-	// When using tunneling expose strategy the port is fixed
-	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return 1194, nil
-	}
-	service := &corev1.Service{}
-	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
-	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %w", err)
-	}
-
-	return service.Spec.Ports[0].NodePort, nil
 }
 
 // GetAPIServerAlternateNames returns the alternate names for the apiserver certificate from the
@@ -609,10 +583,6 @@ func (d *TemplateData) KubermaticDockerTag() string {
 	return d.versions.KubermaticContainerTag
 }
 
-func (d *TemplateData) DNATControllerImage() string {
-	return registry.Must(d.RewriteImage(d.dnatControllerImage))
-}
-
 func (d *TemplateData) NetworkIntfMgrImage() string {
 	return registry.Must(d.RewriteImage(d.networkIntfMgrImage))
 }
@@ -623,10 +593,6 @@ func (d *TemplateData) BackupSchedule() time.Duration {
 
 func (d *TemplateData) BackupCount() *int {
 	return d.backupCount
-}
-
-func (d *TemplateData) DNATControllerTag() string {
-	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {

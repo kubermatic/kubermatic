@@ -96,17 +96,6 @@ groups:
             - Check the Prometheus Service Discovery page to find out why the target is unreachable.
             - Ensure that the seed-controller-manager pod's logs and that it is not crashlooping.
 
-      - alert: OpenVPNServerDown
-        annotations:
-          message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
-        expr: (kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"} != kube_deployment_spec_replicas{cluster!="",deployment="openvpn-server"}) and count(kubermatic_cluster_info) > 0
-        for: 15m
-        labels:
-          severity: critical
-          resource: "{{ $labels.cluster }}"
-          service: kubermatic-seed
-
       - alert: UserClusterPrometheusAbsent
         annotations:
           message: There is no Prometheus in cluster {{ $labels.name }}.
