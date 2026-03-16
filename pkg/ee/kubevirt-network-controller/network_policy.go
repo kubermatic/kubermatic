@@ -71,7 +71,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler(clusterName s
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster.x-k8s.io/cluster-name": clusterName,
+						NetworkPolicyPodSelectorLabel: clusterName,
 					},
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
@@ -81,7 +81,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler(clusterName s
 							{
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"cluster.x-k8s.io/cluster-name": clusterName,
+										NetworkPolicyPodSelectorLabel: clusterName,
 									},
 								},
 							},
@@ -107,7 +107,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster.x-k8s.io/cluster-name": cluster.Name,
+						NetworkPolicyPodSelectorLabel: cluster.Name,
 					},
 				},
 				PolicyTypes: []networkingv1.PolicyType{
@@ -121,7 +121,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 							{
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"cluster.x-k8s.io/cluster-name": cluster.Name,
+										NetworkPolicyPodSelectorLabel: cluster.Name,
 									},
 								},
 							},
@@ -143,7 +143,7 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 							{
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"cluster.x-k8s.io/cluster-name": cluster.Name,
+										NetworkPolicyPodSelectorLabel: cluster.Name,
 									},
 								},
 							},
