@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -43,7 +44,13 @@ const (
 )
 
 // GatewayReconciler returns a reconciler for the main Gateway resource.
-func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace string) kkpreconciling.NamedGatewayAPIGatewayReconcilerFactory {
+// existingListeners contains the current listeners from the Gateway (empty for new Gateways).
+// Non-core listeners (not http/https) from existingListeners are preserved.
+func GatewayReconciler(
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+	existingListeners []gatewayapiv1.Listener,
+) kkpreconciling.NamedGatewayAPIGatewayReconcilerFactory {
 	return func() (string, kkpreconciling.GatewayAPIGatewayReconciler) {
 		return gatewayName, func(g *gatewayapiv1.Gateway) (*gatewayapiv1.Gateway, error) {
 			g.Name = gatewayName
@@ -64,9 +71,9 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 			}
 			g.Spec.GatewayClassName = gatewayapiv1.ObjectName(gatewayClassName)
 
-			// Build the listeners slice. HTTP is always present.
-			// HTTPs is only added when a CertificateIssuer is configured.
-			listeners := []gatewayapiv1.Listener{
+			// Build core listeners. HTTP is always present.
+			// HTTPS is only added when a CertificateIssuer is configured.
+			coreListeners := []gatewayapiv1.Listener{
 				{
 					Name:     "http",
 					Protocol: gatewayapiv1.HTTPProtocolType,
@@ -99,7 +106,7 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 				case certmanagerv1.ClusterIssuerKind:
 					g.Annotations[certmanagerv1.IngressClusterIssuerNameAnnotationKey] = issuer.Name
 				}
-				listeners = append(listeners, gatewayapiv1.Listener{
+				coreListeners = append(coreListeners, gatewayapiv1.Listener{
 					Name:     "https",
 					Hostname: ptr.To(gatewayapiv1.Hostname(cfg.Spec.Ingress.Domain)),
 					Protocol: gatewayapiv1.HTTPSProtocolType,
@@ -125,7 +132,8 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 				})
 			}
 
-			g.Spec.Listeners = listeners
+			// Merge core listeners with preserved non-core from existing (sorted)
+			g.Spec.Listeners = gatewayutil.MergeListeners(coreListeners, existingListeners)
 
 			return g, nil
 		}
@@ -262,24 +270,28 @@ func EnsureGateway(
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
 ) error {
-	factory := GatewayReconciler(cfg, namespace)
-	gatewayName, reconciler := factory()
+	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+
+	var existing gatewayapiv1.Gateway
+	existingListeners := []gatewayapiv1.Listener{}
+
+	err := client.Get(ctx, key, &existing)
+	if err == nil {
+		existingListeners = existing.Spec.Listeners
+	} else if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
+	}
+
+	_, reconciler := GatewayReconciler(cfg, namespace, existingListeners)()
 
 	desired := &gatewayapiv1.Gateway{}
 	if _, err := reconciler(desired); err != nil {
 		return fmt.Errorf("failed to build desired Gateway: %w", err)
 	}
 
-	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
-
-	var existing gatewayapiv1.Gateway
-	if err := client.Get(ctx, key, &existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Debugw("Creating Gateway", "name", gatewayName, "namespace", namespace)
-			return client.Create(ctx, desired)
-		}
-
-		return fmt.Errorf("failed to get Gateway %s/%s: %w", namespace, gatewayName, err)
+	if apierrors.IsNotFound(err) {
+		log.Debugw("Creating Gateway", "name", gatewayName, "namespace", namespace)
+		return client.Create(ctx, desired)
 	}
 
 	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)

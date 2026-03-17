@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -156,12 +157,10 @@ func (r *Reconciler) desiredListeners(
 	gateway *gatewayapiv1.Gateway,
 	httpRoutes []gatewayapiv1.HTTPRoute,
 ) []gatewayapiv1.Listener {
-	// preserve the core HTTP and HTTPs listeners.
+	// preserve the core HTTP and HTTPS listeners.
 	listeners := make([]gatewayapiv1.Listener, 0)
 	for _, l := range gateway.Spec.Listeners {
-		if l.Protocol == gatewayapiv1.HTTPProtocolType && l.Name == "http" {
-			listeners = append(listeners, l)
-		} else if l.Protocol == gatewayapiv1.HTTPSProtocolType && l.Name == "https" {
+		if _, isCore := gatewayutil.CoreListenerNames[l.Name]; isCore {
 			listeners = append(listeners, l)
 		}
 	}
@@ -231,6 +230,7 @@ func (r *Reconciler) desiredListeners(
 		listeners = append(listeners, listener)
 	}
 
+	gatewayutil.SortListenersByName(listeners)
 	return listeners
 }
 
