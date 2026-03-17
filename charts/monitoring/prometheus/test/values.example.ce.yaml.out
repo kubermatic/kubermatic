@@ -2662,7 +2662,7 @@ data:
           - alert: CortexAlertmanagerPersistStateFailing
             annotations:
               message: |
-                Cortex Alertmanager {{ $labels.job }}/{{ $labels.instance }} is unable to persist full state snaphots to remote storage.
+                Cortex Alertmanager {{ $labels.job }}/{{ $labels.instance }} is unable to persist full state snapshots to remote storage.
             expr: |
               rate(cortex_alertmanager_state_persist_failed_total[15m]) > 0
             for: 1h
