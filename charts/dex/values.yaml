@@ -27,6 +27,10 @@ httpRoute:
   domain: ""
   # Timeout for requests (matching nginx proxy-read-timeout annotation)
   timeout: 3600s
+  # Path for Dex route (default: /dex)
+  path: /dex
+  # Path match type: PathPrefix, Exact, or RegularExpression (default: PathPrefix)
+  pathType: PathPrefix
 
 dex:
   replicaCount: 2
