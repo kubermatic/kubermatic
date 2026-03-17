@@ -1,0 +1,3949 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 32,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Headlines",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(cortex_ruler_managers_total{ job=\"pods\"})",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "timeRegions": [],
+      "title": "Active Configurations",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(cortex_prometheus_rule_group_rules{ job=\"pods\"})",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "timeRegions": [],
+      "title": "Total Rules",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[5m]))",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "timeRegions": [],
+      "title": "Read from Ingesters - QPS",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[5m]))",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "timeRegions": [],
+      "title": "Write to Ingesters - QPS",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 33,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Rule Evaluations Global",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_prometheus_rule_evaluations_total{ job=\"pods\"}[$__rate_interval]))\n-\nsum(rate(cortex_prometheus_rule_evaluation_failures_total{ job=\"pods\"}[$__rate_interval]))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "success",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_prometheus_rule_evaluation_failures_total{ job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "failed",
+          "refId": "B",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "EPS",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum (rate(cortex_prometheus_rule_evaluation_duration_seconds_sum{ job=\"pods\"}[$__rate_interval]))\n  /\nsum (rate(cortex_prometheus_rule_evaluation_duration_seconds_count{ job=\"pods\"}[$__rate_interval]))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "average",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 34,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Configuration API (gateway)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "1xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EAB839",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "3xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6ED0E0",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EF843C",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-z]+)\"))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{status}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "QPS",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 13
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"})) * 1e3",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"})) * 1e3",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"}) / sum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum by (route, le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{ job=\"pods\", route=~\"api_prom_rules.*|api_prom_api_v1_(rules|alerts)\"}))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ route }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Per route p99 Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 35,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Writes (Ingesters)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "1xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EAB839",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "3xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6ED0E0",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EF843C",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-z]+)\"))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{status}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "QPS",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(cortex_ingester_client_request_duration_seconds_bucket{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(cortex_ingester_client_request_duration_seconds_bucket{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_ingester_client_request_duration_seconds_sum{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/Push\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 36,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Reads (Ingesters)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "1xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EAB839",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "3xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6ED0E0",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EF843C",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-z]+)\"))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{status}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "QPS",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 29
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(cortex_ingester_client_request_duration_seconds_bucket{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(cortex_ingester_client_request_duration_seconds_bucket{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_ingester_client_request_duration_seconds_sum{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_ingester_client_request_duration_seconds_count{ job=\"pods\", operation=\"/cortex.Ingester/QueryStream\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 37,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Ruler - Blocks storage",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 37
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(cortex_querier_storegateway_instances_hit_per_query_bucket{ job=\"pods\"}[$__rate_interval])) by (le)) * 1",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(cortex_querier_storegateway_instances_hit_per_query_bucket{ job=\"pods\"}[$__rate_interval])) by (le)) * 1",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_querier_storegateway_instances_hit_per_query_sum{ job=\"pods\"}[$__rate_interval])) * 1 / sum(rate(cortex_querier_storegateway_instances_hit_per_query_count{ job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Number of store-gateways hit per Query",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 37
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(cortex_querier_storegateway_refetches_per_query_bucket{ job=\"pods\"}[$__rate_interval])) by (le)) * 1",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(cortex_querier_storegateway_refetches_per_query_bucket{ job=\"pods\"}[$__rate_interval])) by (le)) * 1",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_querier_storegateway_refetches_per_query_sum{ job=\"pods\"}[$__rate_interval])) * 1 / sum(rate(cortex_querier_storegateway_refetches_per_query_count{ job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Refetches of missing blocks per Query",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 37
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_querier_blocks_consistency_checks_failed_total{ job=\"pods\"}[1m])) / sum(rate(cortex_querier_blocks_consistency_checks_total{ job=\"pods\"}[1m]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Failure Rate",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Consistency checks failed",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 38,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Notifications",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 45
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(user) (rate(cortex_prometheus_notifications_errors_total{ job=\"pods\"}[$__rate_interval]))\n  /\nsum by(user) (rate(cortex_prometheus_notifications_sent_total{ job=\"pods\"}[$__rate_interval]))\n> 0\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Delivery Errors",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 45
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(user) (rate(cortex_prometheus_notifications_queue_length{ job=\"pods\"}[$__rate_interval]))\n  /\nsum by(user) (rate(cortex_prometheus_notifications_queue_capacity{ job=\"pods\"}[$__rate_interval])) > 0\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Queue Length",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 45
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by (user) (increase(cortex_prometheus_notifications_dropped_total{ job=\"pods\"}[$__rate_interval])) > 0\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Dropped",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "id": 39,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Group Evaluations",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 53
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(user) (rate(cortex_prometheus_rule_group_iterations_missed_total{ job=\"pods\"}[$__rate_interval])) > 0",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Missed Iterations",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 53
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "rate(cortex_prometheus_rule_group_duration_seconds_sum{ job=\"pods\"}[$__rate_interval])\n  /\nrate(cortex_prometheus_rule_group_duration_seconds_count{ job=\"pods\"}[$__rate_interval])\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 53
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(rule_group) (rate(cortex_prometheus_rule_evaluation_failures_total{ job=\"pods\"}[$__rate_interval])) > 0",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ rule_group }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Failures",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 40,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Rule Evaluation per User",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 61
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(user) (rate(cortex_prometheus_rule_evaluation_duration_seconds_sum{ job=\"pods\"}[$__rate_interval]))\n  /\nsum by(user) (rate(cortex_prometheus_rule_evaluation_duration_seconds_count{ job=\"pods\"}[$__rate_interval]))\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{ user }}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "id": 41,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Ruler Configuration Object Store (Ruler accesses)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "rps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 69
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(operation) (rate(thanos_objstore_bucket_operations_total{ namespace=~\"$namespace\",component=\"ruler-storage\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{operation}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Operations / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 69
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(operation) (rate(thanos_objstore_bucket_operation_failures_total{ namespace=~\"$namespace\",component=\"ruler-storage\"}[$__rate_interval])) / sum by(operation) (rate(thanos_objstore_bucket_operations_total{ namespace=~\"$namespace\",component=\"ruler-storage\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{operation}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Error rate",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 69
+      },
+      "id": 26,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"attributes\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"attributes\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"attributes\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"attributes\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Attributes",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 69
+      },
+      "id": 27,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"exists\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"exists\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"exists\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"exists\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Exists",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "id": 42,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 77
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Get",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 77
+      },
+      "id": 29,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get_range\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get_range\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get_range\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"get_range\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: GetRange",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 77
+      },
+      "id": 30,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"upload\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"upload\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"upload\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"upload\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Upload",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 77
+      },
+      "id": 31,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"delete\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"delete\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"delete\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{ namespace=~\"$namespace\",component=\"ruler-storage\",operation=\"delete\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Delete",
+      "transparent": true,
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "cortex"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".+",
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(cortex_build_info,namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "namespace",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(cortex_build_info,namespace)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Cortex / Ruler",
+  "uid": "44d12bcb1f95661c6ab6bc946dfc3473",
+  "version": 1,
+  "weekStart": ""
+}

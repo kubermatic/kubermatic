@@ -1,0 +1,2444 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "### Per-instance runs\nNumber of times a compactor instance triggers a compaction across all tenants that it manages.\n\n",
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "completed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "started"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#34CCEB",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(cortex_compactor_runs_started_total{job=~\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "started",
+          "range": true,
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(cortex_compactor_runs_completed_total{job=~\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "completed",
+          "range": true,
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(cortex_compactor_runs_failed_total{job=~\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "failed",
+          "range": true,
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Per-instance runs / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "description": "### Tenants compaction progress\nIn a multi-tenant cluster, display the progress of tenants that are compacted while compaction is running.\nReset to <tt>0</tt> after the compaction run is completed for all tenants in the shard.\n\n",
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "(\n  cortex_compactor_tenants_processing_succeeded{job=\"pods\"} +\n  cortex_compactor_tenants_processing_failed{job=\"pods\"} +\n  cortex_compactor_tenants_skipped{job=\"pods\"}\n) / cortex_compactor_tenants_discovered{job=\"pods\"}\n",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{pod}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Tenants compaction progress",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 20,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "description": "### Compacted blocks / sec\nRate of blocks that are generated as a result of a compaction operation.\n\n",
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(prometheus_tsdb_compactions_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "blocks",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Compacted blocks / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "description": "### Per-block compaction duration\nDisplay the amount of time that it has taken to generate a single compacted block.\n\n",
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(prometheus_tsdb_compaction_duration_seconds_bucket{job=\"pods\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(prometheus_tsdb_compaction_duration_seconds_bucket{job=\"pods\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(prometheus_tsdb_compaction_duration_seconds_sum{job=\"pods\"}[$__rate_interval])) * 1e3 / sum(rate(prometheus_tsdb_compaction_duration_seconds_count{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Per-block compaction duration",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 21,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "avg(max by(user) (cortex_bucket_blocks_count{job=\"pods\"}))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "avg",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Average blocks / tenant",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "description": "### Tenants with largest number of blocks\nThe 10 tenants with the largest number of blocks.\n\n",
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "topk(10, max by(user) (cortex_bucket_blocks_count{job=\"pods\"}))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{user}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Tenants with largest number of blocks",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 22,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Garbage Collector",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_blocks_marked_for_deletion_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "blocks",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Blocks marked for deletion / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "successful"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_blocks_cleaned_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "successful",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_block_cleanup_failures_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "failed",
+          "refId": "B",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Blocks deletions / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 23,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Metadata Sync",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "successful"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7EB26D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_meta_syncs_total{job=\"pods\"}[$__rate_interval])) - sum(rate(cortex_compactor_meta_sync_failures_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "successful",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_meta_sync_failures_total{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "failed",
+          "refId": "B",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Metadata Syncs / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(cortex_compactor_meta_sync_duration_seconds_bucket{job=\"pods\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(cortex_compactor_meta_sync_duration_seconds_bucket{job=\"pods\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(cortex_compactor_meta_sync_duration_seconds_sum{job=\"pods\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_compactor_meta_sync_duration_seconds_count{job=\"pods\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Metadata Sync Duration",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 24,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Object Store",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "rps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 41
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(operation) (rate(thanos_objstore_bucket_operations_total{namespace=~\"$namespace\",component=\"compactor\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{operation}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Operations / sec",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 41
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum by(operation) (rate(thanos_objstore_bucket_operation_failures_total{namespace=~\"$namespace\",component=\"compactor\"}[$__rate_interval])) / sum by(operation) (rate(thanos_objstore_bucket_operations_total{namespace=~\"$namespace\",component=\"compactor\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "{{operation}}",
+          "refId": "A",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Error rate",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 41
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"attributes\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"attributes\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"attributes\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"attributes\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Attributes",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 41
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"exists\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"exists\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"exists\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"exists\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Exists",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "loki",
+        "uid": "P982945308D3682D1"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 25,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P982945308D3682D1"
+          },
+          "refId": "A"
+        }
+      ],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 49
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"get\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"get\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"get\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"get\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Get",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 49
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"get_range\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"get_range\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"get_range\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"get_range\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: GetRange",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 49
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"upload\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"upload\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"upload\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"upload\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Upload",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$datasource"
+      },
+      "editable": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 49
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"delete\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "99th Percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(thanos_objstore_bucket_operation_duration_seconds_bucket{namespace=~\"$namespace\",component=\"compactor\",operation=\"delete\"}[$__rate_interval])) by (le)) * 1e3",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "50th Percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(thanos_objstore_bucket_operation_duration_seconds_sum{namespace=~\"$namespace\",component=\"compactor\",operation=\"delete\"}[$__rate_interval])) * 1e3 / sum(rate(thanos_objstore_bucket_operation_duration_seconds_count{namespace=~\"$namespace\",component=\"compactor\",operation=\"delete\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "timeRegions": [],
+      "title": "Latency of Op: Delete",
+      "transparent": true,
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "cortex"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "hide": 2,
+        "label": "cluster",
+        "name": "cluster",
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "constant"
+      },
+      {
+        "allValue": ".+",
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(cortex_build_info,namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "namespace",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(cortex_build_info,namespace)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Cortex / Compactor",
+  "uid": "9c408e1d55681ecb8a22c9fab46875cc",
+  "version": 1,
+  "weekStart": ""
+}
