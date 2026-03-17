@@ -27,14 +27,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -269,6 +273,7 @@ func EnsureGateway(
 	log *zap.SugaredLogger,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
+	scheme *runtime.Scheme,
 ) error {
 	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
 
@@ -288,6 +293,13 @@ func EnsureGateway(
 	if _, err := reconciler(desired); err != nil {
 		return fmt.Errorf("failed to build desired Gateway: %w", err)
 	}
+
+	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
 
 	if apierrors.IsNotFound(err) {
 		log.Debugw("Creating Gateway", "name", gatewayName, "namespace", namespace)
@@ -312,6 +324,10 @@ func EnsureGateway(
 		updated.Annotations[k] = v
 	}
 
+	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
+	}
+
 	log.Debugw("Updating Gateway", "name", gatewayName)
 	return client.Update(ctx, updated)
 }
@@ -325,6 +341,7 @@ func EnsureHTTPRoute(
 	log *zap.SugaredLogger,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
+	scheme *runtime.Scheme,
 ) error {
 	factory := HTTPRouteReconciler(cfg, namespace)
 	routeName, reconciler := factory()
@@ -333,6 +350,13 @@ func EnsureHTTPRoute(
 	if _, err := reconciler(desired); err != nil {
 		return fmt.Errorf("failed to build desired HTTPRoute: %w", err)
 	}
+
+	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
 
 	key := types.NamespacedName{Namespace: namespace, Name: routeName}
 
@@ -362,6 +386,10 @@ func EnsureHTTPRoute(
 	}
 	for k, v := range desired.Annotations {
 		updated.Annotations[k] = v
+	}
+
+	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
 	}
 
 	log.Debugw("Updating HTTPRoute", "name", routeName)

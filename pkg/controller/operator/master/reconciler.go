@@ -616,11 +616,11 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
-	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace); err != nil {
+	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
 		return fmt.Errorf("failed to reconcile Gateway: %w", err)
 	}
 
-	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace); err != nil {
+	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
 		return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 	}
 
