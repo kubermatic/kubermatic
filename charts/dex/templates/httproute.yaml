@@ -31,8 +31,8 @@ spec:
   rules:
     - matches:
         - path:
-            type: PathPrefix
-            value: /dex
+            type: {{ .Values.httpRoute.pathType }}
+            value: {{ .Values.httpRoute.path }}
       backendRefs:
         - name: dex
           port: 5556
