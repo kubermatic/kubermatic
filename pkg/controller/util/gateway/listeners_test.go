@@ -197,7 +197,7 @@ func TestSortListenersByName(t *testing.T) {
 }
 
 func TestSortListenersByNameDeterministic(t *testing.T) {
-	for run := 0; run < 10; run++ {
+	for run := range 10 {
 		listeners := []gatewayapiv1.Listener{
 			{Name: "c"},
 			{Name: "a"},
