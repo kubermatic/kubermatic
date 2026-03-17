@@ -507,10 +507,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 4Gi
-              cpu: 2
-            limits:
               memory: 6Gi
+              cpu: 3
+            limits:
+              memory: 8Gi
 
   - name: pre-kubermatic-appcatalog-nginx-ingress-controller
     run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nginx-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
