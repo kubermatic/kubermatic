@@ -306,26 +306,20 @@ func EnsureGateway(
 		return client.Create(ctx, desired)
 	}
 
-	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
-	if equality.Semantic.DeepEqual(comparableGateway(&existing), comparableGateway(desired)) {
-		log.Debugw("Gateway unchanged, skipping update", "name", gatewayName)
-
-		return nil
-	}
-
 	updated := existing.DeepCopy()
 	updated.Spec = desired.Spec
-	updated.Labels = desired.Labels
-	if updated.Annotations == nil {
-		updated.Annotations = make(map[string]string)
-	}
-
-	for k, v := range desired.Annotations {
-		updated.Annotations[k] = v
-	}
+	kubernetes.EnsureLabels(updated, desired.Labels)
+	kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
 	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
+	}
+
+	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
+	if equality.Semantic.DeepEqual(comparableGateway(&existing), comparableGateway(updated)) {
+		log.Debugw("Gateway unchanged, skipping update", "name", gatewayName)
+
+		return nil
 	}
 
 	log.Debugw("Updating Gateway", "name", gatewayName)
@@ -371,25 +365,23 @@ func EnsureHTTPRoute(
 		return fmt.Errorf("failed to get HTTPRoute %s/%s: %w", namespace, routeName, err)
 	}
 
-	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
-	if equality.Semantic.DeepEqual(comparableHTTPRoute(&existing), comparableHTTPRoute(desired)) {
-		log.Debugw("HTTPRoute unchanged, skipping update", "name", routeName)
-
-		return nil
-	}
-
+	// Build the merged state: desired labels/annotations on top of existing ones.
+	// This preserves user-added metadata (e.g. external-dns annotations) while
+	// ensuring operator-managed fields are up to date.
 	updated := existing.DeepCopy()
 	updated.Spec = desired.Spec
-	updated.Labels = desired.Labels
-	if updated.Annotations == nil {
-		updated.Annotations = make(map[string]string)
-	}
-	for k, v := range desired.Annotations {
-		updated.Annotations[k] = v
-	}
+	kubernetes.EnsureLabels(updated, desired.Labels)
+	kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
 	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
+	}
+
+	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
+	if equality.Semantic.DeepEqual(comparableHTTPRoute(&existing), comparableHTTPRoute(updated)) {
+		log.Debugw("HTTPRoute unchanged, skipping update", "name", routeName)
+
+		return nil
 	}
 
 	log.Debugw("Updating HTTPRoute", "name", routeName)
