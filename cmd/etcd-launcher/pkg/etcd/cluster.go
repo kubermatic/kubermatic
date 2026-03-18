@@ -186,7 +186,7 @@ func (e *Cluster) DeleteUnwantedDeadMembers(ctx context.Context, log *zap.Sugare
 		return true, nil
 	}
 
-	// to avoide race conditions, we will run only on the cluster leader
+	// to avoid race conditions, we will run only on the cluster leader
 	leader, err := e.isLeader(ctx, log)
 	if err != nil {
 		log.Warnw("failed to determine if member is cluster leader", zap.Error(err))
