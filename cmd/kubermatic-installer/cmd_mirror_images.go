@@ -382,7 +382,7 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 	imageSet.Insert(sets.List(helmChartImages)...)
 
 	// get images from system and default applications
-	applicationImages, err := collectApplicationImages(logger, kubermaticConfig, options, clusterVersions)
+	applicationImages, err := collectApplicationImages(logger, kubermaticConfig, options)
 	if err != nil {
 		return err
 	}
@@ -436,7 +436,7 @@ func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermat
 	return imageSet, nil
 }
 
-func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *MirrorImagesOptions, clusterVersions []*version.Version) (sets.Set[string], error) {
+func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *MirrorImagesOptions) (sets.Set[string], error) {
 	imageSet := sets.New[string]()
 
 	helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
