@@ -1,4 +1,4 @@
-# This file has been generated with Velero v1.17.1. Do not edit.
+# This file has been generated with Velero v1.18.0. Do not edit.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -108,6 +108,10 @@ spec:
                 snapshotID:
                   description: SnapshotID is the ID of the Velero backup snapshot to be restored from.
                   type: string
+                snapshotSize:
+                  description: SnapshotSize is the logical size in Bytes of the snapshot.
+                  format: int64
+                  type: integer
                 sourceNamespace:
                   description: |-
                     SourceNamespace is the original namespace where the volume is backed up from.
