@@ -49,8 +49,8 @@ const (
 	CloudCredentialsSecretName           = "velero-cloud-credentials"
 	defaultCloudCredentialsSecretKeyName = "cloud"
 
-	version       = "v1.17.1"
-	pluginVersion = "v1.13.2"
+	version       = "v1.18.0"
+	pluginVersion = "v1.14.0"
 
 	backupOrigin = "kkp-controllers"
 
