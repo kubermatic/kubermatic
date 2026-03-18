@@ -102,11 +102,3 @@ velero:
   # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
   annotations: {}
   # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
-
-<<<<<<< Updated upstream
-  kubectl:
-    image:
-      repository: quay.io/kubermatic-mirror/images/kubectl
-=======
->>>>>>> Stashed changes
-

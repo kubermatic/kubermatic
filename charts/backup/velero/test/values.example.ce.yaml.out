@@ -364,21 +364,6 @@ spec:
     spec:
       serviceAccountName: release-name-velero-server-upgrade-crds
       automountServiceAccountToken: true
-<<<<<<< Updated upstream
-      initContainers:
-        - name: kubectl
-          image: "quay.io/kubermatic-mirror/images/kubectl:1.33"
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - cp `which sh` /tmp && cp `which kubectl` /tmp
-          volumeMounts:
-            - mountPath: /tmp
-              name: crds
-=======
->>>>>>> Stashed changes
       containers:
         - name: velero
           image: "docker.io/velero/velero:v1.18.0"
