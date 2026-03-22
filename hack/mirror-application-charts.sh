@@ -50,6 +50,13 @@ declare -A CHART_URLS=(
   ["velero"]="https://github.com/vmware-tanzu/velero/releases/download/velero-%s/velero-%s.tgz"
 )
 
+# Optional per-chart sub-path override for the OCI push destination.
+# When set, the chart is pushed to oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${PREFIX}
+# instead of oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}.
+declare -A CHART_PUSH_PREFIXES=(
+  ["gpu-operator"]="nvidia"
+)
+
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
@@ -143,9 +150,19 @@ logout_registry() {
   helm registry logout ${REGISTRY_HOST}
 }
 
+# ─── Resolve the OCI push destination ─────────────────────────────────────────
+resolve_push_dest() {
+  local chart_push_prefix="${CHART_PUSH_PREFIXES[$CHART_NAME]:-}"
+  if [[ -n "$chart_push_prefix" ]]; then
+    OCI_PUSH_DEST="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${chart_push_prefix}"
+  else
+    OCI_PUSH_DEST="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
+  fi
+}
+
 # ─── Check if chart exists in registry ────────────────────────────────────────
 chart_exists_in_registry() {
-  local oci_repo="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${CHART_NAME}"
+  local oci_repo="${OCI_PUSH_DEST}/${CHART_NAME}"
 
   # Use `helm show chart` to check if the specific version exists
   if helm show chart "$oci_repo" --version "$CHART_VERSION" > /dev/null 2>&1; then
@@ -158,7 +175,7 @@ chart_exists_in_registry() {
 # ─── Mirror chart ─────────────────────────────────────────────────────────────
 mirror_chart() {
   echo "🌐 Mirroring ${CHART_NAME}@${CHART_VERSION} helm chart:"
-  echo "   → Destination: oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
+  echo "   → Destination: ${OCI_PUSH_DEST}"
 
   # Check if the chart already exists in the registry
   if chart_exists_in_registry; then
@@ -176,7 +193,7 @@ mirror_chart() {
   fi
 
   echo "   → Pushing to registry..."
-  helm push "./${CHART_PACKAGE}" "oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
+  helm push "./${CHART_PACKAGE}" "${OCI_PUSH_DEST}"
 
   echo "   → Cleaning up..."
   rm -f "${CHART_PACKAGE}"
@@ -186,6 +203,7 @@ mirror_chart() {
 main() {
   parse_args "$@"
   resolve_chart_config
+  resolve_push_dest
   login_registry
   mirror_chart
   logout_registry
