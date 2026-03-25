@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: openstack-cloud-controller-manager
   name: openstack-cloud-controller-manager
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: openstack-cloud-controller-manager
         ca-bundle-configmap-revision: "123456"
@@ -44,7 +42,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: registry.k8s.io/provider-os/openstack-cloud-controller-manager:v1.32.0
+        image: registry.k8s.io/provider-os/openstack-cloud-controller-manager:v1.33.1
         name: cloud-controller-manager
         resources:
           limits:

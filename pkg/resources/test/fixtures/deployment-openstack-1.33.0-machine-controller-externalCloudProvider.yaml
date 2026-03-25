@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: machine-controller
   name: machine-controller
@@ -20,7 +19,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
         app: machine-controller
         ca-bundle-configmap-revision: "123456"
@@ -105,7 +103,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.62.0
+        image: quay.io/kubermatic/machine-controller:v1.65.0
         livenessProbe:
           failureThreshold: 3
           httpGet:

@@ -39,7 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -60,7 +60,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	workerName                    string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	seedGetter                    provider.SeedGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
@@ -72,7 +72,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		recorder:                      mgr.GetEventRecorder(ControllerName),
 		seedGetter:                    seedGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
@@ -123,7 +123,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
@@ -169,7 +169,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	for _, app := range applications {
 		if err := r.createInitialApplicationInstallation(ctx, userClusterClient, app, cluster); err != nil {
 			errs = append(errs, err)
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallation %s", app.Name)
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Reconciling", "Failed to create ApplicationInstallation %s", app.Name)
 		}
 	}
 
@@ -252,7 +252,7 @@ func (r *Reconciler) createInitialApplicationInstallation(
 		return ctrlruntimeclient.IgnoreAlreadyExists(err)
 	}
 
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallation %s has been created", applicationInstallation.Name)
+	r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Reconciling", "Initial ApplicationInstallation %s has been created", applicationInstallation.Name)
 
 	return nil
 }

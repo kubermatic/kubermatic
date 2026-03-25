@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: azure-cloud-controller-manager
   name: azure-cloud-controller-manager
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: azure-cloud-controller-manager
         ca-bundle-configmap-revision: "123456"
@@ -44,7 +42,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.33.0
+        image: mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.33.6
         livenessProbe:
           failureThreshold: 3
           httpGet:

@@ -72,8 +72,10 @@ func TestReconcileRouteTable(t *testing.T) {
 
 	t.Run("everything-is-fine", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			VPCID:        defaultVPCID,
-			RouteTableID: defaultRouteTableID,
+			VPCID:           defaultVPCID,
+			RouteTableID:    defaultRouteTableID,
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
 		})
 
 		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
@@ -92,7 +94,9 @@ func TestReconcileRouteTable(t *testing.T) {
 
 	t.Run("no-route-table-yet", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			VPCID: defaultVPCID,
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+			VPCID:           defaultVPCID,
 		})
 
 		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
@@ -111,8 +115,10 @@ func TestReconcileRouteTable(t *testing.T) {
 
 	t.Run("invalid-route-table", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			VPCID:        defaultVPCID,
-			RouteTableID: "does-not-exist",
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+			VPCID:           defaultVPCID,
+			RouteTableID:    "does-not-exist",
 		})
 
 		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))

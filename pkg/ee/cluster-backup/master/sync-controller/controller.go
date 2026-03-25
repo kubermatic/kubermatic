@@ -34,10 +34,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -54,7 +56,7 @@ const (
 
 type reconciler struct {
 	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 	masterClient ctrlruntimeclient.Client
 	seedClients  kuberneteshelper.SeedClientMap
 }
@@ -67,7 +69,7 @@ func Add(
 ) error {
 	r := &reconciler{
 		log:          log.Named(ControllerName),
-		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		recorder:     masterManager.GetEventRecorder(ControllerName),
 		masterClient: masterManager.GetClient(),
 		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
@@ -136,12 +138,19 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return fmt.Errorf("failed to reconcile storage location: %w", err)
 		}
 
+		if cbsl.Spec.Credential != nil {
+			if err := syncCBSLCredentialSecret(ctx, r.masterClient, seedClient, cbsl); err != nil {
+				return fmt.Errorf("failed to sync CBSL credential secret: %w", err)
+			}
+		}
+
 		// fetch the updated CBSL from the cache
 		if err := seedClient.Get(ctx, request.NamespacedName, seedCBSL); err != nil {
 			return fmt.Errorf("failed to fetch storage location on seed cluster: %w", err)
 		}
 
 		if !equality.Semantic.DeepEqual(seedCBSL.Status, cbsl.Status) {
+			seedCBSL.Status = cbsl.Status
 			if err := seedClient.Status().Update(ctx, seedCBSL); err != nil {
 				return fmt.Errorf("failed to update storage location status on seed cluster: %w", err)
 			}
@@ -151,7 +160,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	})
 
 	if err != nil {
-		r.recorder.Event(cbsl, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cbsl, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -166,4 +175,27 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, cbsl, cleanupFinalizer)
+}
+
+func syncCBSLCredentialSecret(
+	ctx context.Context,
+	masterClient ctrlruntimeclient.Client,
+	seedClient ctrlruntimeclient.Client,
+	cbsl *kubermaticv1.ClusterBackupStorageLocation,
+) error {
+	cbslKey := types.NamespacedName{
+		Name:      cbsl.Spec.Credential.Name,
+		Namespace: cbsl.Namespace,
+	}
+
+	cbslSecret := &corev1.Secret{}
+	if err := masterClient.Get(ctx, cbslKey, cbslSecret); err != nil {
+		return fmt.Errorf("failed to get credential secret from master: %w", err)
+	}
+
+	secretReconcilerFactory := []reconciling.NamedSecretReconcilerFactory{
+		secretReconcilerFactory(cbslSecret),
+	}
+
+	return reconciling.ReconcileSecrets(ctx, secretReconcilerFactory, cbslSecret.Namespace, seedClient)
 }

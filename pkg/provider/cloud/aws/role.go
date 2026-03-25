@@ -43,16 +43,22 @@ func workerRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-worker", resourceNamePrefix, clusterName)
 }
 
-func reconcileWorkerRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster) (string, error) {
+func reconcileWorkerRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, accessKeyID, secretAccessKey, region string) (string, error) {
 	policy, err := getWorkerPolicy(cluster.Name)
 	if err != nil {
 		return "", fmt.Errorf("failed to build the worker policy: %w", err)
 	}
 
+	// Get AWS account ID
+	accountID, err := GetAccountID(ctx, accessKeyID, secretAccessKey, region)
+	if err != nil {
+		return "", fmt.Errorf("failed to get AWS account ID: %w", err)
+	}
+
 	policies := map[string]string{workerPolicyName: policy}
 	roleName := workerRoleName(cluster.Name)
 
-	return ensureRole(ctx, client, cluster, roleName, policies)
+	return ensureRole(ctx, client, cluster, roleName, policies, accountID)
 }
 
 // /////////////////////////
@@ -62,10 +68,16 @@ func controlPlaneRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-control-plane", resourceNamePrefix, clusterName)
 }
 
-func reconcileControlPlaneRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileControlPlaneRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, accessKeyID, secretAccessKey, region string) (*kubermaticv1.Cluster, error) {
 	policy, err := getControlPlanePolicy(cluster.Name)
 	if err != nil {
 		return cluster, fmt.Errorf("failed to build the control plane policy: %w", err)
+	}
+
+	// Get AWS account ID
+	accountID, err := GetAccountID(ctx, accessKeyID, secretAccessKey, region)
+	if err != nil {
+		return cluster, fmt.Errorf("failed to get AWS account ID: %w", err)
 	}
 
 	policies := map[string]string{controlPlanePolicyName: policy}
@@ -77,7 +89,7 @@ func reconcileControlPlaneRole(ctx context.Context, client *iam.Client, cluster 
 	}
 
 	// ensure role exists and is assigned to the given policies
-	roleARN, err := ensureRole(ctx, client, cluster, roleNameOrARN, policies)
+	roleARN, err := ensureRole(ctx, client, cluster, roleNameOrARN, policies, accountID)
 	if err != nil {
 		return cluster, err
 	}
@@ -133,7 +145,7 @@ func decodeRoleARN(nameOrARN string) (string, error) {
 	return path.Base(parsed.Resource), nil
 }
 
-func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleNameOrARN string, policies map[string]string) (string, error) {
+func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleNameOrARN string, policies map[string]string, accountID string) (string, error) {
 	// When ensuring an existing role, we are usually called with a full ARN,
 	// but when creating a role initially, we are called with just the name.
 	// To create/check the role, we first need to parse the nameOrARN.
@@ -152,8 +164,14 @@ func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	var roleARN string
 
 	if isNotFound(err) {
+		// Get templated assume role policy with account ID
+		assumeRolePolicyDoc, err := getAssumeRolePolicy(accountID)
+		if err != nil {
+			return "", fmt.Errorf("failed to get assume role policy: %w", err)
+		}
+
 		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+			AssumeRolePolicyDocument: ptr.To(assumeRolePolicyDoc),
 			RoleName:                 ptr.To(roleName),
 			Tags:                     []iamtypes.Tag{iamOwnershipTag(cluster.Name)},
 		}

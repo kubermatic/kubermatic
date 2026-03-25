@@ -59,8 +59,13 @@ func GetPolicyTemplates() ([]kubermaticv1.PolicyTemplate, error) {
 
 			// Convert the ClusterPolicy to PolicyTemplate
 			template, err := convertClusterPolicyToPolicyTemplate(file)
+			closeErr := file.Close()
+
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert %s: %w", entry.Name(), err)
+			}
+			if closeErr != nil {
+				return nil, fmt.Errorf("failed to close %s: %w", entry.Name(), closeErr)
 			}
 
 			templates = append(templates, template)
@@ -82,6 +87,11 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("failed to convert Kyverno ClusterPolicy to Kubermatic PolicyTemplate: %w", err)
 	}
 
+	specJSON, err := canonicalSpec(&clusterPolicy)
+	if err != nil {
+		return kubermaticv1.PolicyTemplate{}, err
+	}
+
 	// Extract metadata from annotations
 	annotations := clusterPolicy.Annotations
 
@@ -89,12 +99,6 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 	category := annotations["policies.kyverno.io/category"]
 	description := annotations["policies.kyverno.io/description"]
 	severity := annotations["policies.kyverno.io/severity"]
-
-	// Convert ClusterPolicy spec to RawExtension
-	specJSON, err := json.Marshal(clusterPolicy.Spec)
-	if err != nil {
-		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("failed to marshal policy spec: %w", err)
-	}
 
 	// Create a RawExtension with the JSON data
 	rawExtension := runtime.RawExtension{
@@ -121,4 +125,18 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 	}
 
 	return policyTemplate, nil
+}
+
+func canonicalSpec(policy *kyvernov1.ClusterPolicy) ([]byte, error) {
+	specMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&policy.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert policy spec to unstructured: %w", err)
+	}
+
+	specJSON, err := json.Marshal(specMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal policy spec: %w", err)
+	}
+
+	return append([]byte(nil), specJSON...), nil
 }

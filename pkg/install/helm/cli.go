@@ -18,6 +18,7 @@ package helm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -63,6 +64,12 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 	}
 
 	for idx, dep := range chart.Dependencies {
+		// Skip OCI repositories as they don't need to be added to helm repos
+		if strings.HasPrefix(dep.Repository, "oci://") {
+			c.logger.Debugf("Skipping OCI repository: %s", dep.Repository)
+			continue
+		}
+
 		repoName := fmt.Sprintf("dep-%s-%d", chart.Name, idx)
 		repoAddFlags := []string{
 			"repo",
@@ -228,10 +235,9 @@ func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document,
 }
 
 func (c *cli) Version() (*semverlib.Version, error) {
-	// add --client to gracefully handle Helm 2 (Helm 3 ignores the flag, thankfully);
 	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
 	// Helm-2-style templating string "{{ .Client.SemVer }}"
-	output, err := c.run("", "version", "--client", "--template", "{{ .Version }}")
+	output, err := c.run("", "version", "--template", "{{ .Version }}")
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +261,7 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 		globalArgs = append(globalArgs, "--namespace", namespace)
 	}
 
-	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
+	cmd := exec.CommandContext(context.Background(), c.binary, append(globalArgs, args...)...)
 	// "If Env contains duplicate environment keys, only the last
 	// value in the slice for each duplicate key is used."
 	// Source: https://pkg.go.dev/os/exec#Cmd.Env

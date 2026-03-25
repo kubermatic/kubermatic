@@ -68,7 +68,7 @@ func TestGetTemplateData(t *testing.T) {
 						Port: 6443,
 					},
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: semver.Semver("v1.30.5"),
+						ControlPlane: semver.Semver("v1.32.0"),
 					},
 					NamespaceName: "test-cluster",
 				},
@@ -82,9 +82,9 @@ func TestGetTemplateData(t *testing.T) {
 						URL:  "https://cluster.seed.kkp",
 						Port: 6443,
 					},
-					Version:           "1.30.5",
-					MajorMinorVersion: "1.30",
-					AutoscalerVersion: "v1.30.3",
+					Version:           "1.32.0",
+					MajorMinorVersion: "1.32",
+					AutoscalerVersion: "v1.32.1",
 				},
 			},
 		},
@@ -165,6 +165,80 @@ func TestRenderValueTemplate(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: ErrBadTemplate,
+		},
+		{
+			name: "case 3: rendering cluster labels should succeed",
+			values: map[string]any{
+				"environment": "{{ .Cluster.Labels.environment }}",
+				"tier":        "{{ .Cluster.Labels.tier }}",
+			},
+			templateData: TemplateData{
+				Cluster: ClusterData{
+					Labels: map[string]string{
+						"environment": "production",
+						"tier":        "frontend",
+					},
+				},
+			},
+			want: map[string]any{
+				"environment": "production",
+				"tier":        "frontend",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "case 4: rendering cluster annotations should succeed",
+			values: map[string]any{
+				"description": "{{ .Cluster.Annotations.description }}",
+				"owner":       "{{ .Cluster.Annotations.owner }}",
+			},
+			templateData: TemplateData{
+				Cluster: ClusterData{
+					Annotations: map[string]string{
+						"description": "test cluster",
+						"owner":       "team-a",
+					},
+				},
+			},
+			want: map[string]any{
+				"description": "test cluster",
+				"owner":       "team-a",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "case 5: rendering with missing label should return empty string",
+			values: map[string]any{
+				"missing": "{{ .Cluster.Labels.nonexistent }}",
+			},
+			templateData: TemplateData{
+				Cluster: ClusterData{
+					Labels: map[string]string{
+						"exists": "yes",
+					},
+				},
+			},
+			want: map[string]any{
+				"missing": "",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "case 6: rendering with missing annotation should return empty string",
+			values: map[string]any{
+				"missing": "{{ .Cluster.Annotations.nonexistent }}",
+			},
+			templateData: TemplateData{
+				Cluster: ClusterData{
+					Annotations: map[string]string{
+						"exists": "yes",
+					},
+				},
+			},
+			want: map[string]any{
+				"missing": "",
+			},
+			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {

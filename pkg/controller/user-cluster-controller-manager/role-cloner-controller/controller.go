@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -51,7 +51,7 @@ const (
 type reconciler struct {
 	log             *zap.SugaredLogger
 	client          ctrlruntimeclient.Client
-	recorder        record.EventRecorder
+	recorder        events.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
@@ -61,7 +61,7 @@ func Add(log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused usercluste
 	r := &reconciler{
 		log:             log,
 		client:          mgr.GetClient(),
-		recorder:        mgr.GetEventRecorderFor(controllerName),
+		recorder:        mgr.GetEventRecorder(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
 
@@ -113,7 +113,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, role)
 	if err != nil {
-		r.recorder.Event(role, corev1.EventTypeWarning, "CloningRoleFailed", err.Error())
+		r.recorder.Eventf(role, nil, corev1.EventTypeWarning, "CloningRoleFailed", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

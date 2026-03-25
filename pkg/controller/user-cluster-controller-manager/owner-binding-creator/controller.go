@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -47,7 +47,7 @@ const (
 type reconciler struct {
 	log             *zap.SugaredLogger
 	client          ctrlruntimeclient.Client
-	recorder        record.EventRecorder
+	recorder        events.EventRecorder
 	ownerEmail      string
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
@@ -58,7 +58,7 @@ func Add(log *zap.SugaredLogger, mgr manager.Manager, ownerEmail string, cluster
 	r := &reconciler{
 		log:             log,
 		client:          mgr.GetClient(),
-		recorder:        mgr.GetEventRecorderFor(controllerName),
+		recorder:        mgr.GetEventRecorder(controllerName),
 		ownerEmail:      ownerEmail,
 		clusterIsPaused: clusterIsPaused,
 	}
@@ -86,7 +86,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, request.Name)
 	if err != nil {
-		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddBindingFailed", err.Error())
+		r.recorder.Eventf(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, nil, corev1.EventTypeWarning, "AddBindingFailed", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

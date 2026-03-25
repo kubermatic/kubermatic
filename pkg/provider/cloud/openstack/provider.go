@@ -43,6 +43,7 @@ const (
 	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group.
 	SecurityGroupCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-security-group"
 	// OldNetworkCleanupFinalizer will instruct the deletion of all network components. Router, Network, Subnet
+	//
 	// Deprecated: Got split into dedicated finalizers.
 	OldNetworkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-network"
 
@@ -61,6 +62,10 @@ const (
 
 	// FloatingIPPoolIDAnnotation stores the ID of the floating IP pool (external network).
 	FloatingIPPoolIDAnnotation = "kubermatic.k8c.io/openstack-floating-ip-pool-id"
+
+	// LoadBalancerFloatingIPPoolIDAnnotation stores the ID of the floating IP pool
+	// to be used for LoadBalancer floating IP allocation.
+	LoadBalancerFloatingIPPoolIDAnnotation = "kubermatic.k8c.io/openstack-loadbalancer-floating-ip-pool-id"
 )
 
 type getClientFunc func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
@@ -141,7 +146,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 		// If we're going to create a subnet in an existing network,
 		// let's check whether any existing subnets collide with our range.
 		if spec.Openstack.SubnetID == "" {
-			if err = validateExistingSubnetOverlap(network.ID, netClient); err != nil {
+			if err = validateExistingSubnetOverlap(network.ID, spec.Openstack.SubnetCIDR, netClient); err != nil {
 				return err
 			}
 		}
@@ -151,6 +156,13 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 		_, err := getNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
 		if err != nil {
 			return fmt.Errorf("failed to get floating ip pool %q: %w", spec.Openstack.FloatingIPPool, err)
+		}
+	}
+
+	if spec.Openstack.LoadBalancerFloatingIPPool != "" {
+		_, err := getNetworkByName(netClient, spec.Openstack.LoadBalancerFloatingIPPool, true)
+		if err != nil {
+			return fmt.Errorf("failed to get load balancer floating ip pool %q: %w", spec.Openstack.LoadBalancerFloatingIPPool, err)
 		}
 	}
 
@@ -168,8 +180,11 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 }
 
 // validateExistingSubnetOverlap checks whether any subnets in the given network overlap with the default subnet CIDR.
-func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.ServiceClient) error {
-	_, defaultCIDR, err := net.ParseCIDR(subnetCIDR)
+func validateExistingSubnetOverlap(networkID, assignedSubnetCIDR string, netClient *gophercloud.ServiceClient) error {
+	if assignedSubnetCIDR == "" {
+		assignedSubnetCIDR = subnetCIDR
+	}
+	_, defaultCIDR, err := net.ParseCIDR(assignedSubnetCIDR)
 	if err != nil {
 		return err
 	}
@@ -189,7 +204,7 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 
 			// do the CIDRs overlap?
 			if currentCIDR.Contains(defaultCIDR.IP) || defaultCIDR.Contains(currentCIDR.IP) {
-				return false, fmt.Errorf("existing subnetwork %q holds a CIDR %q which overlaps with default CIDR %q", sn.Name, sn.CIDR, subnetCIDR)
+				return false, fmt.Errorf("existing subnetwork %q holds a CIDR %q which overlaps with default CIDR %q", sn.Name, sn.CIDR, assignedSubnetCIDR)
 			}
 		}
 
@@ -215,7 +230,10 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	// Reconciling the external Network (the floating IP pool used for machines and LBs)
+	// Reconciling the external Network
+	// By default, the same floating IP pool used for machines and LBs.
+	// Optionally, a dedicated floating IP pool can be specified for LBs, to ensure machines and LBs
+	// will use separate floating IP pools.
 	// We don't need the usual if conditional here because the reconcile function doesn't
 	// create anything.
 	cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
@@ -289,13 +307,11 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
 		cluster.Spec.Cloud.Openstack.Network = networkName
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to update network cluster: %w", err)
 	}
 
 	_, err = createUserClusterNetwork(netClient, networkName)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the network: %w", err)
 	}
@@ -305,8 +321,9 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 
 func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var (
-		err        error
-		extNetwork *NetworkWithExternalExt
+		err          error
+		extNetwork   *NetworkWithExternalExt
+		lbExtNetwork *NetworkWithExternalExt
 	)
 
 	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
@@ -323,15 +340,32 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 	}
 
+	hasLBFloatingIPPool := false
+	if cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool != "" {
+		lbExtNetwork, err = getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get external network for load balancer floating IP pool by name: %w", err)
+		}
+
+		hasLBFloatingIPPool = true
+	}
+
 	// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer.
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		// This should be a noop if the floating IP pool was already correctly provided.
 		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 
 		if cluster.Annotations == nil {
 			cluster.Annotations = make(map[string]string)
 		}
+
 		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
+		// by default, the same floating IP pool is used for machines and LBs.
+		cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = extNetwork.ID
+
+		if hasLBFloatingIPPool && lbExtNetwork != nil {
+			cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool = lbExtNetwork.Name
+			cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = lbExtNetwork.ID
+		}
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
@@ -361,7 +395,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 
 	// for each security group, ensure that it exists
 	err := validateSecurityGroupExists(netClient, securityGroup)
-
 	if err != nil {
 		if isNotFoundErr(err) {
 			// group does not yet exist, so we create it
@@ -382,7 +415,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 			})
-
 			if err != nil {
 				return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
 			}
@@ -394,7 +426,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to update security group in cluster: %w", err)
 	}
@@ -436,12 +467,12 @@ func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
+		subnet, err = createIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, cluster.Spec.Cloud.Openstack.IPv6SubnetCIDR, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the IPv6 subnet: %w", err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer, RouterIPv6SubnetLinkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer)
 			cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
 		})
 		if err != nil {
@@ -487,14 +518,14 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createSubnet(netClient, cluster.Name, network, dnservers)
+		subnet, err = createSubnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.SubnetAllocationPool, cluster.Spec.Cloud.Openstack.SubnetCIDR, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the IPv4 subnet: %w", err)
 		}
 
 		// Update the cluster spec with the new subnet ID
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer)
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 		})
 		if err != nil {

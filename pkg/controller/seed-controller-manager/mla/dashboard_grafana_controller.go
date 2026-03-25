@@ -31,7 +31,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,7 +50,7 @@ type dashboardGrafanaReconciler struct {
 
 	log                        *zap.SugaredLogger
 	workerName                 string
-	recorder                   record.EventRecorder
+	recorder                   events.EventRecorder
 	versions                   kubermatic.Versions
 	dashboardGrafanaController *dashboardGrafanaController
 }
@@ -73,7 +73,7 @@ func newDashboardGrafanaReconciler(
 
 		log:                        log.Named(subname),
 		workerName:                 workerName,
-		recorder:                   mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:                   mgr.GetEventRecorder(controllerName(subname)),
 		versions:                   versions,
 		dashboardGrafanaController: dashboardGrafanaController,
 	}

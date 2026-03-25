@@ -72,7 +72,6 @@ func init() {
 	awsCredentials.AddFlags(flag.CommandLine)
 	azureCredentials.AddFlags(flag.CommandLine)
 	digitaloceanCredentials.AddFlags(flag.CommandLine)
-	equinixMetalCredentials.AddFlags(flag.CommandLine)
 	gcpCredentials.AddFlags(flag.CommandLine)
 	hetznerCredentials.AddFlags(flag.CommandLine)
 	openstackCredentials.AddFlags(flag.CommandLine)
@@ -341,9 +340,9 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
-					Image: "docker.io/byrnedo/alpine-curl:0.1.8",
+					Image: "quay.io/kubermatic/util:2.7.0",
 					Command: []string{
-						"/bin/ash",
+						"/bin/sh",
 						"-c",
 						"while true; do sleep 1; done",
 					},

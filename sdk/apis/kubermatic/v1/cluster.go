@@ -72,6 +72,11 @@ const (
 	DefaultKonnectivityKeepaliveTime = "1m"
 )
 
+const (
+	// AdmissionPluginNameEventRateLimit is the EventRateLimit admission plugin name.
+	AdmissionPluginNameEventRateLimit = "EventRateLimit"
+)
+
 // +kubebuilder:validation:Enum=standard;basic
 
 // Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
@@ -290,6 +295,17 @@ func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
 }
 
+// HasAdmissionPlugin reports whether the given admission plugin name exists in AdmissionPlugins.
+func (c ClusterSpec) HasAdmissionPlugin(name string) bool {
+	return slices.Contains(c.AdmissionPlugins, name)
+}
+
+// IsEventRateLimitAdmissionPluginEnabled reports whether EventRateLimit is enabled either
+// via the dedicated boolean field or through AdmissionPlugins.
+func (c ClusterSpec) IsEventRateLimitAdmissionPluginEnabled() bool {
+	return c.UseEventRateLimitAdmissionPlugin || c.HasAdmissionPlugin(AdmissionPluginNameEventRateLimit)
+}
+
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
 // Only available in Enterprise Edition.
 type KubeLB struct {
@@ -298,7 +314,7 @@ type KubeLB struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
+	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
@@ -391,7 +407,6 @@ type ClusterConditionType string
 // The reference time for this is the node system time and might differ from
 // the user's timezone, which needs to be considered when configuring a window.
 type UpdateWindow struct {
-
 	// Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,
 	// or a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,
 	// i.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.
@@ -475,6 +490,10 @@ type AuthorizationWebhookConfiguration struct {
 	SecretKey string `json:"secretKey"`
 	// the Webhook Version, by default "v1"
 	WebhookVersion string `json:"webhookVersion"`
+	// Optional: The duration to cache authorization decisions for successful authorization webhook calls.
+	CacheAuthorizedTTL *metav1.Duration `json:"cacheAuthorizedTTL,omitempty"`
+	// Optional: The duration to cache authorization decisions for failed authorization webhook calls.
+	CacheUnauthorizedTTL *metav1.Duration `json:"cacheUnauthorizedTTL,omitempty"`
 }
 
 type AuthorizationConfigurationFile struct {
@@ -763,6 +782,20 @@ type OIDCSettings struct {
 	GroupsPrefix   string `json:"groupsPrefix,omitempty"`
 }
 
+// EventRateLimitType defines the type of event rate limit.
+type EventRateLimitType string
+
+const (
+	// EventRateLimitTypeServer is a limit where one bucket is shared by all event queries.
+	EventRateLimitTypeServer EventRateLimitType = "Server"
+	// EventRateLimitTypeNamespace is a limit where one bucket is used by each namespace.
+	EventRateLimitTypeNamespace EventRateLimitType = "Namespace"
+	// EventRateLimitTypeUser is a limit where one bucket is used by each user.
+	EventRateLimitTypeUser EventRateLimitType = "User"
+	// EventRateLimitTypeSourceAndObject is a limit where one bucket is used by each source+object combination.
+	EventRateLimitTypeSourceAndObject EventRateLimitType = "SourceAndObject"
+)
+
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
@@ -773,8 +806,23 @@ type EventRateLimitConfig struct {
 }
 
 type EventRateLimitConfigItem struct {
-	QPS       int32 `json:"qps"`
-	Burst     int32 `json:"burst"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=50
+	//
+	// QPS is the queries per second allowed for this limit type.
+	QPS int32 `json:"qps"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=100
+	//
+	// Burst is the maximum burst size for this limit type.
+	Burst int32 `json:"burst"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=4096
+	// +optional
+	//
+	// CacheSize is the size of the LRU cache for this limit type.
 	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 
@@ -837,19 +885,19 @@ const (
 
 type ComponentSettings struct {
 	// Apiserver configures kube-apiserver settings.
-	Apiserver APIServerSettings `json:"apiserver"`
+	Apiserver APIServerSettings `json:"apiserver,omitempty"`
 	// ControllerManager configures kube-controller-manager settings.
-	ControllerManager ControllerSettings `json:"controllerManager"`
+	ControllerManager ControllerSettings `json:"controllerManager,omitempty"`
 	// Scheduler configures kube-scheduler settings.
-	Scheduler ControllerSettings `json:"scheduler"`
+	Scheduler ControllerSettings `json:"scheduler,omitempty"`
 	// Etcd configures the etcd ring used to store Kubernetes data.
-	Etcd EtcdStatefulSetSettings `json:"etcd"`
+	Etcd EtcdStatefulSetSettings `json:"etcd,omitempty"`
 	// Prometheus configures the Prometheus instance deployed into the cluster control plane.
-	Prometheus StatefulSetSettings `json:"prometheus"`
+	Prometheus StatefulSetSettings `json:"prometheus,omitempty"`
 	// NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
 	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
 	// strategy is configured.
-	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
+	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy,omitempty"`
 	// KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
 	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
@@ -858,6 +906,12 @@ type ComponentSettings struct {
 	OperatingSystemManager *OSMControllerSettings `json:"operatingSystemManager,omitempty"`
 	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
+	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
+	// MachineController configures the Kubermatic machine-controller deployment.
+	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
+	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -892,6 +946,11 @@ type ControllerSettings struct {
 
 type DeploymentSettings struct {
 	Replicas    *int32                       `json:"replicas,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+}
+
+type DaemonSetSettings struct {
 	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
 }
@@ -995,10 +1054,10 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf
+	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf;nftables;
 	// +kubebuilder:default=ipvs
 
-	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf" / "nftables").
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
@@ -1012,6 +1071,7 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	//
 	// Deprecated: This field should not be used anymore, use cluster.componentsOverride.coreDNS.replicas
 	// instead. Only one of the two fields can be set at any time.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
@@ -1103,10 +1163,6 @@ type CloudSpec struct {
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
 	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
-	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
-	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
 	// VSphere defines the configuration data of the vSphere.
@@ -1228,6 +1284,7 @@ type VSphereCloudSpec struct {
 	// +optional
 	Password string `json:"password"`
 	// The name of the vSphere network.
+	//
 	// Deprecated: Use networks instead.
 	// +optional
 	VMNetName string `json:"vmNetName,omitempty"`
@@ -1312,6 +1369,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	VDC string `json:"vdc,omitempty"`
 
 	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
+	//
 	// Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
 	OVDCNetwork string `json:"ovdcNetwork,omitempty"`
 
@@ -1342,7 +1400,6 @@ type BaremetalCloudSpec struct {
 }
 
 type TinkerbellCloudSpec struct {
-
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
@@ -1434,8 +1491,35 @@ type OpenstackCloudSpec struct {
 	//
 	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIPPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
+	// LoadBalancerFloatingIPPool holds the name of the external network to be used
+	// for LoadBalancer floating IP allocation.
+	//
+	// When specified, LoadBalancer type Services will receive floating IPs from this pool
+	// instead of the FloatingIPPool. This allows using different external networks for
+	// cluster infrastructure (router) vs. LoadBalancer services.
+	// If not specified, FloatingIPPool is used for LoadBalancers for backward compatibility.
+	//
+	// This field sets a cluster-wide default for LoadBalancers. Services can override
+	// this default by using the `loadbalancer.openstack.org/class` annotation to select
+	// a specific LoadBalancerClass.
+	// +optional
+	LoadBalancerFloatingIPPool string `json:"loadBalancerFloatingIPPool,omitempty"`
+
+	RouterID string `json:"routerID"`
+	SubnetID string `json:"subnetID"`
+
+	// SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
+	// didn't specify a subnet id.
+	// +optional
+	SubnetCIDR string `json:"subnetCidr,omitempty"`
+	// SubnetAllocationPool represents a pool of usable IPs that can be assigned to resources via the DHCP. The format is
+	// first usable ip and last usable ip separated by a dash(e.g: 10.10.0.1-10.10.0.254)
+	// +optional
+	SubnetAllocationPool string `json:"subnetAllocationPool,omitempty"`
+	// IPv6SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
+	// didn't specify a subnet id for the IPv6 networking.
+	// +optional
+	IPv6SubnetCIDR string `json:"ipv6SubnetCidr,omitempty"`
 	// IPv6SubnetID holds the ID of the subnet used for IPv6 networking.
 	// If not provided, a new subnet will be created if IPv6 is enabled.
 	// +optional
@@ -1468,11 +1552,17 @@ type OpenstackCloudSpec struct {
 	// This requires Nova and Cinder to have matching availability zones configured.
 	// +optional
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
+	// List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+	// +optional
+	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// PacketCloudSpec specifies access data to a Packet cloud.
+// NOOP.
 type PacketCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
@@ -1514,6 +1604,8 @@ type KubevirtCloudSpec struct {
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks.
 	// It contains also some flag specifying which one is the default one.
 	StorageClasses []KubeVirtInfraStorageClass `json:"storageClasses,omitempty"`
+	// VolumeSnapshotClasses defines a list of volume snapshot classes for the infrastructure cluster.
+	VolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"volumeSnapshotClasses,omitempty"`
 	// ImageCloningEnabled flag enable/disable cloning for a cluster.
 	ImageCloningEnabled bool `json:"imageCloningEnabled,omitempty"`
 	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.
@@ -1558,7 +1650,6 @@ type AnexiaCloudSpec struct {
 
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
-
 	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 
@@ -1746,9 +1837,6 @@ func (c *Cluster) GetSecretName() string {
 	}
 	if c.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
-	}
-	if c.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if c.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)

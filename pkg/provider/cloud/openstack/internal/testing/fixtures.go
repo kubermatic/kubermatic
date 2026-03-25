@@ -60,6 +60,11 @@ var ExternalNetworkFoo = Network{
 	NetworkExternalExt: external.NetworkExternalExt{External: true},
 }
 
+var SecondExternalNetwork = Network{
+	Network:            networks.Network{Name: "second-external-network", ID: "f5e7a7b6-1234-5678-90ab-cdef12345678"},
+	NetworkExternalExt: external.NetworkExternalExt{External: true},
+}
+
 var InternalNetwork = Network{
 	Network: networks.Network{Name: "kubernetes-cluster-xyz", ID: NetworkID},
 }

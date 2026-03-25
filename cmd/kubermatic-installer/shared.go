@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"os"
 
+	"dario.cat/mergo"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	goyaml "gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -80,21 +82,53 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 	return config, raw, nil
 }
 
-func loadHelmValues(filename string) (*yamled.Document, error) {
-	if filename == "" {
+func loadHelmValues(filenames []string) (*yamled.Document, error) {
+	if len(filenames) == 0 {
 		doc, _ := yamled.Load(bytes.NewReader([]byte("---\n")))
 		return doc, nil
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+	// We create an empty map into which we merge everything.
+	mergedValues := make(map[string]any)
 
-	values, err := yamled.Load(f)
+	for _, filename := range filenames {
+		if filename == "" {
+			continue
+		}
+
+		content, err := os.ReadFile(filename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s: %w", filename, err)
+		}
+
+		// decoding the current file
+		currentMap := make(map[string]any)
+
+		// using unmarshal directly on the bytes
+		if err := goyaml.Unmarshal(content, &currentMap); err != nil {
+			return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
+		}
+
+		// mergo.WithOverride ensures that values from "currentMap"
+		// overwrite existing values in "mergedValues"
+		if err := mergo.Merge(&mergedValues, currentMap, mergo.WithOverride); err != nil {
+			return nil, fmt.Errorf("failed to merge values from %s: %w", filename, err)
+		}
+	}
+
+	// Convert the finished map back to bytes for yamled
+	var buf bytes.Buffer
+	encoder := goyaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+
+	if err := encoder.Encode(mergedValues); err != nil {
+		return nil, fmt.Errorf("failed to encode merged values: %w", err)
+	}
+
+	// load yamled (as expected by the rest of the code)
+	values, err := yamled.Load(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to load final values: %w", err)
 	}
 
 	return values, nil

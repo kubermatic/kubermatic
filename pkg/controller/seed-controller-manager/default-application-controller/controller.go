@@ -36,11 +36,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -66,7 +67,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	workerName                    string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	seedGetter                    provider.SeedGetter
 	configGetter                  provider.KubermaticConfigurationGetter
 	userClusterConnectionProvider UserClusterClientProvider
@@ -79,7 +80,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		recorder:                      mgr.GetEventRecorder(ControllerName),
 		seedGetter:                    seedGetter,
 		configGetter:                  kubermaticConfigurationGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
@@ -134,7 +135,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
@@ -393,6 +394,15 @@ func ApplicationInstallationReconciler(
 			// Both DefaultValues and DefaultValuesBlock can not be set at the same time, our webhooks should prevent this.
 			if len(app.Spec.ValuesBlock) == 0 && application.Spec.DefaultValues != nil {
 				app.Spec.Values = *application.Spec.DefaultValues
+			}
+
+			// Set ReconciliationInterval from annotation if present
+			if intervalStr, ok := application.Annotations[appskubermaticv1.ApplicationReconciliationIntervalAnnotation]; ok {
+				if interval, err := time.ParseDuration(intervalStr); err == nil {
+					app.Spec.ReconciliationInterval = metav1.Duration{Duration: interval}
+				} else {
+					logger.Warnf("Invalid reconciliation interval annotation %q on ApplicationDefinition %s: %v", intervalStr, application.Name, err)
+				}
 			}
 
 			return app, nil

@@ -65,6 +65,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -284,11 +285,14 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithMachineControllerImageRepository(r.machineControllerImageRepository).
 		WithOperatingSystemManagerImageTag(config.Spec.UserCluster.OperatingSystemManager.ImageTag).
 		WithOperatingSystemManagerImageRepository(config.Spec.UserCluster.OperatingSystemManager.ImageRepository).
+		WithKubeLBImageRepository(config.Spec.UserCluster.KubeLB.ImageRepository).
+		WithKubeLBImageTag(config.Spec.UserCluster.KubeLB.ImageTag).
 		WithBackupPeriod(r.backupSchedule).
 		WithBackupCount(r.backupCount).
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
+		WithDRA(r.features.DynamicResourceAllocation).
 		Build(), nil
 }
 
@@ -412,9 +416,9 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 }
 
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
-func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
+func GetDeploymentReconcilers(data *resources.TemplateData, features Features, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
-		apiserver.DeploymentReconciler(data, enableAPIserverOIDCAuthentication),
+		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication),
 		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
@@ -476,7 +480,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 		modifier.ControlplaneComponent(cluster),
 	}
 
-	factories := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
+	factories := GetDeploymentReconcilers(data, r.features, r.versions)
 	return reconciling.ReconcileDeployments(ctx, factories, cluster.Status.NamespaceName, r, modifiers...)
 }
 
@@ -752,6 +756,26 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
 			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
+		}
+
+		if c.Spec.IsWebhookAuthorizationEnabled() {
+			webhookURL, err := r.extractAuthorizationWebhookURL(ctx, c)
+			if err != nil {
+				return fmt.Errorf("failed to extract authorization webhook URL: %w", err)
+			}
+
+			if webhookURL != "" {
+				u, err := url.Parse(webhookURL)
+				if err != nil {
+					return fmt.Errorf("failed to parse authorization webhook URL %q: %w", webhookURL, err)
+				}
+
+				ipList, err := hostnameToIPList(resolverCtx, u.Hostname())
+				if err != nil {
+					return fmt.Errorf("failed to resolve authorization webhook URL %q: %w", webhookURL, err)
+				}
+				namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.AuthorizationWebhookAllowReconciler(ipList))
+			}
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
@@ -1192,4 +1216,63 @@ func (r *Reconciler) auditWebhookSecretReconciler(ctx context.Context, data *res
 			return secret, nil
 		}
 	}
+}
+
+// extractAuthorizationWebhookURL extracts the server URL from authorization webhook configuration.
+func (r *Reconciler) extractAuthorizationWebhookURL(ctx context.Context, c *kubermaticv1.Cluster) (string, error) {
+	if c.Spec.IsWebhookAuthorizationEnabled() {
+		webhookConfig := c.Spec.AuthorizationConfig.AuthorizationWebhookConfiguration
+
+		webhookSecret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      webhookConfig.SecretName,
+			Namespace: c.Status.NamespaceName,
+		}, webhookSecret)
+		if err != nil {
+			return "", fmt.Errorf("failed to get authorization webhook secret %q: %w", webhookConfig.SecretName, err)
+		}
+
+		configData, exists := webhookSecret.Data[webhookConfig.SecretKey]
+		if !exists {
+			return "", fmt.Errorf("authorization webhook secret %q does not contain key %q", webhookConfig.SecretName, webhookConfig.SecretKey)
+		}
+
+		webhookURL, err := extractWebhookServerURL(configData)
+		if err != nil {
+			return "", fmt.Errorf("failed to extract server URL from authorization webhook configuration: %w", err)
+		}
+
+		return webhookURL, nil
+	}
+
+	return "", nil
+}
+
+// extractWebhookServerURL parses a Kubernetes authorization webhook configuration.
+func extractWebhookServerURL(configData []byte) (string, error) {
+	config, err := clientcmd.Load(configData)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse webhook configuration: %w", err)
+	}
+
+	currentContext := config.CurrentContext
+	if currentContext == "" {
+		return "", fmt.Errorf("no current context set in webhook configuration")
+	}
+
+	context, exists := config.Contexts[currentContext]
+	if !exists {
+		return "", fmt.Errorf("current context %q not found in webhook configuration", currentContext)
+	}
+
+	cluster, exists := config.Clusters[context.Cluster]
+	if !exists {
+		return "", fmt.Errorf("cluster %q not found in webhook configuration", context.Cluster)
+	}
+
+	if cluster.Server == "" {
+		return "", fmt.Errorf("no server URL found in webhook configuration")
+	}
+
+	return cluster.Server, nil
 }

@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -51,7 +51,7 @@ type Reconciler struct {
 	seedClientGetter     provider.SeedClientGetter
 	configGetter         provider.KubermaticConfigurationGetter
 
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 }
 
 // Reconcile acts upon requests and will restore the state of resources

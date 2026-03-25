@@ -31,16 +31,12 @@ import (
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-// We have to unregister the ProcessCollector and GoCollector
-// from the ctrltuntimemetrics Registry, otherwise Collecting errors
-// out because they are both there and in the default prometheus registry.
-// This is not extremely nice but as pretty as "collect metrics from the
-// two registries" will ever got, unless the ctrltuntimemetrics.Registry
-// becomes configurable.
+// This is required to avoid duplicate metrics, as both the default prometheus registry and the
+// controller-runtime metrics registry register these collectors.
 func init() {
-	ctrlruntimemetrics.Registry.Unregister(
-		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	ctrlruntimemetrics.Registry.Unregister(collectors.NewGoCollector())
+	// Reference for go collector: https://github.com/kubernetes-sigs/controller-runtime/pull/3070
+	ctrlruntimemetrics.Registry.Unregister(collectors.NewGoCollector(collectors.WithGoCollectorRuntimeMetrics(collectors.MetricsAll)))
+	ctrlruntimemetrics.Registry.Unregister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 }
 
 // New returns a brand new *MetricsServer that gathers the metrics

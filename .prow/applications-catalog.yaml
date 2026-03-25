@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-appcatalog-aikit
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/aikit-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/aikit-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -28,7 +28,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -59,7 +59,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-argocd
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/argocd-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/argocd-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -73,7 +73,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -106,7 +106,7 @@ presubmits:
   - name: pre-kubermatic-appcatalog-cluster-autoscaler
     # We are testing changes for the cluster-autoscaler application definition and the system applications
     # reconciler through the same job.
-    run_if_changed: "(pkg/applicationdefinitions)"
+    run_if_changed: "(pkg/applicationdefinitions|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -120,7 +120,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -153,7 +153,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-cert-manager
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/cert-manager-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/cert-manager-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -167,7 +167,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -198,7 +198,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-falco
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/falco-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/falco-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -212,7 +212,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -243,7 +243,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-flux
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/flux2-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/flux2-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -257,7 +257,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -288,7 +288,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-k8sgpt-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/k8sgpt-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/k8sgpt-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -302,7 +302,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -333,7 +333,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kube-vip
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kube-vip-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kube-vip-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -347,7 +347,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -378,7 +378,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kubevirt
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubevirt-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubevirt-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -392,7 +392,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -422,8 +422,8 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-appcatalog-metallb
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/metallb-app.yaml)"
+  - name: pre-kubermatic-appcatalog-kueue
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kueue-app.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -438,6 +438,51 @@ presubmits:
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "kueue"
+            - name: APPLICATION_NAME
+              value: "kueue"
+            - name: APPLICATION_NAMESPACE
+              value: "kueue"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "kueue"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-metallb
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/metallb-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -468,7 +513,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nginx-ingress-controller
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nginx-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nginx-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -482,7 +527,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -513,7 +558,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nvidia-gpu-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nvidia-gpu-operator-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nvidia-gpu-operator-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -527,7 +572,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -558,7 +603,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -572,7 +617,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -603,7 +648,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-operator-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-operator-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -617,7 +662,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -648,7 +693,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-local-ai
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/local-ai.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/local-ai.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -662,7 +707,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -692,8 +737,8 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-app-definitions
-    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.sh)"
+  - name: pre-kubermatic-appcatalog-envoy-gateway
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/envoy-gateway-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -707,9 +752,89 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "envoy-gateway"
+            - name: APPLICATION_NAME
+              value: "envoy-gateway"
+            - name: APPLICATION_NAMESPACE
+              value: "envoy-gateway"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "envoy-gateway,gateway-helm"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-app-definitions
+    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.|pkg/test/e2e/defaultappcatalog/application_test.go)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
           command:
             - "./hack/ci/run-application-definitions-e2e-test.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-manager-e2e
+    run_if_changed: "(pkg/test/e2e/appcatalogmanager/|pkg/controller/operator/master/resources/application-catalog/|pkg/controller/operator/master/reconciler.go|pkg/validation/application_definition.go|.prow/applications-catalog.yaml|hack/ci/run-appcatalog-manager-e2e-tests.sh|pkg/ee/default-application-catalog/applicationdefinitions/)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - "./hack/ci/run-appcatalog-manager-e2e-tests.sh"
           env:
             - name: KUBERMATIC_EDITION
               value: ee

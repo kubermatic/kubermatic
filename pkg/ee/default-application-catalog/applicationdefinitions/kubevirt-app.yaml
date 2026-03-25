@@ -25,6 +25,7 @@ metadata:
 spec:
   description: KubeVirt with Containerized Data Importer
   displayName: KubeVirt
+  defaultVersion: v1.7.1
   method: helm
   versions:
     - template:
@@ -34,6 +35,13 @@ spec:
             chartVersion: v1.1.0
             url: oci://quay.io/kubermatic/helm-charts
       version: v1.1.0
+    - template:
+        source:
+          helm:
+            chartName: kubevirt
+            chartVersion: v1.7.1
+            url: oci://quay.io/kubermatic/helm-charts
+      version: v1.7.1
   documentationURL: https://kubevirt.io/
   sourceURL: https://github.com/kubevirt/kubevirt
   logo: |+

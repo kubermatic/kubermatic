@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: operating-system-manager-webhook
   name: operating-system-manager-webhook
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: operating-system-manager-webhook
         ca-bundle-configmap-revision: "123456"
@@ -43,7 +41,7 @@ spec:
         env:
         - name: KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/operating-system-manager:v1.7.4
+        image: quay.io/kubermatic/operating-system-manager:v1.10.2
         livenessProbe:
           failureThreshold: 8
           httpGet:

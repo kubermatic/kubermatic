@@ -37,6 +37,13 @@ helm version
 echodate "Fetching dependencies..."
 i=0
 for url in $(yq '.dependencies.[].repository' Chart.yaml); do
+  # Remove quotes from the URL
+  url=${url//\"/}
+  # Skip OCI repositories as they don't need to be added to helm repos
+  if [[ $url == oci://* ]]; then
+    echo "Skipping OCI repository: ${url}"
+    continue
+  fi
   i=$((i + 1))
   helm repo add ${chartname}-dep-${i} ${url}
 done

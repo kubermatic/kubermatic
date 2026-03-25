@@ -14,7 +14,7 @@
 
 apiVersion: v2
 version: 9.9.9-dev
-appVersion: v1.14.1
+appVersion: v1.20.0
 description: 'Horizontally scalable, highly available, multi-tenant, long term Prometheus.'
 home: https://cortexmetrics.io/
 kubeVersion: ^1.19.0-0
@@ -24,4 +24,4 @@ sources:
 dependencies:
 - name: cortex
   repository: https://cortexproject.github.io/cortex-helm-chart
-  version: 2.1.0
+  version: 3.0.0

@@ -67,6 +67,7 @@ type SettingSpec struct {
 	// +kubebuilder:default=false
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
+	//
 	// Deprecated: EnableWebTerminal is deprecated and should be removed in KKP 2.27+. Please use webTerminalOptions instead. When webTerminalOptions.enabled is set then this field will be ignored.
 	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
 
@@ -87,9 +88,10 @@ type SettingSpec struct {
 	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
 
 	// UserProjectsLimit is the maximum number of projects a user can create.
-	UserProjectsLimit       int64 `json:"userProjectsLimit"`
-	RestrictProjectCreation bool  `json:"restrictProjectCreation"`
-	RestrictProjectDeletion bool  `json:"restrictProjectDeletion"`
+	UserProjectsLimit           int64 `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
+	RestrictProjectDeletion     bool  `json:"restrictProjectDeletion"`
+	RestrictProjectModification bool  `json:"restrictProjectModification"`
 
 	EnableExternalClusterImport bool `json:"enableExternalClusterImport"`
 

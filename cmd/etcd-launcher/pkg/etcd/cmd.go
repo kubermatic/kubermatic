@@ -17,6 +17,7 @@ limitations under the License.
 package etcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -30,12 +31,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-func (e *Cluster) StartEtcdCmd(log *zap.SugaredLogger) (*exec.Cmd, error) {
+func (e *Cluster) StartEtcdCmd(ctx context.Context, log *zap.SugaredLogger) (*exec.Cmd, error) {
 	if _, err := os.Stat(etcdCommandPath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("failed to find etcd executable: %w", err)
 	}
 
-	cmd := exec.Command(etcdCommandPath, etcdCmd(e)...)
+	cmd := exec.CommandContext(ctx, etcdCommandPath, etcdCmd(e)...)
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

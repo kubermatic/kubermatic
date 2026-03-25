@@ -33,6 +33,8 @@ spec:
               # List of registry mirrors to use
               mirrors:
                 - mirror.gcr.io
+        # Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.
+        enableNonRootDeviceOwnership: false
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
@@ -156,8 +158,7 @@ spec:
         kubelb:
           # DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
           disableIngressClass: false
-          # EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
-          # When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+          # EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
           enableGatewayAPI: false
           # EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
           enableSecretSynchronizer: true
@@ -245,6 +246,7 @@ spec:
           dnsPolicy: ""
           # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
           # Defaults to false.
+
           # Deprecated: Use .kubevirt.usePodResourcesCPU instead.
           enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
@@ -295,6 +297,9 @@ spec:
               # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
               # for increased availability
               zones: null
+          # Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+          # to initialise VolumeSnapshotClasses in the tenant cluster.
+          infraVolumeSnapshotClasses: null
           # Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
           # example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
           # otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
@@ -309,6 +314,10 @@ spec:
           # VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
           # value is External and the VM will be protected by a PDB.
           vmEvictionStrategy: ""
+        # Kyverno configures the Kyverno policy engine settings at the datacenter level.
+        # These settings override seed and global configuration and apply to all user clusters
+        # in this datacenter.
+        kyverno: null
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
@@ -388,6 +397,10 @@ spec:
             minimumMemory: 0
             # VCPUs is the minimum required amount of (virtual) CPUs
             minimumVCPUs: 0
+          # NodeVolumeAttachLimit defines the maximum number of volumes that can be
+          # attached to a single node. If set, this value overrides the default
+          # OpenStack volume attachment limit.
+          nodeVolumeAttachLimit: null
           # Authentication region name
           region: ""
           # Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
@@ -404,16 +417,6 @@ spec:
           rhel: ""
           rockylinux: ""
           ubuntu: ""
-        # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-        # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-        # Packet configures an Equinix Metal datacenter.
-        packet:
-          # The list of enabled facilities, for example "ams1", for a full list of available
-          # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
-          facilities: []
-          # Metros are facilities that are grouped together geographically and share capacity
-          # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
-          metro: ""
         # Optional: ProviderReconciliationInterval is the time that must have passed since a
         # Cluster's status.lastProviderReconciliation to make the cluster controller
         # perform an in-depth provider reconciliation, where for example missing security
@@ -494,7 +497,6 @@ spec:
   # to default all new created clusters
   defaultClusterTemplate: ""
   # DefaultComponentSettings are default values to set for newly created clusters.
-  # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
     # Apiserver configures kube-apiserver settings.
     apiserver:
@@ -521,6 +523,8 @@ spec:
       tolerations: null
     # CoreDNS configures CoreDNS deployed as part of the cluster control plane.
     coreDNS: null
+    # EnvoyAgent configures the envoy-agent deployed in the usercluster.
+    envoyAgent: null
     # Etcd configures the etcd ring used to store Kubernetes data.
     etcd:
       # ClusterSize is the number of replicas created for etcd. This should be an
@@ -562,6 +566,10 @@ spec:
       keepaliveTime: ""
       # Resources configure limits/requests for Konnectivity components.
       resources: null
+    # KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+    kubeStateMetrics: null
+    # MachineController configures the Kubermatic machine-controller deployment.
+    machineController: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
     # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
     # strategy is configured.
@@ -573,7 +581,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -681,6 +689,9 @@ spec:
       # UID of the referent.
       # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
       uid: ""
+  # Kyverno configures the Kyverno policy engine settings at the seed level.
+  # These settings apply to all user clusters in this seed.
+  kyverno: null
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
@@ -724,6 +735,7 @@ spec:
   nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
+
     # Deprecated: Use .envoy.loadBalancerService.annotations instead.
     annotations: {}
     # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
@@ -732,8 +744,48 @@ spec:
     disable: false
     # Envoy configures the Envoy application itself.
     envoy:
+      # ConnectionSettings configures idle timeout and TCP keepalive settings for
+      # the nodeport-proxy Envoy listeners and upstream clusters.
+      # Zero values keep Envoy defaults (no KKP override).
+      connectionSettings:
+        # DownstreamTCPKeepaliveInterval configures the interval between TCP
+        # keepalive probes on downstream listener sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        downstreamTCPKeepaliveInterval: 0s
+        # DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+        # probes before considering downstream listener sockets dead.
+        # Set to 0 to leave unset.
+        downstreamTCPKeepaliveProbes: 0
+        # DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+        # keepalive probe is sent on downstream listener sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        downstreamTCPKeepaliveTime: 0s
+        # SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+        # downstream connections are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        sniListenerIdleTimeout: 0s
+        # TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+        # listener downstream connections are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        tunnelingConnectionIdleTimeout: 0s
+        # TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+        # on the tunneling listener are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        tunnelingStreamIdleTimeout: 0s
+        # UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+        # probes on upstream cluster sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        upstreamTCPKeepaliveInterval: 0s
+        # UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+        # probes before considering upstream cluster sockets dead.
+        # Set to 0 to leave unset.
+        upstreamTCPKeepaliveProbes: 0
+        # UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+        # keepalive probe is sent on upstream cluster sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        upstreamTCPKeepaliveTime: 0s
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: docker.io/envoyproxy/envoy-distroless
+      dockerRepository: docker.io/envoyproxy/envoy
       loadBalancerService:
         # Annotations are used to further tweak the LoadBalancer integration with the
         # cloud provider.
@@ -744,12 +796,15 @@ spec:
         # This field will be ignored if the cloud-provider does not support the feature.
         # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
         sourceRanges: []
+      # Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+      # Defaults to 3.
+      replicas: null
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -775,7 +830,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -806,7 +861,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.

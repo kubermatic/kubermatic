@@ -49,7 +49,7 @@ func Add(mgr manager.Manager,
 ) error {
 	reconciler := NewReconciler(
 		log.Named(ControllerName),
-		mgr.GetEventRecorderFor(ControllerName),
+		mgr.GetEventRecorder(ControllerName),
 		mgr.GetClient(),
 		namespace,
 	)

@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"sort"
 	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -57,6 +58,12 @@ type ClusterData struct {
 	MajorMinorVersion string
 	// AutoscalerVersion is the tag which should be used for the cluster autoscaler
 	AutoscalerVersion string
+	// Annotations holds arbitrary non-identifying metadata attached to the cluster.
+	// Transferred from the Kubermatic cluster object.
+	Annotations map[string]string
+	// Labels are key-value pairs used to organize, categorize, and select clusters.
+	// Transferred from the Kubermatic cluster object.
+	Labels map[string]string
 }
 
 var (
@@ -121,6 +128,8 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 				Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Major(), clusterVersion.Minor(), clusterVersion.Patch()),
 				MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
 				AutoscalerVersion: clusterAutoscalerVersion,
+				Annotations:       cluster.Annotations,
+				Labels:            cluster.Labels,
 			},
 		}, nil
 	}
@@ -154,18 +163,32 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 	return parsedMap, nil
 }
 
+// autoscalerImageTags maps Kubernetes major.minor versions to the corresponding
+// cluster-autoscaler image tag that should be used for that version.
+var autoscalerImageTags = map[string]string{
+	"1.31": "v1.31.1",
+	"1.32": "v1.32.1",
+	"1.33": "v1.33.3",
+	"1.34": "v1.34.2",
+	"1.35": "v1.34.2",
+}
+
+// GetAutoscalerImageTag returns the cluster-autoscaler image tag for the given
+// Kubernetes major.minor version (e.g. "1.32").
 func GetAutoscalerImageTag(majorMinorVersion string) (string, error) {
-	switch majorMinorVersion {
-	case "1.29":
-		return "v1.29.5", nil
-	case "1.30":
-		return "v1.30.3", nil
-	case "1.31":
-		return "v1.31.1", nil
-	case "1.32":
-		return "v1.32.1", nil
-	case "1.33":
-		return "v1.32.1", nil
+	if tag, ok := autoscalerImageTags[majorMinorVersion]; ok {
+		return tag, nil
 	}
 	return "", fmt.Errorf("could not find cluster autoscaler tag for cluster minor-major version %v", majorMinorVersion)
+}
+
+// SupportedAutoscalerMinorVersions returns the sorted list of Kubernetes major.minor
+// versions for which a cluster-autoscaler image tag is known.
+func SupportedAutoscalerMinorVersions() []string {
+	versions := make([]string, 0, len(autoscalerImageTags))
+	for v := range autoscalerImageTags {
+		versions = append(versions, v)
+	}
+	sort.Strings(versions)
+	return versions
 }

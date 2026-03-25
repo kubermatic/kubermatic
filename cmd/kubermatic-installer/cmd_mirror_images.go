@@ -20,8 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -29,9 +31,13 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	catalogv1alpha1 "k8c.io/application-catalog-manager/pkg/apis/applicationcatalog/v1alpha1"
+	catalogcharts "k8c.io/application-catalog-manager/pkg/charts"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -50,6 +56,7 @@ type MirrorImagesOptions struct {
 	Config                    string
 	Versions                  kubermaticversion.Versions
 	VersionFilter             string
+	ProviderFilter            []string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
 	Archive                   bool
@@ -110,6 +117,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
+	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, fmt.Sprintf("Cloud providers to mirror images for. Valid values are: %s. Can be specified multiple times. If not specified, images for all providers will be mirrored", strings.Join(allSupportedProviderNames(), ", ")))
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
@@ -148,9 +156,8 @@ func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.Kub
 	// Validate the MirrorImages field in the KubermaticConfiguration to ensure all images are properly formatted.
 	// Each image must follow the format "repository:tag". Validation errors will prevent further processing.
 	if len(config.Spec.MirrorImages) > 0 {
-		err := validation.ValidateMirrorImages(config.Spec.MirrorImages)
-		if err != nil {
-			return nil, fmt.Errorf("invalid mirrorImages configuration in KubermaticConfiguration: %w", err)
+		if validationErr := validation.ValidateMirrorImages(config.Spec.MirrorImages); validationErr != nil {
+			return nil, fmt.Errorf("invalid mirrorImages configuration in KubermaticConfiguration: %w", validationErr)
 		}
 	}
 
@@ -203,6 +210,44 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	return tempDir, nil
 }
 
+// parseProviderFilter parses a list of provider names and returns them as a set.
+// Returns nil if the filter list is empty (meaning all providers should be included).
+func parseProviderFilter(providers []string) (sets.Set[string], error) {
+	if len(providers) == 0 {
+		return nil, nil
+	}
+
+	providerSet := sets.New[string]()
+
+	for _, p := range providers {
+		provider := strings.TrimSpace(strings.ToLower(p))
+		if provider == "" {
+			continue
+		}
+
+		if !kubermaticv1.IsProviderSupported(provider) {
+			return nil, fmt.Errorf(
+				"invalid provider %q. Valid providers are: %s",
+				p,
+				strings.Join(allSupportedProviderNames(), ", "),
+			)
+		}
+
+		providerSet.Insert(provider)
+	}
+
+	return providerSet, nil
+}
+
+func allSupportedProviderNames() []string {
+	names := make([]string, 0, len(kubermaticv1.InfrastructureProviders))
+	for _, p := range kubermaticv1.InfrastructureProviders {
+		names = append(names, strings.ToLower(string(p)))
+	}
+	slices.Sort(names)
+	return names
+}
+
 // CollectImageMatrix aggregates images for all cluster versions, cloud providers, and CNI plugins,
 // including both Konnectivity and non-Konnectivity configurations.
 func CollectImageMatrix(
@@ -213,10 +258,11 @@ func CollectImageMatrix(
 	versions kubermaticversion.Versions,
 	caBundle resources.CABundle,
 	registryPrefix string,
+	cloudSpecs []kubermaticv1.CloudSpec,
 ) ([]string, error) {
 	var imageList []string
 	for _, clusterVersion := range clusterVersions {
-		for _, cloudSpec := range images.GetCloudSpecs() {
+		for _, cloudSpec := range cloudSpecs {
 			for _, cniPlugin := range images.GetCNIPlugins() {
 				versionLogger := logger.WithFields(logrus.Fields{
 					"version":     clusterVersion.Version.String(),
@@ -254,174 +300,359 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.GitVersion)
 
 		if options.LoadFrom == "" {
-			kubermaticConfig, err := getKubermaticConfiguration(options)
-			if err != nil {
-				return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
-			}
-
-			clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
-			if err != nil {
-				return fmt.Errorf("failed to load versions: %w", err)
-			}
-
-			caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
-			if err != nil {
-				return fmt.Errorf("failed to load CA bundle: %w", err)
-			}
-
-			if options.AddonsPath == "" {
-				options.AddonsPath, err = getAddonsPath(ctx, logger, options, kubermaticConfig)
-				if err != nil {
-					return fmt.Errorf("failed to get addons path: %w", err)
-				}
-				defer os.RemoveAll(options.AddonsPath)
-			}
-
-			allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
-			if err != nil {
-				return fmt.Errorf("failed to load addons: %w", err)
-			}
-
-			logger.Info("🚀 Collecting images…")
-
-			// Using a set here for deduplication
-			imageSet := sets.New[string]()
-
-			imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix)
-			if err != nil {
+			if err := mirrorImages(ctx, logger, versions, options, userAgent); err != nil {
 				return err
 			}
-			imageSet.Insert(imageList...)
-
-			// Populate the imageSet with images specified in the KubermaticConfiguration's MirrorImages field.
-			// This ensures that all required images for mirroring are included in the set for further processing.
-			if len(kubermaticConfig.Spec.MirrorImages) > 0 {
-				imageSet.Insert(kubermaticConfig.Spec.MirrorImages...)
-			}
-
-			// error out early if there is no useful Helm binary
-			helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
-			if err != nil {
-				return fmt.Errorf("failed to create Helm client: %w", err)
-			}
-
-			helmVersion, err := helmClient.Version()
-			if err != nil {
-				return fmt.Errorf("failed to check Helm version: %w", err)
-			}
-
-			if helmVersion.LessThan(MinHelmVersion) {
-				return fmt.Errorf(
-					"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-					MinHelmVersion,
-					options.HelmBinary,
-					helmVersion,
-				)
-			}
-
-			if options.ChartsDirectory != "" {
-				chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
-				chartsLogger.Info("🚀 Rendering Helm charts…")
-
-				// Because charts can specify a desired kubeVersion and the helm render default is hardcoded to 1.20, we need to set a custom kubeVersion.
-				// Otherwise some charts would fail to render (e.g. consul).
-				// Since we are just rendering from the client-side, it makes sense to use the latest kubeVersion we support.
-				latestClusterVersion := clusterVersions[len(clusterVersions)-1]
-				images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix, latestClusterVersion.Version.Original())
-				if err != nil {
-					return fmt.Errorf("failed to get images: %w", err)
-				}
-				imageSet.Insert(images...)
-			}
-
-			copyKubermaticConfig := kubermaticConfig.DeepCopy()
-
-			logger.Info("🚀 Getting images from system Applications Helm charts…")
-
-			for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
-				if err != nil {
-					return err
-				}
-
-				chartImage := fmt.Sprintf("%s/%s:%s",
-					sysChart.Template.Source.Helm.URL,
-					sysChart.Template.Source.Helm.ChartName,
-					sysChart.Template.Source.Helm.ChartVersion,
-				)
-
-				// Check if the chartImage starts with "oci://"
-				if strings.HasPrefix(chartImage, "oci://") {
-					// remove oci:// prefix and insert the chartImage into imageSet.
-					imageSet.Insert(chartImage[len("oci://"):])
-				}
-
-				imageSet.Insert(sysChart.WorkloadImages...)
-			}
-
-			for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
-				if err != nil {
-					return err
-				}
-
-				chartImage := fmt.Sprintf("%s/%s:%s",
-					defaultChart.Template.Source.Helm.URL,
-					defaultChart.Template.Source.Helm.ChartName,
-					defaultChart.Template.Source.Helm.ChartVersion,
-				)
-
-				// Check if the chartImage starts with "oci://"
-				if strings.HasPrefix(chartImage, "oci://") {
-					// remove oci:// prefix and insert the chartImage into imageSet.
-					imageSet.Insert(chartImage[len("oci://"):])
-				}
-
-				imageSet.Insert(defaultChart.WorkloadImages...)
-			}
-
-			if options.Archive && options.ArchivePath == "" {
-				currentPath, err := os.Getwd()
-				if err != nil {
-					return fmt.Errorf("failed to get current directory: %w", err)
-				}
-				options.ArchivePath = fmt.Sprintf("%s/kubermatic-v%s-images.tar.gz", currentPath, options.Versions.GitVersion)
-			}
-
-			var verb string
-			var count, fullCount int
-			if options.Archive {
-				logger.WithField("archive-path", options.ArchivePath).Info("🚀 Archiving images…")
-				count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
-				if err != nil {
-					return fmt.Errorf("failed to export images: %w", err)
-				}
-				verb = "archiving"
-				if options.DryRun {
-					verb = "archiving (dry-run)"
-				}
-			} else {
-				logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
-				count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, options.Insecure, sets.List(imageSet), options.Registry, userAgent)
-				if err != nil {
-					return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
-				}
-
-				verb = "mirroring"
-				if options.DryRun {
-					verb = "mirroring (dry-run)"
-				}
-			}
-
-			logger.WithFields(logrus.Fields{"copied-image-count": count, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
-
-			return nil
 		} else {
-			logger.WithField("archive-path", options.LoadFrom).Info("🚀 Loading images…")
-			if err := images.LoadImages(ctx, logger, options.LoadFrom, options.DryRun, options.Registry, userAgent); err != nil {
-				return fmt.Errorf("failed to load images: %w", err)
+			if err := loadImages(ctx, logger, options, userAgent); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions, userAgent string) error {
+	kubermaticConfig, err := getKubermaticConfiguration(options)
+	if err != nil {
+		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
+	clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
+	if err != nil {
+		return fmt.Errorf("failed to load versions: %w", err)
+	}
+
+	caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
+	if err != nil {
+		return fmt.Errorf("failed to load CA bundle: %w", err)
+	}
+
+	if options.AddonsPath == "" {
+		options.AddonsPath, err = getAddonsPath(ctx, logger, options, kubermaticConfig)
+		if err != nil {
+			return fmt.Errorf("failed to get addons path: %w", err)
+		}
+		defer os.RemoveAll(options.AddonsPath)
+	}
+
+	allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
+	if err != nil {
+		return fmt.Errorf("failed to load addons: %w", err)
+	}
+
+	// Parse and validate the provider filter
+	providerFilter, err := parseProviderFilter(options.ProviderFilter)
+	if err != nil {
+		return fmt.Errorf("failed to parse provider filter: %w", err)
+	}
+
+	// Filter cloud specs based on the provider filter
+	cloudSpecs := images.GetFilteredCloudSpecs(providerFilter)
+
+	if providerFilter != nil && providerFilter.Len() > 0 {
+		logger.Infof("Filtering images for providers: %v", sets.List(providerFilter))
+	} else {
+		logger.Info("🔍 Collecting images for all providers")
+	}
+
+	logger.Info("🚀 Collecting images…")
+
+	// Using a set here for deduplication
+	imageSet := sets.New[string]()
+
+	imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix, cloudSpecs)
+	if err != nil {
+		return err
+	}
+	imageSet.Insert(imageList...)
+
+	// Populate the imageSet with images specified in the KubermaticConfiguration's MirrorImages field.
+	// This ensures that all required images for mirroring are included in the set for further processing.
+	if len(kubermaticConfig.Spec.MirrorImages) > 0 {
+		imageSet.Insert(kubermaticConfig.Spec.MirrorImages...)
+	}
+
+	// if we have a charts directory, we try to render the charts and add the images to our list
+	helmChartImages, err := collectHelmChartImages(ctx, logger, kubermaticConfig, clusterVersions, options)
+	if err != nil {
+		return err
+	}
+	imageSet.Insert(sets.List(helmChartImages)...)
+
+	// get images from system and default applications
+	applicationImages, err := collectApplicationImages(logger, kubermaticConfig, options)
+	if err != nil {
+		return err
+	}
+	imageSet.Insert(sets.List(applicationImages)...)
+
+	// finally, add some static images that are not covered by any of the above
+	imageSet.Insert(staticImages()...)
+	return archiveOrCopyImages(ctx, logger, imageSet, options, userAgent)
+}
+
+func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, clusterVersions []*version.Version, options *MirrorImagesOptions) (sets.Set[string], error) {
+	imageSet := sets.New[string]()
+
+	if options.ChartsDirectory == "" {
+		return imageSet, nil
+	}
+
+	// error out early if there is no useful Helm binary
+	helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Helm client: %w", err)
+	}
+
+	helmVersion, err := helmClient.Version()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Helm version: %w", err)
+	}
+
+	if helmVersion.LessThan(MinHelmVersion) {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			MinHelmVersion,
+			options.HelmBinary,
+			helmVersion,
+		)
+	}
+
+	chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
+	chartsLogger.Info("🚀 Rendering Helm charts…")
+
+	// Because charts can specify a desired kubeVersion and the helm render default is hardcoded to 1.20, we need to set a custom kubeVersion.
+	// Otherwise some charts would fail to render (e.g. consul).
+	// Since we are just rendering from the client-side, it makes sense to use the latest kubeVersion we support.
+	latestClusterVersion := clusterVersions[len(clusterVersions)-1]
+	images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix, latestClusterVersion.Version.Original())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images from helm charts: %w", err)
+	}
+	imageSet.Insert(images...)
+
+	return imageSet, nil
+}
+
+func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *MirrorImagesOptions) (sets.Set[string], error) {
+	imageSet := sets.New[string]()
+
+	helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Helm client: %w", err)
+	}
+
+	copyKubermaticConfig := kubermaticConfig.DeepCopy()
+
+	logger.Info("🚀 Getting images from system Applications Helm charts…")
+	for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+		if err != nil {
+			return nil, err
+		}
+		chartImage := fmt.Sprintf("%s/%s:%s", sysChart.Template.Source.Helm.URL, sysChart.Template.Source.Helm.ChartName, sysChart.Template.Source.Helm.ChartVersion)
+		// Check if the chartImage starts with "oci://"
+		if strings.HasPrefix(chartImage, "oci://") {
+			// remove oci:// prefix and insert the chartImage into imageSet.
+			imageSet.Insert(chartImage[len("oci://"):])
+		}
+		imageSet.Insert(sysChart.WorkloadImages...)
+	}
+
+	if kubermaticConfig.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		// new approach: use application-catalog-manager package
+		logger.Info("🚀 Getting images from External Application Catalog...")
+
+		for catalogChart, err := range getExternalCatalogCharts(copyKubermaticConfig) {
+			if err != nil {
+				return nil, err
 			}
 
-			logger.Info("✅ Finished loading images.")
-			return nil
+			// download and render Helm chart to extract workload images
+			chartPath, downloadErr := images.DownloadAppSourceChart(&catalogChart.Template.Source, "", options.HelmTimeout)
+			if downloadErr != nil {
+				return nil, fmt.Errorf("failed to download chart %s: %w", catalogChart.Template.Source.Helm.ChartName, downloadErr)
+			}
+			defer os.RemoveAll(chartPath)
+
+			chartImages, renderErr := images.GetImagesForHelmChart(logger, nil, helmClient, chartPath, "", options.RegistryPrefix, "")
+			if renderErr != nil {
+				return nil, fmt.Errorf("failed to render Helm chart %s: %w", catalogChart.Template.Source.Helm.ChartName, renderErr)
+			}
+
+			// extract OCI chart image if present
+			chartImage := fmt.Sprintf("%s/%s:%s",
+				catalogChart.Template.Source.Helm.URL,
+				catalogChart.Template.Source.Helm.ChartName,
+				catalogChart.Template.Source.Helm.ChartVersion)
+			if strings.HasPrefix(chartImage, "oci://") {
+				imageSet.Insert(chartImage[len("oci://"):])
+			}
+
+			// add workload images from rendered chart
+			imageSet.Insert(chartImages...)
 		}
-	})
+	} else {
+		// legacy approach: use embedded default application catalog
+		logger.Info("🚀 Getting images from default Applications Helm charts…")
+		for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+			if err != nil {
+				return nil, err
+			}
+			chartImage := fmt.Sprintf("%s/%s:%s",
+				defaultChart.Template.Source.Helm.URL,
+				defaultChart.Template.Source.Helm.ChartName,
+				defaultChart.Template.Source.Helm.ChartVersion)
+			// Check if the chartImage starts with "oci://"
+			if strings.HasPrefix(chartImage, "oci://") {
+				// remove oci:// prefix and insert the chartImage into imageSet.
+				imageSet.Insert(chartImage[len("oci://"):])
+			}
+			imageSet.Insert(defaultChart.WorkloadImages...)
+		}
+	}
+
+	return imageSet, nil
+}
+
+func archiveOrCopyImages(ctx context.Context, logger *logrus.Logger, imageSet sets.Set[string], options *MirrorImagesOptions, userAgent string) error {
+	if options.Archive && options.ArchivePath == "" {
+		currentPath, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current directory: %w", err)
+		}
+		options.ArchivePath = fmt.Sprintf("%s/kubermatic-v%s-images.tar.gz", currentPath, options.Versions.GitVersion)
+	}
+
+	var verb string
+	var count, fullCount int
+	var err error
+
+	if options.Archive {
+		logger.WithField("archive-path", options.ArchivePath).Info("🚀 Archiving images…")
+		count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
+		if err != nil {
+			return fmt.Errorf("failed to export images: %w", err)
+		}
+		verb = "archiving"
+		if options.DryRun {
+			verb = "archiving (dry-run)"
+		}
+	} else {
+		logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
+		count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, options.Insecure, sets.List(imageSet), options.Registry, userAgent)
+		if err != nil {
+			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
+		}
+		verb = "mirroring"
+		if options.DryRun {
+			verb = "mirroring (dry-run)"
+		}
+	}
+
+	logger.WithFields(logrus.Fields{"copied-image-count": count, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
+	return nil
+}
+
+func loadImages(ctx context.Context, logger *logrus.Logger, options *MirrorImagesOptions, userAgent string) error {
+	logger.WithField("archive-path", options.LoadFrom).Info("🚀 Loading images…")
+	if err := images.LoadImages(ctx, logger, options.LoadFrom, options.DryRun, options.Registry, userAgent); err != nil {
+		return fmt.Errorf("failed to load images: %w", err)
+	}
+
+	logger.Info("✅ Finished loading images.")
+	return nil
+}
+
+func staticImages() []string {
+	return []string{
+		resources.WEBTerminalImage}
+}
+
+// getExternalCatalogCharts returns default Helm charts from the
+// application-catalog-manager package. This is used when
+// ExternalApplicationCatalogManager feature gate is enabled.
+//
+// The function respects the Apps filter from KubermaticConfiguration
+// to match the filtering behavior of the External Catalog Manager.
+func getExternalCatalogCharts(
+	config *kubermaticv1.KubermaticConfiguration,
+) iter.Seq2[*images.AppsHelmChart, error] {
+	return func(yield func(*images.AppsHelmChart, error) bool) {
+		// get all default charts from application-catalog-manager package
+		allCharts := catalogcharts.GetDefaultCharts()
+
+		// apply filtering based on KubermaticConfiguration
+		// this matches the behavior of the External Catalog Manager webhook
+		if len(config.Spec.Applications.CatalogManager.Apps) > 0 {
+			allCharts = filterChartsByName(allCharts, config.Spec.Applications.CatalogManager.Apps)
+		}
+
+		// convert each ChartConfig to AppsHelmChart
+		for _, chart := range allCharts {
+			for _, chartVersion := range chart.ChartVersions {
+				// resolve URL using catalog's helper method
+				url := resolveChartURL(&chart, &chartVersion)
+
+				appChart := &images.AppsHelmChart{
+					WorkloadImages: []string{}, // will be filled by Helm rendering
+					ApplicationVersion: appskubermaticv1.ApplicationVersion{
+						Version: chartVersion.AppVersion,
+						Template: appskubermaticv1.ApplicationTemplate{
+							Source: appskubermaticv1.ApplicationSource{
+								Helm: &appskubermaticv1.HelmSource{
+									URL:          url,
+									ChartName:    chart.ChartName,
+									ChartVersion: chartVersion.ChartVersion,
+								},
+							},
+						},
+					},
+				}
+
+				if !yield(appChart, nil) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// filterChartsByName filters charts by name, keeping only those in the include list.
+// this mirrors the behavior of the External Catalog Manager webhook.
+func filterChartsByName(charts []catalogv1alpha1.ChartConfig, includeList []string) []catalogv1alpha1.ChartConfig {
+	if len(includeList) == 0 {
+		return charts
+	}
+
+	includeSet := make(map[string]struct{})
+	for _, name := range includeList {
+		includeSet[name] = struct{}{}
+	}
+
+	var filtered []catalogv1alpha1.ChartConfig
+	for _, chart := range charts {
+		if _, included := includeSet[chart.GetAppName()]; included {
+			filtered = append(filtered, chart)
+		}
+	}
+
+	return filtered
+}
+
+// resolveChartURL resolves the repository URL for a specific chart version.
+// this replicates the logic from ApplicationCatalog.ResolveChartURL
+// without requiring an ApplicationCatalog instance.
+func resolveChartURL(chart *catalogv1alpha1.ChartConfig, version *catalogv1alpha1.ChartVersion) string {
+	if version.RepositorySettings != nil && version.RepositorySettings.BaseURL != "" {
+		return version.RepositorySettings.BaseURL
+	}
+
+	if chart.RepositorySettings != nil && chart.RepositorySettings.BaseURL != "" {
+		return chart.RepositorySettings.BaseURL
+	}
+
+	// use default Helm repository from application-catalog-manager
+	return catalogv1alpha1.DefaultHelmRepository
 }

@@ -1056,7 +1056,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					InitContainers: []corev1.Container{
 						{
 							Name:    "copy-ro-manifest",
-							Image:   registry.Must(data.RewriteImage("registry.k8s.io/busybox:1.27.2")),
+							Image:   registry.Must(data.RewriteImage("quay.io/kubermatic/util:2.8.0")),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",
@@ -1352,24 +1352,6 @@ func setEnvForProvider(providerName string, envVar []corev1.EnvVar, credentialSe
 			envVar,
 			corev1.EnvVar{
 				Name:      "OS_TENANT_NAME",
-				ValueFrom: envVarSource,
-			},
-		)
-	}
-	if providerName == resources.KubeOneEquinix {
-		envVarSource.SecretKeyRef.Key = resources.PacketAPIKey
-		envVar = append(
-			envVar,
-			corev1.EnvVar{
-				Name:      "METAL_AUTH_TOKEN",
-				ValueFrom: envVarSource,
-			},
-		)
-		envVarSource.SecretKeyRef.Key = resources.PacketProjectID
-		envVar = append(
-			envVar,
-			corev1.EnvVar{
-				Name:      "METAL_PROJECT_ID",
 				ValueFrom: envVarSource,
 			},
 		)

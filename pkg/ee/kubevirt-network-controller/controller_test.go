@@ -42,7 +42,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -113,7 +113,7 @@ func TestReconcile(t *testing.T) {
 				Spec: networkingv1.NetworkPolicySpec{
 					PodSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster.x-k8s.io/cluster-name": clusterName,
+							NetworkPolicyPodSelectorLabel: clusterName,
 						},
 					},
 					Egress: []networkingv1.NetworkPolicyEgressRule{
@@ -123,7 +123,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},
@@ -221,7 +221,7 @@ func TestReconcile(t *testing.T) {
 				Spec: networkingv1.NetworkPolicySpec{
 					PodSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster.x-k8s.io/cluster-name": clusterName,
+							NetworkPolicyPodSelectorLabel: clusterName,
 						},
 					},
 					Egress: []networkingv1.NetworkPolicyEgressRule{
@@ -231,7 +231,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},
@@ -262,7 +262,7 @@ func TestReconcile(t *testing.T) {
 								{
 									PodSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"cluster.x-k8s.io/cluster-name": clusterName,
+											NetworkPolicyPodSelectorLabel: clusterName,
 										},
 									},
 								},
@@ -418,7 +418,7 @@ func TestReconcile(t *testing.T) {
 			}
 			r := &Reconciler{
 				log:         kubermaticlog.Logger,
-				recorder:    &record.FakeRecorder{},
+				recorder:    &events.FakeRecorder{},
 				Client:      tc.seedClient,
 				seedGetter:  tc.seedGetter,
 				infraGetter: infraGetter,

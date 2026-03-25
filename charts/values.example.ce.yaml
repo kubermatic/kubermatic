@@ -114,18 +114,6 @@ dex:
           - https://kkp.example.com/api/v2/kubeconfig/secret
           - https://kkp.example.com/api/v2/dashboard/login
 
-kubermaticOperator:
-  # insert the Docker authentication JSON provided by Kubermatic here
-  imagePullSecret: |
-    {
-      "auths": {
-        "quay.io": {
-          "auth": "<your-auth-token>",
-          "email": ""
-        }
-      }
-    }
-
 minio:
   storeSize: "500Gi"
   storageClass: minio-hdd

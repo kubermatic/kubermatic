@@ -161,7 +161,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	desiredRules := r.getDesiredRules(nodeList.Items)
 
 	// Get the actual state (current iptable rules)
-	allActualRules, err := execSave()
+	allActualRules, err := execSave(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to read iptable rules: %w", err)
 	}
@@ -272,8 +272,8 @@ func (r *Reconciler) applyDNATRules(ctx context.Context, rules []string, haveJum
 	return execRestore(ctx, restore)
 }
 
-func execSave() ([]string, error) {
-	cmd := exec.Command("iptables-save", []string{"-t", "nat"}...)
+func execSave(ctx context.Context) ([]string, error) {
+	cmd := exec.CommandContext(ctx, "iptables-save", []string{"-t", "nat"}...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute %q: %w. Output: \n%s", strings.Join(cmd.Args, " "), err, out)

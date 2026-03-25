@@ -7,6 +7,94 @@
 - [v2.27.4](#v2274)
 - [v2.27.5](#v2275)
 - [v2.27.6](#v2276)
+- [v2.27.7](#v2277)
+- [v2.27.8](#v2278)
+- [v2.27.9](#v2279)
+- [v2.27.10](#v22710)
+- [v2.27.11](#v22711)
+- [v2.27.12](#v22712)
+
+## v2.27.12
+
+**GitHub release: [v2.27.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.12)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.32.13 ([#15543](https://github.com/kubermatic/kubermatic/pull/15543))
+
+## v2.27.11
+
+**GitHub release: [v2.27.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.11)**
+
+### Supported Kubernetes Versions
+
+- Add support for the latest k8s patch releases 1.32.12 ([#15469](https://github.com/kubermatic/kubermatic/pull/15469))
+
+## v2.27.10
+
+**GitHub release: [v2.27.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.10)**
+
+### Bugfixes
+
+- Delete orphaned UserProjectBinding resources on User or Project deletion ([#15181](https://github.com/kubermatic/kubermatic/pull/15181))
+- Add omitempty to component settings fields to allow partial configuration ([#15182](https://github.com/kubermatic/kubermatic/pull/15182))
+
+## v2.27.9
+
+**GitHub release: [v2.27.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.9)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.32.10/v1.31.14 ([#15173](https://github.com/kubermatic/kubermatic/pull/15173))
+
+### Bugfixes
+
+- Remove deprecation notice for `defaultComponentSettings` in the Seed Resource ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
+- Use the lowercase email when creating a user object ([#7629](https://github.com/kubermatic/dashboard/pull/7629))
+- A regression bug was fixed which introduced errors when a user tried to login with a user email containing uppercase letters and the one with only lowercase was already stored ([#7671](https://github.com/kubermatic/dashboard/pull/7671))
+- Fix a bug where the user cluster logging/monitoring checkboxes were shown even though user cluster MLA was disabled in the seed settings ([#7681](https://github.com/kubermatic/dashboard/pull/7681))
+
+## v2.27.8
+
+**GitHub release: [v2.27.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.8)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.32.9/1.31.13 ([#14999](https://github.com/kubermatic/kubermatic/pull/14999))
+
+### Bugfixes
+
+- A bug was fixed where evicted kubevirt vms configured with evictionStrategy `LiveMigrate` were treated like vms with `External` evictionStrategy by deleting the related machine object ([#14736](https://github.com/kubermatic/kubermatic/pull/14736))
+- A caching functionality for used http.Transports when initializing minio clients in seed-controller-manager was added to avoid tcp connection leaks ([#14956](https://github.com/kubermatic/kubermatic/pull/14956), [#7593](https://github.com/kubermatic/dashboard/pull/7593))
+- Fix web terminal token expiration by refreshing expired tokens automatically ([#7550](https://github.com/kubermatic/dashboard/pull/7550))
+- Move web-terminal cleanup job to seed to fix cleanup not working when the token is expired ([#7451](https://github.com/kubermatic/dashboard/pull/7451))
+
+### Updates
+
+- Update Go version to 1.23.12 ([#14948](https://github.com/kubermatic/kubermatic/pull/14948), [#7556](https://github.com/kubermatic/dashboard/pull/7556))
+- Update machine-controller version to [v1.61.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.4) and operating-system-manager version to [v1.6.9](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.9) ([#15050](https://github.com/kubermatic/kubermatic/pull/15050))
+- Update nginx-ingress-controller to 1.11.8 ([#15038](https://github.com/kubermatic/kubermatic/pull/15038))
+
+## v2.27.7
+
+**GitHub release: [v2.27.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.7)**
+
+### New Features
+
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+
+### Bugfixes
+
+- Add RBAC rules for Velero Backup resources to allow get, list, and watch operations ([#14822](https://github.com/kubermatic/kubermatic/pull/14822))
+- Fix issue with CBSL credentials and status not syncing to seed clusters ([#14865](https://github.com/kubermatic/kubermatic/pull/14865))
+- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
+- Pass ConfigDrive value to JSON patch during machine updates  for OpenStack ([#7299](https://github.com/kubermatic/dashboard/pull/7299))
+
+### Updates
+
+- Update Helm v3.17.4 ([#14854](https://github.com/kubermatic/kubermatic/pull/14854))
+- Update OSM to [v1.6.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.8) ([#14888](https://github.com/kubermatic/kubermatic/pull/14888))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
 
 ## v2.27.6
 

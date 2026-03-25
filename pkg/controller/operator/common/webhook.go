@@ -74,7 +74,7 @@ func WebhookClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) rec
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"clustertemplates", "projects", "ipamallocations", "resourcequotas"},
+					Resources: []string{"clustertemplates", "projects", "ipamallocations", "resourcequotas", "users"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 				{
@@ -346,10 +346,24 @@ func WebhookServingCASecretReconciler(cfg *kubermaticv1.KubermaticConfiguration)
 	}
 }
 
-func WebhookServingCertSecretReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretReconcilerFactory {
+// WebhookServingCertSecretReconciler returns a reconciler for the webhook serving certificate.
+// It accepts optional additional service names to include in the certificate's Subject Alternative Names.
+func WebhookServingCertSecretReconciler(
+	ctx context.Context,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	client ctrlruntimeclient.Client,
+	sans ...string,
+) reconciling.NamedSecretReconcilerFactory {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", WebhookServiceName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", WebhookServiceName, cfg.Namespace),
+	}
+
+	for _, serviceName := range sans {
+		altNames = append(altNames,
+			fmt.Sprintf("%s.%s", serviceName, cfg.Namespace),
+			fmt.Sprintf("%s.%s.svc", serviceName, cfg.Namespace),
+		)
 	}
 
 	caGetter := func() (*triple.KeyPair, error) {

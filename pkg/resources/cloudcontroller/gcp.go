@@ -186,7 +186,7 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 func getGCPInitContainer(data *resources.TemplateData) corev1.Container {
 	return corev1.Container{
 		Name:    "decode-sa",
-		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.5.0")),
+		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.7.0")),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
@@ -212,17 +212,17 @@ func GCPCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-provider-gcp/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v129:
-		return "v29.0.0"
-	case v130:
-		fallthrough
 	case v131:
-		fallthrough
+		return "v30.0.0"
 	case v132:
-		fallthrough
+		return "v32.2.5"
 	case v133:
 		fallthrough
+	case v134:
+		fallthrough
+	case v135:
+		fallthrough
 	default:
-		return "v30.0.0"
+		return "v35.0.0"
 	}
 }

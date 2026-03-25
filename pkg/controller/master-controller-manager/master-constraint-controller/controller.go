@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -50,7 +50,7 @@ type reconciler struct {
 	masterClient ctrlruntimeclient.Client
 	namespace    string
 	seedClients  kuberneteshelper.SeedClientMap
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 }
 
 func Add(
@@ -65,7 +65,7 @@ func Add(
 		masterClient: masterMgr.GetClient(),
 		namespace:    namespace,
 		seedClients:  kuberneteshelper.SeedClientMap{},
-		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
+		recorder:     masterMgr.GetEventRecorder(ControllerName),
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -103,7 +103,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, log, constraint)
 	if err != nil {
-		r.recorder.Event(constraint, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(constraint, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

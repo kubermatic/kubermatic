@@ -62,7 +62,7 @@ func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger,
 			}
 		}
 
-		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterNamespaceCleanup", "Cluster namespace is still terminating, some resources might be blocked by finalizers.")
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ClusterNamespaceCleanup", "Reconciling", "Cluster namespace is still terminating, some resources might be blocked by finalizers.")
 		return nil
 	}
 

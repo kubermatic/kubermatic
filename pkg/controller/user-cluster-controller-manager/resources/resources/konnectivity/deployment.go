@@ -192,11 +192,7 @@ func getArgs(cluster *kubermaticv1.Cluster, kServerHost, kKeepaliveTime string, 
 		clusterArgs = cluster.Spec.ComponentsOverride.KonnectivityProxy.Args
 	}
 
-	if len(clusterArgs) > 0 {
-		args = append(args, clusterArgs...)
-	}
-
-	return args
+	return konnectivity.AppendArgsWithDefaults(args, clusterArgs)
 }
 
 // PodDisruptionBudgetReconciler returns a func to create/update the Konnectivity agent's PodDisruptionBudget.

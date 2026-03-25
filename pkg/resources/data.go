@@ -91,6 +91,8 @@ type TemplateData struct {
 	machineControllerImageRepository      string
 	operatingSystemManagerImageTag        string
 	operatingSystemManagerImageRepository string
+	kubeLBImageRepository                 string
+	kubeLBImageTag                        string
 	backupSchedule                        time.Duration
 	backupCount                           *int
 	versions                              kubermatic.Versions
@@ -101,6 +103,7 @@ type TemplateData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 	userClusterMLAEnabled                 bool
 	isKonnectivityEnabled                 bool
+	dra                                   bool
 
 	tunnelingAgentIP string
 
@@ -260,6 +263,16 @@ func (td *TemplateDataBuilder) WithBackupCount(backupCount int) *TemplateDataBui
 	return td
 }
 
+func (td *TemplateDataBuilder) WithKubeLBImageRepository(repository string) *TemplateDataBuilder {
+	td.data.kubeLBImageRepository = repository
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKubeLBImageTag(tag string) *TemplateDataBuilder {
+	td.data.kubeLBImageTag = tag
+	return td
+}
+
 func (td *TemplateDataBuilder) WithMachineControllerImageTag(tag string) *TemplateDataBuilder {
 	td.data.machineControllerImageTag = tag
 	return td
@@ -293,6 +306,11 @@ func (td *TemplateDataBuilder) WithAPIServerAlternateNames(altNames *certutil.Al
 func (td TemplateDataBuilder) Build() *TemplateData {
 	// TODO: Add validation
 	return &td.data
+}
+
+func (td *TemplateDataBuilder) WithDRA(draEnabled bool) *TemplateDataBuilder {
+	td.data.dra = draEnabled
+	return td
 }
 
 // GetViewerToken returns the viewer token.
@@ -418,6 +436,14 @@ func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 // ExternalIP returns the external facing IP or an error if no IP exists.
 func (d *TemplateData) ExternalIP() (*net.IP, error) {
 	return GetClusterExternalIP(d.cluster)
+}
+
+func (d *TemplateData) KubeLBImageRepository() string {
+	return d.kubeLBImageRepository
+}
+
+func (d *TemplateData) KubeLBImageTag() string {
+	return d.kubeLBImageTag
 }
 
 func (d *TemplateData) MachineControllerImageTag() string {
@@ -885,16 +911,13 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		}
 	}
 
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if cluster.Spec.Cloud.Packet != nil {
-		vars = append(vars, corev1.EnvVar{Name: "METAL_AUTH_TOKEN", ValueFrom: refTo(PacketAPIKey)})
-		vars = append(vars, corev1.EnvVar{Name: "METAL_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
-	}
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeconfig)})
+		vars = append(vars, corev1.EnvVar{Name: "PROJECT_ID", Value: cluster.Labels["project-id"]})
+		vars = append(vars, corev1.EnvVar{Name: "CLUSTER_ID", Value: cluster.Name})
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", ValueFrom: refTo(AlibabaAccessKeyID)})
@@ -1059,6 +1082,10 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 	}
 
 	return config, nil
+}
+
+func (d *TemplateData) DRAEnabled() bool {
+	return d.dra
 }
 
 func expandVariables(input string, vars map[string]string) string {

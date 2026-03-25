@@ -48,8 +48,8 @@ type DeployOptions struct {
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
-
-	Versions kubermaticversion.Versions
+	SeparateSeed     bool
+	Versions         kubermaticversion.Versions
 
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool
@@ -69,6 +69,14 @@ type DeployOptions struct {
 	SkipCharts []string
 
 	DeployDefaultPolicyTemplateCatalog bool
+
+	// MigrateToGatewayAPI indicates whether to deploy Envoy Gateway or ingress-controller.
+	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	MigrateToGatewayAPI bool
+	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
+	// When false (default), old resources are cleaned up automatically during migration.
+	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	SkipIngressCleanup bool
 }
 
 type Stack interface {

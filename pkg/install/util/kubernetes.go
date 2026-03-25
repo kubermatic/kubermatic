@@ -37,3 +37,22 @@ func EnsureNamespace(ctx context.Context, log logrus.FieldLogger, kubeClient ctr
 
 	return ctrlruntimeclient.IgnoreAlreadyExists(err)
 }
+
+func EnsureNamespaceLabel(ctx context.Context, kubeClient ctrlruntimeclient.Client, namespace, key, value string) error {
+	ns := &corev1.Namespace{}
+	if err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: namespace}, ns); err != nil {
+		return err
+	}
+
+	if ns.Labels == nil {
+		ns.Labels = make(map[string]string)
+	}
+
+	if ns.Labels[key] == value {
+		return nil
+	}
+
+	ns.Labels[key] = value
+
+	return kubeClient.Update(ctx, ns)
+}

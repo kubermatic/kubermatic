@@ -34,6 +34,8 @@ const (
 )
 
 // EndpointsReconciler returns the func to create/update the endpoints of the kubernetes service.
+// NOTE: Endpoints API is deprecated since K8s 1.33 (KEP-4974) but still required for Kubernetes
+// conformance tests until Stage 3 of the deprecation plan is reached.
 func EndpointsReconciler(k8sServiceEndpointAddress string, k8sServiceEndpointPort int32) reconciling.NamedEndpointsReconcilerFactory {
 	return func() (string, reconciling.EndpointsReconciler) {
 		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {

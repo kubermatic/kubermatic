@@ -62,7 +62,7 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, log *zap.SugaredLogge
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "ConstraintCleanup", "Cleanup has been completed, all constraints have been deleted.")
+	d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ConstraintCleanup", "Reconciling", "Cleanup has been completed, all constraints have been deleted.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.KubermaticConstraintCleanupFinalizer)
 }

@@ -26,6 +26,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func NewScheme() *runtime.Scheme {
@@ -33,6 +34,7 @@ func NewScheme() *runtime.Scheme {
 	utilruntime.Must(kubermaticv1.AddToScheme(s))
 	utilruntime.Must(appskubermaticv1.AddToScheme(s))
 	utilruntime.Must(scheme.AddToScheme(s))
+	utilruntime.Must(gatewayapiv1.Install(s))
 
 	metav1.AddToGroupVersion(s, schema.GroupVersion{Version: "v1"})
 

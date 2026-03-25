@@ -94,14 +94,41 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("Failed to build ctrlruntime client: %v", err)
 	}
 
-	cluster, userClusterClient, restConfig, cleanup, logger, err := createUserCluster(ctx, t, logger, seedClient)
-	if cleanup != nil {
-		defer cleanup()
-	}
-	if err != nil {
-		t.Fatalf("Failed to setup usercluster: %v", err)
+	tests := []struct {
+		name      string
+		proxyMode string
+	}{
+		{
+			name:      "ipvs proxy mode",
+			proxyMode: resources.IPVSProxyMode,
+		},
+		{
+			name:      "iptables proxy mode",
+			proxyMode: resources.IPTablesProxyMode,
+		},
+		{
+			name:      "nftables proxy mode",
+			proxyMode: resources.NFTablesProxyMode,
+		},
 	}
 
+	for _, test := range tests {
+		proxyMode := test.proxyMode
+		t.Run(test.name, func(t *testing.T) {
+			cluster, userClusterClient, restConfig, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
+			if cleanup != nil {
+				defer cleanup()
+			}
+			if err != nil {
+				t.Fatalf("Failed to setup usercluster: %v", err)
+			}
+
+			testKonnectivityCluster(ctx, t, tLogger, seedClient, cluster, userClusterClient, restConfig)
+		})
+	}
+}
+
+func testKonnectivityCluster(ctx context.Context, t *testing.T, logger *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, restConfig *rest.Config) {
 	userClient, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		t.Fatalf("Failed to create client: %s", err)
@@ -357,10 +384,14 @@ func createUserCluster(
 	t *testing.T,
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
+	proxyMode string,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 1, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
-	testJig.ClusterJig.WithKonnectivity(true).WithTestName("konnectivity")
+	testJig.ClusterJig.
+		WithKonnectivity(true).
+		WithTestName("konnectivity").
+		WithProxyMode(proxyMode)
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)

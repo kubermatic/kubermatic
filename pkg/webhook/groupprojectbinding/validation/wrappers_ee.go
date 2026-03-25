@@ -20,39 +20,26 @@ package validation
 
 import (
 	"context"
-	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eegroupprojectbindingvalidation "k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
-
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func validateCreate(_ context.Context,
-	_ runtime.Object,
+	_ *kubermaticv1.GroupProjectBinding,
 ) error {
 	return nil
 }
 
 func validateUpdate(_ context.Context,
-	oldObj runtime.Object,
-	newObj runtime.Object,
+	oldObj *kubermaticv1.GroupProjectBinding,
+	newObj *kubermaticv1.GroupProjectBinding,
 ) error {
-	oldGroupProjectBinding, ok := oldObj.(*kubermaticv1.GroupProjectBinding)
-	if !ok {
-		return errors.New("existing object is not a GroupProjectBinding")
-	}
-
-	newGroupProjectBinding, ok := newObj.(*kubermaticv1.GroupProjectBinding)
-	if !ok {
-		return errors.New("updated object is not a GroupProjectBinding")
-	}
-
-	return eegroupprojectbindingvalidation.ValidateUpdate(oldGroupProjectBinding, newGroupProjectBinding)
+	return eegroupprojectbindingvalidation.ValidateUpdate(oldObj, newObj)
 }
 
 func validateDelete(_ context.Context,
-	_ runtime.Object,
+	_ *kubermaticv1.GroupProjectBinding,
 ) error {
 	return nil
 }

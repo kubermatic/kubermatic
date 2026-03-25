@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -47,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	psaapi "k8s.io/pod-security-admission/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,6 +76,8 @@ const (
 	OperatingSystemManagerWebhookServiceName = "operating-system-manager-webhook"
 	// MachineControllerDeploymentName is the name for the machine-controller deployment.
 	MachineControllerDeploymentName = "machine-controller"
+	// MachineControllerContainerName is the name for the container within the machine-controller deployment.
+	MachineControllerContainerName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment.
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	// MetricsServerDeploymentName is the name for the metrics-server deployment.
@@ -183,7 +187,8 @@ const (
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
 	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
-
+	// WEBTerminalImage is the name of the image used for the web terminal tool pod.
+	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.12.0"
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
@@ -273,6 +278,8 @@ const (
 
 	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
+	// CloudControllerManagerServiceAccountName is the name of the cloud controller manager service account.
+	CloudControllerManagerServiceAccountName = "cloud-provider"
 
 	// DefaultServiceAccountName is the name of Kubernetes default service accounts.
 	DefaultServiceAccountName = "default"
@@ -398,6 +405,8 @@ const (
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init.
 	CloudInitSettingsNamespace = "cloud-init-settings"
+	// NamespaceNodeLease is the namespace where node lease objects are stored.
+	NamespaceNodeLease = "kube-node-lease"
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only.
 	DefaultOwnerReadOnlyMode = 0400
 
@@ -467,6 +476,8 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+	// NFTablesProxyMode defines the nftables kube-proxy mode.
+	NFTablesProxyMode = "nftables"
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
@@ -474,7 +485,7 @@ const (
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
 	// EventRateLimitAdmissionPlugin defines the EventRateLimit admission plugin.
-	EventRateLimitAdmissionPlugin = "EventRateLimit"
+	EventRateLimitAdmissionPlugin = kubermaticv1.AdmissionPluginNameEventRateLimit
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
@@ -643,7 +654,6 @@ const (
 	KubeOneNutanix             = "nutanix"
 	KubeOneVMwareCloudDirector = "vmwareCloudDirector"
 	KubeOneOpenStack           = "openstack"
-	KubeOneEquinix             = "equinix"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
 	KubeOneImageTag            = "v1.7.2"
@@ -688,9 +698,6 @@ const (
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
 	OpenstackRegion  = "region"
-
-	PacketAPIKey    = "apiKey"
-	PacketProjectID = "projectID"
 
 	KubeVirtKubeconfig = "kubeConfig"
 
@@ -1020,6 +1027,7 @@ const (
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
+	NetworkPolicyAuthorizationWebhookAllow          = "authorization-webhook-allow"
 )
 
 const (
@@ -1523,6 +1531,10 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
+	if componentSettings.EnvoyAgent != nil && componentSettings.EnvoyAgent.Resources != nil {
+		r[EnvoyAgentDaemonSetName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+		r[EnvoyAgentAssignAddressContainerName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+	}
 	if componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 		r[KonnectivityAgentContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
@@ -1551,6 +1563,12 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.CoreDNS != nil && componentSettings.CoreDNS.Resources != nil {
 		r[CoreDNSDeploymentName] = componentSettings.CoreDNS.Resources.DeepCopy()
+	}
+	if componentSettings.KubeStateMetrics != nil && componentSettings.KubeStateMetrics.Resources != nil {
+		r[KubeStateMetricsDeploymentName] = componentSettings.KubeStateMetrics.Resources.DeepCopy()
+	}
+	if componentSettings.MachineController != nil && componentSettings.MachineController.Resources != nil {
+		r[MachineControllerContainerName] = componentSettings.MachineController.Resources.DeepCopy()
 	}
 
 	return r
@@ -1667,12 +1685,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", fmt.Errorf("ConfigMap does not contain key %q", CABundleConfigMapKey)
 	}
 
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM([]byte(bundle)) {
-		return nil, "", errors.New("CA bundle does not contain any valid certificates")
-	}
-
-	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
+	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, bundle)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
 	}
@@ -1743,7 +1756,11 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, clusterVersion semver.Semver) string {
+	// default to nftables for Kubernetes 1.35+ as iptables is deprecated and will be removed in Kubernetes 1.36
+	if clusterVersion.Semver() != nil && clusterVersion.Semver().Minor() >= 35 {
+		return NFTablesProxyMode
+	}
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
@@ -1793,4 +1810,31 @@ func containsString(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// PSALabelsPrivileged returns Pod Security Admission labels for privileged level.
+func PSALabelsPrivileged() map[string]string {
+	return map[string]string{
+		psaapi.EnforceLevelLabel: string(psaapi.LevelPrivileged),
+		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
+		psaapi.WarnLevelLabel:    string(psaapi.LevelPrivileged),
+	}
+}
+
+// PSALabelsBaseline returns Pod Security Admission labels for baseline level.
+func PSALabelsBaseline() map[string]string {
+	return map[string]string{
+		psaapi.EnforceLevelLabel: string(psaapi.LevelBaseline),
+		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
+		psaapi.WarnLevelLabel:    string(psaapi.LevelBaseline),
+	}
+}
+
+func AllProxyModes() []string {
+	return []string{
+		IPVSProxyMode,
+		IPTablesProxyMode,
+		EBPFProxyMode,
+		NFTablesProxyMode,
+	}
 }

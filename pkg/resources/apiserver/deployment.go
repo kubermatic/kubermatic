@@ -56,6 +56,7 @@ var (
 	}
 
 	gte131, _ = semverlib.NewConstraint(">= 1.31")
+	lt135, _  = semverlib.NewConstraint("<= 1.34")
 )
 
 const (
@@ -75,9 +76,11 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.Apiserver
+			if override.Replicas != nil {
+				dep.Spec.Replicas = override.Replicas
 			}
+			dep.Spec.Template.Spec.Tolerations = override.Tolerations
 
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
@@ -147,7 +150,10 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				}
 			}
 
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, auditWebhookBackendEnabled)
+			flags, err := getApiserverFlags(
+				data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled,
+				enableEncryptionConfiguration, auditWebhookBackendEnabled,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -280,7 +286,12 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool) ([]string, error) {
+//nolint:gocyclo
+func getApiserverFlags(
+	data *resources.TemplateData,
+	etcdEndpoints []string,
+	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
+) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -458,10 +469,16 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
 
+	if data.DRAEnabled() {
+		featureGates = append(featureGates, "DynamicResourceAllocation=true")
+		flags = append(flags, "--runtime-config=resource.k8s.io/v1beta1=true")
+	}
+
 	version := cluster.Status.Versions.Apiserver.Semver()
-	if gte131.Check(version) {
-		// enable recommended CEL cost feature gates (Kube 1.31+), as per
+	if gte131.Check(version) && lt135.Check(version) {
+		// enable recommended CEL cost feature gates (Kube 1.31-1.34), as per
 		// https://github.com/kubernetes/kubernetes/pull/124675
+		// Note: These feature gates were graduated to GA and removed in Kubernetes 1.35
 		featureGates = append(featureGates,
 			"StrictCostEnforcementForVAP=true",
 			"StrictCostEnforcementForWebhooks=true",
@@ -493,6 +510,15 @@ func generateAuthorizationFlags(cluster *kubermaticv1.Cluster) []string {
 	if cluster.Spec.IsWebhookAuthorizationEnabled() {
 		flags = append(flags, "--authorization-webhook-config-file", "/etc/kubernetes/authorization-webhook.yaml")
 		flags = append(flags, "--authorization-webhook-version", cluster.Spec.GetAuthorizationWebhookVersion())
+
+		// Add cache TTL flags if specified by user (override Kubernetes defaults)
+		webhookConfig := cluster.Spec.AuthorizationConfig.AuthorizationWebhookConfiguration
+		if webhookConfig.CacheAuthorizedTTL != nil {
+			flags = append(flags, "--authorization-webhook-cache-authorized-ttl", webhookConfig.CacheAuthorizedTTL.Duration.String())
+		}
+		if webhookConfig.CacheUnauthorizedTTL != nil {
+			flags = append(flags, "--authorization-webhook-cache-unauthorized-ttl", webhookConfig.CacheUnauthorizedTTL.Duration.String())
+		}
 	}
 
 	if cluster.Spec.IsAuthorizationConfigurationFileEnabled() {

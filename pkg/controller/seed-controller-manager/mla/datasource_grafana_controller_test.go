@@ -42,7 +42,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -65,7 +65,7 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 	reconciler := datasourceGrafanaReconciler{
 		Client:                      dynamicClient,
 		log:                         kubermaticlog.Logger,
-		recorder:                    record.NewFakeRecorder(10),
+		recorder:                    events.NewFakeRecorder(10),
 		datasourceGrafanaController: datasourceGrafanaController,
 	}
 	return &reconciler, ts

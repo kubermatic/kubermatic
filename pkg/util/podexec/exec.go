@@ -42,7 +42,7 @@ func ExecuteCommand(ctx context.Context, restConfig *rest.Config, pod types.Name
 		return "", "", fmt.Errorf("failed to create HTTP client: %w", err)
 	}
 
-	restClient, err := apiutil.RESTClientForGVK(gvk, false, restConfig, scheme.Codecs, httpClient)
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, false, restConfig, scheme.Codecs, httpClient)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create REST client: %w", err)
 	}

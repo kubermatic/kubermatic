@@ -33,20 +33,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		name: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("64Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("150m"),
-			},
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	name: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("150m"),
+		},
+	},
+}
 
 const (
 	name      = "kube-state-metrics"
@@ -62,6 +60,15 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
+
+			override := data.Cluster().Spec.ComponentsOverride
+			if override.KubeStateMetrics != nil {
+				if override.KubeStateMetrics.Replicas != nil {
+					dep.Spec.Replicas = override.KubeStateMetrics.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = override.KubeStateMetrics.Tolerations
+			}
+
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -159,7 +166,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				},
 			}
 
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

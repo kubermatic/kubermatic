@@ -39,7 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -79,9 +79,9 @@ func Add(
 		scheme:                 masterManager.GetScheme(),
 		namespace:              namespace,
 		masterClient:           masterManager.GetClient(),
-		masterRecorder:         masterManager.GetEventRecorderFor(ControllerName),
+		masterRecorder:         masterManager.GetEventRecorder(ControllerName),
 		seedClients:            map[string]ctrlruntimeclient.Client{},
-		seedRecorders:          map[string]record.EventRecorder{},
+		seedRecorders:          map[string]events.EventRecorder{},
 		initializedSeedsGetter: seedsGetter,
 		configGetter:           configGetter,
 		workerName:             workerName,
@@ -172,7 +172,7 @@ func Add(
 	// are automatically skipped by the seedlifecyclecontroller).
 	for key, manager := range seedManagers {
 		reconciler.seedClients[key] = manager.GetClient()
-		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
+		reconciler.seedRecorders[key] = manager.GetEventRecorder(ControllerName)
 
 		if err := createSeedWatches(bldr, key, manager, namespace, workerName); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %w", key, err)

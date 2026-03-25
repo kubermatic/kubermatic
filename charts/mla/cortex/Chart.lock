@@ -1,6 +1,6 @@
 dependencies:
 - name: cortex
   repository: https://cortexproject.github.io/cortex-helm-chart
-  version: 2.1.0
-digest: sha256:7cddb7331732b8779ba3bd94f8a4f27ee3166a13d3057bb757b7a9830b4e4af6
-generated: "2023-12-21T09:08:18.061272245+05:30"
+  version: 3.0.0
+digest: sha256:461da635943e8af9ecf50d867421334a314c70658e91b73308056f7f7e1779ef
+generated: "2026-01-27T15:56:44.287244105Z"

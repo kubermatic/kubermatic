@@ -74,7 +74,7 @@ const (
 	SeedPrometheusService = "prometheus:web"
 
 	// SeedAlertmanagerService is the service exposed by Alertmanager.
-	SeedAlertmanagerService = "alertmanager:web"
+	SeedAlertmanagerService = "alertmanager:http"
 
 	// KubectlProxyPort is the port used by kubectl to provide the
 	// proxy connection on. This is not the port on which any of the
@@ -112,7 +112,7 @@ func Add(
 
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
-		recorder:             mgr.GetEventRecorderFor(ControllerName),
+		recorder:             mgr.GetEventRecorder(ControllerName),
 		log:                  log,
 		namespace:            namespace,
 		seedsGetter:          seedsGetter,

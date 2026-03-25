@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   name: etcd
   namespace: cluster-de-test-01
 spec:

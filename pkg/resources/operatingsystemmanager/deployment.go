@@ -41,23 +41,21 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.OperatingSystemManagerContainerName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("128Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1"),
-			},
+var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.OperatingSystemManagerContainerName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
+		},
+	},
+}
 
 const (
-	Tag = "v1.7.4"
+	Tag = "v1.10.2"
 )
 
 type operatingSystemManagerData interface {
@@ -71,6 +69,7 @@ type operatingSystemManagerData interface {
 	OperatingSystemManagerImageTag() string
 	OperatingSystemManagerImageRepository() string
 	OperatingSystemManagerDefaultOSPsDisabled() bool
+	DRAEnabled() bool
 }
 
 // DeploymentReconciler returns the function to create and update the operating system manager deployment.
@@ -104,8 +103,12 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
-			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.OperatingSystemManager
+			if override != nil {
+				if override.Replicas != nil {
+					dep.Spec.Replicas = override.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = override.Tolerations
 			}
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
@@ -234,10 +237,6 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && len(data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations) > 0 {
-				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations
-			}
-
 			return dep, nil
 		}
 	}
@@ -272,13 +271,23 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 		flags = append(flags, "-external-cloud-provider")
 	}
 
+	nodeSettings := data.DC().Node
+
 	flags = appendContainerRuntimeFlags(flags, data)
 
-	nodeSettings := data.DC().Node
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
+	kubeletFeatureGates := []string{}
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
-		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+		kubeletFeatureGates = append(kubeletFeatureGates, csiMigrationFeatureGates...)
+	}
+
+	if data.DRAEnabled() {
+		kubeletFeatureGates = append(kubeletFeatureGates, "DynamicResourceAllocation=true")
+	}
+
+	if len(kubeletFeatureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(kubeletFeatureGates, ","))
 	}
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
@@ -389,25 +398,32 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
-	if crid == nil || len(crid.Registries) == 0 {
-		return []string{}
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeOpts) []string {
+	flags := make([]string, 0)
+	if crid == nil {
+		return flags
+	}
+	// If enableNonRootDeviceOwnership is true, we add the flag to enable device ownership from security context.
+	if crid.EnableNonRootDeviceOwnership {
+		flags = append(flags, "-device-ownership-from-security-context")
 	}
 
-	var (
-		registries, flags []string
-	)
+	if crid.ContainerdRegistryMirrors == nil || len(crid.ContainerdRegistryMirrors.Registries) == 0 {
+		return flags
+	}
+
+	var registries []string
 
 	// fetch all keys from the map and sort them
 	// for stable order.
-	for registry := range crid.Registries {
+	for registry := range crid.ContainerdRegistryMirrors.Registries {
 		registries = append(registries, registry)
 	}
 
 	slices.Sort(registries)
 
 	for _, registry := range registries {
-		for _, endpoint := range crid.Registries[registry].Mirrors {
+		for _, endpoint := range crid.ContainerdRegistryMirrors.Registries[registry].Mirrors {
 			flags = append(flags, fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint))
 		}
 	}
@@ -460,27 +476,17 @@ func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData
 	}
 
 	containerdFlags := containerdFlags(nodeSettings, data.Cluster())
-	for _, flag := range containerdFlags {
-		flags = append(flags, flag, "")
-	}
+	flags = append(flags, containerdFlags...)
 
 	return flags
 }
 
 func containerdFlags(nodeSettings *kubermaticv1.NodeSettings, cluster *kubermaticv1.Cluster) []string {
-	var containerdConfig *kubermaticv1.ContainerRuntimeContainerd
-
-	if nodeSettings != nil && nodeSettings.ContainerdRegistryMirrors != nil {
-		containerdConfig = nodeSettings.ContainerdRegistryMirrors
+	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil {
+		return getContainerdFlags(cluster.Spec.ContainerRuntimeOpts)
 	}
-
-	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil && cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors != nil {
-		containerdConfig = cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors
+	if nodeSettings != nil {
+		return getContainerdFlags(&nodeSettings.ContainerRuntimeOpts)
 	}
-
-	if containerdConfig != nil {
-		return getContainerdFlags(containerdConfig)
-	}
-
 	return []string{}
 }

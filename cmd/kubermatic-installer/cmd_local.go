@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -63,6 +64,7 @@ const (
 	kkpDefaultLogin      = "kubermatic@example.com"
 	kkpDefaultPassword   = "password"
 	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
+	kindClusterName      = "kkp-cluster"
 )
 
 var (
@@ -112,11 +114,16 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 		Short: "Initialize kind environment for simplified local KKP installation",
 		Long:  "Prepares minimal kind environment and auto-configures a non-production KKP installation for evaluation and development purpose.",
 		PreRun: func(cmd *cobra.Command, args []string) {
+			options.CopyInto(&opt.Options)
+			if opt.HelmBinary == "" {
+				opt.HelmBinary = os.Getenv("HELM_BINARY")
+			}
+
 			_, err := exec.LookPath("kind")
 			if err != nil {
 				logger.Fatalf("failed to find 'kind' binary: %v", err)
 			}
-			out, err := exec.Command("kind", "version").CombinedOutput()
+			out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
 			if err != nil {
 				logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
 			}
@@ -137,7 +144,9 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
-		RunE: localKindFunc(logger, opt),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return localKindFunc(logger, opt)(cmd, args)
+		},
 	}
 	return cmd
 }
@@ -148,15 +157,30 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Info("Creating kind cluster…")
-	// TODO: make this idempotent
-	out, err := exec.Command("kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
-	if err != nil {
-		logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+	logger.Infof("Creating kind cluster %q…", kindClusterName)
+
+	// start the manager in its own goroutine
+	appContext := context.Background()
+	clusterExists := false
+
+	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
+	if err == nil {
+		if strings.Contains(strings.TrimSpace(string(out)), kindClusterName) {
+			clusterExists = true
+		}
+	}
+
+	if clusterExists {
+		logger.Infof("Kind cluster %q already exists, skipping creation...", kindClusterName)
+	} else {
+		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", kindClusterName, "--config", kindConfig).CombinedOutput()
+		if err != nil {
+			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
-	kubeconfigCmd := exec.Command("kubectl", "config", "view", "--minify", "--flatten")
+	kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
 	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 	kindKubeConfig, err := os.Create(kindKubeConfigPath)
 	if err != nil {
@@ -187,8 +211,10 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to construct mgr: %v", err)
 	}
 
-	// start the manager in its own goroutine
-	appContext := context.Background()
+	err = setupKubermaticInstallerScheme(mgr)
+	if err != nil {
+		logger.Fatalf("failed to setup scheme: %v", err)
+	}
 
 	go func() {
 		if err := mgr.Start(appContext); err != nil {
@@ -206,14 +232,36 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 }
 
 func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, o ctrlruntimeclient.Object) {
+	if err := kubeClient.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(o), o); err == nil {
+		return
+	}
 	if err := kubeClient.Create(context.Background(), o); err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.Fatal(err)
 	}
 }
 
-func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, opt LocalOptions) {
+func installKubevirt(logger *logrus.Logger, helmClient helm.Client, opt LocalOptions) {
 	logger.Info("Installing KubeVirt…")
-	err := helmClient.InstallChart("kubevirt", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, []string{"--create-namespace"})
+
+	var helmValues map[string]string = nil
+
+	// check the OS; if it is NOT Linux (e.g., 'darwin' for macOS), enable kubevirt emulation.
+	// reference: https://kubevirt.io/quickstart_kind/
+	if runtime.GOOS != "linux" {
+		logger.Info("enabling KubeVirt emulation.")
+
+		helmValues = make(map[string]string)
+		helmValues["localKubevirt.useEmulation"] = "true"
+	}
+
+	err := helmClient.InstallChart(
+		"kubevirt",
+		"kubevirt",
+		filepath.Join(opt.ChartsDirectory, "local-kubevirt"),
+		"",
+		helmValues,
+		[]string{"--create-namespace"},
+	)
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
@@ -285,31 +333,43 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 	}
 
 	return prepareYAMLFile(dir, "values", func(doc *yamled.Document) error {
+		// new gateway api migration
+		doc.Set(yamled.Path{"migrateGatewayAPI"}, true)
+		doc.Set(yamled.Path{"httpRoute", "gatewayName"}, "kubermatic")
+		doc.Set(yamled.Path{"httpRoute", "gatewayNamespace"}, "kubermatic")
+		doc.Set(yamled.Path{"httpRoute", "domain"}, kkpEndpoint)
+		doc.Remove(yamled.Path{"nginx"})
+
+		// configure envoy proxy
+		doc.Set(yamled.Path{"envoyProxy", "service", "type"}, "NodePort")
+		doc.Set(yamled.Path{"envoyProxy", "service", "externalTrafficPolicy"}, "Cluster")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "type"}, "JSONMerge")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "value", "spec", "type"}, "NodePort")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "value", "spec", "ports"}, []map[string]interface{}{
+			{
+				"name":       "http",
+				"port":       80,
+				"targetPort": 10080,
+				"nodePort":   31514,
+			},
+			{
+				"name":       "https",
+				"port":       443,
+				"targetPort": 10443,
+				"nodePort":   32394,
+			},
+		})
+
+		// dex configuration
+		doc.Set(yamled.Path{"dex", "replicaCount"}, 1)
 		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
 		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
-		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
-		doc.Set(yamled.Path{"nginx", "controller", "extraArgs", "update-status"}, "true")
-		doc.Remove(yamled.Path{"minio"})
-
 		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
-			"className": "nginx",
-			"enabled":   true,
-			"annotations": map[string]interface{}{
-				"cert-manager.io/cluster-issuer": "letsencrypt-staging",
-			},
-			"hosts": []map[string]interface{}{
-				{
-					"host": kkpEndpoint,
-					"paths": []map[string]interface{}{
-						{
-							"path":     "/dex",
-							"pathType": "ImplementationSpecific",
-						},
-					},
-				},
-			},
-			"tls": []map[string]interface{}{},
+			"enabled": false,
+			"tls":     []map[string]interface{}{},
 		})
+		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
+		doc.Remove(yamled.Path{"minio"})
 
 		// Set the imagePullSecret from kubermatic.example.yaml
 		// This ensures both configurations use the same value
@@ -359,10 +419,8 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 		logger.Fatalf("failed to prepare Helm values: %v", err)
 	}
 
-	ensureResource(kubeClient, logger, &kindIngressControllerNamespace)
 	ensureResource(kubeClient, logger, &kindKubermaticNamespace)
 	ensureResource(kubeClient, logger, &kindStorageClass)
-	ensureResource(kubeClient, logger, &kindIngressControllerService)
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
 	ms := kubermaticmaster.NewStack(false)
@@ -370,10 +428,12 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
 	}
-	v, err := loadHelmValues(valuesPath)
+
+	v, err := loadHelmValues([]string{valuesPath})
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", valuesPath, err)
 	}
+
 	msOpts := stack.DeployOptions{
 		ChartsDirectory:            opts.ChartsDirectory,
 		KubeClient:                 kubeClient,
@@ -384,6 +444,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 		KubermaticConfiguration:    k,
 		RawKubermaticConfiguration: uk,
 		HelmValues:                 v,
+		MigrateToGatewayAPI:        true,
 	}
 
 	if err := ms.Deploy(context.Background(), msOpts); err != nil {
@@ -433,7 +494,7 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 				helmVersion,
 			)
 		}
-		installKubevirt(logger, exampleDir, helmClient, opt)
+		installKubevirt(logger, helmClient, opt)
 		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, opt)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)

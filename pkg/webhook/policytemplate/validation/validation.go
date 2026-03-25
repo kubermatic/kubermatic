@@ -18,18 +18,16 @@ package validation
 
 import (
 	"context"
-	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.PolicyTemplate] = &validator{}
 
 // validator for validating Kubermatic PolicyTemplate CRs.
 type validator struct {
@@ -43,22 +41,12 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 	}
 }
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateCreate(ctx context.Context, obj *kubermaticv1.PolicyTemplate) (admission.Warnings, error) {
 	return nil, v.validate(ctx, obj).ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	oldTemplate, ok := oldObj.(*kubermaticv1.PolicyTemplate)
-	if !ok {
-		return nil, errors.New("old object is not a PolicyTemplate")
-	}
-
-	newTemplate, ok := newObj.(*kubermaticv1.PolicyTemplate)
-	if !ok {
-		return nil, errors.New("new object is not a PolicyTemplate")
-	}
-
-	allErrs := v.validate(ctx, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, oldTemplate, newTemplate *kubermaticv1.PolicyTemplate) (admission.Warnings, error) {
+	allErrs := v.validate(ctx, newTemplate)
 
 	specPath := field.NewPath("spec")
 	if oldTemplate.Spec.Visibility != newTemplate.Spec.Visibility {
@@ -71,16 +59,11 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, allErrs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.PolicyTemplate) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (v *validator) validate(ctx context.Context, obj runtime.Object) field.ErrorList {
-	template, ok := obj.(*kubermaticv1.PolicyTemplate)
-	if !ok {
-		return field.ErrorList{field.InternalError(field.NewPath(""), errors.New("object is not a PolicyTemplate"))}
-	}
-
+func (v *validator) validate(ctx context.Context, template *kubermaticv1.PolicyTemplate) field.ErrorList {
 	err := validation.ValidatePolicyTemplate(template)
 
 	return err

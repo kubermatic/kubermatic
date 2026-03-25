@@ -38,7 +38,7 @@ type ClusterData struct {
 
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
-	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
+	// "hetzner", "kubevirt", "openstack", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
 	// Version is the exact current cluster version.
@@ -61,6 +61,9 @@ type ClusterData struct {
 	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	KubeVirtInfraStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
+	// KubeVirtInfraVolumeSnapshotClasses is a list of volume snapshot classes from the KubeVirt infra cluster
+	// that are used for initialization of user cluster volume snapshot classes by the CSI driver kubevirt.
+	KubeVirtInfraVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
 	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
 	DisableCSIDriver bool
 }
@@ -151,7 +154,6 @@ type Credentials struct {
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
 	Openstack           OpenstackCredentials
-	Packet              PacketCredentials
 	Kubevirt            KubevirtCredentials
 	VSphere             VSphereCredentials
 	Alibaba             AlibabaCredentials
@@ -204,11 +206,6 @@ type OpenstackCredentials struct {
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
 	Token                       string
-}
-
-type PacketCredentials struct {
-	APIKey    string
-	ProjectID string
 }
 
 type KubevirtCredentials struct {

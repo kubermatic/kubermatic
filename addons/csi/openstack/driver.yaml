@@ -20,20 +20,20 @@
 
 {{ $version := "UNSUPPORTED" }}
 
-{{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.29.1" }}
-{{ end }}
-{{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.30.2" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.31.2" }}
+{{ $version = "v1.31.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
-{{ $version = "v1.31.2" }}
+{{ $version = "v1.32.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.33" }}
-{{ $version = "v1.32.0" }}
+{{ $version = "v1.33.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.34" }}
+{{ $version = "v1.34.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.35" }}
+{{ $version = "v1.35.0" }}
 {{ end }}
 
 {{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
@@ -402,7 +402,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.35.0
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -426,7 +426,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.35.0
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -442,7 +442,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.7.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.10.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-attacher
           resources: {}
@@ -461,7 +461,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.3.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-provisioner
           resources: {}
@@ -477,7 +477,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.1.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.4.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-snapshotter
           resources: {}
@@ -494,7 +494,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.14.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-resizer
           resources: {}
@@ -508,7 +508,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.17.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
@@ -527,7 +527,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: CLUSTER_NAME
               value: '{{ .Cluster.Name }}'
             - name: SSL_CERT_FILE
@@ -555,7 +555,7 @@ spec:
             - mountPath: /etc/kubermatic/certs
               name: ca-bundle
               readOnly: true
-            - mountPath: /etc/kubernetes
+            - mountPath: /etc/config
               name: cloud-config
               readOnly: true
       nodeSelector: {}
@@ -581,7 +581,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.35.0
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -599,7 +599,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.35.0
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -619,7 +619,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.12.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.15.0" }}'
           imagePullPolicy: IfNotPresent
           name: node-driver-registrar
           resources: {}
@@ -634,7 +634,7 @@ spec:
         - args:
             - -v=2
             - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.17.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
@@ -654,7 +654,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: SSL_CERT_FILE
               value: /etc/kubermatic/certs/ca-bundle.pem
           image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
@@ -691,7 +691,7 @@ spec:
             - mountPath: /etc/kubermatic/certs
               name: ca-bundle
               readOnly: true
-            - mountPath: /etc/kubernetes
+            - mountPath: /etc/config
               name: cloud-config
               readOnly: true
       dnsPolicy: ClusterFirstWithHostNet

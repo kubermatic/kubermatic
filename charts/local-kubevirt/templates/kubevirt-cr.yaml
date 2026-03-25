@@ -21,6 +21,7 @@ spec:
   certificateRotateStrategy: {}
   configuration:
     developerConfiguration:
+      useEmulation: {{ .Values.localKubevirt.useEmulation | default false }}
       featureGates: []
   customizeComponents: {}
   imagePullPolicy: IfNotPresent

@@ -30,7 +30,7 @@ spec:
       # Claims lists the names of resources, defined in spec.resourceClaims,
       # that are used by this container.
 
-      # This is an alpha field and requires enabling the
+      # This field depends on the
       # DynamicResourceAllocation feature gate.
 
       # This field is immutable. It can only be set for containers.
@@ -49,6 +49,121 @@ spec:
         memory: 150Mi
   # Applications contains configuration for Application settings.
   applications:
+    # CatalogManager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
+    # from ApplicationCatalog custom resources.
+    # When the ExternalApplicationCatalogManager feature gate is enabled, KKP deploys the application-catalog-manager
+    # and application-catalog-webhook, which work together to reconcile ApplicationDefinition CRs from ApplicationCatalog CRs.
+    # Note: The Application Catalog Manager requires its feature flag to be enabled.
+    # Once the ExternalApplicationCatalogManager feature gate is enabled,
+    # kubermaticconfiguration.spec.applications.defaultApplicationCatalog field becomes no-op,
+    # as the responsibility of ApplicationDefinitions is delegated to the new ApplicationCatalog Cr.
+    catalogManager:
+      # Apps is a list of application definition names that should be installed in the master cluster.
+      # If not set, all the applications from the catalog are installed.
+      apps:
+        - cert-manager
+        - argo-cd
+      # Image configures the container image for the application-catalog manager.
+      image:
+        # Repository is used to override the application-catalog manager image repository.
+        # The default value is "quay.io/kubermatic/application-catalog-manager"
+        repository: quay.io/kubermatic/application-catalog-manager
+        # Tag is used to override the application-catalog manager image tag.
+        tag: 91dddf224f1cefd8dfe043e22628a23eca886142
+      # Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      limit:
+        # MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        metadataSelector:
+          # Tiers specifies the support tiers to filter ApplicationDefinitions.
+          # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+          tiers: null
+        # NameSelector defines criteria for selecting ApplicationDefinitions by name.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        nameSelector: null
+      # LogLevel specifies the logging verbosity level for the application-catalog manager.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      logLevel: ""
+      # ManagerSettings configures the application-catalog manager deployment settings.
+      managerSettings:
+        # LogLevel specifies the logging verbosity level for the application-catalog manager.
+        logLevel: ""
+        # Resources describes the requested and maximum allowed CPU/memory usage for application-catalog manager deployment.
+        resources:
+          # Claims lists the names of resources, defined in spec.resourceClaims,
+          # that are used by this container.
+
+          # This field depends on the
+          # DynamicResourceAllocation feature gate.
+
+          # This field is immutable. It can only be set for containers.
+          claims: null
+          # Limits describes the maximum amount of compute resources allowed.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          limits: null
+          # Requests describes the minimum amount of compute resources required.
+          # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+          # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          requests: null
+      # ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+      # By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+      # Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+      reconciliationInterval: 0s
+      # RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      registrySettings:
+        # Credentials optionally references a secret containing Helm registry authentication credentials.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        credentials: null
+        # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        registryURL: ""
+        # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        tag: ""
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      # Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
+      resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This field depends on the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable. It can only be set for containers.
+        claims: null
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits: null
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests: null
+      # WebhookSettings configures the application-catalog webhook deployment settings.
+      webhookSettings:
+        # LogLevel specifies the logging verbosity level for the application-catalog webhook.
+        logLevel: ""
+        # Resources describes the requested and maximum allowed CPU/memory usage for application-catalog webhook deployment.
+        resources:
+          # Claims lists the names of resources, defined in spec.resourceClaims,
+          # that are used by this container.
+
+          # This field depends on the
+          # DynamicResourceAllocation feature gate.
+
+          # This field is immutable. It can only be set for containers.
+          claims: null
+          # Limits describes the maximum amount of compute resources allowed.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          limits: null
+          # Requests describes the minimum amount of compute resources required.
+          # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+          # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          requests: null
     # DefaultApplicationCatalog contains configuration for the default application catalog.
     defaultApplicationCatalog:
       # Applications is a list of application definition names that should be installed in the master cluster.
@@ -130,6 +245,12 @@ spec:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com
+    # Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+    # When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+    # are managed by kubermatic-operator, instead of Ingress.
+    gateway:
+      # ClassName is the GatewayClass to use.
+      className: kubermatic-envoy-gateway
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.
@@ -152,7 +273,7 @@ spec:
       # Claims lists the names of resources, defined in spec.resourceClaims,
       # that are used by this container.
 
-      # This is an alpha field and requires enabling the
+      # This field depends on the
       # DynamicResourceAllocation feature gate.
 
       # This field is immutable. It can only be set for containers.
@@ -279,7 +400,7 @@ spec:
       # Claims lists the names of resources, defined in spec.resourceClaims,
       # that are used by this container.
 
-      # This is an alpha field and requires enabling the
+      # This field depends on the
       # DynamicResourceAllocation feature gate.
 
       # This field is immutable. It can only be set for containers.
@@ -317,7 +438,7 @@ spec:
       # Claims lists the names of resources, defined in spec.resourceClaims,
       # that are used by this container.
 
-      # This is an alpha field and requires enabling the
+      # This field depends on the
       # DynamicResourceAllocation feature gate.
 
       # This field is immutable. It can only be set for containers.
@@ -412,13 +533,23 @@ spec:
       # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
       # suffix it becomes "v2.15.0-SUFFIX".
       dockerTagSuffix: ""
+    # AdmissionPlugins configures global admission plugin settings for all user clusters.
+    admissionPlugins: null
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # Applications contains configuration for default Application settings.
     applications:
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
       # Namespace is the namespace which is set as the default for applications installed via ui
       # If left empty the default for the application installation namespace is the name of the resource itself
       namespace: ""
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
@@ -430,8 +561,22 @@ spec:
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
+    # KubeLB configures the kubeLB component.
+    kubelb:
+      # ImageRepository is used to override the KubeLB image repository.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageRepository: ""
+      # ImageTag is used to override the KubeLB image.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+
+      # KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
+      # Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
+      imageTag: ""
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     kubermaticDockerRepository: quay.io/kubermatic/kubermatic
+    # Kyverno configures the Kyverno policy engine settings at the global level.
+    # These settings apply to all user clusters unless overridden at seed or datacenter level.
+    kyverno: null
     # MachineController configures the Machine Controller
     machineController:
       # ImageRepository is used to override the Machine Controller image repository.
@@ -493,34 +638,36 @@ spec:
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
       helmRepository: ""
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.32.7
+    default: v1.34.5
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
+          - v1.32
       eks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
+          - v1.32
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -549,46 +696,50 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.29.*
+        from: 1.32.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.31.*
-      - from: 1.31.*
-        to: 1.31.*
-      - from: 1.31.*
-        to: 1.32.*
-      - from: 1.32.*
         to: 1.32.*
       - from: 1.32.*
         to: 1.33.*
       - from: 1.33.*
         to: 1.33.*
+      - from: 1.33.*
+        to: 1.34.*
+      - from: 1.34.*
+        to: 1.34.*
+      - from: 1.34.*
+        to: 1.35.*
+      - from: 1.35.*
+        to: 1.35.*
     # Versions lists the available versions.
     versions:
-      - v1.30.5
-      - v1.30.9
-      - v1.30.11
-      - v1.30.12
-      - v1.30.14
-      - v1.31.1
-      - v1.31.5
-      - v1.31.7
-      - v1.31.8
-      - v1.31.10
-      - v1.31.11
       - v1.32.1
       - v1.32.3
       - v1.32.4
       - v1.32.6
       - v1.32.7
+      - v1.32.9
+      - v1.32.10
+      - v1.32.12
+      - v1.32.13
       - v1.33.0
       - v1.33.2
       - v1.33.3
+      - v1.33.5
+      - v1.33.6
+      - v1.33.7
+      - v1.33.8
+      - v1.33.9
+      - v1.34.1
+      - v1.34.2
+      - v1.34.3
+      - v1.34.4
+      - v1.34.5
+      - v1.35.0
+      - v1.35.1
+      - v1.35.2
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
@@ -599,7 +750,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -624,7 +775,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -649,7 +800,7 @@ spec:
         # Claims lists the names of resources, defined in spec.resourceClaims,
         # that are used by this container.
 
-        # This is an alpha field and requires enabling the
+        # This field depends on the
         # DynamicResourceAllocation feature gate.
 
         # This field is immutable. It can only be set for containers.
@@ -682,7 +833,7 @@ spec:
       # Claims lists the names of resources, defined in spec.resourceClaims,
       # that are used by this container.
 
-      # This is an alpha field and requires enabling the
+      # This field depends on the
       # DynamicResourceAllocation feature gate.
 
       # This field is immutable. It can only be set for containers.

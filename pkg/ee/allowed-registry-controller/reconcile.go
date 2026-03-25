@@ -42,7 +42,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -55,12 +55,12 @@ const (
 
 type Reconciler struct {
 	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 	masterClient ctrlruntimeclient.Client
 	namespace    string
 }
 
-func NewReconciler(log *zap.SugaredLogger, recorder record.EventRecorder, masterClient ctrlruntimeclient.Client, namespace string) *Reconciler {
+func NewReconciler(log *zap.SugaredLogger, recorder events.EventRecorder, masterClient ctrlruntimeclient.Client, namespace string) *Reconciler {
 	return &Reconciler{
 		log:          log,
 		recorder:     recorder,
@@ -86,7 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, allowedRegistry)
 	if err != nil {
-		r.recorder.Event(allowedRegistry, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(allowedRegistry, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

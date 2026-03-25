@@ -127,8 +127,6 @@ func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv
 	}
 
 	if cluster != nil {
-		//nolint:staticcheck
-		//lint:ignore SA1019: config.VMNetName is deprecated: use networks instead.
 		if config.VMNetName.Value == "" && config.Networks == nil {
 			// Both Networks and VMNetName can't exist at the same time.
 			if len(cluster.Spec.Cloud.VSphere.Networks) > 0 {

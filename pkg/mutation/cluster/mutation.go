@@ -47,6 +47,7 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	if datacenter.Spec.DisableCSIDriver {
 		newCluster.Spec.DisableCSIDriver = true
 	}
+
 	// Always enable external CCM for supported providers in new clusters unless the user
 	// explicitly disabled the external CCM. For regular users this is not important (most
 	// won't disable the CCM), but the ccm-migration e2e tests require to create a cluster

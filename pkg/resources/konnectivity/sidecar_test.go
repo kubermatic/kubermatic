@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -45,6 +46,7 @@ func TestKnpServerArgs(t *testing.T) {
 			"--server-port=0",
 			"--agent-port=8132",
 			"--admin-port=8133",
+			"--admin-bind-address=0.0.0.0",
 			"--health-port=8134",
 			"--agent-namespace=kube-system",
 			fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
@@ -52,6 +54,7 @@ func TestKnpServerArgs(t *testing.T) {
 			"--authentication-audience=system:konnectivity-server",
 			"--proxy-strategies=default",
 			fmt.Sprintf("--keepalive-time=%s", keepAliveTime),
+			"--xfr-channel-size=150",
 		}
 	}
 
@@ -246,6 +249,72 @@ func TestKnpServerArgs(t *testing.T) {
 				"--custom-arg=value",
 			),
 		},
+		{
+			name: "default xfr-channel-size is set",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{},
+				},
+			},
+			serverCount:       3,
+			expectedKeepAlive: kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			expectedArgs:      getDefaultArgs(3, kubermaticv1.DefaultKonnectivityKeepaliveTime),
+		},
+		{
+			name: "user xfr-channel-size overrides default without duplicates",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--xfr-channel-size=300"},
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{},
+				},
+			},
+			serverCount:       3,
+			expectedKeepAlive: kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			// When user specifies xfr-channel-size, default is NOT added (no duplicates)
+			expectedArgs: func() []string {
+				// getDefaultArgs includes xfr-channel-size, but we expect it to be replaced
+				baseArgs := []string{
+					"--logtostderr=true",
+					"-v=3",
+					fmt.Sprintf("--cluster-key=/etc/kubernetes/pki/%s.key", resources.KonnectivityProxyTLSSecretName),
+					fmt.Sprintf("--cluster-cert=/etc/kubernetes/pki/%s.crt", resources.KonnectivityProxyTLSSecretName),
+					"--uds-name=/etc/kubernetes/konnectivity-server/konnectivity-server.socket",
+					fmt.Sprintf("--kubeconfig=/etc/kubernetes/kubeconfig/%s", resources.KonnectivityServerConf),
+					fmt.Sprintf("--server-count=%d", 3),
+					"--mode=grpc",
+					"--server-port=0",
+					"--agent-port=8132",
+					"--admin-port=8133",
+					"--admin-bind-address=0.0.0.0",
+					"--health-port=8134",
+					"--agent-namespace=kube-system",
+					fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
+					"--delete-existing-uds-file=true",
+					"--authentication-audience=system:konnectivity-server",
+					"--proxy-strategies=default",
+					fmt.Sprintf("--keepalive-time=%s", kubermaticv1.DefaultKonnectivityKeepaliveTime),
+					"--xfr-channel-size=300",
+				}
+				return baseArgs
+			}(),
+		},
 	}
 
 	for _, tt := range tests {
@@ -281,6 +350,28 @@ func TestKnpServerArgs(t *testing.T) {
 				assert.NoError(t, err)
 				assert.ElementsMatch(t, tt.expectedArgs, args)
 			}
+		})
+	}
+}
+
+func TestNetworkProxyVersion(t *testing.T) {
+	tests := []struct {
+		clusterVersion string
+		expected       string
+	}{
+		{"1.32.0", "v0.32.1"},
+		{"1.32.5", "v0.32.1"},
+		{"1.33.0", "v0.33.1"},
+		{"1.33.3", "v0.33.1"},
+		{"1.34.0", "v0.34.0"},
+		{"1.34.1", "v0.34.0"},
+		{"1.35.0", "v0.34.0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.clusterVersion, func(t *testing.T) {
+			v := *semver.NewSemverOrDie(tt.clusterVersion)
+			assert.Equal(t, tt.expected, NetworkProxyVersion(v))
 		})
 	}
 }

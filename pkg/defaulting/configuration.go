@@ -44,6 +44,10 @@ const (
 	DefaultEtcdVolumeSize                         = "5Gi"
 	DefaultAuthClientID                           = "kubermatic"
 	DefaultIngressClass                           = "nginx"
+	DefaultIngressName                            = "kubermatic"
+	DefaultGatewayName                            = "kubermatic"
+	DefaultHTTPRouteName                          = "kubermatic"
+	DefaultGatewayClassName                       = "kubermatic-envoy-gateway"
 	DefaultCABundleConfigMapName                  = "ca-bundle"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
@@ -57,7 +61,7 @@ const (
 	DefaultVPARecommenderDockerRepository         = "registry.k8s.io/autoscaling/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "registry.k8s.io/autoscaling/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "registry.k8s.io/autoscaling/vpa-admission-controller"
-	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-distroless"
+	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy"
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10
 	DefaultS3Endpoint                             = "s3.amazonaws.com"
@@ -70,6 +74,10 @@ const (
 	// routed through a proxy. All user-supplied values are appended to
 	// this constant.
 	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
+
+	// Default image repository and tag.
+	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
+	DefaultApplicationManagerImageTag        = "91dddf224f1cefd8dfe043e22628a23eca886142"
 )
 
 func newSemver(s string) semver.Semver {
@@ -215,7 +223,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.32.7"),
+		Default: semver.NewSemverOrDie("v1.34.5"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -224,58 +232,37 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.30
-			newSemver("v1.30.5"),
-			newSemver("v1.30.9"),
-			newSemver("v1.30.11"),
-			newSemver("v1.30.12"),
-			newSemver("v1.30.14"),
-			// Kubernetes 1.31
-			newSemver("v1.31.1"),
-			newSemver("v1.31.5"),
-			newSemver("v1.31.7"),
-			newSemver("v1.31.8"),
-			newSemver("v1.31.10"),
-			newSemver("v1.31.11"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
 			newSemver("v1.32.4"),
 			newSemver("v1.32.6"),
 			newSemver("v1.32.7"),
+			newSemver("v1.32.9"),
+			newSemver("v1.32.10"),
+			newSemver("v1.32.12"),
+			newSemver("v1.32.13"),
 			// Kubernetes 1.33
 			newSemver("v1.33.0"),
 			newSemver("v1.33.2"),
 			newSemver("v1.33.3"),
+			newSemver("v1.33.5"),
+			newSemver("v1.33.6"),
+			newSemver("v1.33.7"),
+			newSemver("v1.33.8"),
+			newSemver("v1.33.9"),
+			// Kubernetes 1.34
+			newSemver("v1.34.1"),
+			newSemver("v1.34.2"),
+			newSemver("v1.34.3"),
+			newSemver("v1.34.4"),
+			newSemver("v1.34.5"),
+			// Kubernetes 1.35
+			newSemver("v1.35.0"),
+			newSemver("v1.35.1"),
+			newSemver("v1.35.2"),
 		},
 		Updates: []kubermaticv1.Update{
-			{
-				// Allow to next minor release
-				From: "1.29.*",
-				To:   "1.30.*",
-			},
-			// ======= 1.30 =======
-			{
-				// Allow to change to any patch version
-				From: "1.30.*",
-				To:   "1.30.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.30.*",
-				To:   "1.31.*",
-			},
-			// ======= 1.31 =======
-			{
-				// Allow to change to any patch version
-				From: "1.31.*",
-				To:   "1.31.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.31.*",
-				To:   "1.32.*",
-			},
 			// ======= 1.32 =======
 			{
 				// Allow to change to any patch version
@@ -292,6 +279,28 @@ var (
 				// Allow to change to any patch version
 				From: "1.33.*",
 				To:   "1.33.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.33.*",
+				To:   "1.34.*",
+			},
+			// ======= 1.34 =======
+			{
+				// Allow to change to any patch version
+				From: "1.34.*",
+				To:   "1.34.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.34.*",
+				To:   "1.35.*",
+			},
+			// ======= 1.35 =======
+			{
+				// Allow to change to any patch version
+				From: "1.35.*",
+				To:   "1.35.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
@@ -310,24 +319,18 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.31"),
+		Default: semver.NewSemverOrDie("v1.32"),
 		Versions: []semver.Semver{
-			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
+			newSemver("v1.32"),
 		},
 	}
 
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.31"),
+		Default: semver.NewSemverOrDie("v1.32"),
 		Versions: []semver.Semver{
-			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
+			newSemver("v1.32"),
 		},
 	}
 
@@ -432,6 +435,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
+	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.ClassName == "" {
+		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
+		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)
+	}
+
 	if configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {
 		configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix = DefaultUserClusterScrapeAnnotationPrefix
 		logger.Debugw("Defaulting field", "field", "userCluster.monitoring.scrapeAnnotationPrefix", "value", configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
@@ -478,6 +486,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if auth.IssuerRedirectURL == "" && configCopy.Spec.Ingress.Domain != "" {
 		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", configCopy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.issuerRedirectURL", "value", auth.IssuerRedirectURL)
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.Image.Repository == "" {
+		configCopy.Spec.Applications.CatalogManager.Image.Repository = DefaultApplicationManagerImageRepository
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.repository", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
 	}
 
 	configCopy.Spec.Auth = auth

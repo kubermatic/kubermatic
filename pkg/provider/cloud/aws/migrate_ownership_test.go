@@ -36,7 +36,10 @@ func TestBackfillOwnershipTags(t *testing.T) {
 	finalizer := tagCleanupFinalizer
 
 	// create a vanilla cluster
-	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+	})
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
@@ -85,6 +88,8 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	// this will not put an owner tag on the SG
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		SecurityGroupID: securityGroupID,
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
 	})
 	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
@@ -161,6 +166,8 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	// this will not put an owner tag on the profile
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		InstanceProfileName: profileName,
+		AccessKeyID:         nope,
+		SecretAccessKey:     nope,
 	})
 	cluster, err := provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
@@ -241,6 +248,8 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	// this will not put an owner tag on the role
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		ControlPlaneRoleARN: roleARN,
+		AccessKeyID:         nope,
+		SecretAccessKey:     nope,
 	})
 
 	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))

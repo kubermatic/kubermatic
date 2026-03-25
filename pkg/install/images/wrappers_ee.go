@@ -82,6 +82,7 @@ func DefaultAppsHelmCharts(
 	registryPrefix string,
 ) iter.Seq2[*AppsHelmChart, error] {
 	log := kubermaticlog.NewDefault().Sugar()
+
 	defaultAppDefReconcilers, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(log, config, true)
 	if err != nil {
 		return func(yield func(*AppsHelmChart, error) bool) {

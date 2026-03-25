@@ -18,7 +18,6 @@ package machinecontroller
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -44,7 +43,7 @@ func KubePublicRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFac
 func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.MachineControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
+			rb.Labels = resources.BaseAppLabels(resources.MachineControllerDeploymentName, nil)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.MachineControllerRoleName,

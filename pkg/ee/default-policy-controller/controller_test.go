@@ -41,7 +41,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -417,7 +417,7 @@ func TestReconcile(t *testing.T) {
 
 			r := &Reconciler{
 				Client:       seedClient,
-				recorder:     &record.FakeRecorder{},
+				recorder:     &events.FakeRecorder{},
 				log:          log,
 				versions:     kubermatic.GetFakeVersions(),
 				configGetter: kubermatictest.NewConfigGetter(nil),
@@ -705,6 +705,48 @@ func TestSelectorTargeting(t *testing.T) {
 			},
 		},
 		{
+			name: "project visibility with target but nil cluster selector",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod"}),
+				genClusterWithProject("cluster3", "project2", map[string]string{"env": "test"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				genPolicyTemplateWithNilSelectors("policy-project1-nil-selector", false, true,
+					kubermaticv1.PolicyTemplateVisibilityProject, "project1", true, false, false),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-project1-nil-selector"},
+				"cluster2": {"policy-project1-nil-selector"},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "global visibility with target but nil selectors",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project2", map[string]string{"env": "prod"}),
+				genClusterWithProject("cluster3", "project1", map[string]string{"env": "staging"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "frontend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				genPolicyTemplateWithNilSelectors("policy-global-nil-selectors", false, true,
+					kubermaticv1.PolicyTemplateVisibilityGlobal, "", true, false, false),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-global-nil-selectors"},
+				"cluster2": {"policy-global-nil-selectors"},
+				"cluster3": {"policy-global-nil-selectors"},
+			},
+		},
+		{
 			name: "invalid visibility should not match any clusters",
 			clusters: []*kubermaticv1.Cluster{
 				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
@@ -761,7 +803,7 @@ func TestSelectorTargeting(t *testing.T) {
 
 			r := &Reconciler{
 				Client:       seedClient,
-				recorder:     &record.FakeRecorder{},
+				recorder:     &events.FakeRecorder{},
 				log:          log,
 				versions:     kubermatic.GetFakeVersions(),
 				configGetter: kubermatictest.NewConfigGetter(nil),
@@ -905,7 +947,7 @@ func TestPolicyBindingDeletionMapping(t *testing.T) {
 
 			r := &Reconciler{
 				Client:   client,
-				recorder: &record.FakeRecorder{},
+				recorder: &events.FakeRecorder{},
 				log:      log,
 				versions: kubermatic.GetFakeVersions(),
 			}
@@ -1118,6 +1160,34 @@ func genPolicyTemplateWithExpressions(name string, defaultPolicy, enforced bool,
 		template.Spec.Target = &kubermaticv1.PolicyTemplateTarget{
 			ClusterSelector: clusterSelector,
 			ProjectSelector: projectSelector,
+		}
+	}
+
+	return template
+}
+
+// genPolicyTemplateWithNilSelectors creates a PolicyTemplate with Target containing nil selectors.
+// This is used to test the case where target: {} in YAML creates Target with nil selectors.
+func genPolicyTemplateWithNilSelectors(name string, defaultPolicy, enforced bool, visibility string, projectID string, createTarget, setClusterSelector, setProjectSelector bool) kubermaticv1.PolicyTemplate {
+	template := kubermaticv1.PolicyTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: kubermaticv1.PolicyTemplateSpec{
+			Default:    defaultPolicy,
+			Enforced:   enforced,
+			Visibility: visibility,
+			ProjectID:  projectID,
+		},
+	}
+
+	if createTarget {
+		template.Spec.Target = &kubermaticv1.PolicyTemplateTarget{}
+		if setClusterSelector {
+			template.Spec.Target.ClusterSelector = &metav1.LabelSelector{}
+		}
+		if setProjectSelector {
+			template.Spec.Target.ProjectSelector = &metav1.LabelSelector{}
 		}
 	}
 

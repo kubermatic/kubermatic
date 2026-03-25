@@ -33,6 +33,13 @@ charts=$(find charts/ -name Chart.yaml -not -path 'charts/mla/*' | sort)
 
   i=0
   for url in $(yq '.dependencies.[].repository' "$chartYAML"); do
+    # Remove quotes from the URL
+    url=${url//\"/}
+    # Skip OCI repositories as they don't need to be added to helm repos
+    if [[ "$url" == oci://* ]]; then
+      echodate "Skipping OCI repository: $url"
+      continue
+    fi
     i=$((i + 1))
     helm repo add ${chartname}-dep-${i} ${url}
   done

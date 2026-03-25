@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: machine-controller-webhook
   name: machine-controller-webhook
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: machine-controller-webhook
         ca-bundle-configmap-revision: "123456"
@@ -61,7 +59,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.62.0
+        image: quay.io/kubermatic/machine-controller:v1.65.0
         livenessProbe:
           failureThreshold: 8
           httpGet:

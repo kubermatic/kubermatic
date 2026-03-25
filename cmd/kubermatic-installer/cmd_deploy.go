@@ -25,11 +25,11 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/go-logr/zapr"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -42,9 +42,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
@@ -63,7 +63,7 @@ type DeployOptions struct {
 	KubeContext string
 
 	HelmBinary         string
-	HelmValues         string
+	HelmValues         []string
 	HelmTimeout        time.Duration
 	SkipDependencies   bool
 	SkipSeedValidation sets.Set[string]
@@ -72,10 +72,22 @@ type DeployOptions struct {
 	StorageClass       string
 	DisableTelemetry   bool
 	AllowEditionChange bool
+	SeparateSeed       bool
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
+	// MigrateGatewayAPI instructs kubermatic-installer to deploy envoy-gateway-controller
+	// chart instead of nginx-ingress-controller.
+	// For more details, see the documentation, as ingress based components like Dex may require
+	// manual further configurations.
+	//
+	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	MigrateGatewayAPI bool
+	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
+	// When false (default), old resources are cleaned up automatically during migration.
+	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	SkipIngressCleanup bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -115,8 +127,10 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 			if opt.KubeContext == "" {
 				opt.KubeContext = os.Getenv("KUBE_CONTEXT")
 			}
-			if opt.HelmValues == "" {
-				opt.HelmValues = os.Getenv("HELM_VALUES")
+			if len(opt.HelmValues) == 0 {
+				if envVal := os.Getenv("HELM_VALUES"); envVal != "" {
+					opt.HelmValues = []string{envVal}
+				}
 			}
 			if opt.HelmBinary == "" {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
@@ -128,7 +142,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
-	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
+	cmd.PersistentFlags().StringSliceVar(&opt.HelmValues, "helm-values", nil, "full path to the Helm values.yaml used for customizing all charts (can be specified multiple times)")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
@@ -138,10 +152,13 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))
 	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
 	cmd.PersistentFlags().BoolVar(&opt.AllowEditionChange, "allow-edition-change", false, "allow up- or downgrading between Community and Enterprise editions")
+	cmd.PersistentFlags().BoolVar(&opt.SeparateSeed, "separate-seed", false, "deploy ingress or gateway-api master components to the seed (only applies to kubermatic-seed stack)")
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "enable the migration from nginx-ingress-controller to Gateway API. See the documentation for more details.")
+	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "skip cleanup of old Ingress or Gateway API resources during migration (cleanup happens by default)")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
@@ -200,6 +217,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			ForceHelmReleaseUpgrade:            opt.Force,
 			ChartsDirectory:                    opt.ChartsDirectory,
 			EnableCertManagerV2Migration:       opt.MigrateCertManager,
+			SeparateSeed:                       opt.SeparateSeed,
 			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
 			EnableNginxIngressMigration:        opt.MigrateNginx,
 			DisableTelemetry:                   opt.DisableTelemetry,
@@ -215,6 +233,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
+			MigrateToGatewayAPI:                opt.MigrateGatewayAPI,
+			SkipIngressCleanup:                 opt.SkipIngressCleanup,
 		}
 
 		// prepare Kubernetes and Helm clients
@@ -223,12 +243,18 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to get config: %w", err)
 		}
 
+		ctrlruntimelog.SetLogger(zapr.NewLogger(zap.NewNop()))
+
 		mgr, err := manager.New(ctrlConfig, manager.Options{
 			Metrics:                metricsserver.Options{BindAddress: "0"},
 			HealthProbeBindAddress: "0",
 		})
 		if err != nil {
 			return fmt.Errorf("failed to construct mgr: %w", err)
+		}
+
+		if err := setupKubermaticInstallerScheme(mgr); err != nil {
+			return fmt.Errorf("failed to setup installer scheme: %w", err)
 		}
 
 		// start the manager in its own goroutine
@@ -275,18 +301,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		}
 
 		logger.Info("✅ Provided configuration is valid.")
-
-		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
-
-		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
-
-		if err := certmanagerv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
 
 		// prepare seed access components
 		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)

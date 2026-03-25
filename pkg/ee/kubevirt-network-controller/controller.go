@@ -43,7 +43,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -54,7 +54,7 @@ import (
 const (
 	ControllerName                = "kubevirt-network-controller"
 	WorkloadSubnetLabel           = "k8c.io/kubevirt-workload-subnet"
-	NetworkPolicyPodSelectorLabel = "cluster.x-k8s.io/cluster-name"
+	NetworkPolicyPodSelectorLabel = "kubermatic.k8c.io/cluster-id"
 	NetworkPolicyCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubevirt-infra-network-policy"
 )
 
@@ -67,7 +67,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	versions   kubermatic.Versions
 	workerName string
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 }
 
 func Add(
@@ -87,7 +87,7 @@ func Add(
 		seedGetter:  seedGetter,
 		infraGetter: SetupKubeVirtInfraClient,
 		workerName:  workerName,
-		recorder:    mgr.GetEventRecorderFor(ControllerName),
+		recorder:    mgr.GetEventRecorder(ControllerName),
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -166,7 +166,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

@@ -62,22 +62,26 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.1.5"
+	imageTag  = "v1.3.7"
 )
 
 type kubeLBData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	DC() *kubermaticv1.Datacenter
+	KubeLBImageRepository() string
+	KubeLBImageTag() string
 }
 
-func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter) *resources.TemplateData {
+func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter, kubeLB kubermaticv1.KubeLBConfiguration) *resources.TemplateData {
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithCluster(cluster).
 		WithClient(client).
 		WithOverwriteRegistry(overwriteRegistry).
 		WithDatacenter(&dc).
+		WithKubeLBImageRepository(kubeLB.ImageRepository).
+		WithKubeLBImageTag(kubeLB.ImageTag).
 		Build()
 }
 
@@ -128,10 +132,18 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName))
+			if r := data.KubeLBImageRepository(); r != "" {
+				repository = r
+			}
+			tag := imageTag
+			if t := data.KubeLBImageTag(); t != "" {
+				tag = t
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.KubeLBDeploymentName,
-					Image:   repository + ":" + imageTag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/ccm"},
 					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB, data.Cluster().Spec.KubeLB),
 					LivenessProbe: &corev1.Probe{
@@ -174,6 +186,13 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 							ReadOnly:  true,
 						},
 					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 8082,
+							Name:          "ccm-metrics",
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
 				},
 			}
 
@@ -211,6 +230,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 
 	if clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI {
 		flags = append(flags, "-enable-gateway-api")
+		flags = append(flags, "-install-gateway-api-crds")
 	}
 	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")

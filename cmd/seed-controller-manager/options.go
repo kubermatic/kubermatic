@@ -220,6 +220,7 @@ type controllerContext struct {
 	mgr                  manager.Manager
 	clientProvider       *client.Provider
 	seedGetter           provider.SeedGetter
+	projectsGetter       provider.ProjectsGetter
 	configGetter         provider.KubermaticConfigurationGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger

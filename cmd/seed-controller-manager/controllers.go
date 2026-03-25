@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	applicationsecretclustercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
+	auditloggingenforcement "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/audit-logging-enforcement-controller"
 	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	clustercredentialscontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-credentials-controller"
@@ -38,13 +39,13 @@ import (
 	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
+	eventratelimitenforcement "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/event-rate-limit-enforcement-controller"
 	initialapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-application-installation-controller"
 	initialmachinedeployment "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/ipam"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	operatingsystemmanagermigrator "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-manager-migrator"
 	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
@@ -83,10 +84,11 @@ var AllControllers = map[string]controllerCreator{
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
-	operatingsystemmanagermigrator.ControllerName:           createOperatingSystemManagerMigratorController,
 	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
+	auditloggingenforcement.ControllerName:                  createAuditLoggingEnforcementController,
+	eventratelimitenforcement.ControllerName:                createEventRateLimitEnforcementController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -165,6 +167,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
+			DynamicResourceAllocation:    ctrlCtx.runOptions.featureGates.Enabled(features.DynamicResourceAllocation),
 		},
 		ctrlCtx.versions,
 	)
@@ -455,17 +458,6 @@ func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createOperatingSystemManagerMigratorController(ctrlCtx *controllerContext) error {
-	return operatingsystemmanagermigrator.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.clientProvider,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.versions,
-	)
-}
-
 func createDefaultApplicationController(ctrlCtx *controllerContext) error {
 	return defaultapplicationcontroller.Add(
 		ctrlCtx.ctx,
@@ -499,5 +491,25 @@ func createApplicationSecretClusterController(ctrlCtx *controllerContext) error 
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
+	)
+}
+
+func createAuditLoggingEnforcementController(ctrlCtx *controllerContext) error {
+	return auditloggingenforcement.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createEventRateLimitEnforcementController(ctrlCtx *controllerContext) error {
+	return eventratelimitenforcement.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.configGetter,
+		ctrlCtx.runOptions.workerCount,
 	)
 }

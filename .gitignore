@@ -9,7 +9,7 @@
 .idea
 .kubeconfig
 /reports
-/vendor
+*vendor
 _artifacts/*
 _build
 _cache

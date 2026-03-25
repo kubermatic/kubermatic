@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	csiVersion = "9ad38f9e49c296acfe7b9d3301ebff8a1056fa68"
+	csiVersion = "v0.4.5"
 )
 
 // DeploymentsReconcilers returns the CSI controller Deployments for KubeVirt.
@@ -264,6 +264,66 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("10m"),
 							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-snapshotter",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-snapshotter:v4.2.1")),
+					Args: []string{
+						"--v=5",
+						"--csi-address=/csi/csi.sock",
+						"--timeout=3m",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-resizer",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-resizer:v1.13.1")),
+					Args: []string{
+						"--v=5",
+						"--csi-address=/csi/csi.sock",
+						"--timeout=3m",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--handle-volume-inuse-error=false",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
 						},
 					},
 				},

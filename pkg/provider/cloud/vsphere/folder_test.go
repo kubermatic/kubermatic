@@ -20,74 +20,86 @@ package vsphere
 
 import (
 	"context"
-	"path"
 	"testing"
 
+	"github.com/vmware/govmomi/find"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestProvider_GetVMFolders(t *testing.T) {
-	tests := []struct {
-		name           string
-		dc             *kubermaticv1.DatacenterSpecVSphere
-		expectedFolder string
-	}{
-		{
-			name: "successfully-create-and-list-folders-below-custom-root",
-			dc: &kubermaticv1.DatacenterSpecVSphere{
-				Datacenter:    vSphereDatacenter,
-				Endpoint:      vSphereEndpoint,
-				AllowInsecure: true,
-				RootPath:      path.Join("/", vSphereDatacenter, vSphereVMRootFolder),
-			},
-			expectedFolder: path.Join("/", vSphereDatacenter, vSphereVMRootFolder, generateTestFolder()),
-		},
+	sim := vSphereSimulator{t: t}
+	sim.setUp()
+	defer sim.tearDown()
+
+	dc := &kubermaticv1.DatacenterSpecVSphere{
+		RootPath: "/DC0/vm",
+	}
+	sim.fillClientInfo(dc)
+
+	ctx := context.Background()
+	session, err := newSession(ctx, dc, sim.username(), sim.password(), nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
-			session, err := newSession(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	finder := find.NewFinder(session.Client.Client, true)
+	datacenter, err := finder.Datacenter(ctx, dc.Datacenter)
+	if err != nil {
+		t.Fatalf("failed to find datacenter: %v", err)
+	}
+	finder.SetDatacenter(datacenter)
 
-			restSession, err := newRESTSession(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
-			if err != nil {
-				t.Fatal("failed to create REST client session: %w", err)
-			}
-			defer restSession.Logout(ctx)
+	vmFolder, err := finder.Folder(ctx, dc.RootPath)
+	if err != nil {
+		t.Fatalf("failed to find vm folder: %v", err)
+	}
 
-			if err := ensureVMFolder(ctx, session, restSession, test.expectedFolder, nil); err != nil {
-				t.Fatal(err)
-			}
-			folders, err := GetVMFolders(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	testFolderName := "kubermatic-e2e-" + rand.String(8)
+	expectedFolderPath := dc.RootPath + "/" + testFolderName
 
-			folderFound := false
-			gotFolders := sets.New[string]()
-			for _, folder := range folders {
-				if folder.Path == test.expectedFolder {
-					folderFound = true
-					if err := deleteVMFolder(ctx, session, test.expectedFolder); err != nil {
-						t.Fatal(err)
-					}
-				}
-			}
+	if _, err = vmFolder.CreateFolder(ctx, testFolderName); err != nil {
+		t.Fatalf("failed to create folder: %v", err)
+	}
+	defer cleanupFolder(t, finder, ctx, expectedFolderPath)
 
-			if !folderFound {
-				t.Fatalf("Response is missing expected folders:\n%v", diff.SetDiff(sets.New(test.expectedFolder), gotFolders))
-			}
-		})
+	folders, err := GetVMFolders(ctx, dc, sim.username(), sim.password(), nil)
+	if err != nil {
+		t.Fatalf("GetVMFolders failed: %v", err)
+	}
+
+	if len(folders) == 0 {
+		t.Fatal("expected at least one folder, got none")
+	}
+
+	folderFound := false
+	for _, folder := range folders {
+		if folder.Path == "" {
+			t.Error("folder Path should not be empty")
+		}
+		if folder.Path == expectedFolderPath {
+			folderFound = true
+		}
+	}
+
+	if !folderFound {
+		t.Errorf("created folder %s not found in GetVMFolders results", expectedFolderPath)
 	}
 }
 
-func generateTestFolder() string {
-	return "kubermatic-e2e-" + rand.String(8)
+func cleanupFolder(t *testing.T, finder *find.Finder, ctx context.Context, path string) {
+	folder, err := finder.Folder(ctx, path)
+	if err != nil {
+		t.Logf("warning: failed to find test folder for cleanup: %v", err)
+		return
+	}
+
+	task, err := folder.Destroy(ctx)
+	if err != nil {
+		t.Logf("warning: failed to destroy test folder: %v", err)
+		return
+	}
+	_ = task.Wait(ctx)
 }

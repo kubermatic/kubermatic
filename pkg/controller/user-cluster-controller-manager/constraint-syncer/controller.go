@@ -32,7 +32,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -53,7 +53,7 @@ type reconciler struct {
 	log             *zap.SugaredLogger
 	seedClient      ctrlruntimeclient.Client
 	userClient      ctrlruntimeclient.Client
-	recorder        record.EventRecorder
+	recorder        events.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
@@ -64,7 +64,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		log:             log,
 		seedClient:      seedMgr.GetClient(),
 		userClient:      userMgr.GetClient(),
-		recorder:        userMgr.GetEventRecorderFor(controllerName),
+		recorder:        userMgr.GetEventRecorder(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
 
@@ -99,7 +99,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, constraint, log)
 	if err != nil {
-		r.recorder.Event(constraint, corev1.EventTypeWarning, "ConstraintReconcileFailed", err.Error())
+		r.recorder.Eventf(constraint, nil, corev1.EventTypeWarning, "ConstraintReconcileFailed", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

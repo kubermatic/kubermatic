@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: apiserver
   name: apiserver
@@ -20,7 +19,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "30000"
         prometheus.io/scrape_with_kube_cert: "true"
-      creationTimestamp: null
       labels:
         adm-control-configmap-revision: "123456"
         apiserver-etcd-client-certificate-secret-revision: "123456"
@@ -65,6 +63,7 @@ spec:
         - --server-port=0
         - --agent-port=8132
         - --admin-port=8133
+        - --admin-bind-address=0.0.0.0
         - --health-port=8134
         - --agent-namespace=kube-system
         - --agent-service-account=system-konnectivity-agent
@@ -72,9 +71,10 @@ spec:
         - --authentication-audience=system:konnectivity-server
         - --proxy-strategies=default
         - --keepalive-time=1m
+        - --xfr-channel-size=150
         command:
         - /proxy-server
-        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.31.0
+        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.33.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3

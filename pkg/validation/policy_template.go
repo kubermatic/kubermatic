@@ -64,6 +64,10 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 		}
 	}
 
+	if template.Spec.NamespacedPolicy && template.Spec.Enforced {
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("namespacedPolicy"), "namespacedPolicy cannot be true when enforced is true"))
+	}
+
 	if template.Spec.Target != nil {
 		targetPath := specPath.Child("target")
 		if template.Spec.Target.ProjectSelector != nil {

@@ -46,12 +46,12 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 				}
 			}
 
-			d.recorder.Eventf(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "There are %d EtcdBackupConfig objects waiting for deletion.", len(backupConfigs.Items))
+			d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Reconciling", "There are %d EtcdBackupConfig objects waiting for deletion.", len(backupConfigs.Items))
 			return nil
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Cleanup has been completed, all EtcdBackupConfigs have been deleted.")
+	d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Reconciling", "Cleanup has been completed, all EtcdBackupConfigs have been deleted.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 }

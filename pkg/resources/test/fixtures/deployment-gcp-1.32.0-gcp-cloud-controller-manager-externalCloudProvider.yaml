@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: gcp-cloud-controller-manager
   name: gcp-cloud-controller-manager
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,scratch
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: gcp-cloud-controller-manager
         ca-bundle-configmap-revision: "123456"
@@ -47,7 +45,7 @@ spec:
           value: /etc/kubermatic/certs/ca-bundle.pem
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/kubermatic/cloud-credentials/serviceAccount.json
-        image: registry.k8s.io/cloud-provider-gcp/cloud-controller-manager:v30.0.0
+        image: registry.k8s.io/cloud-provider-gcp/cloud-controller-manager:v32.2.5
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -97,7 +95,7 @@ spec:
         - base64 -d /input/serviceAccount > /scratch/serviceAccount.json
         command:
         - /bin/sh
-        image: quay.io/kubermatic/util:2.5.0
+        image: quay.io/kubermatic/util:2.7.0
         name: decode-sa
         resources: {}
         volumeMounts:

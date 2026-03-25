@@ -28,11 +28,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -64,14 +65,9 @@ func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGette
 	}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.Cluster] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	cluster, ok := obj.(*kubermaticv1.Cluster)
-	if !ok {
-		return nil, errors.New("object is not a Cluster")
-	}
-
+func (v *validator) ValidateCreate(ctx context.Context, cluster *kubermaticv1.Cluster) (admission.Warnings, error) {
 	// This validates the charset and the max length.
 	if errs := k8svalidation.IsDNS1035Label(cluster.Name); len(errs) != 0 {
 		return nil, fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
@@ -99,20 +95,18 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
+	if err := v.validateKyvernoEnforcement(cluster, nil, datacenter, seed, config); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := v.validateEventRateLimitEnforcement(cluster, nil, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	oldCluster, ok := oldObj.(*kubermaticv1.Cluster)
-	if !ok {
-		return nil, errors.New("old object is not a Cluster")
-	}
-
-	newCluster, ok := newObj.(*kubermaticv1.Cluster)
-	if !ok {
-		return nil, errors.New("new object is not a Cluster")
-	}
-
+func (v *validator) ValidateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) (admission.Warnings, error) {
 	datacenter, seed, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
 	if err != nil {
 		return nil, err
@@ -131,10 +125,18 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
+	if err := v.validateKyvernoEnforcement(newCluster, oldCluster, datacenter, seed, config); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := v.validateEventRateLimitEnforcement(newCluster, oldCluster, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.Cluster) (admission.Warnings, error) {
 	return nil, nil
 }
 
@@ -204,6 +206,90 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 	// exists and is not being deleted.
 	if !isUpdate && project.DeletionTimestamp != nil {
 		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
+	}
+
+	return nil
+}
+
+// validateKyvernoEnforcement ensures users cannot override enforced Kyverno settings through Cluster spec.
+func (v *validator) validateKyvernoEnforcement(
+	newCluster, oldCluster *kubermaticv1.Cluster,
+	datacenter *kubermaticv1.Datacenter,
+	seed *kubermaticv1.Seed,
+	config *kubermaticv1.KubermaticConfiguration,
+) *field.Error {
+	enforcementInfo := kyverno.GetEnforcement(
+		datacenter.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+	if !enforcementInfo.Enforced {
+		return nil
+	}
+
+	fieldPath := field.NewPath("spec", "kyverno", "enabled")
+
+	isUpdate := oldCluster != nil
+	if isUpdate {
+		if oldCluster.Spec.IsKyvernoEnabled() && !newCluster.Spec.IsKyvernoEnabled() {
+			return field.Invalid(
+				fieldPath,
+				newCluster.Spec.Kyverno,
+				fmt.Sprintf("kyverno is enforced by %q and cannot be disabled", enforcementInfo.Source),
+			)
+		}
+
+		return nil
+	}
+
+	if !newCluster.Spec.IsKyvernoEnabled() {
+		return field.Invalid(
+			fieldPath,
+			newCluster.Spec.Kyverno,
+			fmt.Sprintf("kyverno is enforced by %q and must be enabled for new clusters", enforcementInfo.Source),
+		)
+	}
+
+	return nil
+}
+
+// validateEventRateLimitEnforcement ensures users cannot disable EventRateLimit or override its config when enforced globally.
+func (v *validator) validateEventRateLimitEnforcement(
+	newCluster, oldCluster *kubermaticv1.Cluster,
+	config *kubermaticv1.KubermaticConfiguration,
+) *field.Error {
+	if config == nil || config.Spec.UserCluster.AdmissionPlugins == nil ||
+		config.Spec.UserCluster.AdmissionPlugins.EventRateLimit == nil {
+		return nil
+	}
+
+	erl := config.Spec.UserCluster.AdmissionPlugins.EventRateLimit
+	if erl.Enforced == nil || !*erl.Enforced {
+		return nil
+	}
+
+	isUpdate := oldCluster != nil
+	newPluginEnabled := newCluster.Spec.IsEventRateLimitAdmissionPluginEnabled()
+
+	fieldPath := field.NewPath("spec", "useEventRateLimitAdmissionPlugin")
+	if isUpdate {
+		// Prevent disabling when enforced
+		oldPluginEnabled := oldCluster.Spec.IsEventRateLimitAdmissionPluginEnabled()
+		if oldPluginEnabled && !newPluginEnabled {
+			return field.Invalid(fieldPath, false,
+				"EventRateLimit is enforced globally and cannot be disabled")
+		}
+	} else if !newPluginEnabled {
+		return field.Invalid(fieldPath, false,
+			"EventRateLimit is enforced globally and must be enabled for new clusters")
+	}
+
+	if erl.DefaultConfig != nil && newCluster.Spec.EventRateLimitConfig != nil {
+		if !equality.Semantic.DeepEqual(newCluster.Spec.EventRateLimitConfig, erl.DefaultConfig) {
+			configPath := field.NewPath("spec", "eventRateLimitConfig")
+			return field.Invalid(configPath, newCluster.Spec.EventRateLimitConfig,
+				"EventRateLimit configuration is enforced globally and cannot be overridden")
+		}
 	}
 
 	return nil

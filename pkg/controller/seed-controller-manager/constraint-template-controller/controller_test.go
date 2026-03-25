@@ -38,7 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 			r := &reconciler{
 				log:                       kubermaticlog.Logger,
 				workerNameLabelSelector:   workerSelector,
-				recorder:                  &record.FakeRecorder{},
+				recorder:                  &events.FakeRecorder{},
 				seedClient:                tc.seedClient,
 				userClusterClientProvider: newFakeClientProvider(tc.userClient),
 				userClusterClients:        map[string]ctrlruntimeclient.Client{},
@@ -174,7 +174,7 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 	r := &reconciler{
 		log:                       kubermaticlog.Logger,
 		workerNameLabelSelector:   workerSelector,
-		recorder:                  &record.FakeRecorder{},
+		recorder:                  &events.FakeRecorder{},
 		seedClient:                seedClient,
 		userClusterClientProvider: newFakeClientProvider(userClient),
 		userClusterClients:        map[string]ctrlruntimeclient.Client{},

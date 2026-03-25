@@ -17,6 +17,8 @@ limitations under the License.
 package cloudinitsettings
 
 import (
+	"maps"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -26,6 +28,10 @@ import (
 // NamespaceReconciler creates the namespace for CloudInitSettingsNamespace.
 func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 	return resources.CloudInitSettingsNamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
 		return ns, nil
 	}
 }

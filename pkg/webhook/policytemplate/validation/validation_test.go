@@ -181,6 +181,14 @@ func TestAdmissionValidationPolicyTemplate(t *testing.T) {
 			wantErrors: false,
 		},
 		{
+			name: "Reject namespaced policy when enforced is true",
+			template: createTestPolicyTemplate("invalid-namespaced-enforced", func(pt *kubermaticv1.PolicyTemplate) {
+				pt.Spec.NamespacedPolicy = true
+				pt.Spec.Enforced = true
+			}),
+			wantErrors: true, errorPaths: []string{"spec.namespacedPolicy"},
+		},
+		{
 			name: "Reject template missing Title",
 			template: createTestPolicyTemplate("invalid-missing-title", func(pt *kubermaticv1.PolicyTemplate) {
 				pt.Spec.Title = ""
@@ -445,7 +453,7 @@ func testImmutability(t *testing.T, validator *validator) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := validator.ValidateUpdate(context.Background(), tt.oldTemplate.DeepCopyObject(), tt.newTemplate.DeepCopyObject())
+			_, err := validator.ValidateUpdate(context.Background(), tt.oldTemplate.DeepCopy(), tt.newTemplate.DeepCopy())
 			checkErrors(t, tt.name+" [Update]", err, tt.wantErrors, tt.errorPaths)
 		})
 	}

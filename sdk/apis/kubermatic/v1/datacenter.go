@@ -17,7 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -30,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 type ProviderType string
 
 // +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
@@ -55,7 +57,6 @@ const (
 	KubevirtCloudProvider            ProviderType = "kubevirt"
 	NutanixCloudProvider             ProviderType = "nutanix"
 	OpenstackCloudProvider           ProviderType = "openstack"
-	PacketCloudProvider              ProviderType = "packet"
 	VMwareCloudDirectorCloudProvider ProviderType = "vmwareclouddirector"
 	VSphereCloudProvider             ProviderType = "vsphere"
 
@@ -65,30 +66,44 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var (
-	SupportedProviders = []ProviderType{
-		AKSCloudProvider,
-		AlibabaCloudProvider,
-		AnexiaCloudProvider,
-		AWSCloudProvider,
-		AzureCloudProvider,
-		BaremetalCloudProvider,
-		BringYourOwnCloudProvider,
-		DigitaloceanCloudProvider,
-		EdgeCloudProvider,
-		EKSCloudProvider,
-		FakeCloudProvider,
-		GCPCloudProvider,
-		GKECloudProvider,
-		HetznerCloudProvider,
-		KubevirtCloudProvider,
-		NutanixCloudProvider,
-		OpenstackCloudProvider,
-		PacketCloudProvider,
-		VMwareCloudDirectorCloudProvider,
-		VSphereCloudProvider,
-	}
-)
+var InfrastructureProviders = []ProviderType{
+	AlibabaCloudProvider,
+	AnexiaCloudProvider,
+	AWSCloudProvider,
+	AzureCloudProvider,
+	BaremetalCloudProvider,
+	BringYourOwnCloudProvider,
+	DigitaloceanCloudProvider,
+	EdgeCloudProvider,
+	GCPCloudProvider,
+	HetznerCloudProvider,
+	KubevirtCloudProvider,
+	NutanixCloudProvider,
+	OpenstackCloudProvider,
+	VMwareCloudDirectorCloudProvider,
+	VSphereCloudProvider,
+}
+
+var ManagedKubernetesProviders = []ProviderType{
+	AKSCloudProvider,
+	EKSCloudProvider,
+	GKECloudProvider,
+}
+
+var SupportedProviders = func() []ProviderType {
+	providers := append(
+		InfrastructureProviders,
+		append(
+			ManagedKubernetesProviders,
+			FakeCloudProvider,
+		)...)
+
+	slices.SortFunc(providers, func(a, b ProviderType) int {
+		return cmp.Compare(string(a), string(b))
+	})
+
+	return providers
+}()
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
@@ -296,7 +311,6 @@ type SeedSpec struct {
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
-	// Deprecated: Use DefaultClusterTemplate instead.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
 	// DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
 	// to default all new created clusters
@@ -326,6 +340,23 @@ type SeedSpec struct {
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
 	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+	// Kyverno configures the Kyverno policy engine settings at the seed level.
+	// These settings apply to all user clusters in this seed.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+}
+
+type KyvernoConfigurations struct {
+	// Enforced indicates whether Kyverno enablement is mandatory at cluster.
+	// When set to true at Datacenter, Seed, or KubermaticConfiguration level, user clusters under that scope
+	// must have Kyverno enabled and cannot disable it.
+	// If it is set to true, the Kyverno becomes enforced at this level, and will be deployed to user clusters under the scope.
+	// If it is set to false, Kyverno is not enforced at this level.
+	// If nil, no Kyverno enforcement preference is declared.
+	// For example, if Kyverno is enforced at the Seed level, setting this to false at the Datacenter level makes the Datacenter not enforce Kyverno,
+	// though other clusters in the Seed will still have Kyverno enforced.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -369,6 +400,7 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	//
 	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
@@ -395,7 +427,57 @@ type EnvoyLoadBalancerService struct {
 }
 type NodePortProxyComponentEnvoy struct {
 	NodeportProxyComponent `json:",inline"`
-	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+	// Defaults to 3.
+	// +kubebuilder:default:=3
+	// +kubebuilder:validation:Minimum:=1
+	Replicas            *int32                   `json:"replicas,omitempty"`
+	LoadBalancerService EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// ConnectionSettings configures idle timeout and TCP keepalive settings for
+	// the nodeport-proxy Envoy listeners and upstream clusters.
+	// Zero values keep Envoy defaults (no KKP override).
+	ConnectionSettings NodePortProxyEnvoyConnectionSettings `json:"connectionSettings,omitempty"`
+}
+
+type NodePortProxyEnvoyConnectionSettings struct {
+	// SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+	// downstream connections are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	SNIListenerIdleTimeout metav1.Duration `json:"sniListenerIdleTimeout,omitempty"`
+	// TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+	// listener downstream connections are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	TunnelingConnectionIdleTimeout metav1.Duration `json:"tunnelingConnectionIdleTimeout,omitempty"`
+	// TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+	// on the tunneling listener are kept open.
+	// Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+	TunnelingStreamIdleTimeout metav1.Duration `json:"tunnelingStreamIdleTimeout,omitempty"`
+	// DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on downstream listener sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	DownstreamTCPKeepaliveTime metav1.Duration `json:"downstreamTCPKeepaliveTime,omitempty"`
+	// DownstreamTCPKeepaliveInterval configures the interval between TCP
+	// keepalive probes on downstream listener sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	DownstreamTCPKeepaliveInterval metav1.Duration `json:"downstreamTCPKeepaliveInterval,omitempty"`
+	// DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering downstream listener sockets dead.
+	// Set to 0 to leave unset.
+	// +kubebuilder:validation:Minimum:=1
+	DownstreamTCPKeepaliveProbes uint32 `json:"downstreamTCPKeepaliveProbes,omitempty"`
+	// UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on upstream cluster sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	UpstreamTCPKeepaliveTime metav1.Duration `json:"upstreamTCPKeepaliveTime,omitempty"`
+	// UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+	// probes on upstream cluster sockets.
+	// Set to 0 to leave unset. If set, value must be >= 1s.
+	UpstreamTCPKeepaliveInterval metav1.Duration `json:"upstreamTCPKeepaliveInterval,omitempty"`
+	// UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering upstream cluster sockets dead.
+	// Set to 0 to leave unset.
+	// +kubebuilder:validation:Minimum:=1
+	UpstreamTCPKeepaliveProbes uint32 `json:"upstreamTCPKeepaliveProbes,omitempty"`
 }
 
 type NodeportProxyComponent struct {
@@ -440,10 +522,6 @@ type DatacenterSpec struct {
 	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
 	// Openstack configures an Openstack datacenter.
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
-	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-	// Packet configures an Equinix Metal datacenter.
-	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 	// Hetzner configures a Hetzner datacenter.
 	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
 	// VSphere configures a VMware vSphere datacenter.
@@ -515,48 +593,49 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
+	// These settings override seed and global configuration and apply to all user clusters
+	// in this datacenter.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
 }
 
-var (
-	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
-	knownIPv6CloudProviders = map[ProviderType]struct {
-		ipv6EnabledForAllDatacenters bool
-	}{
-		AWSCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		AzureCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BaremetalCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BringYourOwnCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		EdgeCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		DigitaloceanCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		GCPCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		HetznerCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		OpenstackCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-		PacketCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		VSphereCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-	}
-)
+// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+var knownIPv6CloudProviders = map[ProviderType]struct {
+	ipv6EnabledForAllDatacenters bool
+}{
+	AWSCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	AzureCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BaremetalCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BringYourOwnCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	EdgeCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	DigitaloceanCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	GCPCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	HetznerCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	OpenstackCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+	VSphereCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+}
 
 func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
 	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
@@ -672,32 +751,11 @@ type DatacenterSpecOpenstack struct {
 	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRange,omitempty"`
 	// Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
-}
-
-type LoadBalancerClass struct {
-	// Name is the name of the load balancer class.
-	//
-	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
-	// Config is the configuration for the specified LoadBalancerClass section in the cloud config.
-	Config LBClass `json:"config"`
-}
-
-type LBClass struct {
-	// FloatingNetworkID is the external network used to create floating IP for the load balancer VIP.
-	FloatingNetworkID string `json:"floatingNetworkID,omitempty"`
-	// FloatingSubnetID is the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnetID string `json:"floatingSubnetID,omitempty"`
-	// FloatingSubnet is a name pattern for the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnet string `json:"floatingSubnet,omitempty"`
-	// FloatingSubnetTags is a comma separated list of tags for the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnetTags string `json:"floatingSubnetTags,omitempty"`
-	// NetworkID is the ID of the Neutron network on which to create load balancer VIP, not needed if subnet-id is set.
-	NetworkID string `json:"networkID,omitempty"`
-	// SubnetID is the ID of the Neutron subnet on which to create load balancer VIP.
-	SubnetID string `json:"subnetID,omitempty"`
-	// MemberSubnetID is the ID of the Neutron network on which to create the members of the load balancer.
-	MemberSubnetID string `json:"memberSubnetID,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -785,14 +843,12 @@ type DatacenterSpecBaremetal struct {
 	Tinkerbell *DatacenterSpecTinkerbell `json:"tinkerbell,omitempty"`
 }
 
-var (
-	SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // DatacenterSepcTinkerbell contains spec for tinkerbell provider.
 type DatacenterSpecTinkerbell struct {
@@ -813,16 +869,12 @@ type TinkerbellHTTPSource struct {
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
-type DatacenterSpecBringYourOwn struct {
-}
+type DatacenterSpecBringYourOwn struct{}
 
 // DatacenterSpecEdge describes a datacenter of edge nodes.
-type DatacenterSpecEdge struct {
-}
+type DatacenterSpecEdge struct{}
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// DatacenterSpecPacket describes a Packet datacenter.
+// NOOP.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
@@ -875,6 +927,7 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
 	// Defaults to false.
+	//
 	// Deprecated: Use .kubevirt.usePodResourcesCPU instead.
 	EnableDedicatedCPUs bool `json:"enableDedicatedCpus,omitempty"`
 
@@ -894,6 +947,10 @@ type DatacenterSpecKubevirt struct {
 	// In the tenant cluster, the created StorageClass name will have as name:
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
+
+	// Optional: InfraVolumeSnapshotClasses contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+	// to initialise VolumeSnapshotClasses in the tenant cluster.
+	InfraVolumeSnapshotClasses []KubeVirtInfraVolumeSnapshotClass `json:"infraVolumeSnapshotClasses,omitempty"`
 
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
@@ -1006,6 +1063,18 @@ type KubeVirtInfraStorageClass struct {
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
 }
 
+type KubeVirtInfraVolumeSnapshotClass struct {
+	// InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+	InfraVolumeSnapshotClass string `json:"infraVolumeSnapshotClass"`
+	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+	// snapshot.storage.kubernetes.io/is-default-class: true
+	// If missing or false, annotation will be:
+	// snapshot.storage.kubernetes.io/is-default-class: false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.
+	DeletionPolicy string `json:"deletionPolicy,omitempty"`
+}
+
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
 type CustomNetworkPolicy struct {
 	// Name is the name of the Custom Network Policy.
@@ -1014,14 +1083,12 @@ type CustomNetworkPolicy struct {
 	Spec networkingv1.NetworkPolicySpec `json:"spec"`
 }
 
-var (
-	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // KubeVirtVolumeProvisioner represents what is the provisioner of the storage class volume, whether it will be the csi driver
 // and/or CDI for disk images.
@@ -1143,6 +1210,8 @@ type ContainerRuntimeOpts struct {
 	PauseImage string `json:"pauseImage,omitempty"`
 	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
 	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+	// Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.
+	EnableNonRootDeviceOwnership bool `json:"enableNonRootDeviceOwnership,omitempty"`
 }
 
 // ContainerRuntimeContainerd defines containerd container runtime registries configs.
@@ -1287,8 +1356,7 @@ type KubeLBDatacenterSettings struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
-	// When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
 	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
 	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`

@@ -17,6 +17,7 @@ limitations under the License.
 package fake
 
 import (
+	"context"
 	"time"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -31,7 +32,7 @@ type SharedInformerFactory struct {
 
 // NewFakeSharedInformerFactory returns a new factory.
 func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *SharedInformerFactory {
-	f := kubeinformers.NewFilteredSharedInformerFactory(kubeClient, time.Minute*5, namespace, nil)
+	f := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Minute*5, kubeinformers.WithNamespace(namespace))
 	factory := &SharedInformerFactory{SharedInformerFactory: f}
 	return factory
 }
@@ -71,6 +72,10 @@ type dummySharedIndexInformer struct {
 var _ cache.SharedIndexInformer = &dummySharedIndexInformer{}
 
 func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) (cache.ResourceEventHandlerRegistration, error) {
+	panic("implement me")
+}
+
+func (i *dummySharedIndexInformer) AddEventHandlerWithOptions(handler cache.ResourceEventHandler, options cache.HandlerOptions) (cache.ResourceEventHandlerRegistration, error) {
 	panic("implement me")
 }
 
@@ -114,8 +119,16 @@ func (i *dummySharedIndexInformer) AddIndexers(indexers cache.Indexers) error {
 	panic("implement me")
 }
 
+func (i *dummySharedIndexInformer) RunWithContext(ctx context.Context) {
+	panic("implement me")
+}
+
 func (i *dummySharedIndexInformer) SetTransform(handler cache.TransformFunc) error {
 	return nil
+}
+
+func (i *dummySharedIndexInformer) SetWatchErrorHandlerWithContext(handler cache.WatchErrorHandlerWithContext) error {
+	panic("implement me")
 }
 
 func (i *dummySharedIndexInformer) GetIndexer() cache.Indexer {
