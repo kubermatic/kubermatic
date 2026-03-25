@@ -46,8 +46,8 @@ spec:
       # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
       type: "LoadBalancer"
       port: 8080
-  documentationURL: https://sozercan.github.io/aikit/docs
-  sourceURL: https://github.com/sozercan/aikit
+  documentationURL: https://kaito-project.github.io/aikit/
+  sourceURL: https://github.com/kaito-project/aikit
   logo: |+
     iVBORw0KGgoAAAANSUhEUgAAAE4AAABOCAYAAACOqiAdAAAABGdBTUEAALGPC/xhBQAAACBjSFJN
     AAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAA
