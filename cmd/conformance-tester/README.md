@@ -3,7 +3,7 @@
 Runs static test scenarios against a set of KKP userclusters.
 
 The conformance tester will, by default, test all supported versions on providers using all supported operating systems,
-by creting one cluster for each combination, waiting for it to become healthy, adding nodes and then executing the
+by creating one cluster for each combination, waiting for it to become healthy, adding nodes and then executing the
 selected tests. Optionally the tests can be executed in a pre-existing cluster.
 
 The conformance tester is used both in the KKP e2e tests as well as manually to perform pre-release tests.
