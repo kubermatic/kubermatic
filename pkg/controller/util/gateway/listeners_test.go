@@ -141,7 +141,7 @@ func TestMergeListenersPreservesFields(t *testing.T) {
 			Port:     443,
 			Protocol: gatewayapiv1.HTTPSProtocolType,
 			Hostname: ptr.To(gatewayapiv1.Hostname(dexHostname)),
-			TLS: &gatewayapiv1.ListenerTLSConfig{
+			TLS: &gatewayapiv1.GatewayTLSConfig{
 				Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
 			},
 		},
