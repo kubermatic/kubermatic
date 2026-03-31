@@ -993,7 +993,6 @@ func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 			},
 		},
 	})
-
 	factory := GatewayReconciler(cfg, namespace, nil)
 	_, reconciler := factory()
 
@@ -1042,6 +1041,74 @@ func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 }
 
 func TestEnsureGatewayPreservesDynamicListeners(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "example.com",
+			CertificateIssuer: corev1.TypedLocalObjectReference{
+				Name: "letsencrypt-prod",
+				Kind: certmanagerv1.ClusterIssuerKind,
+			},
+		},
+	})
+
+	// Simulate Gateway with dynamic listener added by httproute-gateway-sync
+	existing := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				common.NameLabel: defaulting.DefaultGatewayName,
+			},
+			Annotations: map[string]string{
+				certmanagerv1.IngressClusterIssuerNameAnnotationKey: "letsencrypt-prod",
+			},
+		},
+		Spec: gatewayapiv1.GatewaySpec{
+			GatewayClassName: gatewayapiv1.ObjectName(defaulting.DefaultGatewayClassName),
+			Listeners: []gatewayapiv1.Listener{
+				{Name: "dex-example-com", Port: 443, Protocol: gatewayapiv1.HTTPSProtocolType},
+				{Name: "http", Port: 80, Protocol: gatewayapiv1.HTTPProtocolType},
+				{Name: "https", Port: 443, Protocol: gatewayapiv1.HTTPSProtocolType},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var updated gatewayapiv1.Gateway
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &updated)
+	if err != nil {
+		t.Fatalf("Gateway should exist: %v", err)
+	}
+
+	// Verify dynamic listener is preserved
+	var foundDex bool
+	for _, l := range updated.Spec.Listeners {
+		if l.Name == "dex-example-com" {
+			foundDex = true
+			break
+		}
+	}
+	if !foundDex {
+		t.Error("dex-example-com listener should be preserved after EnsureGateway")
+	}
+
+	// Verify we have exactly 3 listeners
+	if len(updated.Spec.Listeners) != 3 {
+		t.Errorf("expected 3 listeners, got %d", len(updated.Spec.Listeners))
+	}
+}
+
+func TestEnsureGatewayPreservesDynamicListenersWithOwnership(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 	scheme := fake.NewScheme()

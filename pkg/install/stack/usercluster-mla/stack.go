@@ -139,6 +139,11 @@ func (s *UserClusterMLAStack) Deploy(ctx context.Context, opt stack.DeployOption
 }
 
 func deployMLASecrets(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, MLASecretsChartName) {
+		logger.Info("⭕ Skipping MLA Secrets deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying MLA Secrets…")
 	sublogger := log.Prefix(logger, "   ")
 
