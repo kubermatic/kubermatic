@@ -366,7 +366,7 @@ spec:
       automountServiceAccountToken: true
       initContainers:
         - name: kubectl
-          image: "quay.io/kubermatic-mirror/images/kubectl:1.33"
+          image: "quay.io/kubermatic-mirror/images/kubectl:1.33.4"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
