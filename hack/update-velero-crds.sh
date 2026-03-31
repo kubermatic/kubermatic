@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-if [ "$#" -lt 2 ] || [ "$1" == "--help" ]; then
+if [ "$#" -lt 1 ] || [ "$1" == "--help" ]; then
   cat << EOF
 Usage: $(basename $0) (version)
 where:
