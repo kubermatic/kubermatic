@@ -46,3 +46,14 @@ Please do one of the following options:
 ```documentation
 
 ```
+
+**Test issue**:
+<!--
+Please do one of the following options:
+- Add a link to the GitHub issue for testing this change
+- Add "TBD" if a test issue is needed, but will be created later
+- Add "NONE" if a test issue is not needed
+-->
+```test-issue
+
+```
