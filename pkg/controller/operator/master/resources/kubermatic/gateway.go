@@ -238,42 +238,38 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 }
 
 // gatewayComparable holds the fields used to detect meaningful changes between
-// existing and desired Gateway state. OwnerReferences are intentionally excluded:
-// the managed-by label difference triggers the first update on upgrade, which
-// applies the ownerReference as a side effect. After that initial reconciliation,
-// OwnerReferences stay stable. Including them would cause unnecessary updates if
-// external tools modify ownership metadata.
+// existing and desired Gateway state.
 type gatewayComparable struct {
-	Spec        gatewayapiv1.GatewaySpec
-	Labels      map[string]string
-	Annotations map[string]string
+	Spec            gatewayapiv1.GatewaySpec
+	Labels          map[string]string
+	Annotations     map[string]string
+	OwnerReferences []metav1.OwnerReference
 }
 
 func comparableGateway(gw *gatewayapiv1.Gateway) gatewayComparable {
 	return gatewayComparable{
-		Spec:        gw.Spec,
-		Labels:      gw.Labels,
-		Annotations: gw.Annotations,
+		Spec:            gw.Spec,
+		Labels:          gw.Labels,
+		Annotations:     gw.Annotations,
+		OwnerReferences: gw.OwnerReferences,
 	}
 }
 
 // httpRouteComparable holds the fields used to detect meaningful changes between
-// existing and desired HTTPRoute state. OwnerReferences are intentionally excluded:
-// the managed-by label difference triggers the first update on upgrade, which
-// applies the ownerReference as a side effect. After that initial reconciliation,
-// OwnerReferences stay stable. Including them would cause unnecessary updates if
-// external tools modify ownership metadata.
+// existing and desired HTTPRoute state.
 type httpRouteComparable struct {
-	Spec        gatewayapiv1.HTTPRouteSpec
-	Labels      map[string]string
-	Annotations map[string]string
+	Spec            gatewayapiv1.HTTPRouteSpec
+	Labels          map[string]string
+	Annotations     map[string]string
+	OwnerReferences []metav1.OwnerReference
 }
 
 func comparableHTTPRoute(hr *gatewayapiv1.HTTPRoute) httpRouteComparable {
 	return httpRouteComparable{
-		Spec:        hr.Spec,
-		Labels:      hr.Labels,
-		Annotations: hr.Annotations,
+		Spec:            hr.Spec,
+		Labels:          hr.Labels,
+		Annotations:     hr.Annotations,
+		OwnerReferences: hr.OwnerReferences,
 	}
 }
 
