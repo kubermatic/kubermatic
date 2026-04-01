@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -236,6 +237,12 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 	}
 }
 
+// gatewayComparable holds the fields used to detect meaningful changes between
+// existing and desired Gateway state. OwnerReferences are intentionally excluded:
+// the managed-by label difference triggers the first update on upgrade, which
+// applies the ownerReference as a side effect. After that initial reconciliation,
+// OwnerReferences stay stable. Including them would cause unnecessary updates if
+// external tools modify ownership metadata.
 type gatewayComparable struct {
 	Spec        gatewayapiv1.GatewaySpec
 	Labels      map[string]string
@@ -250,6 +257,12 @@ func comparableGateway(gw *gatewayapiv1.Gateway) gatewayComparable {
 	}
 }
 
+// httpRouteComparable holds the fields used to detect meaningful changes between
+// existing and desired HTTPRoute state. OwnerReferences are intentionally excluded:
+// the managed-by label difference triggers the first update on upgrade, which
+// applies the ownerReference as a side effect. After that initial reconciliation,
+// OwnerReferences stay stable. Including them would cause unnecessary updates if
+// external tools modify ownership metadata.
 type httpRouteComparable struct {
 	Spec        gatewayapiv1.HTTPRouteSpec
 	Labels      map[string]string
@@ -262,6 +275,19 @@ func comparableHTTPRoute(hr *gatewayapiv1.HTTPRoute) httpRouteComparable {
 		Labels:      hr.Labels,
 		Annotations: hr.Annotations,
 	}
+}
+
+// setControllerReference sets a controller owner reference on the object,
+// ignoring AlreadyOwnedError when the object already has a different
+// controller owner. Matches the pattern in modifier.Ownership().
+func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Object, scheme *runtime.Scheme) error {
+	if err := controllerutil.SetControllerReference(owner, controlled, scheme); err != nil {
+		var alreadyOwned *controllerutil.AlreadyOwnedError
+		if !errors.As(err, &alreadyOwned) {
+			return fmt.Errorf("failed to set owner reference: %w", err)
+		}
+	}
+	return nil
 }
 
 // EnsureGateway creates or updates the Gateway. Uses direct client operations instead of the standard reconciling
@@ -294,7 +320,7 @@ func EnsureGateway(
 		return fmt.Errorf("failed to build desired Gateway: %w", err)
 	}
 
-	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+	if err := setControllerReference(cfg, desired, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
 	}
 	kubernetes.EnsureLabels(desired, map[string]string{
@@ -311,7 +337,7 @@ func EnsureGateway(
 	kubernetes.EnsureLabels(updated, desired.Labels)
 	kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
-	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
+	if err := setControllerReference(cfg, updated, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
 	}
 
@@ -345,7 +371,7 @@ func EnsureHTTPRoute(
 		return fmt.Errorf("failed to build desired HTTPRoute: %w", err)
 	}
 
-	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+	if err := setControllerReference(cfg, desired, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
 	}
 	kubernetes.EnsureLabels(desired, map[string]string{
@@ -373,7 +399,7 @@ func EnsureHTTPRoute(
 	kubernetes.EnsureLabels(updated, desired.Labels)
 	kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
-	if err := controllerutil.SetControllerReference(cfg, updated, scheme); err != nil {
+	if err := setControllerReference(cfg, updated, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
 	}
 
