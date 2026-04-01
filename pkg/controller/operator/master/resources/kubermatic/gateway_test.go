@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -1293,5 +1294,120 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 
 	if len(fetched.Status.Parents) == 0 {
 		t.Error("Expected Status Parents to be preserved, but they were cleared (Update was called when it shouldn't have been)")
+	}
+}
+
+func TestEnsureGatewayToleratesExistingOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	// pre-existing Gateway with a different controller owner
+	existing := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultGatewayName,
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v1",
+					Kind:               "ConfigMap",
+					Name:               "other-owner",
+					UID:                types.UID("other-uid"),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
+			Labels: map[string]string{
+				common.NameLabel: defaulting.DefaultGatewayName,
+			},
+		},
+		Spec: gatewayapiv1.GatewaySpec{
+			GatewayClassName: "old-class",
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
+	if err != nil {
+		t.Fatalf("expected no error when Gateway has different controller owner, got: %v", err)
+	}
+}
+
+func TestEnsureHTTPRouteToleratesExistingOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	// pre-existing HTTPRoute with a different controller owner
+	existing := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultHTTPRouteName,
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v1",
+					Kind:               "ConfigMap",
+					Name:               "other-owner",
+					UID:                types.UID("other-uid"),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
+			Labels: map[string]string{
+				common.NameLabel: "kubermatic",
+			},
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "default-gateway",
+						Namespace: (*gatewayapiv1.Namespace)(&namespace),
+					},
+				},
+			},
+			Hostnames: []gatewayapiv1.Hostname{"kubermatic.example.com"},
+			Rules: []gatewayapiv1.HTTPRouteRule{
+				{
+					BackendRefs: []gatewayapiv1.HTTPBackendRef{
+						{
+							BackendRef: gatewayapiv1.BackendRef{
+								BackendObjectReference: gatewayapiv1.BackendObjectReference{
+									Name: APIDeploymentName,
+									Port: ptr.To(gatewayapiv1.PortNumber(80)),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
+	if err != nil {
+		t.Fatalf("expected no error when HTTPRoute has different controller owner, got: %v", err)
 	}
 }
