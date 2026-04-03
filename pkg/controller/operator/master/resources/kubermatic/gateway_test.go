@@ -26,13 +26,28 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+func testKubermaticConfiguration(spec kubermaticv1.KubermaticConfigurationSpec) *kubermaticv1.KubermaticConfiguration {
+	return &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+			UID:       types.UID("test-uid"),
+		},
+		Spec: spec,
+	}
+}
 
 func TestGatewayReconciler(t *testing.T) {
 	testCases := []struct {
@@ -493,18 +508,17 @@ func TestHTTPRouteReconciler(t *testing.T) {
 
 func TestEnsureGatewayCreatesNew(t *testing.T) {
 	ctx := context.Background()
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "kubermatic.example.com",
-			},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
 		},
-	}
+	})
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -535,11 +549,29 @@ func TestEnsureGatewayCreatesNew(t *testing.T) {
 	if httpListener.Protocol != gatewayapiv1.HTTPProtocolType {
 		t.Errorf("expected protocol HTTP, got %s", httpListener.Protocol)
 	}
+
+	if len(created.OwnerReferences) != 1 {
+		t.Fatalf("expected 1 owner reference, got %d", len(created.OwnerReferences))
+	}
+	ownerRef := created.OwnerReferences[0]
+	if ownerRef.Kind != "KubermaticConfiguration" {
+		t.Errorf("expected owner kind KubermaticConfiguration, got %s", ownerRef.Kind)
+	}
+	if ownerRef.Name != "kubermatic" {
+		t.Errorf("expected owner name kubermatic, got %s", ownerRef.Name)
+	}
+	if ownerRef.UID != "test-uid" {
+		t.Errorf("expected owner UID test-uid, got %s", ownerRef.UID)
+	}
+	if created.Labels[modifier.ManagedByLabel] != common.OperatorName {
+		t.Errorf("expected managed-by label %q, got %q", common.OperatorName, created.Labels[modifier.ManagedByLabel])
+	}
 }
 
 func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
 	existing := &gatewayapiv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -561,20 +593,18 @@ func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "kubermatic.example.com",
-				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
-					ClassName: defaulting.DefaultGatewayClassName,
-				},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ClassName: defaulting.DefaultGatewayClassName,
 			},
 		},
-	}
+	})
 
-	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -588,22 +618,383 @@ func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 	if updated.Spec.GatewayClassName != gatewayapiv1.ObjectName(defaulting.DefaultGatewayClassName) {
 		t.Errorf("expected GatewayClassName %s, got %s", defaulting.DefaultGatewayClassName, updated.Spec.GatewayClassName)
 	}
+
+	if len(updated.OwnerReferences) != 1 {
+		t.Fatalf("expected 1 owner reference, got %d", len(updated.OwnerReferences))
+	}
+	if updated.OwnerReferences[0].Kind != "KubermaticConfiguration" {
+		t.Errorf("expected owner kind KubermaticConfiguration, got %s", updated.OwnerReferences[0].Kind)
+	}
+	if updated.Labels[modifier.ManagedByLabel] != common.OperatorName {
+		t.Errorf("expected managed-by label %q, got %q", common.OperatorName, updated.Labels[modifier.ManagedByLabel])
+	}
+	if updated.Labels["old-label"] != "old-value" {
+		t.Errorf("expected user label 'old-label' to be preserved, got %q", updated.Labels["old-label"])
+	}
+}
+
+func TestEnsureGatewayPreservesUserMetadata(t *testing.T) {
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	testCases := []struct {
+		name                string
+		cfg                 *kubermaticv1.KubermaticConfiguration
+		existingLabels      map[string]string
+		existingAnnotations map[string]string
+		wantLabels          map[string]string
+		wantAnnotations     map[string]string
+	}{
+		{
+			name: "user labels and annotations preserved without cert-manager",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+				},
+			}),
+			existingLabels: map[string]string{
+				"team": "platform",
+			},
+			existingAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+			},
+			wantLabels: map[string]string{
+				"team":                  "platform",
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+			},
+		},
+		{
+			name: "user annotations coexist with cert-manager ClusterIssuer annotation",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "letsencrypt-prod",
+						Kind: certmanagerv1.ClusterIssuerKind,
+					},
+				},
+			}),
+			existingLabels: map[string]string{
+				"environment": "production",
+			},
+			existingAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+			},
+			wantLabels: map[string]string{
+				"environment":           "production",
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname":         "example.kubermatic.com",
+				certmanagerv1.IngressClusterIssuerNameAnnotationKey: "letsencrypt-prod",
+			},
+		},
+		{
+			name: "user annotations coexist with cert-manager Issuer annotation",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "my-issuer",
+						Kind: certmanagerv1.IssuerKind,
+					},
+				},
+			}),
+			existingLabels: map[string]string{},
+			existingAnnotations: map[string]string{
+				"custom.io/note": "managed-externally",
+			},
+			wantLabels: map[string]string{
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"custom.io/note": "managed-externally",
+				certmanagerv1.IngressIssuerNameAnnotationKey: "my-issuer",
+			},
+		},
+		{
+			name: "no user metadata, only operator metadata present",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+				},
+			}),
+			existingLabels:      map[string]string{},
+			existingAnnotations: map[string]string{},
+			wantLabels: map[string]string{
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{},
+		},
+		{
+			name: "multiple user labels and annotations at once",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "letsencrypt-prod",
+						Kind: certmanagerv1.ClusterIssuerKind,
+					},
+				},
+			}),
+			existingLabels: map[string]string{
+				"team":        "platform",
+				"environment": "staging",
+				"cost-center": "engineering",
+			},
+			existingAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+				"external-dns.alpha.kubernetes.io/ttl":      "60",
+				"custom.io/owner":                           "team-alpha",
+			},
+			wantLabels: map[string]string{
+				"team":                  "platform",
+				"environment":           "staging",
+				"cost-center":           "engineering",
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname":         "example.kubermatic.com",
+				"external-dns.alpha.kubernetes.io/ttl":              "60",
+				"custom.io/owner":                                   "team-alpha",
+				certmanagerv1.IngressClusterIssuerNameAnnotationKey: "letsencrypt-prod",
+			},
+		},
+		{
+			name: "operator overwrites stale managed label value",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+				},
+			}),
+			existingLabels: map[string]string{
+				common.NameLabel: "stale-value",
+				"team":           "platform",
+			},
+			existingAnnotations: map[string]string{},
+			wantLabels: map[string]string{
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+				"team":                  "platform",
+			},
+			wantAnnotations: map[string]string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// build existing Gateway with the correct spec so only metadata differs
+			factory := GatewayReconciler(tc.cfg, namespace, nil)
+			_, reconciler := factory()
+			base := &gatewayapiv1.Gateway{}
+			if _, err := reconciler(base); err != nil {
+				t.Fatalf("failed to build base Gateway: %v", err)
+			}
+
+			// apply operator ownership so the test starts from a stable state
+			if err := controllerutil.SetControllerReference(tc.cfg, base, scheme); err != nil {
+				t.Fatalf("failed to set owner reference: %v", err)
+			}
+			kubernetes.EnsureLabels(base, map[string]string{
+				modifier.ManagedByLabel: common.OperatorName,
+			})
+
+			// layer on user-provided metadata (may overwrite operator labels to simulate stale state)
+			kubernetes.EnsureLabels(base, tc.existingLabels)
+			kubernetes.EnsureAnnotations(base, tc.existingAnnotations)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(base).Build()
+
+			if err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), tc.cfg, namespace, scheme); err != nil {
+				t.Fatalf("EnsureGateway failed: %v", err)
+			}
+
+			var updated gatewayapiv1.Gateway
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &updated); err != nil {
+				t.Fatalf("Gateway should exist: %v", err)
+			}
+
+			if len(updated.Labels) != len(tc.wantLabels) {
+				t.Errorf("expected %d labels, got %d: %v", len(tc.wantLabels), len(updated.Labels), updated.Labels)
+			}
+			for k, v := range tc.wantLabels {
+				if updated.Labels[k] != v {
+					t.Errorf("expected label %q=%q, got %q", k, v, updated.Labels[k])
+				}
+			}
+			if len(updated.Annotations) != len(tc.wantAnnotations) {
+				t.Errorf("expected %d annotations, got %d: %v", len(tc.wantAnnotations), len(updated.Annotations), updated.Annotations)
+			}
+			for k, v := range tc.wantAnnotations {
+				if updated.Annotations[k] != v {
+					t.Errorf("expected annotation %q=%q, got %q", k, v, updated.Annotations[k])
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	testCases := []struct {
+		name                string
+		existingLabels      map[string]string
+		existingAnnotations map[string]string
+		wantLabels          map[string]string
+		wantAnnotations     map[string]string
+	}{
+		{
+			name: "user labels and annotations preserved",
+			existingLabels: map[string]string{
+				"team": "platform",
+			},
+			existingAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+			},
+			wantLabels: map[string]string{
+				"team":                  "platform",
+				common.NameLabel:        "kubermatic",
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+			},
+		},
+		{
+			name:                "no user metadata, only operator metadata",
+			existingLabels:      map[string]string{},
+			existingAnnotations: map[string]string{},
+			wantLabels: map[string]string{
+				common.NameLabel:        "kubermatic",
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{},
+		},
+		{
+			name: "multiple user labels and annotations at once",
+			existingLabels: map[string]string{
+				"team":        "platform",
+				"environment": "staging",
+			},
+			existingAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+				"external-dns.alpha.kubernetes.io/ttl":      "60",
+				"custom.io/owner":                           "team-alpha",
+			},
+			wantLabels: map[string]string{
+				"team":                  "platform",
+				"environment":           "staging",
+				common.NameLabel:        "kubermatic",
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
+				"external-dns.alpha.kubernetes.io/ttl":      "60",
+				"custom.io/owner":                           "team-alpha",
+			},
+		},
+		{
+			name: "operator overwrites stale managed label value",
+			existingLabels: map[string]string{
+				common.NameLabel: "stale-value",
+				"team":           "platform",
+			},
+			existingAnnotations: map[string]string{},
+			wantLabels: map[string]string{
+				common.NameLabel:        "kubermatic",
+				modifier.ManagedByLabel: common.OperatorName,
+				"team":                  "platform",
+			},
+			wantAnnotations: map[string]string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+				},
+			})
+
+			// build existing HTTPRoute with correct spec so only metadata differs
+			factory := HTTPRouteReconciler(cfg, namespace)
+			_, reconciler := factory()
+			base := &gatewayapiv1.HTTPRoute{}
+			if _, err := reconciler(base); err != nil {
+				t.Fatalf("failed to build base HTTPRoute: %v", err)
+			}
+
+			if err := controllerutil.SetControllerReference(cfg, base, scheme); err != nil {
+				t.Fatalf("failed to set owner reference: %v", err)
+			}
+			kubernetes.EnsureLabels(base, map[string]string{
+				modifier.ManagedByLabel: common.OperatorName,
+			})
+
+			// layer on user-provided metadata (may overwrite operator labels to simulate stale state)
+			kubernetes.EnsureLabels(base, tc.existingLabels)
+			kubernetes.EnsureAnnotations(base, tc.existingAnnotations)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(base).Build()
+
+			if err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme); err != nil {
+				t.Fatalf("EnsureHTTPRoute failed: %v", err)
+			}
+
+			var updated gatewayapiv1.HTTPRoute
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: httpRouteName}, &updated); err != nil {
+				t.Fatalf("HTTPRoute should exist: %v", err)
+			}
+
+			if len(updated.Labels) != len(tc.wantLabels) {
+				t.Errorf("expected %d labels, got %d: %v", len(tc.wantLabels), len(updated.Labels), updated.Labels)
+			}
+			for k, v := range tc.wantLabels {
+				if updated.Labels[k] != v {
+					t.Errorf("expected label %q=%q, got %q", k, v, updated.Labels[k])
+				}
+			}
+			if len(updated.Annotations) != len(tc.wantAnnotations) {
+				t.Errorf("expected %d annotations, got %d: %v", len(tc.wantAnnotations), len(updated.Annotations), updated.Annotations)
+			}
+			for k, v := range tc.wantAnnotations {
+				if updated.Annotations[k] != v {
+					t.Errorf("expected annotation %q=%q, got %q", k, v, updated.Annotations[k])
+				}
+			}
+		})
+	}
 }
 
 func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "kubermatic.example.com",
-				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
-					ClassName: defaulting.DefaultGatewayClassName,
-				},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ClassName: defaulting.DefaultGatewayClassName,
 			},
 		},
-	}
+	})
+
 	factory := GatewayReconciler(cfg, namespace, nil)
 	_, reconciler := factory()
 
@@ -611,6 +1002,14 @@ func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 	if _, err := reconciler(desired); err != nil {
 		t.Fatalf("failed to build desired Gateway: %v", err)
 	}
+
+	// set ownership on desired so existing (DeepCopy) matches what EnsureGateway produces
+	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+		t.Fatalf("failed to set owner reference: %v", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
 
 	existing := desired.DeepCopy()
 	existing.Status = gatewayapiv1.GatewayStatus{
@@ -625,9 +1024,9 @@ func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -646,26 +1045,28 @@ func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
 func TestEnsureGatewayPreservesDynamicListeners(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "example.com",
-				CertificateIssuer: corev1.TypedLocalObjectReference{
-					Name: "letsencrypt-prod",
-					Kind: certmanagerv1.ClusterIssuerKind,
-				},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "example.com",
+			CertificateIssuer: corev1.TypedLocalObjectReference{
+				Name: "letsencrypt-prod",
+				Kind: certmanagerv1.ClusterIssuerKind,
 			},
 		},
-	}
+	})
 
-	// Simulate Gateway with dynamic listener added by httproute-gateway-sync
+	// Simulate Gateway with dynamic listener added by httproute-gateway-sync.
+	// Pre-set ownership so that the only potential diff is in listeners/spec,
+	// keeping this test focused on listener preservation.
 	existing := &gatewayapiv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				common.NameLabel: defaulting.DefaultGatewayName,
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
 			},
 			Annotations: map[string]string{
 				certmanagerv1.IngressClusterIssuerNameAnnotationKey: "letsencrypt-prod",
@@ -680,10 +1081,13 @@ func TestEnsureGatewayPreservesDynamicListeners(t *testing.T) {
 			},
 		},
 	}
+	if err := controllerutil.SetControllerReference(cfg, existing, scheme); err != nil {
+		t.Fatalf("failed to set owner reference on existing: %v", err)
+	}
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -714,18 +1118,17 @@ func TestEnsureGatewayPreservesDynamicListeners(t *testing.T) {
 
 func TestEnsureHTTPRouteCreatesNew(t *testing.T) {
 	ctx := context.Background()
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "kubermatic.example.com",
-			},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
 		},
-	}
+	})
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -754,19 +1157,28 @@ func TestEnsureHTTPRouteCreatesNew(t *testing.T) {
 	if apiRule.BackendRefs[0].Name != APIDeploymentName {
 		t.Errorf("expected backend %s, got %s", APIDeploymentName, apiRule.BackendRefs[0].Name)
 	}
+
+	if len(created.OwnerReferences) != 1 {
+		t.Fatalf("expected 1 owner reference, got %d", len(created.OwnerReferences))
+	}
+	if created.OwnerReferences[0].Kind != "KubermaticConfiguration" {
+		t.Errorf("expected owner kind KubermaticConfiguration, got %s", created.OwnerReferences[0].Kind)
+	}
+	if created.Labels[modifier.ManagedByLabel] != common.OperatorName {
+		t.Errorf("expected managed-by label %q, got %q", common.OperatorName, created.Labels[modifier.ManagedByLabel])
+	}
 }
 
 func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
+	scheme := fake.NewScheme()
 
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Domain: "kubermatic.example.com",
-			},
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
 		},
-	}
+	})
 
 	factory := HTTPRouteReconciler(cfg, namespace)
 	_, reconciler := factory()
@@ -775,6 +1187,14 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 	if _, err := reconciler(desired); err != nil {
 		t.Fatalf("failed to build desired HTTPRoute: %v", err)
 	}
+
+	// set ownership on desired so existing (DeepCopy) matches what EnsureHTTPRoute produces
+	if err := controllerutil.SetControllerReference(cfg, desired, scheme); err != nil {
+		t.Fatalf("failed to set owner reference: %v", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
 
 	existing := desired.DeepCopy()
 	existing.Status.RouteStatus = gatewayapiv1.RouteStatus{
@@ -791,9 +1211,9 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -807,5 +1227,120 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 
 	if len(fetched.Status.Parents) == 0 {
 		t.Error("Expected Status Parents to be preserved, but they were cleared (Update was called when it shouldn't have been)")
+	}
+}
+
+func TestEnsureGatewayToleratesExistingOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	// pre-existing Gateway with a different controller owner
+	existing := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultGatewayName,
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v1",
+					Kind:               "ConfigMap",
+					Name:               "other-owner",
+					UID:                types.UID("other-uid"),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
+			Labels: map[string]string{
+				common.NameLabel: defaulting.DefaultGatewayName,
+			},
+		},
+		Spec: gatewayapiv1.GatewaySpec{
+			GatewayClassName: "old-class",
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
+	if err != nil {
+		t.Fatalf("expected no error when Gateway has different controller owner, got: %v", err)
+	}
+}
+
+func TestEnsureHTTPRouteToleratesExistingOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	// pre-existing HTTPRoute with a different controller owner
+	existing := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultHTTPRouteName,
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v1",
+					Kind:               "ConfigMap",
+					Name:               "other-owner",
+					UID:                types.UID("other-uid"),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
+			Labels: map[string]string{
+				common.NameLabel: "kubermatic",
+			},
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "default-gateway",
+						Namespace: (*gatewayapiv1.Namespace)(&namespace),
+					},
+				},
+			},
+			Hostnames: []gatewayapiv1.Hostname{"kubermatic.example.com"},
+			Rules: []gatewayapiv1.HTTPRouteRule{
+				{
+					BackendRefs: []gatewayapiv1.HTTPBackendRef{
+						{
+							BackendRef: gatewayapiv1.BackendRef{
+								BackendObjectReference: gatewayapiv1.BackendObjectReference{
+									Name: APIDeploymentName,
+									Port: ptr.To(gatewayapiv1.PortNumber(80)),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme)
+	if err != nil {
+		t.Fatalf("expected no error when HTTPRoute has different controller owner, got: %v", err)
 	}
 }
