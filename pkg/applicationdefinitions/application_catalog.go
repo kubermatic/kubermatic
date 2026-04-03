@@ -17,6 +17,8 @@ limitations under the License.
 package applicationdefinitions
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 
@@ -127,16 +129,32 @@ func systemApplicationDefinitionReconcilerFactory(
 				updateApplicationDefinition(fileAppDef, config)
 			}
 
-			// Also, we need to ensure that the default values are set correctly. To do this:
-			// 1. Get the default values from the currently being reconciled application definition (clusterAppDef)
-			// 2. If it's empty, use `fileAppDef` default values as a source of truth - ensuring the values are never empty
-			// 3. If it's not empty, use the current values from the reconciled object, allowing users to override the default values
-			if clusterAppDef.Spec.DefaultValuesBlock != "" && clusterAppDef.Spec.DefaultValuesBlock != "{}" {
+			// detect whether an admin has modified defaultValuesBlock since our
+			// last apply. If so, preserve their override. Otherwise, use the
+			// file-embedded value so upstream changes propagate on upgrade.
+			fileHash := sha1Hex(fileAppDef.Spec.DefaultValuesBlock)
+			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
+			clusterHash := sha1Hex(clusterAppDef.Spec.DefaultValuesBlock)
+
+			if clusterAppDef.Spec.DefaultValuesBlock != "" &&
+				clusterAppDef.Spec.DefaultValuesBlock != "{}" &&
+				storedHash != "" &&
+				storedHash != clusterHash {
+				// admin modified the value since our last apply -- preserve it
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
 			clusterAppDef.Name = fileAppDef.Name
 			clusterAppDef.Spec = fileAppDef.Spec
+
+			// record what file hash we applied so future reconciles can detect admin changes
+			annotations := clusterAppDef.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
+			annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation] = fileHash
+			clusterAppDef.SetAnnotations(annotations)
+
 			return clusterAppDef, nil
 		}
 	}
@@ -168,4 +186,9 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.SystemApplications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.SystemApplications.PlainHTTP
 	}
+}
+
+func sha1Hex(s string) string {
+	sum := sha1.Sum([]byte(s))
+	return hex.EncodeToString(sum[:])
 }
