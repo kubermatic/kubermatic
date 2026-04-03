@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -27,14 +28,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -232,32 +237,53 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 	}
 }
 
+// gatewayComparable holds the fields used to detect meaningful changes between
+// existing and desired Gateway state.
 type gatewayComparable struct {
-	Spec        gatewayapiv1.GatewaySpec
-	Labels      map[string]string
-	Annotations map[string]string
+	Spec            gatewayapiv1.GatewaySpec
+	Labels          map[string]string
+	Annotations     map[string]string
+	OwnerReferences []metav1.OwnerReference
 }
 
 func comparableGateway(gw *gatewayapiv1.Gateway) gatewayComparable {
 	return gatewayComparable{
-		Spec:        gw.Spec,
-		Labels:      gw.Labels,
-		Annotations: gw.Annotations,
+		Spec:            gw.Spec,
+		Labels:          gw.Labels,
+		Annotations:     gw.Annotations,
+		OwnerReferences: gw.OwnerReferences,
 	}
 }
 
+// httpRouteComparable holds the fields used to detect meaningful changes between
+// existing and desired HTTPRoute state.
 type httpRouteComparable struct {
-	Spec        gatewayapiv1.HTTPRouteSpec
-	Labels      map[string]string
-	Annotations map[string]string
+	Spec            gatewayapiv1.HTTPRouteSpec
+	Labels          map[string]string
+	Annotations     map[string]string
+	OwnerReferences []metav1.OwnerReference
 }
 
 func comparableHTTPRoute(hr *gatewayapiv1.HTTPRoute) httpRouteComparable {
 	return httpRouteComparable{
-		Spec:        hr.Spec,
-		Labels:      hr.Labels,
-		Annotations: hr.Annotations,
+		Spec:            hr.Spec,
+		Labels:          hr.Labels,
+		Annotations:     hr.Annotations,
+		OwnerReferences: hr.OwnerReferences,
 	}
+}
+
+// setControllerReference sets a controller owner reference on the object,
+// ignoring AlreadyOwnedError when the object already has a different
+// controller owner. Matches the pattern in modifier.Ownership().
+func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Object, scheme *runtime.Scheme) error {
+	if err := controllerutil.SetControllerReference(owner, controlled, scheme); err != nil {
+		var alreadyOwned *controllerutil.AlreadyOwnedError
+		if !errors.As(err, &alreadyOwned) {
+			return fmt.Errorf("failed to set owner reference: %w", err)
+		}
+	}
+	return nil
 }
 
 // EnsureGateway creates or updates the Gateway. Uses direct client operations instead of the standard reconciling
@@ -269,6 +295,7 @@ func EnsureGateway(
 	log *zap.SugaredLogger,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
+	scheme *runtime.Scheme,
 ) error {
 	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
 
@@ -289,27 +316,32 @@ func EnsureGateway(
 		return fmt.Errorf("failed to build desired Gateway: %w", err)
 	}
 
+	if err := setControllerReference(cfg, desired, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
+
 	if apierrors.IsNotFound(err) {
 		log.Debugw("Creating Gateway", "name", gatewayName, "namespace", namespace)
 		return client.Create(ctx, desired)
 	}
 
+	updated := existing.DeepCopy()
+	updated.Spec = desired.Spec
+	kubernetes.EnsureLabels(updated, desired.Labels)
+	kubernetes.EnsureAnnotations(updated, desired.Annotations)
+
+	if err := setControllerReference(cfg, updated, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
+	}
+
 	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
-	if equality.Semantic.DeepEqual(comparableGateway(&existing), comparableGateway(desired)) {
+	if equality.Semantic.DeepEqual(comparableGateway(&existing), comparableGateway(updated)) {
 		log.Debugw("Gateway unchanged, skipping update", "name", gatewayName)
 
 		return nil
-	}
-
-	updated := existing.DeepCopy()
-	updated.Spec = desired.Spec
-	updated.Labels = desired.Labels
-	if updated.Annotations == nil {
-		updated.Annotations = make(map[string]string)
-	}
-
-	for k, v := range desired.Annotations {
-		updated.Annotations[k] = v
 	}
 
 	log.Debugw("Updating Gateway", "name", gatewayName)
@@ -325,6 +357,7 @@ func EnsureHTTPRoute(
 	log *zap.SugaredLogger,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
+	scheme *runtime.Scheme,
 ) error {
 	factory := HTTPRouteReconciler(cfg, namespace)
 	routeName, reconciler := factory()
@@ -333,6 +366,13 @@ func EnsureHTTPRoute(
 	if _, err := reconciler(desired); err != nil {
 		return fmt.Errorf("failed to build desired HTTPRoute: %w", err)
 	}
+
+	if err := setControllerReference(cfg, desired, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
+	}
+	kubernetes.EnsureLabels(desired, map[string]string{
+		modifier.ManagedByLabel: common.OperatorName,
+	})
 
 	key := types.NamespacedName{Namespace: namespace, Name: routeName}
 
@@ -347,21 +387,23 @@ func EnsureHTTPRoute(
 		return fmt.Errorf("failed to get HTTPRoute %s/%s: %w", namespace, routeName, err)
 	}
 
+	// Build the merged state: desired labels/annotations on top of existing ones.
+	// This preserves user-added metadata (e.g. external-dns annotations) while
+	// ensuring operator-managed fields are up to date.
+	updated := existing.DeepCopy()
+	updated.Spec = desired.Spec
+	kubernetes.EnsureLabels(updated, desired.Labels)
+	kubernetes.EnsureAnnotations(updated, desired.Annotations)
+
+	if err := setControllerReference(cfg, updated, scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
+	}
+
 	// compare only Spec/Labels/Annotations (ignore Status to avoid update loops)
-	if equality.Semantic.DeepEqual(comparableHTTPRoute(&existing), comparableHTTPRoute(desired)) {
+	if equality.Semantic.DeepEqual(comparableHTTPRoute(&existing), comparableHTTPRoute(updated)) {
 		log.Debugw("HTTPRoute unchanged, skipping update", "name", routeName)
 
 		return nil
-	}
-
-	updated := existing.DeepCopy()
-	updated.Spec = desired.Spec
-	updated.Labels = desired.Labels
-	if updated.Annotations == nil {
-		updated.Annotations = make(map[string]string)
-	}
-	for k, v := range desired.Annotations {
-		updated.Annotations[k] = v
 	}
 
 	log.Debugw("Updating HTTPRoute", "name", routeName)
