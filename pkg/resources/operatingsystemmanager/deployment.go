@@ -55,7 +55,7 @@ var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 }
 
 const (
-	Tag = "v1.10.1"
+	Tag = "v1.10.3"
 )
 
 type operatingSystemManagerData interface {
