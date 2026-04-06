@@ -97,17 +97,17 @@ func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.
 
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
-// * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
-// * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
-// * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
-// * rule group controller - manage rule groups that will be used to generate alerts (syncs RuleGroup CRs to Cortex/Loki HTTP API).
-// * rule group sync controller - fan out operator-managed RuleGroup templates from the MLA namespace into every enabled cluster namespace.
-// * default rule group controller - seed a predefined RuleGroup into a cluster namespace the first time user-cluster monitoring is enabled;
-//   the object is created once and then left entirely under user control (never overwritten or deleted by this controller).
-// * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
-// * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
-// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
+//   - org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
+//   - user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
+//   - datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
+//   - alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
+//   - rule group controller - manage rule groups that will be used to generate alerts (syncs RuleGroup CRs to Cortex/Loki HTTP API).
+//   - rule group sync controller - fan out operator-managed RuleGroup templates from the MLA namespace into every enabled cluster namespace.
+//   - default rule group controller - seed a predefined RuleGroup into a cluster namespace the first time user-cluster monitoring is enabled;
+//     the object is created once and then left entirely under user control (never overwritten or deleted by this controller).
+//   - dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
+//   - ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
+//   - cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
