@@ -209,9 +209,9 @@ func TestDefaultRuleGroupReconciler(t *testing.T) {
 			expectClusterID: "", // no label check — we verify custom Data is preserved below
 		},
 		{
-			name:        "cluster not found: reconcile is a no-op",
-			clusterName: "nonexistent",
-			objects:     []ctrlruntimeclient.Object{},
+			name:          "cluster not found: reconcile is a no-op",
+			clusterName:   "nonexistent",
+			objects:       []ctrlruntimeclient.Object{},
 			expectCreated: false,
 		},
 		{
