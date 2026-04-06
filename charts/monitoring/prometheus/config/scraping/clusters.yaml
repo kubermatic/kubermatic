@@ -12,46 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Federation scrape job removed: per-cluster Prometheus instances now run in agent
+# mode and push metrics directly via remote_write. No pull-based federation needed.
+
+# empty name is left - as it is a mandatory field for scrape config. We will remove this file in future releases.
 job_name: clusters
-honor_labels: true
-params:
-  match[]:
-  - '{kubermatic="federate"}'
-metrics_path: /federate
-scheme: http
-kubernetes_sd_configs:
-- role: endpoints
-relabel_configs:
-- source_labels: [__meta_kubernetes_service_label_cluster]
-  separator: ;
-  regex: user
-  replacement: $1
-  action: keep
-- source_labels: [__meta_kubernetes_endpoint_port_name]
-  separator: ;
-  regex: web
-  replacement: $1
-  action: keep
-- source_labels: [__meta_kubernetes_namespace]
-  separator: ;
-  regex: (.*)
-  target_label: namespace
-  replacement: $1
-  action: replace
-- source_labels: [__meta_kubernetes_pod_name]
-  separator: ;
-  regex: (.*)
-  target_label: pod
-  replacement: $1
-  action: replace
-- source_labels: [__meta_kubernetes_service_name]
-  separator: ;
-  regex: (.*)
-  target_label: service
-  replacement: $1
-  action: replace
-- separator: ;
-  regex: (.*)
-  target_label: endpoint
-  replacement: web
-  action: replace

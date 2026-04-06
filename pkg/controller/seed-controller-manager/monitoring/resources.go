@@ -30,7 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/reconciler/pkg/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -127,15 +131,36 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 	return nil
 }
 
+// seedPrometheusNamespace is the namespace where the seed-level Prometheus runs.
+const seedPrometheusNamespace = "monitoring"
+
+// getSeedPrometheusReplicas returns the current replica count of the seed Prometheus
+// StatefulSet. Returns 0 if the StatefulSet does not exist (seed monitoring not
+// installed) or has 0 replicas — callers must treat 0 as "no remote_write targets".
+func (r *Reconciler) getSeedPrometheusReplicas(ctx context.Context) int32 {
+	sts := &appsv1.StatefulSet{}
+	if err := r.Get(ctx, types.NamespacedName{Name: "prometheus", Namespace: seedPrometheusNamespace}, sts); err != nil {
+		// NotFound means the monitoring stack is not installed; other errors are
+		// transient — in both cases omit remote_write so the agent does not
+		// accumulate WAL data for unreachable targets.
+		return 0
+	}
+	if sts.Spec.Replicas == nil {
+		return 0
+	}
+	return *sts.Spec.Replicas
+}
+
 // GetConfigMapReconcilers returns all ConfigMapReconcilers that are currently in use.
-func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+func GetConfigMapReconcilers(data *resources.TemplateData, seedPrometheusReplicas int32) []reconciling.NamedConfigMapReconcilerFactory {
 	return []reconciling.NamedConfigMapReconcilerFactory{
-		prometheus.ConfigMapReconciler(data),
+		prometheus.ConfigMapReconciler(data, seedPrometheusReplicas),
 	}
 }
 
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetConfigMapReconcilers(data)
+	replicas := r.getSeedPrometheusReplicas(ctx)
+	creators := GetConfigMapReconcilers(data, replicas)
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
@@ -183,20 +208,27 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 	return kkpreconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, r)
 }
 
-// GetServiceReconcilers returns all service creators that are currently in use.
-func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServiceReconcilerFactory {
-	return []reconciling.NamedServiceReconcilerFactory{
-		prometheus.ServiceReconciler(data),
+// migratePrometheusFederationService deletes the legacy per-cluster "prometheus"
+// Service that was used as a federation scrape target by the seed Prometheus.
+// In agent mode the per-cluster Prometheus pushes metrics out via remote_write;
+// the Service is no longer needed and would otherwise be left as an orphan.
+func (r *Reconciler) migratePrometheusFederationService(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	svc := &corev1.Service{}
+	key := types.NamespacedName{Name: "prometheus", Namespace: cluster.Status.NamespaceName}
+	if err := r.Get(ctx, key, svc); err != nil {
+		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
+	// Only delete if it carries the federation label set by the old ServiceReconciler.
+	if svc.Labels["cluster"] != "user" {
+		return nil
+	}
+	if err := r.Delete(ctx, svc); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete legacy prometheus federation service: %w", err)
+	}
+	return nil
 }
 
-func (r *Reconciler) ensureServices(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetServiceReconcilers(data)
-
-	return reconciling.ReconcileServices(ctx, creators, cluster.Status.NamespaceName, r)
-}
-
-// GetServiceReconcilers returns all service creators that are currently in use.
+// GetServiceAccountReconcilers returns all service creators that are currently in use.
 func GetServiceAccountReconcilers() []reconciling.NamedServiceAccountReconcilerFactory {
 	return []reconciling.NamedServiceAccountReconcilerFactory{
 		prometheus.ServiceAccountReconciler(),

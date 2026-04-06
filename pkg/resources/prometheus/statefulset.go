@@ -42,12 +42,12 @@ const (
 var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 	name: {
 		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
 		},
 	},
 }
@@ -102,16 +102,7 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 				{
 					Name:  resources.PrometheusStatefulSetName,
 					Image: registry.Must(data.RewriteImage(resources.RegistryQuay + "/prometheus/prometheus:" + tag)),
-					Args: []string{
-						"--config.file=/etc/prometheus/config/prometheus.yaml",
-						"--storage.tsdb.path=/var/prometheus/data",
-						"--storage.tsdb.min-block-duration=15m",
-						"--storage.tsdb.max-block-duration=30m",
-						"--storage.tsdb.retention.time=1h",
-						"--web.enable-lifecycle",
-						"--storage.tsdb.no-lockfile",
-						"--web.route-prefix=/",
-					},
+					Args: prometheusAgentArgs(),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "web",
@@ -144,7 +135,7 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 						PeriodSeconds:       5,
 						TimeoutSeconds:      3,
 						FailureThreshold:    10,
-						InitialDelaySeconds: 30,
+						InitialDelaySeconds: 10, // agent mode has no TSDB to replay on startup
 						SuccessThreshold:    1,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -198,7 +189,11 @@ func getVolumes() []corev1.Volume {
 		{
 			Name: volumeDataName,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					// Cap WAL disk usage; agent mode holds all scraped series in WAL
+					// until remote_write is acknowledged.
+					SizeLimit: resource.NewQuantity(500*1024*1024, resource.BinarySI),
+				},
 			},
 		},
 		{
@@ -217,5 +212,15 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
+	}
+}
+
+func prometheusAgentArgs() []string {
+	return []string{
+		"--config.file=/etc/prometheus/config/prometheus.yaml",
+		"--enable-feature=agent",
+		"--storage.agent.path=/var/prometheus/data",
+		"--web.enable-lifecycle",
+		"--web.route-prefix=/",
 	}
 }

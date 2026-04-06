@@ -74,6 +74,7 @@ spec:
             {{- end }}
             --web.enable-lifecycle \
             --web.enable-admin-api \
+            --web.enable-remote-write-receiver \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             {{- range $key, $value := .Values.prometheus.extraArgs }}
             --{{ $key }}={{ $value }} \

@@ -45,6 +45,33 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 		allErrs = append(allErrs, errs...)
 	}
 
+	allErrs = append(allErrs, validateUserClusterMonitoring(&spec.UserCluster.Monitoring, field.NewPath("spec", "userCluster", "monitoring"))...)
+
+	return allErrs
+}
+
+func validateUserClusterMonitoring(monitoring *kubermaticv1.KubermaticUserClusterMonitoringConfiguration, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Per-cluster Prometheus runs in agent mode and cannot evaluate rules.
+	// CustomRules and DisableDefaultRules only applied to the old TSDB-based
+	// per-cluster Prometheus; all alerting rules now live at the seed level.
+	if monitoring.CustomRules != "" {
+		allErrs = append(allErrs, field.Forbidden(
+			fldPath.Child("customRules"),
+			"per-cluster Prometheus runs in agent mode and cannot evaluate rules; "+
+				"custom rules must be added to the seed-level Prometheus instead",
+		))
+	}
+
+	if monitoring.DisableDefaultRules {
+		allErrs = append(allErrs, field.Forbidden(
+			fldPath.Child("disableDefaultRules"),
+			"per-cluster Prometheus runs in agent mode and cannot evaluate rules; "+
+				"this field has no effect and should be removed from the configuration",
+		))
+	}
+
 	return allErrs
 }
 
