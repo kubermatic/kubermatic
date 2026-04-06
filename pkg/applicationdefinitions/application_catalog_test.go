@@ -27,11 +27,10 @@ import (
 )
 
 const (
-	testAppDefName       = "test-app"
-	testDefaultValues    = "key: value\n"
-	testUpdatedValues    = "key: updated-value\n"
-	testAdminValues      = "key: admin-override\n"
-	testValuesBlockEmpty = "{}"
+	testAppDefName    = "test-app"
+	testDefaultValues = "key: value\n"
+	testUpdatedValues = "key: updated-value\n"
+	testAdminValues   = "key: admin-override\n"
 )
 
 func makeAppDef(name, defaultValuesBlock string, annotations map[string]string) *appskubermaticv1.ApplicationDefinition {
@@ -66,208 +65,125 @@ func reconcile(fileAppDef, clusterAppDef *appskubermaticv1.ApplicationDefinition
 	return reconciler(clusterAppDef)
 }
 
-func TestFreshInstall(t *testing.T) {
-	// clusterAppDef has empty DefaultValuesBlock, no annotation
-	fileAppDef := makeAppDef(testAppDefName, testDefaultValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, "", nil)
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestDefaultValuesBlockReconciliation(t *testing.T) {
+	tests := []struct {
+		name               string
+		fileValues         string
+		clusterValues      string
+		clusterAnnotations map[string]string
+		wantValues         string
+		wantHashOf         string // the value whose sha1 should appear in the annotation
+	}{
+		{
+			name:          "fresh install, empty cluster",
+			fileValues:    testDefaultValues,
+			clusterValues: "",
+			wantValues:    testDefaultValues,
+			wantHashOf:    testDefaultValues,
+		},
+		{
+			name:          "fresh install, cluster has empty JSON",
+			fileValues:    testDefaultValues,
+			clusterValues: "{}",
+			wantValues:    testDefaultValues,
+			wantHashOf:    testDefaultValues,
+		},
+		{
+			name:          "upgrade, no admin edit (cluster matches file)",
+			fileValues:    testDefaultValues,
+			clusterValues: testDefaultValues,
+			wantValues:    testDefaultValues,
+			wantHashOf:    testDefaultValues,
+		},
+		{
+			name:          "upgrade, admin edited (cluster differs from file, no annotation)",
+			fileValues:    testUpdatedValues,
+			clusterValues: testAdminValues,
+			wantValues:    testAdminValues,
+			wantHashOf:    testUpdatedValues,
+		},
+		{
+			name:          "steady state, no admin edit (file changed, propagate upstream)",
+			fileValues:    testUpdatedValues,
+			clusterValues: testDefaultValues,
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: testUpdatedValues,
+			wantHashOf: testUpdatedValues,
+		},
+		{
+			name:          "steady state, admin edited",
+			fileValues:    testUpdatedValues,
+			clusterValues: testAdminValues,
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: testAdminValues,
+			wantHashOf: testUpdatedValues,
+		},
+		{
+			name:          "admin clears field (empty), annotation exists",
+			fileValues:    testUpdatedValues,
+			clusterValues: "",
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: testUpdatedValues,
+			wantHashOf: testUpdatedValues,
+		},
+		{
+			name:          "admin sets to empty JSON, annotation exists",
+			fileValues:    testUpdatedValues,
+			clusterValues: "{}",
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: testUpdatedValues,
+			wantHashOf: testUpdatedValues,
+		},
+		{
+			name:          "file becomes empty, no admin edit",
+			fileValues:    "",
+			clusterValues: testDefaultValues,
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: "",
+			wantHashOf: "",
+		},
+		{
+			name:          "file becomes empty, admin edited",
+			fileValues:    "",
+			clusterValues: testAdminValues,
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+			},
+			wantValues: testAdminValues,
+			wantHashOf: "",
+		},
 	}
 
-	if result.Spec.DefaultValuesBlock != testDefaultValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testDefaultValues, result.Spec.DefaultValuesBlock)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fileAppDef := makeAppDef(testAppDefName, tt.fileValues, nil)
+			clusterAppDef := makeAppDef(testAppDefName, tt.clusterValues, tt.clusterAnnotations)
 
-	expectedHash := sha1Hex(testDefaultValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
+			result, err := reconcile(fileAppDef, clusterAppDef)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-func TestFirstUpgradeNoAnnotation(t *testing.T) {
-	// clusterAppDef has stale non-empty DefaultValuesBlock, no annotation.
-	// file value should overwrite the stale value.
-	fileAppDef := makeAppDef(testAppDefName, testUpdatedValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, testDefaultValues, nil)
+			if result.Spec.DefaultValuesBlock != tt.wantValues {
+				t.Errorf("DefaultValuesBlock: got %q, want %q", result.Spec.DefaultValuesBlock, tt.wantValues)
+			}
 
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testUpdatedValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testUpdatedValues, result.Spec.DefaultValuesBlock)
-	}
-
-	expectedHash := sha1Hex(testUpdatedValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
-
-func TestReconcileNoAdminChange(t *testing.T) {
-	// clusterAppDef has DefaultValuesBlock matching stored hash annotation.
-	// file has a new value. expect new file value applied, annotation updated.
-	oldHash := sha1Hex(testDefaultValues)
-	fileAppDef := makeAppDef(testAppDefName, testUpdatedValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, testDefaultValues, map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testUpdatedValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testUpdatedValues, result.Spec.DefaultValuesBlock)
-	}
-
-	expectedHash := sha1Hex(testUpdatedValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
-
-func TestAdminCustomizationPreserved(t *testing.T) {
-	// clusterAppDef has modified DefaultValuesBlock (hash differs from stored annotation).
-	// expect admin value preserved, annotation set to file hash.
-	oldHash := sha1Hex(testDefaultValues)
-	fileAppDef := makeAppDef(testAppDefName, testUpdatedValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, testAdminValues, map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testAdminValues {
-		t.Errorf("expected admin DefaultValuesBlock %q to be preserved, got %q", testAdminValues, result.Spec.DefaultValuesBlock)
-	}
-
-	// annotation should store the file hash, not the admin hash
-	expectedHash := sha1Hex(testUpdatedValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q (file hash), got %q", expectedHash, got)
-	}
-}
-
-func TestAdminClearsField(t *testing.T) {
-	// clusterAppDef has empty DefaultValuesBlock, annotation exists.
-	// expect file value applied, annotation updated.
-	oldHash := sha1Hex(testDefaultValues)
-	fileAppDef := makeAppDef(testAppDefName, testUpdatedValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, "", map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testUpdatedValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testUpdatedValues, result.Spec.DefaultValuesBlock)
-	}
-
-	expectedHash := sha1Hex(testUpdatedValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
-
-func TestAdminRevertsToSystemDefault(t *testing.T) {
-	// clusterAppDef has DefaultValuesBlock matching file value exactly,
-	// stored hash from previous file version.
-	// expect file value applied (same outcome either way).
-	oldHash := sha1Hex("old-value: something\n")
-	fileAppDef := makeAppDef(testAppDefName, testUpdatedValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, testUpdatedValues, map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testUpdatedValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testUpdatedValues, result.Spec.DefaultValuesBlock)
-	}
-
-	expectedHash := sha1Hex(testUpdatedValues)
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
-
-func TestFileBecomesEmpty(t *testing.T) {
-	// previous file had values, new file has empty DefaultValuesBlock.
-	// no admin override. expect empty value applied.
-	oldHash := sha1Hex(testDefaultValues)
-	fileAppDef := makeAppDef(testAppDefName, "", nil)
-	clusterAppDef := makeAppDef(testAppDefName, testDefaultValues, map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != "" {
-		t.Errorf("expected empty DefaultValuesBlock, got %q", result.Spec.DefaultValuesBlock)
-	}
-
-	// fileHash for empty string
-	expectedHash := sha1Hex("")
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q, got %q", expectedHash, got)
-	}
-}
-
-func TestFileBecomesEmptyWithAdminOverride(t *testing.T) {
-	// previous file had values, new file has empty DefaultValuesBlock.
-	// admin has custom value. expect admin value preserved.
-	oldHash := sha1Hex(testDefaultValues)
-	fileAppDef := makeAppDef(testAppDefName, "", nil)
-	clusterAppDef := makeAppDef(testAppDefName, testAdminValues, map[string]string{
-		appskubermaticv1.ApplicationDefaultValuesHashAnnotation: oldHash,
-	})
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testAdminValues {
-		t.Errorf("expected admin DefaultValuesBlock %q to be preserved, got %q", testAdminValues, result.Spec.DefaultValuesBlock)
-	}
-
-	// annotation should store the file hash (empty), not the admin hash
-	expectedHash := sha1Hex("")
-	if got := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]; got != expectedHash {
-		t.Errorf("expected hash annotation %q (file hash for empty), got %q", expectedHash, got)
-	}
-}
-
-func TestClusterValuesBlockEmptyJSONNoAnnotation(t *testing.T) {
-	// clusterAppDef has "{}" DefaultValuesBlock, no annotation.
-	// should be treated as empty, so file value applies.
-	fileAppDef := makeAppDef(testAppDefName, testDefaultValues, nil)
-	clusterAppDef := makeAppDef(testAppDefName, testValuesBlockEmpty, nil)
-
-	result, err := reconcile(fileAppDef, clusterAppDef)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.Spec.DefaultValuesBlock != testDefaultValues {
-		t.Errorf("expected DefaultValuesBlock %q, got %q", testDefaultValues, result.Spec.DefaultValuesBlock)
+			expectedHash := sha1Hex(tt.wantHashOf)
+			gotHash := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
+			if gotHash != expectedHash {
+				t.Errorf("hash annotation: got %q, want %q", gotHash, expectedHash)
+			}
+		})
 	}
 }
 

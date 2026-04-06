@@ -100,6 +100,9 @@ func systemApplicationDefinitionReconcilerFactory(
 			l[appskubermaticv1.ApplicationManagedByLabel] = appskubermaticv1.ApplicationManagedByKKPValue
 			fileAppDef.SetLabels(l)
 
+			// capture the stored hash before EnsureAnnotations potentially overwrites it
+			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
+
 			// Labels and annotations specified in the ApplicationDefinition installed on the cluster are merged with the ones specified in the ApplicationDefinition
 			// that is generated from the system applications.
 			kubernetes.EnsureLabels(clusterAppDef, fileAppDef.Labels)
@@ -129,18 +132,26 @@ func systemApplicationDefinitionReconcilerFactory(
 				updateApplicationDefinition(fileAppDef, config)
 			}
 
-			// detect whether an admin has modified defaultValuesBlock since our
-			// last apply. If so, preserve their override. Otherwise, use the
+			// detect whether an admin has modified defaultValuesBlock.
+			// if so, preserve their override. otherwise, use the
 			// file-embedded value so upstream changes propagate on upgrade.
 			fileHash := sha1Hex(fileAppDef.Spec.DefaultValuesBlock)
-			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
 			clusterHash := sha1Hex(clusterAppDef.Spec.DefaultValuesBlock)
 
-			if clusterAppDef.Spec.DefaultValuesBlock != "" &&
-				clusterAppDef.Spec.DefaultValuesBlock != "{}" &&
-				storedHash != "" &&
-				storedHash != clusterHash {
-				// admin modified the value since our last apply -- preserve it
+			clusterHasValue := clusterAppDef.Spec.DefaultValuesBlock != "" &&
+				clusterAppDef.Spec.DefaultValuesBlock != "{}"
+
+			var adminModified bool
+			if storedHash == "" {
+				// no annotation means that upgrade from old controller or fresh install.
+				// if cluster has a value that differs from the file, treat as admin edit.
+				adminModified = clusterHasValue && clusterHash != fileHash
+			} else {
+				// annotation present, admin changed it if cluster hash drifted from stored hash.
+				adminModified = clusterHasValue && storedHash != clusterHash
+			}
+
+			if adminModified {
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
@@ -152,6 +163,7 @@ func systemApplicationDefinitionReconcilerFactory(
 			if annotations == nil {
 				annotations = make(map[string]string)
 			}
+
 			annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation] = fileHash
 			clusterAppDef.SetAnnotations(annotations)
 
