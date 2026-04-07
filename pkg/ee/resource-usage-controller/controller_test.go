@@ -99,6 +99,43 @@ func TestReconcile(t *testing.T) {
 				Storage: getQuantity("0"),
 			},
 		},
+		{
+			name:     "scenario 5: calculate GPU usage from one machine with GPU",
+			cluster:  generator.GenDefaultCluster(),
+			machines: []*clusterv1alpha1.Machine{genFakeMachineWithGPU("m1", "5", "5G", "10G", "2")},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("5"),
+				Memory:  getQuantity("5G"),
+				Storage: getQuantity("10G"),
+				GPU:     getQuantity("2"),
+			},
+		},
+		{
+			name:    "scenario 6: calculate GPU usage from 2 machines with GPU",
+			cluster: generator.GenDefaultCluster(),
+			machines: []*clusterv1alpha1.Machine{
+				genFakeMachineWithGPU("m1", "5", "5G", "10G", "2"),
+				genFakeMachineWithGPU("m2", "2", "3G", "5G", "4"),
+			},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("7"),
+				Memory:  getQuantity("8G"),
+				Storage: getQuantity("15G"),
+				GPU:     getQuantity("6"),
+			},
+		},
+		{
+			name:    "scenario 7: GPU usage is nil when no machines have GPU",
+			cluster: generator.GenDefaultCluster(),
+			machines: []*clusterv1alpha1.Machine{
+				genFakeMachine("m1", "5", "5G", "10G"),
+			},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("5"),
+				Memory:  getQuantity("5G"),
+				Storage: getQuantity("10G"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -153,6 +190,12 @@ func TestReconcile(t *testing.T) {
 func genFakeMachine(name, cpu, memory, storage string) *clusterv1alpha1.Machine {
 	return generator.GenTestMachine(name,
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
+		nil, nil)
+}
+
+func genFakeMachineWithGPU(name, cpu, memory, storage, gpu string) *clusterv1alpha1.Machine {
+	return generator.GenTestMachine(name,
+		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s","gpu":"%s"}}`, cpu, memory, storage, gpu),
 		nil, nil)
 }
 

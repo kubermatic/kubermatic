@@ -126,6 +126,14 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		resourceUsage.CPU.Add(*resourceDetails.CPU())
 		resourceUsage.Memory.Add(*resourceDetails.Memory())
 		resourceUsage.Storage.Add(*resourceDetails.Storage())
+		if gpuUsage := resourceDetails.GPU(); !gpuUsage.IsZero() {
+			if resourceUsage.GPU == nil {
+				gpu := gpuUsage.DeepCopy()
+				resourceUsage.GPU = &gpu
+			} else {
+				resourceUsage.GPU.Add(*gpuUsage)
+			}
+		}
 	}
 
 	cluster.Status.ResourceUsage = resourceUsage

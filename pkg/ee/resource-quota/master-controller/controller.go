@@ -142,6 +142,14 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 		if localUsage.Storage != nil {
 			globalUsage.Storage.Add(*localUsage.Storage)
 		}
+		if localUsage.GPU != nil {
+			if globalUsage.GPU == nil {
+				gpu := localUsage.GPU.DeepCopy()
+				globalUsage.GPU = &gpu
+			} else {
+				globalUsage.GPU.Add(*localUsage.GPU)
+			}
+		}
 	}
 
 	if err := r.ensureGlobalUsage(ctx, log, resourceQuota, globalUsage); err != nil {
@@ -157,15 +165,25 @@ func (r *reconciler) ensureGlobalUsage(ctx context.Context, log *zap.SugaredLogg
 		log.Debugw("global usage for resource quota is the same, not updating",
 			"cpu", globalUsage.CPU.String(),
 			"memory", globalUsage.Memory.String(),
-			"storage", globalUsage.Storage.String())
+			"storage", globalUsage.Storage.String(),
+			"gpu", gpuString(globalUsage.GPU))
 		return nil
 	}
 	log.Debugw("global usage for resource quota needs update",
 		"cpu", globalUsage.CPU.String(),
 		"memory", globalUsage.Memory.String(),
-		"storage", globalUsage.Storage.String())
+		"storage", globalUsage.Storage.String(),
+		"gpu", gpuString(globalUsage.GPU))
 
 	return util.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.GlobalUsage = *globalUsage
 	})
+}
+
+// gpuString safely converts a GPU quantity pointer to a string for logging.
+func gpuString(gpu *resource.Quantity) string {
+	if gpu == nil {
+		return "0"
+	}
+	return gpu.String()
 }

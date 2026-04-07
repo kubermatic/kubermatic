@@ -74,6 +74,13 @@ spec:
                       description: Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
+                    gpu:
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      description: GPU represents the number of GPU devices. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
                   type: object
                 subject:
                   description: Subject specifies to which entity the quota applies to.
@@ -122,6 +129,13 @@ spec:
                       description: Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
+                    gpu:
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      description: GPU represents the number of GPU devices. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
                   type: object
                 localUsage:
                   description: LocalUsage is holds the current usage of resources for the local seed.
@@ -145,6 +159,13 @@ spec:
                         - type: integer
                         - type: string
                       description: Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    gpu:
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      description: GPU represents the number of GPU devices. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
                   type: object

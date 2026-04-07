@@ -64,6 +64,19 @@ func TestReconcile(t *testing.T) {
 				Build(),
 			expectedUsage: *genResourceDetails("7", "7G", "18G"),
 		},
+		{
+			name:          "scenario 2: calculate rq local usage with GPU",
+			requestName:   rqName,
+			resourceQuota: genResourceQuota(rqName),
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects(genResourceQuota(rqName),
+					genClusterWithGPU("c1", projectID, "2", "5G", "10G", "2"),
+					genClusterWithGPU("c2", projectID, "5", "2G", "8G", "4"),
+					genCluster("notSameProjectCluster", "impostor", "3", "3G", "3G")).
+				Build(),
+			expectedUsage: *genResourceDetailsWithGPU("7", "7G", "18G", "6"),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -111,11 +124,24 @@ func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails 
 	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
 }
 
+func genResourceDetailsWithGPU(cpu, mem, storage, gpu string) *kubermaticv1.ResourceDetails {
+	return kubermaticv1.NewResourceDetailsWithGPU(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage), resource.MustParse(gpu))
+}
+
 func genCluster(name, projectID, cpu, mem, storage string) *kubermaticv1.Cluster {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Name = name
 	cluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	cluster.Status.ResourceUsage = genResourceDetails(cpu, mem, storage)
+
+	return cluster
+}
+
+func genClusterWithGPU(name, projectID, cpu, mem, storage, gpu string) *kubermaticv1.Cluster {
+	cluster := &kubermaticv1.Cluster{}
+	cluster.Name = name
+	cluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
+	cluster.Status.ResourceUsage = genResourceDetailsWithGPU(cpu, mem, storage, gpu)
 
 	return cluster
 }

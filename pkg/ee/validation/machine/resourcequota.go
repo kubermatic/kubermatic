@@ -68,11 +68,18 @@ func ValidateQuota(ctx context.Context,
 		currentStorage = *resourceQuota.Status.GlobalUsage.Storage
 	}
 
+	var currentGPU = resource.Quantity{}
+	if resourceQuota.Status.GlobalUsage.GPU != nil {
+		currentGPU = *resourceQuota.Status.GlobalUsage.GPU
+	}
+
 	// add requested resources to current usage and compare
 	combinedUsage := NewResourceDetails(currentCPU, currentMem, currentStorage)
+	combinedUsage.gpu = currentGPU
 	combinedUsage.CPU().Add(*machineResourceUsage.CPU())
 	combinedUsage.Memory().Add(*machineResourceUsage.Memory())
 	combinedUsage.Storage().Add(*machineResourceUsage.Storage())
+	combinedUsage.GPU().Add(*machineResourceUsage.GPU())
 
 	quota := resourceQuota.Spec.Quota
 	if quota.CPU != nil && quota.CPU.Cmp(*combinedUsage.CPU()) < 0 {
@@ -96,6 +103,13 @@ func ValidateQuota(ctx context.Context,
 			machineResourceUsage.Storage(), quota.Storage, currentStorage.String())
 	}
 
+	if quota.GPU != nil && quota.GPU.Cmp(*combinedUsage.GPU()) < 0 {
+		log.Debugw("requested GPU would exceed current quota", "request",
+			machineResourceUsage.GPU(), "quota", quota.GPU, "used", currentGPU.String())
+		return fmt.Errorf("requested GPU %q would exceed current quota (quota/used %q/%q)",
+			machineResourceUsage.GPU(), quota.GPU, currentGPU.String())
+	}
+
 	return nil
 }
 
@@ -103,6 +117,7 @@ type ResourceDetails struct {
 	cpu     resource.Quantity
 	mem     resource.Quantity
 	storage resource.Quantity
+	gpu     resource.Quantity
 }
 
 func NewResourceDetails(cpu resource.Quantity, mem resource.Quantity, storage resource.Quantity) *ResourceDetails {
@@ -126,10 +141,16 @@ func NewResourceDetailsFromCapacity(capacity *provider.NodeCapacity) (*ResourceD
 		return nil, errors.New("storage must not be nil")
 	}
 
+	var gpu resource.Quantity
+	if capacity.GPUs != nil {
+		gpu = *capacity.GPUs
+	}
+
 	return &ResourceDetails{
 		cpu:     *capacity.CPUCores,
 		mem:     *capacity.Memory,
 		storage: *capacity.Storage,
+		gpu:     gpu,
 	}, nil
 }
 
@@ -143,4 +164,8 @@ func (r *ResourceDetails) Memory() *resource.Quantity {
 
 func (r *ResourceDetails) Storage() *resource.Quantity {
 	return &r.storage
+}
+
+func (r *ResourceDetails) GPU() *resource.Quantity {
+	return &r.gpu
 }

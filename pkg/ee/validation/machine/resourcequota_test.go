@@ -66,6 +66,16 @@ func TestResourceQuotaValidation(t *testing.T) {
 			machine:     genFakeMachine("2", "2G", "5000G"),
 			expectedErr: true,
 		},
+		{
+			name:        "quota with GPU that fits should succeed",
+			machine:     genFakeMachineWithGPU("2", "2G", "10G", "2"),
+			expectedErr: false,
+		},
+		{
+			name:        "should fail with GPU quota exceeded",
+			machine:     genFakeMachineWithGPU("2", "2G", "10G", "10"),
+			expectedErr: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -90,10 +100,18 @@ func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
 		nil, nil)
 }
 
+func genFakeMachineWithGPU(cpu, memory, storage, gpu string) *clusterv1alpha1.Machine {
+	return generator.GenTestMachine("fake",
+		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s","gpu":"%s"}}`, cpu, memory, storage, gpu),
+		nil, nil)
+}
+
 func genResourceQuota() *kubermaticv1.ResourceQuota {
 	rq := &kubermaticv1.ResourceQuota{}
-	rq.Spec.Quota = *kubermaticv1.NewResourceDetails(resource.MustParse("50"), resource.MustParse("50G"), resource.MustParse("1000G"))
-	rq.Status.GlobalUsage = *kubermaticv1.NewResourceDetails(resource.MustParse("3"), resource.MustParse("3G"), resource.MustParse("60G"))
+	gpuQuota := resource.MustParse("8")
+	gpuUsed := resource.MustParse("4")
+	rq.Spec.Quota = *kubermaticv1.NewResourceDetailsWithGPU(resource.MustParse("50"), resource.MustParse("50G"), resource.MustParse("1000G"), gpuQuota)
+	rq.Status.GlobalUsage = *kubermaticv1.NewResourceDetailsWithGPU(resource.MustParse("3"), resource.MustParse("3G"), resource.MustParse("60G"), gpuUsed)
 
 	return rq
 }

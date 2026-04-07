@@ -78,7 +78,7 @@ type Subject struct {
 	Kind string `json:"kind"`
 }
 
-// ResourceDetails holds the CPU, Memory and Storage quantities.
+// ResourceDetails holds the CPU, Memory, Storage and GPU quantities.
 type ResourceDetails struct {
 	// CPU holds the quantity of CPU. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	CPU *resource.Quantity `json:"cpu,omitempty"`
@@ -86,10 +86,15 @@ type ResourceDetails struct {
 	Memory *resource.Quantity `json:"memory,omitempty"`
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
+	// GPU represents the number of GPU devices. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+	GPU *resource.Quantity `json:"gpu,omitempty"`
 }
 
 func (r ResourceDetails) IsEmpty() bool {
-	return (r.CPU == nil || r.CPU.IsZero()) && (r.Memory == nil || r.Memory.IsZero()) && (r.Storage == nil || r.Storage.IsZero())
+	return (r.CPU == nil || r.CPU.IsZero()) &&
+		(r.Memory == nil || r.Memory.IsZero()) &&
+		(r.Storage == nil || r.Storage.IsZero()) &&
+		(r.GPU == nil || r.GPU.IsZero())
 }
 
 // +kubebuilder:object:generate=true
@@ -109,5 +114,14 @@ func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails
 		CPU:     &cpu,
 		Memory:  &memory,
 		Storage: &storage,
+	}
+}
+
+func NewResourceDetailsWithGPU(cpu, memory, storage, gpu resource.Quantity) *ResourceDetails {
+	return &ResourceDetails{
+		CPU:     &cpu,
+		Memory:  &memory,
+		Storage: &storage,
+		GPU:     &gpu,
 	}
 }

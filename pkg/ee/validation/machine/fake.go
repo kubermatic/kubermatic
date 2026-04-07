@@ -53,11 +53,20 @@ func getFakeQuotaRequest(config *providerconfig.Config) (*ResourceDetails, error
 		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	return NewResourceDetails(cpu, mem, storage), nil
+	var gpu resource.Quantity
+	if spec.GPU != "" {
+		gpu, err = resource.ParseQuantity(spec.GPU)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing gpu quantity: %w", err)
+		}
+	}
+
+	return &ResourceDetails{cpu: cpu, mem: mem, storage: storage, gpu: gpu}, nil
 }
 
 type FakeProviderSpec struct {
 	CPU     string `json:"cpu"`
 	Memory  string `json:"memory"`
 	Storage string `json:"storage"`
+	GPU     string `json:"gpu,omitempty"`
 }

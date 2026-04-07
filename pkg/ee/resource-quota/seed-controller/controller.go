@@ -150,6 +150,14 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 			if clusterUsage.Storage != nil {
 				localUsage.Storage.Add(*clusterUsage.Storage)
 			}
+			if clusterUsage.GPU != nil {
+				if localUsage.GPU == nil {
+					gpu := clusterUsage.GPU.DeepCopy()
+					localUsage.GPU = &gpu
+				} else {
+					localUsage.GPU.Add(*clusterUsage.GPU)
+				}
+			}
 		}
 	}
 
@@ -166,13 +174,15 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 		log.Debugw("local usage for resource quota is the same, not updating",
 			"cpu", localUsage.CPU.String(),
 			"memory", localUsage.Memory.String(),
-			"storage", localUsage.Storage.String())
+			"storage", localUsage.Storage.String(),
+			"gpu", gpuString(localUsage.GPU))
 		return nil
 	}
 	log.Debugw("local usage for resource quota needs update",
 		"cpu", localUsage.CPU.String(),
 		"memory", localUsage.Memory.String(),
-		"storage", localUsage.Storage.String())
+		"storage", localUsage.Storage.String(),
+		"gpu", gpuString(localUsage.GPU))
 
 	return util.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.LocalUsage = *localUsage
@@ -203,6 +213,14 @@ func withClusterEventFilter() predicate.Predicate {
 			return false
 		},
 	}
+}
+
+// gpuString safely converts a GPU quantity pointer to a string for logging.
+func gpuString(gpu *resource.Quantity) string {
+	if gpu == nil {
+		return "0"
+	}
+	return gpu.String()
 }
 
 func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogger, workerName string) handler.EventHandler {
