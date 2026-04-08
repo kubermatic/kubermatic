@@ -39,7 +39,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19
-	github.com/aws/smithy-go v1.22.3
+	github.com/aws/smithy-go v1.24.2
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.16.9
 	github.com/containerd/containerd/v2 v2.0.2
@@ -183,7 +183,7 @@ require (
 	github.com/aptible/supercronic v0.2.34 // indirect
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.10 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.8 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 // indirect
