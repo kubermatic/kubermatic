@@ -78,6 +78,8 @@ type controllerRunOptions struct {
 	oidcIssuerClientID     string
 	oidcIssuerClientSecret string
 
+	authenticationConfiguration []byte
+
 	// Used in the tunneling expose strategy
 	tunnelingAgentIP flagopts.IPValue
 
@@ -109,9 +111,10 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	}
 
 	var (
-		rawEtcdDiskSize string
-		caBundleFile    string
-		configFile      string
+		rawEtcdDiskSize                 string
+		caBundleFile                    string
+		configFile                      string
+		authenticationConfigurationFile string
 	)
 
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
@@ -132,6 +135,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.StringVar(&authenticationConfigurationFile, "authentication-configuration-file", "", "Path to the authentication configuration file.")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaulting.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaulting.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaulting.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
@@ -178,6 +182,14 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
+
+	if authenticationConfigurationFile != "" {
+		b, err := os.ReadFile(authenticationConfigurationFile)
+		if err != nil {
+			return c, fmt.Errorf("failed to read authentication configuration file: %w", err)
+		}
+		c.authenticationConfiguration = b
+	}
 
 	return c, nil
 }

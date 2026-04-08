@@ -278,6 +278,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
+		WithAuthenticationConfigurationYAML(r.authenticationConfigurationYAML).
 		WithKubermaticImage(r.kubermaticImage).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
 		WithDnatControllerImage(r.dnatControllerImage).
@@ -524,6 +525,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
 		apiserver.ServiceAccountKeyReconciler(),
+		apiserver.AuthenticationConfigurationReconciler(data, r.caBundle.String(), r.features.KubernetesOIDCAuthentication),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
@@ -739,7 +741,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			)
 		}
 
-		issuerURL := c.Spec.OIDC.IssuerURL
+		issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
 		if issuerURL == "" && r.features.KubernetesOIDCAuthentication {
 			issuerURL = data.OIDCIssuerURL()
 		}

@@ -84,6 +84,7 @@ type TemplateData struct {
 	etcdDiskSize                          resource.Quantity
 	oidcIssuerURL                         string
 	oidcIssuerClientID                    string
+	authenticationConfigurationYAML       []byte
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	networkIntfMgrImage                   string
@@ -199,6 +200,11 @@ func (td *TemplateDataBuilder) WithOIDCIssuerURL(url string) *TemplateDataBuilde
 
 func (td *TemplateDataBuilder) WithOIDCIssuerClientID(clientID string) *TemplateDataBuilder {
 	td.data.oidcIssuerClientID = clientID
+	return td
+}
+
+func (td *TemplateDataBuilder) WithAuthenticationConfigurationYAML(yaml []byte) *TemplateDataBuilder {
+	td.data.authenticationConfigurationYAML = yaml
 	return td
 }
 
@@ -336,6 +342,11 @@ func (d *TemplateData) OIDCIssuerURL() string {
 // OIDCIssuerClientID return the issuer client ID.
 func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
+}
+
+// AuthenticationConfigurationYAML returns the seed's authentication configuration in YAML format.
+func (d *TemplateData) AuthenticationConfigurationYAML() []byte {
+	return d.authenticationConfigurationYAML
 }
 
 // Cluster returns the cluster.

@@ -102,8 +102,9 @@ type Reconciler struct {
 	backupSchedule                   time.Duration
 	backupCount                      int
 
-	oidcIssuerURL      string
-	oidcIssuerClientID string
+	oidcIssuerURL                   string
+	oidcIssuerClientID              string
+	authenticationConfigurationYAML []byte
 
 	features Features
 	versions kubermatic.Versions
@@ -133,6 +134,7 @@ func Add(
 
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
+	authenticationConfigurationYAML []byte,
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
@@ -171,8 +173,9 @@ func Add(
 		seedGetter:   seedGetter,
 		configGetter: configGetter,
 
-		oidcIssuerURL:      oidcIssuerURL,
-		oidcIssuerClientID: oidcIssuerClientID,
+		oidcIssuerURL:                   oidcIssuerURL,
+		oidcIssuerClientID:              oidcIssuerClientID,
+		authenticationConfigurationYAML: authenticationConfigurationYAML,
 
 		tunnelingAgentIP: tunnelingAgentIP,
 		caBundle:         caBundle,

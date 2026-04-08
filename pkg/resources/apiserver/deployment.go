@@ -286,7 +286,6 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-//nolint:gocyclo
 func getApiserverFlags(
 	data *resources.TemplateData,
 	etcdEndpoints []string,
@@ -433,41 +432,11 @@ func getApiserverFlags(
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	oidcSettings := cluster.Spec.OIDC
-	if oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "" {
-		flags = append(flags,
-			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
-			"--oidc-issuer-url", oidcSettings.IssuerURL,
-			"--oidc-client-id", oidcSettings.ClientID,
-		)
-
-		if oidcSettings.UsernameClaim != "" {
-			flags = append(flags, "--oidc-username-claim", oidcSettings.UsernameClaim)
-		}
-		if oidcSettings.GroupsClaim != "" {
-			flags = append(flags, "--oidc-groups-claim", oidcSettings.GroupsClaim)
-		}
-		if oidcSettings.RequiredClaim != "" {
-			flags = append(flags, "--oidc-required-claim", oidcSettings.RequiredClaim)
-		}
-		if oidcSettings.GroupsPrefix != "" {
-			flags = append(flags, "--oidc-groups-prefix", oidcSettings.GroupsPrefix)
-		}
-		if oidcSettings.UsernamePrefix != "" {
-			flags = append(flags, "--oidc-username-prefix", oidcSettings.UsernamePrefix)
-		}
-	} else if enableOIDCAuthentication {
-		flags = append(flags,
-			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
-			"--oidc-issuer-url", data.OIDCIssuerURL(),
-			"--oidc-client-id", data.OIDCIssuerClientID(),
-			"--oidc-username-claim", "email",
-			"--oidc-groups-prefix", "oidc:",
-			"--oidc-groups-claim", "groups",
-		)
-	}
-
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
+
+	featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
+
+	flags = append(flags, "--authentication-config", filepath.Join("/etc/kubernetes/authentication-config", resources.AuthenticationConfigurationKey))
 
 	if data.DRAEnabled() {
 		featureGates = append(featureGates, "DynamicResourceAllocation=true")
@@ -544,7 +513,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled, isAuditWebhookEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -611,6 +580,11 @@ func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isA
 			MountPath: "/etc/kubernetes/adm-control",
 			ReadOnly:  true,
 		},
+		{
+			Name:      resources.AuthenticationConfigurationVolumeName,
+			MountPath: "/etc/kubernetes/authentication-config",
+			ReadOnly:  true,
+		},
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -664,6 +638,13 @@ func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isA
 }
 
 func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
+	authenticationConfigSecretName := resources.ApiserverAuthenticationConfigurationSecretName
+	authenticationConfigSecretKey := resources.AuthenticationConfigurationKey
+	if data.Cluster().Spec.IsAuthenticationConfigurationEnabled() {
+		authenticationConfigSecretName = data.Cluster().Spec.AuthenticationConfiguration.SecretName
+		authenticationConfigSecretKey = data.Cluster().Spec.AuthenticationConfiguration.SecretKey
+	}
+
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -777,6 +758,18 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.AdmissionControlConfigMapName,
 					},
+				},
+			},
+		},
+		{
+			Name: resources.AuthenticationConfigurationVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: authenticationConfigSecretName,
+					Items: []corev1.KeyToPath{{
+						Key:  authenticationConfigSecretKey,
+						Path: resources.AuthenticationConfigurationKey,
+					}},
 				},
 			},
 		},

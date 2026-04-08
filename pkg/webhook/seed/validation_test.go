@@ -488,6 +488,67 @@ func TestValidate(t *testing.T) {
 			features:    features.FeatureGate{},
 			errExpected: true,
 		},
+		{
+			name: "Adding a seed with AuthenticationConfiguration should succeed",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "auth-config",
+						SecretKey:  "authentication-configuration.yaml",
+					},
+				},
+			},
+		},
+		{
+			name: "Adding a seed with both AuthenticationConfiguration and OIDCProviderConfiguration should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "auth-config",
+						SecretKey:  "authentication-configuration.yaml",
+					},
+					OIDCProviderConfiguration: &kubermaticv1.OIDCProviderConfiguration{
+						IssuerURL:      "https://issuer.example.com",
+						IssuerClientID: "client-id",
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Adding a seed with AuthenticationConfiguration with missing secretKey should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "auth-config",
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Adding a seed with AuthenticationConfiguration with missing secretName should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretKey: "authentication-configuration.yaml",
+					},
+				},
+			},
+			errExpected: true,
+		},
 	}
 
 	scheme := fake.NewScheme()

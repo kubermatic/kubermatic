@@ -333,6 +333,19 @@ spec:
                         - auditWebhookConfig
                       type: object
                   type: object
+                authenticationConfiguration:
+                  description: AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+                  properties:
+                    secretKey:
+                      description: Name of the Secret key containing the AuthenticationConfiguration.
+                      type: string
+                    secretName:
+                      description: Name of the Secret containing the AuthenticationConfiguration.
+                      type: string
+                  required:
+                    - secretKey
+                    - secretName
+                  type: object
                 country:
                   description: |-
                     Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.

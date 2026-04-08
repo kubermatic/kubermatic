@@ -177,18 +177,33 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				})
 			}
 
-			configureSeedLevelOIDCProvider := seed.Spec.OIDCProviderConfiguration != nil
-
-			if configureSeedLevelOIDCProvider {
+			if seed.Spec.OIDCProviderConfiguration != nil {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerURL),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientSecret),
 				)
-			}
+			} else if seed.Spec.AuthenticationConfiguration != nil {
+				authConfigVolume := "auth-config"
+				volumes = append(volumes, corev1.Volume{
+					Name: authConfigVolume,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: seed.Spec.AuthenticationConfiguration.SecretName,
+						},
+					},
+				})
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      authConfigVolume,
+					MountPath: "/opt/auth-config/",
+					ReadOnly:  true,
+				})
 
-			// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
-			if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; !configureSeedLevelOIDCProvider && fgSet {
+				args = append(args,
+					fmt.Sprintf("-authentication-configuration-file=/opt/auth-config/%s", seed.Spec.AuthenticationConfiguration.SecretKey),
+				)
+			} else if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; fgSet {
+				// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),

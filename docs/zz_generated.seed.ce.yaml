@@ -7,6 +7,8 @@ metadata:
 spec:
   # Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
   auditLogging: null
+  # AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+  authenticationConfiguration: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""

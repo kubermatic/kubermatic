@@ -374,6 +374,19 @@ spec:
                         - auditWebhookConfig
                       type: object
                   type: object
+                authenticationConfiguration:
+                  description: 'Optional: AuthenticationConfiguration points to a Secret containing the AuthenticationConfiguration for the k8s api-server.'
+                  properties:
+                    secretKey:
+                      description: Name of the Secret key containing the AuthenticationConfiguration.
+                      type: string
+                    secretName:
+                      description: Name of the Secret containing the AuthenticationConfiguration.
+                      type: string
+                  required:
+                    - secretKey
+                    - secretName
+                  type: object
                 authorizationConfig:
                   description: 'Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now'
                   properties:
@@ -3885,7 +3898,10 @@ spec:
                       type: object
                   type: object
                 oidc:
-                  description: 'Optional: OIDC specifies the OIDC configuration parameters for enabling authentication mechanism for the cluster.'
+                  description: |-
+                    Optional: OIDC specifies the OIDC configuration parameters for enabling authentication mechanism for the cluster.
+
+                    Deprecated: Specify authenticationConfiguration instead. This field is still supported for backward compatibility.
                   properties:
                     clientID:
                       type: string
