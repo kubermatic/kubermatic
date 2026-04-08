@@ -22,6 +22,7 @@ import (
 	"iter"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -148,6 +149,10 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 				return
 			}
 
+			// Save original (unrendered) values so that apps needing per-version
+			// rendering (e.g. cluster-autoscaler) can re-render them per K8s version.
+			originalValues := values
+
 			// Render the ApplicationDefinition values to inject template variables
 			values, err = renderApplicationDefinitionValues(values, defaultKubernetesVersion)
 			if err != nil {
@@ -196,6 +201,44 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 					yield(nil, fmt.Errorf("failed to pull app chart: %w", err))
 
 					return
+				}
+
+				// cluster-autoscaler image tags are Kubernetes-version-specific, so we render
+				// the chart once per supported K8s minor version (as known to GetAutoscalerImageTag).
+				if appName == "cluster-autoscaler" {
+					for _, majorMinor := range template.SupportedAutoscalerMinorVersions() {
+						sv, err := semver.NewSemver(majorMinor + ".0")
+						if err != nil {
+							yield(nil, fmt.Errorf("failed to parse autoscaler minor version %s: %w", majorMinor, err))
+							return
+						}
+
+						renderedValues, err := renderApplicationDefinitionValues(originalValues, sv)
+						if err != nil {
+							yield(nil, fmt.Errorf("failed to render values for cluster-autoscaler (k8s %s): %w", majorMinor, err))
+							return
+						}
+
+						versionValuesFile := ""
+						if renderedValues != nil {
+							versionValuesFile = path.Join(tmpDir, fmt.Sprintf("values-%s.yaml", strings.ReplaceAll(majorMinor, ".", "-")))
+							if err := os.WriteFile(versionValuesFile, renderedValues, 0o644); err != nil {
+								yield(nil, fmt.Errorf("failed to write values file for k8s %s: %w", majorMinor, err))
+								return
+							}
+						}
+
+						chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, versionValuesFile, registryPrefix, "")
+						if err != nil {
+							yield(nil, fmt.Errorf("failed to get images for cluster-autoscaler (k8s %s): %w", majorMinor, err))
+							return
+						}
+
+						if !yield(&AppsHelmChart{ChartArchive: chartPath, WorkloadImages: chartImages, ApplicationVersion: appVer}, nil) {
+							return
+						}
+					}
+					continue
 				}
 
 				// get images
