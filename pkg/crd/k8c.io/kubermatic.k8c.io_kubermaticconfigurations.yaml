@@ -674,6 +674,13 @@ spec:
                           default: kubermatic-envoy-gateway
                           description: ClassName is the GatewayClass to use.
                           type: string
+                        tlsSecretName:
+                          description: |-
+                            TLSSecretName is the name of an existing Kubernetes TLS secret in the KKP namespace
+                            to use for the default HTTPS listener on the Gateway. This allows operators to provide
+                            TLS without configuring a cert-manager CertificateIssuer. If both TLSSecretName and
+                            CertificateIssuer are set, CertificateIssuer takes precedence.
+                          type: string
                       type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.

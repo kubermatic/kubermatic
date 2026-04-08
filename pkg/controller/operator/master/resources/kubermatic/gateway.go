@@ -135,6 +135,31 @@ func GatewayReconciler(
 						},
 					},
 				})
+			} else if cfg.Spec.Ingress.Gateway != nil && cfg.Spec.Ingress.Gateway.TLSSecretName != "" {
+				coreListeners = append(coreListeners, gatewayapiv1.Listener{
+					Name:     "https",
+					Hostname: ptr.To(gatewayapiv1.Hostname(cfg.Spec.Ingress.Domain)),
+					Protocol: gatewayapiv1.HTTPSProtocolType,
+					Port:     gatewayapiv1.PortNumber(443),
+					AllowedRoutes: &gatewayapiv1.AllowedRoutes{
+						Namespaces: &gatewayapiv1.RouteNamespaces{
+							From: ptr.To(gatewayapiv1.NamespacesFromSelector),
+							Selector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									common.GatewayAccessLabelKey: "true",
+								},
+							},
+						},
+					},
+					TLS: &gatewayapiv1.ListenerTLSConfig{
+						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
+						CertificateRefs: []gatewayapiv1.SecretObjectReference{
+							{
+								Name: gatewayapiv1.ObjectName(cfg.Spec.Ingress.Gateway.TLSSecretName),
+							},
+						},
+					},
+				})
 			}
 
 			// Merge core listeners with preserved non-core from existing (sorted)

@@ -288,6 +288,144 @@ func TestGatewayReconcilerPreservesNonCoreListeners(t *testing.T) {
 	}
 }
 
+func TestGatewayReconcilerTLSSecretName(t *testing.T) {
+	const tlsSecret = "kubermatic-tls"
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					TLSSecretName: tlsSecret,
+				},
+			},
+		},
+	}
+
+	t.Run("HTTPS listener created from TLSSecretName when no CertificateIssuer", func(t *testing.T) {
+		creatorGetter := GatewayReconciler(cfg, "kubermatic", nil)
+		_, creator := creatorGetter()
+
+		gw, err := creator(&gatewayapiv1.Gateway{})
+		if err != nil {
+			t.Fatalf("GatewayReconciler failed: %v", err)
+		}
+
+		if len(gw.Spec.Listeners) != 2 {
+			t.Fatalf("expected 2 listeners (http + https), got %d: %v", len(gw.Spec.Listeners), listenerNames(gw.Spec.Listeners))
+		}
+
+		var httpsListener *gatewayapiv1.Listener
+		for i := range gw.Spec.Listeners {
+			if gw.Spec.Listeners[i].Name == "https" {
+				httpsListener = &gw.Spec.Listeners[i]
+				break
+			}
+		}
+		if httpsListener == nil {
+			t.Fatal("https listener not found")
+		}
+		if httpsListener.Protocol != gatewayapiv1.HTTPSProtocolType {
+			t.Errorf("expected HTTPS protocol, got %v", httpsListener.Protocol)
+		}
+		if httpsListener.TLS == nil {
+			t.Fatal("expected TLS config on https listener")
+		}
+		if len(httpsListener.TLS.CertificateRefs) != 1 {
+			t.Fatalf("expected 1 certificate ref, got %d", len(httpsListener.TLS.CertificateRefs))
+		}
+		if string(httpsListener.TLS.CertificateRefs[0].Name) != tlsSecret {
+			t.Errorf("expected certificate ref name %q, got %q", tlsSecret, httpsListener.TLS.CertificateRefs[0].Name)
+		}
+
+		// No cert-manager annotations should be set
+		for _, key := range []string{"cert-manager.io/issuer", "cert-manager.io/cluster-issuer"} {
+			if _, exists := gw.Annotations[key]; exists {
+				t.Errorf("annotation %q should not be set when using TLSSecretName", key)
+			}
+		}
+	})
+
+	t.Run("HTTPS listener survives reconciliation (idempotency)", func(t *testing.T) {
+		// First reconcile — no existing listeners
+		creatorGetter := GatewayReconciler(cfg, "kubermatic", nil)
+		_, creator := creatorGetter()
+		first, err := creator(&gatewayapiv1.Gateway{})
+		if err != nil {
+			t.Fatalf("first reconcile failed: %v", err)
+		}
+
+		// Second reconcile — pass the first result as existing listeners (simulates real reconcile loop)
+		creatorGetter2 := GatewayReconciler(cfg, "kubermatic", first.Spec.Listeners)
+		_, creator2 := creatorGetter2()
+		second, err := creator2(first.DeepCopy())
+		if err != nil {
+			t.Fatalf("second reconcile failed: %v", err)
+		}
+
+		if len(second.Spec.Listeners) != 2 {
+			t.Fatalf("after second reconcile: expected 2 listeners, got %d: %v", len(second.Spec.Listeners), listenerNames(second.Spec.Listeners))
+		}
+
+		var httpsListener *gatewayapiv1.Listener
+		for i := range second.Spec.Listeners {
+			if second.Spec.Listeners[i].Name == "https" {
+				httpsListener = &second.Spec.Listeners[i]
+				break
+			}
+		}
+		if httpsListener == nil {
+			t.Fatal("https listener was removed after second reconcile — bug reproduced")
+		}
+		if string(httpsListener.TLS.CertificateRefs[0].Name) != tlsSecret {
+			t.Errorf("certificate ref changed after reconcile: got %q, want %q",
+				httpsListener.TLS.CertificateRefs[0].Name, tlsSecret)
+		}
+	})
+
+	t.Run("CertificateIssuer takes precedence over TLSSecretName", func(t *testing.T) {
+		cfgBoth := &kubermaticv1.KubermaticConfiguration{
+			Spec: kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "letsencrypt-prod",
+						Kind: certmanagerv1.ClusterIssuerKind,
+					},
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						TLSSecretName: tlsSecret,
+					},
+				},
+			},
+		}
+
+		creatorGetter := GatewayReconciler(cfgBoth, "kubermatic", nil)
+		_, creator := creatorGetter()
+		gw, err := creator(&gatewayapiv1.Gateway{})
+		if err != nil {
+			t.Fatalf("GatewayReconciler failed: %v", err)
+		}
+
+		// Should use cert-manager path: certificateSecretName, not the tlsSecret
+		var httpsListener *gatewayapiv1.Listener
+		for i := range gw.Spec.Listeners {
+			if gw.Spec.Listeners[i].Name == "https" {
+				httpsListener = &gw.Spec.Listeners[i]
+				break
+			}
+		}
+		if httpsListener == nil {
+			t.Fatal("https listener not found")
+		}
+		if string(httpsListener.TLS.CertificateRefs[0].Name) != string(certificateSecretName) {
+			t.Errorf("expected cert-manager secret %q, got %q", certificateSecretName, httpsListener.TLS.CertificateRefs[0].Name)
+		}
+		if _, exists := gw.Annotations["cert-manager.io/cluster-issuer"]; !exists {
+			t.Error("expected cert-manager cluster-issuer annotation when CertificateIssuer is set")
+		}
+	})
+}
+
 func listenerNames(listeners []gatewayapiv1.Listener) []string {
 	names := make([]string, len(listeners))
 	for i, l := range listeners {

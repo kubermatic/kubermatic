@@ -483,6 +483,12 @@ type KubermaticGatewayConfiguration struct {
 	// ClassName is the GatewayClass to use.
 	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
+
+	// TLSSecretName is the name of an existing Kubernetes TLS secret in the KKP namespace
+	// to use for the default HTTPS listener on the Gateway. This allows operators to provide
+	// TLS without configuring a cert-manager CertificateIssuer. If both TLSSecretName and
+	// CertificateIssuer are set, CertificateIssuer takes precedence.
+	TLSSecretName string `json:"tlsSecretName,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.

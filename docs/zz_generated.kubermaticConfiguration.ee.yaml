@@ -251,6 +251,11 @@ spec:
     gateway:
       # ClassName is the GatewayClass to use.
       className: kubermatic-envoy-gateway
+      # TLSSecretName is the name of an existing Kubernetes TLS secret in the KKP namespace
+      # to use for the default HTTPS listener on the Gateway. This allows operators to provide
+      # TLS without configuring a cert-manager CertificateIssuer. If both TLSSecretName and
+      # CertificateIssuer are set, CertificateIssuer takes precedence.
+      tlsSecretName: ""
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.
