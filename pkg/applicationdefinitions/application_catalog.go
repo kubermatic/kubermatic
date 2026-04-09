@@ -132,26 +132,39 @@ func systemApplicationDefinitionReconcilerFactory(
 				updateApplicationDefinition(fileAppDef, config)
 			}
 
-			// detect whether an admin has modified defaultValuesBlock.
-			// if so, preserve their override. otherwise, use the
-			// file-embedded value so upstream changes propagate on upgrade.
+			// Decide whether to keep the cluster's defaultValuesBlock or replace
+			// it with the one from the embedded YAML file.
+			//
+			// When we already have a hash annotation, we can compare: if the cluster
+			// value changed since we last wrote it, the admin must have edited it, so
+			// we keep their version. Otherwise we apply the file value.
+			//
+			// Without a hash annotation (upgrade from an older KKP), we can't tell
+			// whether a differing value is an admin edit or a stale file value. We
+			// preserve it by default to avoid overwriting admin customizations. If the
+			// admin wants upstream changes to propagate, they can opt in by adding the
+			// allow-default-values-overwrite annotation.
 			fileHash := sha1Hex(fileAppDef.Spec.DefaultValuesBlock)
 			clusterHash := sha1Hex(clusterAppDef.Spec.DefaultValuesBlock)
 
 			clusterHasValue := clusterAppDef.Spec.DefaultValuesBlock != "" &&
 				clusterAppDef.Spec.DefaultValuesBlock != "{}"
 
-			var adminModified bool
-			if storedHash == "" {
-				// no annotation means that upgrade from old controller or fresh install.
-				// if cluster has a value that differs from the file, treat as admin edit.
-				adminModified = clusterHasValue && clusterHash != fileHash
-			} else {
-				// annotation present, admin changed it if cluster hash drifted from stored hash.
-				adminModified = clusterHasValue && storedHash != clusterHash
+			_, allowOverwrite := clusterAppDef.Annotations[appskubermaticv1.ApplicationAllowDefaultValuesOverwriteAnnotation]
+
+			var keepAdminModifications bool
+			switch {
+			case storedHash != "" && clusterHasValue && storedHash != clusterHash:
+				// steady state, hash drifted from what we recorded -> admin edit
+				keepAdminModifications = true
+			case storedHash == "" && clusterHasValue && !allowOverwrite:
+				// upgrade from old controller, preserve by default
+				keepAdminModifications = true
 			}
 
-			if adminModified {
+			// if there is an admin modification on default values block, preserve admin modifications.
+			// This means that the whatever KKP stores in ApplicationDefinition YAML file would be ignored.
+			if keepAdminModifications {
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
