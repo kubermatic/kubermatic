@@ -136,6 +136,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileGatewayAPIResources(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	if err := r.reconcileSecrets(ctx, defaulted, logger); err != nil {
 		return err
 	}
@@ -157,10 +161,6 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	if err := r.reconcileIngresses(ctx, defaulted, logger); err != nil {
-		return err
-	}
-
-	if err := r.reconcileGatewayAPIResources(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
