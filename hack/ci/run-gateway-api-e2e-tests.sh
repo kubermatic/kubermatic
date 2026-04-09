@@ -107,3 +107,63 @@ go_test gateway_api_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
   -test.run "TestGatewayAPIFreshInstall"
 
 echodate "Gateway API fresh install tests completed successfully!"
+
+# Reproduce issue #15711: patch KubermaticConfiguration with a missing ConfigMap
+# reference, then redeploy from scratch. The fix ensures Gateway is created
+# before Deployments, so the installer succeeds despite the broken volume ref.
+
+echodate "=============== Starting deployment failure tolerance test phase ==============="
+echodate "Uninstalling kubermatic-operator Helm release..."
+if ! helm uninstall kubermatic-operator -n kubermatic; then
+  echodate "WARNING: failed to uninstall kubermatic-operator Helm release (may already be gone)"
+fi
+
+echodate "Cleaning up operator-managed resources..."
+if ! kubectl delete gateway -n kubermatic --all --ignore-not-found=true; then
+  echodate "ERROR: failed to delete Gateway resources"
+  exit 1
+fi
+if ! kubectl delete httproute -n kubermatic --all --ignore-not-found=true; then
+  echodate "ERROR: failed to delete HTTPRoute resources"
+  exit 1
+fi
+if ! kubectl delete deploy kubermatic-dashboard -n kubermatic --ignore-not-found=true; then
+  echodate "ERROR: failed to delete kubermatic-dashboard Deployment"
+  exit 1
+fi
+
+echodate "Patching KubermaticConfiguration with missing ConfigMap reference..."
+if ! kubectl patch kubermaticconfiguration -n kubermatic e2e --type merge -p '
+spec:
+  ui:
+    extraVolumeMounts:
+      - name: themes
+        mountPath: /dist/light.css
+        subPath: light
+    extraVolumes:
+      - name: themes
+        configMap:
+          name: kubermatic-dashboard-themes
+'; then
+  echodate "ERROR: failed to patch KubermaticConfiguration with missing ConfigMap reference"
+  exit 1
+fi
+
+echodate "Re-deploying KKP with broken dashboard ConfigMap reference..."
+if ! _build/kubermatic-installer --verbose deploy kubermatic-master \
+  --helm-values "$HELM_VALUES_FILE" \
+  --skip-seed-validation=kubermatic \
+  --migrate-gateway-api; then
+  echodate "ERROR: kubermatic-installer failed during re-deploy with broken ConfigMap (this is the core of issue #15711)"
+  exit 1
+fi
+
+echodate "Running Gateway API deployment failure tolerance tests..."
+
+if ! go_test gateway_api_deployment_failure_tolerance_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIDeploymentFailureTolerance"; then
+  echodate "ERROR: Gateway API deployment failure tolerance test failed"
+  exit 1
+fi
+
+echodate "Gateway API deployment failure tolerance tests completed successfully!"

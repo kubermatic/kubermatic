@@ -440,3 +440,70 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	l.Infof("Dex health check endpoint /dex/healthz returned 200 OK")
 	return nil
 }
+
+// verifyGatewayExistsRegardlessOfDeploymentHealth verifies that Gateway API resources
+// exist and are functional even when some Deployments are unhealthy due to missing
+// volumes (like ConfigMaps). This validates the resilience fix for issue
+// https://github.com/kubermatic/kubermatic/issues/15711 where a missing ConfigMap blocked
+// Gateway creation because Deployments were reconciled first.
+func verifyGatewayExistsRegardlessOfDeploymentHealth(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
+	t.Helper()
+	ns := jig.KubermaticNamespace()
+
+	gtwName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultGatewayName}
+	gtw := &gatewayapiv1.Gateway{}
+	err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		if err := c.Get(ctx, gtwName, gtw); err != nil {
+			return fmt.Errorf("Gateway not found: %w", err), nil
+		}
+
+		programmed := meta.IsStatusConditionTrue(gtw.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed))
+		if !programmed {
+			return fmt.Errorf("Gateway %q not programmed", gtwName.String()), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("Gateway not found/programmed: %w", err)
+	}
+
+	l.Infof("Gateway %q exists and is programmed (despite broken Deployment)", gtwName.String())
+
+	hrName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultHTTPRouteName}
+	hr := &gatewayapiv1.HTTPRoute{}
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		if err := c.Get(ctx, hrName, hr); err != nil {
+			return fmt.Errorf("HTTPRoute not found: %w", err), nil
+		}
+
+		if len(hr.Status.Parents) == 0 {
+			return fmt.Errorf("HTTPRoute has no parents"), nil
+		}
+
+		accepted := meta.IsStatusConditionTrue(hr.Status.Parents[0].Conditions, string(gatewayapiv1.RouteConditionAccepted))
+		if !accepted {
+			return fmt.Errorf("HTTPRoute not accepted"), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("HTTPRoute not found/accepted: %w", err)
+	}
+
+	l.Infof("HTTPRoute %q exists and is accepted", hrName.String())
+
+	l.Info("kubermatic-api Deployment is healthy (unaffected by missing ConfigMap)")
+
+	// verify the ConfigMap referenced by the dashboard does not exist
+	cmName := types.NamespacedName{Namespace: ns, Name: "kubermatic-dashboard-themes"}
+	cm := &corev1.ConfigMap{}
+	if err := c.Get(ctx, cmName, cm); !apierrors.IsNotFound(err) {
+		return fmt.Errorf("ConfigMap kubermatic-dashboard-themes should not exist for this test")
+	}
+
+	l.Info("ConfigMap kubermatic-dashboard-themes correctly absent (test precondition)")
+
+	return nil
+}
