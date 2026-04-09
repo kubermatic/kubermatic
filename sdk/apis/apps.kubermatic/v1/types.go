@@ -52,4 +52,9 @@ const (
 	// ApplicationDefaultValuesHashAnnotation stores the SHA1 hash of the file-embedded
 	// defaultValuesBlock. Used to detect admin modifications to system ApplicationDefinitions.
 	ApplicationDefaultValuesHashAnnotation = "apps.kubermatic.k8c.io/default-values-hash"
+
+	// ApplicationAllowDefaultValuesOverwriteAnnotation signals that the admin allows KKP
+	// to overwrite defaultValuesBlock with upstream values during upgrade from an older
+	// controller that did not track the hash annotation.
+	ApplicationAllowDefaultValuesOverwriteAnnotation = "apps.kubermatic.k8c.io/allow-default-values-overwrite"
 )

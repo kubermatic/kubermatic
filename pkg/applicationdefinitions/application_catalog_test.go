@@ -96,7 +96,24 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			wantHashOf:    testDefaultValues,
 		},
 		{
-			name:          "upgrade, admin edited (cluster differs from file, no annotation)",
+			name:          "upgrade, file changed, cluster has stale value (no annotation, no opt-in)",
+			fileValues:    testUpdatedValues,
+			clusterValues: testDefaultValues,
+			wantValues:    testDefaultValues,
+			wantHashOf:    testUpdatedValues,
+		},
+		{
+			name:          "upgrade, file changed, cluster has stale value (no annotation, with opt-in)",
+			fileValues:    testUpdatedValues,
+			clusterValues: testDefaultValues,
+			clusterAnnotations: map[string]string{
+				appskubermaticv1.ApplicationAllowDefaultValuesOverwriteAnnotation: "true",
+			},
+			wantValues: testUpdatedValues,
+			wantHashOf: testUpdatedValues,
+		},
+		{
+			name:          "upgrade, admin edited (no annotation, no opt-in, preserved)",
 			fileValues:    testUpdatedValues,
 			clusterValues: testAdminValues,
 			wantValues:    testAdminValues,
