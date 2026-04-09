@@ -56,3 +56,22 @@ func TestGatewayAPIFreshInstall(t *testing.T) {
 		t.Fatalf("Gateway HTTP connectivity verification failed: %v", err)
 	}
 }
+
+func TestGatewayAPIDeploymentFailureTolerance(t *testing.T) {
+	ctx := context.Background()
+	rawLogger := log.NewFromOptions(logOptions)
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
+	logger := rawLogger.Sugar()
+
+	seedClient, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("Failed to build client: %v", err)
+	}
+
+	logger.Info("Verifying Gateway API resources exist despite Deployment reconciliation failure...")
+
+	err = verifyGatewayExistsRegardlessOfDeploymentHealth(ctx, t, seedClient, logger)
+	if err != nil {
+		t.Fatalf("Gateway API deployment failure tolerance verification failed: %v", err)
+	}
+}
