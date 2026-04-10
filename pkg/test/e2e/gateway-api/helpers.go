@@ -498,7 +498,7 @@ func verifyGatewayExistsRegardlessOfDeploymentHealth(ctx context.Context, t *tes
 	cmName := types.NamespacedName{Namespace: ns, Name: "kubermatic-dashboard-themes"}
 	cm := &corev1.ConfigMap{}
 
-	err := c.Get(ctx, cmName, cm)
+	err = c.Get(ctx, cmName, cm)
 	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("ConfigMap kubermatic-dashboard-themes should not exist for this test")
 	}
