@@ -494,16 +494,15 @@ func verifyGatewayExistsRegardlessOfDeploymentHealth(ctx context.Context, t *tes
 
 	l.Infof("HTTPRoute %q exists and is accepted", hrName.String())
 
-	l.Info("kubermatic-api Deployment is healthy (unaffected by missing ConfigMap)")
-
 	// verify the ConfigMap referenced by the dashboard does not exist
 	cmName := types.NamespacedName{Namespace: ns, Name: "kubermatic-dashboard-themes"}
 	cm := &corev1.ConfigMap{}
-	if err := c.Get(ctx, cmName, cm); !apierrors.IsNotFound(err) {
+
+	err := c.Get(ctx, cmName, cm)
+	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("ConfigMap kubermatic-dashboard-themes should not exist for this test")
 	}
 
 	l.Info("ConfigMap kubermatic-dashboard-themes correctly absent (test precondition)")
-
 	return nil
 }
