@@ -27,7 +27,7 @@ This ticket should capture:
 
 <!-- Required for release tracking. -->
 
-- Release minor: <!-- e.g. 2.27 -->
+- Release minor: <!-- e.g. 2.31 -->
 - GitHub milestone: <!-- the milestone this release is tracked under -->
 - Parent release testing epic: <!-- link to the umbrella issue that tracks all testing for this release -->
 - Related pull request(s):
@@ -38,11 +38,16 @@ This ticket should capture:
 
 <!--
 List the concrete KKP surface affected by this change.
-Use exact architecture components, not broad categories.
+Use exact architecture components, not broad categories. Add a short qualifier when needed to clarify what part of the surface changed.
 -->
 
 - Affected KKP surface(s) (controllers, APIs, CRDs, manifests, or charts):
-<!-- Example: `seed-controller-manager` reconciliation for `Cluster` objects, `kubermatic-webhook` validation for `Seed`, rendered user-cluster manifests, or operator chart values. -->
+<!--
+Examples:
+- `Cluster` resource reconciliation in `kkp-kubernetes-controller` within `seed-controller-manager`
+- `Seed` admission validation in `kubermatic-webhook`
+- `ApplicationInstallation` reconciliation in `kkp-app-installation-controller` within `user-cluster-controller-manager`
+-->
 
 ### Prerequisites
 
@@ -56,17 +61,15 @@ Include configuration, feature gates, required objects, existing cluster state, 
 
 ### Test environment
 
-<!-- 
-Provide the environment needed for someone else to repeat the test.
+<!-- Provide the environment/configuration needed for someone else to repeat the test. -->
 
- -->
-
+- Environment: <!-- e.g. QA, local -->
 - Edition (CE or EE):
 - Topology (shared or separate master/seed):
+- Starting state: <!-- e.g. fresh install, existing installation, upgrade from <version>, migration from <state> -->
 - Provider / datacenter:
 - Kubernetes version(s):
 - Operating system(s):
-- Upgrade path:
 
 ### Relevant manifests or API objects (if applicable)
 
