@@ -128,10 +128,10 @@ migrate_to_external_catalog_manager() {
   retry 10 kubectl -n kubermatic wait --for=condition=available --timeout=120s deployment/application-catalog-webhook
 
   echodate "Verifying default ApplicationCatalog CR exists..."
-  retry 5 verify_resource_exists applicationcatalog default-catalog -n kubermatic
+  retry 10 verify_resource_exists applicationcatalog default-catalog -n kubermatic
 
   echodate "Verifying catalog-managed ApplicationDefinitions..."
-  retry 5 verify_resource_exists applicationdefinitions -A -l 'applicationcatalog.k8c.io/managed-by=true'
+  retry 10 verify_resource_exists applicationdefinitions -A -l 'applicationcatalog.k8c.io/managed-by=true'
 
   echodate "Migration to ExternalApplicationCatalogManager completed successfully!"
 }
