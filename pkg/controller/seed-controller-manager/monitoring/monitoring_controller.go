@@ -135,7 +135,6 @@ func Add(
 		&appsv1.Deployment{},
 		&appsv1.StatefulSet{},
 		&autoscalingv1.VerticalPodAutoscaler{},
-		&corev1.Service{},
 	} {
 		bldr.Watches(t, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()))
 	}
@@ -258,8 +257,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, err
 	}
 
-	// check that all Services's are created
-	if err := r.ensureServices(ctx, cluster, data); err != nil {
+	// Remove the legacy per-cluster federation Service if still present from
+	// a pre-agent-mode installation.
+	if err := r.migratePrometheusFederationService(ctx, cluster); err != nil {
 		return nil, err
 	}
 

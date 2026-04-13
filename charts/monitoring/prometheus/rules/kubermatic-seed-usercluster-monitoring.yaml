@@ -1,0 +1,430 @@
+# This file has been generated, DO NOT EDIT.
+
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# These rules were previously evaluated inside each per-cluster Prometheus instance.
+# After migration to Prometheus agent mode, per-cluster agents push raw metrics to
+# the seed Prometheus via remote_write. All metrics carry 'cluster' and 'seed_cluster'
+# external labels, so rules can be evaluated centrally here.
+#
+# Key differences from the per-cluster versions:
+#   - Recording rules filter {cluster!=""} to exclude any seed-level metrics that share
+#     the same metric name (e.g. process_open_fds is emitted by seed components too).
+#   - Recording rules aggregate by (cluster, ...) to preserve per-cluster identity.
+#   - absent() alerts are replaced: at seed level, absent() only fires when NO cluster
+#     has the component. Instead, we cross-join with kube-state-metrics as a liveness
+#     anchor ("cluster is actively monitored") to detect per-cluster absences.
+#   - Konnectivity and Envoy rules are no longer conditional: metrics are only present
+#     for clusters using those features, so the rules naturally scope themselves.
+#
+# Job names used by the per-cluster agent scrape configs:
+#   etcd                - etcd pods (static_configs, no job relabeling)
+#   apiserver           - kube-apiserver (kubernetes-control-plane job, relabeled from app label)
+#   machine-controller  - machine-controller (control-plane-pods job, relabeled from app label)
+#   kube-state-metrics  - kube-state-metrics (control-plane-pods job, relabeled from app label)
+#   usercluster-controller, dns-resolver, cadvisor, nodes - same control-plane-pods relabeling pattern
+
+groups:
+  - name: usercluster.goprocess
+    rules:
+      - record: job:process_resident_memory_bytes:clone
+        expr: process_resident_memory_bytes{cluster!=""}
+      - record: job:process_cpu_seconds_total:rate5m
+        expr: rate(process_cpu_seconds_total{cluster!=""}[5m])
+      - record: job:process_open_fds:clone
+        expr: process_open_fds{cluster!=""}
+  - name: usercluster.etcd
+    rules:
+      - alert: EtcdInsufficientMembers
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}" in cluster {{ $labels.cluster }}: insufficient members ({{ $value }}).'
+        expr: |
+          sum by (cluster, job) (up{job="etcd", cluster!=""} == bool 1)
+          < ((count by (cluster, job) (up{job="etcd", cluster!=""}) + 1) / 2)
+        for: 15m
+        labels:
+          severity: critical
+      - alert: EtcdNoLeader
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }} has no leader. Cluster writes are blocked.'
+        expr: |
+          # Use the kube-state-metrics anchor: fire when the cluster is being monitored
+          # but no etcd member reports etcd_server_has_leader == 1.
+          # This covers both: (a) etcd running but lost quorum/leader, and
+          # (b) all etcd pods gone — where etcd_server_has_leader would be absent
+          # and the naive "== 0" expression would never fire.
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""})
+          unless
+          count by (cluster) (etcd_server_has_leader{job="etcd", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: critical
+      - alert: EtcdHighNumberOfLeaderChanges
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: instance {{ $labels.instance }} has seen {{ $value }} leader changes within the last 15 minutes.'
+        expr: |
+          rate(etcd_server_leader_changes_seen_total{job="etcd", cluster!=""}[15m]) > 3
+        for: 15m
+        labels:
+          severity: warning
+      - alert: EtcdGRPCRequestsSlow
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: gRPC requests to {{ $labels.grpc_method }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, job, instance, grpc_service, grpc_method, le) (
+              rate(grpc_server_handling_seconds_bucket{job="etcd", grpc_type="unary", cluster!=""}[5m])
+            )
+          ) > 0.15
+        for: 10m
+        labels:
+          severity: critical
+      - alert: EtcdMemberCommunicationSlow
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: member communication with {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, instance, le) (
+              rate(etcd_network_peer_round_trip_time_seconds_bucket{job="etcd", cluster!=""}[5m])
+            )
+          ) > 0.15
+        for: 10m
+        labels:
+          severity: warning
+      - alert: EtcdHighNumberOfFailedProposals
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: {{ $value }} proposal failures within the last 15 minutes on etcd instance {{ $labels.instance }}.'
+        expr: |
+          rate(etcd_server_proposals_failed_total{job="etcd", cluster!=""}[15m]) > 5
+        for: 15m
+        labels:
+          severity: warning
+      - alert: EtcdHighFsyncDurations
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: 99th percentile fsync durations are {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, instance, le) (
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd", cluster!=""}[5m])
+            )
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+      - alert: EtcdHighCommitDurations
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: 99th percentile commit durations {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, instance, le) (
+              rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd", cluster!=""}[5m])
+            )
+          ) > 0.25
+        for: 10m
+        labels:
+          severity: warning
+      - alert: EtcdDatabaseQuotaLowSpace
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: database size exceeds the defined quota on etcd instance {{ $labels.instance }}, please defrag or increase the quota as writes will be disabled when it is full.'
+        expr: |
+          (last_over_time(etcd_mvcc_db_total_size_in_bytes{job="etcd", cluster!=""}[5m])
+          / last_over_time(etcd_server_quota_backend_bytes{job="etcd", cluster!=""}[5m])) * 100 > 95
+        for: 10m
+        labels:
+          severity: critical
+      - alert: EtcdExcessiveDatabaseGrowth
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: predicting running out of disk space in the next four hours on etcd instance {{ $labels.instance }}.'
+        expr: |
+          predict_linear(etcd_mvcc_db_total_size_in_bytes{job="etcd", cluster!=""}[4h], 4 * 60 * 60)
+          > etcd_server_quota_backend_bytes{job="etcd", cluster!=""}
+        for: 10m
+        labels:
+          severity: warning
+      - alert: EtcdDatabaseHighFragmentationRatio
+        annotations:
+          message: 'Etcd in cluster {{ $labels.cluster }}: database size in use on instance {{ $labels.instance }} is {{ $value | humanizePercentage }} of the actual allocated disk space, please run defragmentation (e.g. etcdctl defrag) to retrieve the unused fragmented disk space.'
+        expr: |
+          (last_over_time(etcd_mvcc_db_total_size_in_use_in_bytes{job="etcd", cluster!=""}[5m])
+          / last_over_time(etcd_mvcc_db_total_size_in_bytes{job="etcd", cluster!=""}[5m])) < 0.5
+          and etcd_mvcc_db_total_size_in_use_in_bytes{job="etcd", cluster!=""} > 104857600
+        for: 10m
+        labels:
+          severity: warning
+      - record: job:etcd_server_has_leader:sum
+        expr: sum by (cluster) (etcd_server_has_leader{job="etcd", cluster!=""})
+      - record: job:etcd_disk_wal_fsync_duration_seconds_bucket:99percentile
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, instance, le) (rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd", cluster!=""}[5m]))
+          )
+      - record: job:etcd_disk_backend_commit_duration_seconds_bucket:99percentile
+        expr: |
+          histogram_quantile(0.99,
+            sum by (cluster, instance, le) (rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd", cluster!=""}[5m]))
+          )
+      - record: job:etcd_mvcc_db_total_size_in_bytes:clone
+        expr: etcd_mvcc_db_total_size_in_bytes{job="etcd", cluster!=""}
+      - record: job:etcd_network_client_grpc_received_bytes_total:rate5m
+        expr: rate(etcd_network_client_grpc_received_bytes_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_network_client_grpc_sent_bytes_total:rate5m
+        expr: rate(etcd_network_client_grpc_sent_bytes_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_network_peer_received_bytes_total:rate5msum
+        expr: sum by (cluster, instance) (rate(etcd_network_peer_received_bytes_total{job="etcd", cluster!=""}[5m]))
+      - record: job:etcd_network_peer_sent_bytes_total:rate5msum
+        expr: sum by (cluster, instance) (rate(etcd_network_peer_sent_bytes_total{job="etcd", cluster!=""}[5m]))
+      - record: job:etcd_server_proposals_failed_total:rate5msum
+        expr: sum by (cluster) (rate(etcd_server_proposals_failed_total{job="etcd", cluster!=""}[5m]))
+      - record: job:etcd_server_proposals_pending:sum
+        expr: sum by (cluster) (etcd_server_proposals_pending{job="etcd", cluster!=""})
+      - record: job:etcd_server_proposals_committed_total:rate5msum
+        expr: sum by (cluster) (rate(etcd_server_proposals_committed_total{job="etcd", cluster!=""}[5m]))
+      - record: job:etcd_server_proposals_applied_total:rate5msum
+        expr: sum by (cluster) (rate(etcd_server_proposals_applied_total{job="etcd", cluster!=""}[5m]))
+      - record: job:etcd_server_leader_changes_seen_total:changes1d
+        expr: changes(etcd_server_leader_changes_seen_total{job="etcd", cluster!=""}[1d])
+      - record: job:etcd_mvcc_delete_total:rate5m
+        expr: rate(etcd_mvcc_delete_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_mvcc_put_total:rate5m
+        expr: rate(etcd_mvcc_put_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_mvcc_range_total:rate5m
+        expr: rate(etcd_mvcc_range_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_debugging_mvcc_watcher_total:rate5m
+        expr: rate(etcd_debugging_mvcc_watcher_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_mvcc_txn_total:rate5m
+        expr: rate(etcd_mvcc_txn_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_debugging_mvcc_keys_total:clone
+        expr: etcd_debugging_mvcc_keys_total{job="etcd", cluster!=""}
+      - record: job:etcd_debugging_store_reads_total:rate5m
+        expr: rate(etcd_debugging_store_reads_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_debugging_store_writes_total:rate5m
+        expr: rate(etcd_debugging_store_writes_total{job="etcd", cluster!=""}[5m])
+      - record: job:etcd_debugging_store_expires_total:rate5m
+        expr: rate(etcd_debugging_store_expires_total{job="etcd", cluster!=""}[5m])
+      - record: job:apiserver_storage_size_bytes:sum
+        expr: sum by (cluster) (apiserver_storage_size_bytes{cluster!=""})
+  - name: usercluster.machine-controller
+    rules:
+      - alert: MachineControllerTooManyErrors
+        annotations:
+          message: Machine Controller in cluster {{ $labels.cluster }} has too many errors in its loop.
+        expr: |
+          sum by (cluster, namespace) (rate(machine_controller_errors_total{cluster!=""}[5m])) > 0.01
+        for: 20m
+        labels:
+          severity: warning
+      - alert: MachineControllerMachineDeletionTakesTooLong
+        annotations:
+          message: Machine {{ $labels.machine }} of cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
+        expr: (time() - machine_controller_machine_deleted{cluster!=""}) > 30 * 60
+        for: 0m
+        labels:
+          severity: warning
+      - alert: AWSInstanceCountTooHigh
+        annotations:
+          message: '{{ $labels.machine }} in cluster {{ $labels.cluster }} has more than one instance at AWS'
+        expr: machine_controller_aws_instances_for_machine{cluster!=""} > 1
+        for: 30m
+        labels:
+          severity: warning
+      - alert: KubernetesAdmissionWebhookHighRejectionRate
+        annotations:
+          message: '{{ $labels.operation }} requests for Machine objects in cluster {{ $labels.cluster }} are failing (Admission) with a high rate. Consider checking the affected objects'
+        expr: |
+          rate(apiserver_admission_webhook_admission_latencies_seconds_count{name="machine-controller.kubermatic.io-machines", rejected="true", cluster!=""}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+      - record: job:machine_controller_errors_total:rate5m
+        expr: rate(machine_controller_errors_total{cluster!=""}[5m])
+      - record: job:machine_controller_workers:sum
+        expr: sum by (cluster) (machine_controller_workers{cluster!=""})
+      - record: job:machine_controller_machines_total:sum
+        expr: sum by (cluster, kubelet_version, os, provider, size) (machine_controller_machines_total{cluster!=""})
+      - record: job:machine_deployment_available_replicas:user:sum
+        expr: sum by (cluster, name, namespace) (machine_deployment_available_replicas{cluster!=""})
+      - record: job:machine_deployment_ready_replicas:user:sum
+        expr: sum by (cluster, name, namespace) (machine_deployment_ready_replicas{cluster!=""})
+      - record: job:machine_deployment_replicas:user:sum
+        expr: sum by (cluster, name, namespace) (machine_deployment_replicas{cluster!=""})
+      - record: job:machine_deployment_updated_replicas:user:sum
+        expr: sum by (cluster, name, namespace) (machine_deployment_updated_replicas{cluster!=""})
+  - name: usercluster.process.filedescriptors
+    rules:
+      # {cluster!=""} ensures seed-level processes (alertmanager, prometheus, etc.)
+      # are excluded — they emit the same metric names but have no cluster label.
+      - record: instance:fd_utilization
+        expr: process_open_fds{cluster!=""} / process_max_fds{cluster!=""}
+      - alert: FdExhaustionClose
+        annotations:
+          message: '{{ $labels.job }} instance {{ $labels.instance }} in cluster {{ $labels.cluster }} will exhaust its file descriptors soon'
+        expr: |
+          predict_linear(instance:fd_utilization[1h], 3600 * 4) > 1
+        for: 10m
+        labels:
+          severity: warning
+      - alert: FdExhaustionClose
+        annotations:
+          message: '{{ $labels.job }} instance {{ $labels.instance }} in cluster {{ $labels.cluster }} will exhaust its file descriptors soon'
+        expr: |
+          predict_linear(instance:fd_utilization[10m], 3600) > 1
+        for: 10m
+        labels:
+          severity: critical
+  - name: usercluster.kubernetes-nodes
+    rules:
+      - alert: KubernetesNodeNotReady
+        annotations:
+          message: '{{ $labels.node }} in cluster {{ $labels.cluster }} has been unready for more than 30 minutes.'
+        expr: kube_node_status_condition{condition="Ready", status="true", cluster!=""} == 0
+        for: 30m
+        labels:
+          severity: warning
+      - record: job:kube_node_info:count
+        expr: count by (cluster) (kube_node_info{cluster!=""})
+  - name: usercluster.kubernetes-absent
+    # absent() cannot be used at seed level for per-cluster detection: it only fires
+    # when the metric is absent across ALL clusters simultaneously. Instead, we use
+    # kube-state-metrics as a liveness anchor — if a cluster is sending kube-state-metrics
+    # it is actively monitored, and we can detect missing components via set subtraction.
+    rules:
+      - alert: KubernetesApiserverDown
+        annotations:
+          message: Kubernetes apiserver has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: |
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""})
+          unless
+          count by (cluster) (up{job="apiserver", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: critical
+      - alert: MachineControllerDown
+        annotations:
+          message: Machine controller has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: |
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""})
+          unless
+          count by (cluster) (up{job="machine-controller", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: critical
+      - alert: UserClusterControllerDown
+        annotations:
+          message: User Cluster Controller has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: |
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""})
+          unless
+          count by (cluster) (up{job="usercluster-controller", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: critical
+      - alert: KubeStateMetricsDown
+        annotations:
+          message: Kube-state-metrics has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: |
+          count by (cluster) (up{job="etcd", cluster!=""})
+          unless
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: warning
+      - alert: EtcdDown
+        annotations:
+          message: Etcd has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: |
+          count by (cluster) (up{job="kube-state-metrics", cluster!=""})
+          unless
+          count by (cluster) (up{job="etcd", cluster!=""} == 1)
+        for: 15m
+        labels:
+          severity: critical
+      # Fires when cadvisor is being scraped (target present) but is failing.
+      # An absent() would be incorrect: clusters with no nodes have no cadvisors.
+      - alert: CAdvisorDown
+        annotations:
+          message: cAdvisor on {{ $labels.kubernetes_io_hostname }} in cluster {{ $labels.cluster }} could not be scraped.
+        expr: up{job="cadvisor", cluster!=""} == 0
+        for: 15m
+        labels:
+          severity: warning
+      # Fires when kubelet is being scraped (target present) but is failing.
+      - alert: KubernetesNodeDown
+        annotations:
+          message: The kubelet on {{ $labels.kubernetes_io_hostname }} in cluster {{ $labels.cluster }} could not be scraped.
+        expr: up{job="nodes", cluster!=""} == 0
+        for: 15m
+        labels:
+          severity: warning
+      # DNSResolverDown only applies to clusters NOT using Konnectivity.
+      # Konnectivity clusters legitimately have no dns-resolver targets, so we cannot
+      # use the kube-state-metrics anchor here. Instead, fire only when targets exist
+      # but are failing. Disappearance of all targets is covered by the etcd/apiserver alerts.
+      - alert: DNSResolverDown
+        annotations:
+          message: DNS resolver has disappeared from Prometheus target discovery in cluster {{ $labels.cluster }}.
+        expr: up{job="dns-resolver", cluster!=""} == 0
+        for: 15m
+        labels:
+          severity: warning
+  # Konnectivity rules: only active for clusters using the Konnectivity expose strategy.
+  # No conditional is needed — konnectivity metrics are only scraped from clusters that
+  # run a Konnectivity server, so rules simply produce no output for other clusters.
+  - name: usercluster.konnectivity
+    rules:
+      - record: job:konnectivity_ready_backend_connections:count
+        expr: konnectivity_network_proxy_server_ready_backend_connections{cluster!=""}
+      - record: job:konnectivity_dial_failure_rate:by_reason
+        expr: sum by (cluster, reason) (rate(konnectivity_network_proxy_server_dial_failure_count{cluster!=""}[5m]))
+      - record: job:konnectivity_network_proxy_server_full_receive_channels:sum
+        expr: sum by (cluster) (konnectivity_network_proxy_server_full_receive_channels{cluster!=""})
+      - alert: KonnectivityNoAgents
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has no Konnectivity agents connected. New tunnels cannot be established.'
+        expr: |
+          job:konnectivity_ready_backend_connections:count == 0
+        for: 2m
+        labels:
+          severity: critical
+      - alert: KonnectivityAgentsUnhealthy
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has only {{ $value }} Konnectivity agent(s) connected (expected: 2).'
+        expr: |
+          job:konnectivity_ready_backend_connections:count < 2
+        for: 3m
+        labels:
+          severity: warning
+      - alert: KonnectivityHighDialFailureRate
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has {{ $value | humanize }} dial failures/sec (reason: {{ $labels.reason }}). Check agent and node health.'
+        expr: |
+          job:konnectivity_dial_failure_rate:by_reason > 0.1
+        for: 10m
+        labels:
+          severity: warning
+  # Envoy agent rules: only active for clusters using the Tunneling expose strategy.
+  # Same as Konnectivity — no conditional needed, metrics are only present for
+  # clusters running envoy-agent.
+  - name: usercluster.envoy
+    rules:
+      - record: job:envoy_cluster_upstream_cx_active:sum
+        expr: sum by (cluster) (envoy_cluster_upstream_cx_active{cluster!=""})
+      - record: job:envoy_cluster_upstream_rq_total:irate1msum
+        expr: sum by (cluster, envoy_cluster_name) (irate(envoy_cluster_upstream_rq_total{cluster!=""}[1m]))
+      - record: job:envoy_cluster_upstream_cx_rx_bytes_total:irate1msum
+        expr: sum by (cluster, envoy_cluster_name) (irate(envoy_cluster_upstream_cx_rx_bytes_total{cluster!=""}[1m]))
+      - record: job:envoy_cluster_upstream_cx_tx_bytes_total:irate1msum
+        expr: sum by (cluster, envoy_cluster_name) (irate(envoy_cluster_upstream_cx_tx_bytes_total{cluster!=""}[1m]))
+      - record: job:envoy_cluster_upstream_rq_time_bucket:rate1msum
+        expr: sum by (cluster, le, envoy_cluster_name) (rate(envoy_cluster_upstream_rq_time_bucket{cluster!=""}[1m]))

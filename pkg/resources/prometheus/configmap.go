@@ -58,10 +58,46 @@ type configTemplateData struct {
 	CustomScrapingConfigs string
 	// ScrapingAnnotationPrefix is normalized to fit into a Prometheus rewrite rule.
 	ScrapingAnnotationPrefix string
+	// RemoteWriteConfig is the pre-rendered remote_write YAML block, generated
+	// dynamically based on the number of seed Prometheus replicas at reconcile time.
+	RemoteWriteConfig string
+}
+
+// writeRelabelRegex is the keep regex for write_relabel_configs. It covers exactly
+// the metrics referenced by rules in usercluster-monitoring.yaml.
+// etcd_.* covers all etcd_server/disk/network/mvcc/debugging metrics.
+// machine_controller_.* and machine_deployment_.* cover machine-controller.
+// konnectivity_.* and envoy_.* are no-ops for clusters not using those features.
+const writeRelabelRegex = `up|process_open_fds|process_max_fds|process_resident_memory_bytes|process_cpu_seconds_total|etcd_.*|grpc_server_handling_seconds_bucket|apiserver_storage_size_bytes|apiserver_admission_webhook_admission_latencies_seconds_count|machine_controller_.*|machine_deployment_.*|kube_node_status_condition|kube_node_info|konnectivity_network_proxy_server_.*|envoy_cluster_upstream_.*`
+
+// buildRemoteWriteConfig generates the remote_write YAML block targeting each seed
+// Prometheus replica pod directly via StatefulSet headless DNS. Writing to every
+// pod individually ensures each replica holds the full dataset — equivalent to the
+// old /federate pull model where both replicas independently scraped /federate.
+//
+// Returns an empty string when replicas is 0 (seed monitoring not installed).
+// In that case the agent still scrapes but discards immediately — no WAL buildup.
+func buildRemoteWriteConfig(replicas int32) string {
+	if replicas <= 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("remote_write:\n")
+	for i := int32(0); i < replicas; i++ {
+		fmt.Fprintf(&sb, "- url: http://prometheus-%d.prometheus.monitoring.svc.cluster.local:9090/api/v1/write\n", i)
+		fmt.Fprintf(&sb, "  name: seed-prometheus-%d\n", i)
+		sb.WriteString("  write_relabel_configs:\n")
+		sb.WriteString("  - source_labels: [__name__]\n")
+		sb.WriteString("    action: keep\n")
+		fmt.Fprintf(&sb, "    regex: '%s'\n", writeRelabelRegex)
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 // ConfigMapReconciler returns a ConfigMapReconciler containing the prometheus config for the supplied data.
-func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
+// seedPrometheusReplicas is the current replica count of the seed Prometheus StatefulSet; it is used
+// to generate one remote_write target per replica pod so every replica receives the full dataset.
+func ConfigMapReconciler(data *resources.TemplateData, seedPrometheusReplicas int32) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cluster := data.Cluster()
@@ -97,11 +133,6 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				return nil, fmt.Errorf("custom scraping configuration could not be parsed as a Go template: %w", err)
 			}
 
-			customRules, err := renderTemplate(kubermaticConfig.Spec.UserCluster.Monitoring.CustomRules, customData)
-			if err != nil {
-				return nil, fmt.Errorf("custom scraping rules could not be parsed as a Go template: %w", err)
-			}
-
 			// prepare tls_config stanza
 			etcdTLSYaml, err := yaml.Marshal(etcdTLS)
 			if err != nil {
@@ -121,6 +152,7 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				EtcdTLSConfig:            strings.TrimSpace(string(etcdTLSYaml)),
 				ApiserverTLSConfig:       strings.TrimSpace(string(apiserverTLSYaml)),
 				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
+				RemoteWriteConfig:        buildRemoteWriteConfig(seedPrometheusReplicas),
 			}
 
 			config, err := renderTemplate(prometheusConfig, configData)
@@ -137,29 +169,10 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 
 			cm.Data["prometheus.yaml"] = config
 
-			if kubermaticConfig.Spec.UserCluster.Monitoring.DisableDefaultRules {
-				delete(cm.Data, "rules.yaml")
-			} else {
-				cm.Data["rules.yaml"] = prometheusRules
-
-				// deploy DNSResolverDownAlert rule only if Konnectivity is disabled
-				// (custom DNS resolver in not deployed in Konnectivity setup)
-				if !data.IsKonnectivityEnabled() {
-					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
-				} else {
-					cm.Data["rules.yaml"] += prometheusRuleKonnectivity
-				}
-
-				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-					cm.Data["rules.yaml"] += prometheusRuleEnvoyAgentFederation
-				}
-			}
-
-			if customRules == "" {
-				delete(cm.Data, "rules-custom.yaml")
-			} else {
-				cm.Data["rules-custom.yaml"] = customRules
-			}
+			// Agent mode cannot evaluate rules; alerting rules are now managed at the
+			// seed-level Prometheus. Remove any previously deployed rules files.
+			delete(cm.Data, "rules.yaml")
+			delete(cm.Data, "rules-custom.yaml")
 
 			// make sure all files end with exactly one empty line to prevent needless pod restarts
 			for k, v := range cm.Data {
@@ -187,23 +200,23 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 
 const prometheusConfig = `
 global:
-  evaluation_interval: 30s
   scrape_interval: 30s
   external_labels:
     cluster: "{{ .TemplateData.Cluster.Name }}"
     seed_cluster: "{{ .TemplateData.Seed.Name }}"
 
-rule_files:
-- "/etc/prometheus/config/rules*.yaml"
-
-alerting:
-  alertmanagers:
-  - dns_sd_configs:
-    # configure the Seed's alertmanager for the user cluster
-    - names:
-      - 'alertmanager.monitoring.svc.cluster.local'
-      type: A
-      port: 9093
+# Push scraped metrics to all seed-level Prometheus replicas directly.
+# Writing to each pod via the StatefulSet headless DNS (not the ClusterIP Service)
+# ensures every replica receives the full dataset — equivalent to the old pull
+# federation model where both replicas independently scraped /federate.
+# This gives Thanos deduplication identical timestamps across replicas (better than
+# federation where each replica scraped at a slightly different moment).
+#
+# write_relabel_configs keeps only the metrics referenced by alerting and recording
+# rules in charts/monitoring/prometheus/rules/src/kubermatic-seed/usercluster-monitoring.yaml,
+# matching the cardinality of the old /federate filter ({kubermatic="federate"}).
+# Replica count and targets are generated at reconcile time from the seed Prometheus StatefulSet.
+{{ .RemoteWriteConfig }}
 
 scrape_configs:
 {{- if not .TemplateData.KubermaticConfiguration.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs }}
