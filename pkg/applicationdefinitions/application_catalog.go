@@ -101,7 +101,7 @@ func systemApplicationDefinitionReconcilerFactory(
 			fileAppDef.SetLabels(l)
 
 			// capture the stored hash before EnsureAnnotations potentially overwrites it
-			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
+			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation]
 
 			// Labels and annotations specified in the ApplicationDefinition installed on the cluster are merged with the ones specified in the ApplicationDefinition
 			// that is generated from the system applications.
@@ -177,7 +177,7 @@ func systemApplicationDefinitionReconcilerFactory(
 				annotations = make(map[string]string)
 			}
 
-			annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation] = fileHash
+			annotations[appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation] = fileHash
 			clusterAppDef.SetAnnotations(annotations)
 
 			return clusterAppDef, nil

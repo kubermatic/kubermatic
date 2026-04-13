@@ -124,7 +124,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    testUpdatedValues,
 			clusterValues: testDefaultValues,
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: testUpdatedValues,
 			wantHashOf: testUpdatedValues,
@@ -134,7 +134,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    testUpdatedValues,
 			clusterValues: testAdminValues,
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: testAdminValues,
 			wantHashOf: testUpdatedValues,
@@ -144,7 +144,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    testUpdatedValues,
 			clusterValues: "",
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: testUpdatedValues,
 			wantHashOf: testUpdatedValues,
@@ -154,7 +154,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    testUpdatedValues,
 			clusterValues: "{}",
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: testUpdatedValues,
 			wantHashOf: testUpdatedValues,
@@ -164,7 +164,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    "",
 			clusterValues: testDefaultValues,
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: "",
 			wantHashOf: "",
@@ -174,7 +174,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			fileValues:    "",
 			clusterValues: testAdminValues,
 			clusterAnnotations: map[string]string{
-				appskubermaticv1.ApplicationDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
+				appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation: sha1Hex(testDefaultValues),
 			},
 			wantValues: testAdminValues,
 			wantHashOf: "",
@@ -196,7 +196,7 @@ func TestDefaultValuesBlockReconciliation(t *testing.T) {
 			}
 
 			expectedHash := sha1Hex(tt.wantHashOf)
-			gotHash := result.Annotations[appskubermaticv1.ApplicationDefaultValuesHashAnnotation]
+			gotHash := result.Annotations[appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation]
 			if gotHash != expectedHash {
 				t.Errorf("hash annotation: got %q, want %q", gotHash, expectedHash)
 			}
