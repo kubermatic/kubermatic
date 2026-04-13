@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -137,7 +138,7 @@ func Add(
 		&autoscalingv1.VerticalPodAutoscaler{},
 		&corev1.Service{},
 	} {
-		bldr.Watches(t, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()))
+		bldr.Watches(t, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), builder.WithPredicates(predicateutil.SkipCreateEvents()))
 	}
 
 	_, err := bldr.Build(reconciler)

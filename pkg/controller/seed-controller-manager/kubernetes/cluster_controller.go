@@ -29,6 +29,7 @@ import (
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/clusterdeletion"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -225,7 +226,7 @@ func Add(
 		For(&kubermaticv1.Cluster{})
 
 	for _, t := range typesToWatch {
-		bldr.Watches(t, inNamespaceHandler)
+		bldr.Watches(t, inNamespaceHandler, builder.WithPredicates(predicateutil.SkipCreateEvents()))
 	}
 
 	_, err := bldr.Build(reconciler)
