@@ -71,9 +71,13 @@ func GatewayReconciler(
 			}
 
 			gatewayClassName := defaulting.DefaultGatewayClassName
-			if cfg.Spec.Ingress.Gateway != nil && cfg.Spec.Ingress.Gateway.ClassName != "" {
-				gatewayClassName = cfg.Spec.Ingress.Gateway.ClassName
+			gatewayConfig := cfg.Spec.Ingress.Gateway
+			if gatewayConfig != nil {
+				if gatewayConfig.ClassName != "" {
+					gatewayClassName = gatewayConfig.ClassName
+				}
 			}
+			g.Spec.Infrastructure = reconcileGatewayInfrastructure(g.Spec.Infrastructure, gatewayConfig)
 			g.Spec.GatewayClassName = gatewayapiv1.ObjectName(gatewayClassName)
 
 			// Build core listeners. HTTP is always present.
@@ -143,6 +147,37 @@ func GatewayReconciler(
 			return g, nil
 		}
 	}
+}
+
+// reconcileGatewayInfrastructure keeps unmanaged infrastructure fields from the
+// existing Gateway, while making KubermaticConfiguration the source of truth for
+// infrastructure annotations.
+func reconcileGatewayInfrastructure(
+	existing *gatewayapiv1.GatewayInfrastructure,
+	gatewayConfig *kubermaticv1.KubermaticGatewayConfiguration,
+) *gatewayapiv1.GatewayInfrastructure {
+	var infra *gatewayapiv1.GatewayInfrastructure
+	if existing != nil {
+		infra = existing.DeepCopy()
+		infra.Annotations = nil
+	}
+
+	if gatewayConfig != nil && len(gatewayConfig.InfrastructureAnnotations) > 0 {
+		if infra == nil {
+			infra = &gatewayapiv1.GatewayInfrastructure{}
+		}
+
+		infra.Annotations = make(map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue, len(gatewayConfig.InfrastructureAnnotations))
+		for key, value := range gatewayConfig.InfrastructureAnnotations {
+			infra.Annotations[gatewayapiv1.AnnotationKey(key)] = gatewayapiv1.AnnotationValue(value)
+		}
+	}
+
+	if infra != nil && len(infra.Labels) == 0 && len(infra.Annotations) == 0 && infra.ParametersRef == nil {
+		return nil
+	}
+
+	return infra
 }
 
 // HTTPRouteReconciler returns a reconciler for the HTTPRoute resource that routes to KKP services.
@@ -312,6 +347,11 @@ func EnsureGateway(
 	_, reconciler := GatewayReconciler(cfg, namespace, existingListeners)()
 
 	desired := &gatewayapiv1.Gateway{}
+	// Carry over existing infrastructure so the reconciler can preserve unmanaged
+	// fields while reconciling annotation ownership from config.
+	if err == nil && existing.Spec.Infrastructure != nil {
+		desired.Spec.Infrastructure = existing.Spec.Infrastructure.DeepCopy()
+	}
 	if _, err := reconciler(desired); err != nil {
 		return fmt.Errorf("failed to build desired Gateway: %w", err)
 	}
