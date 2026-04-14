@@ -202,6 +202,10 @@ spec:
     gateway:
       # ClassName is the GatewayClass to use.
       className: kubermatic-envoy-gateway
+      # InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
+      # operator-managed Gateway so the Gateway implementation can propagate them to the
+      # generated infrastructure resources.
+      infrastructureAnnotations: null
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.

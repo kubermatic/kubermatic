@@ -534,6 +534,14 @@ spec:
                           default: kubermatic-envoy-gateway
                           description: ClassName is the GatewayClass to use.
                           type: string
+                        infrastructureAnnotations:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
+                            operator-managed Gateway so the Gateway implementation can propagate them to the
+                            generated infrastructure resources.
+                          type: object
                       type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.

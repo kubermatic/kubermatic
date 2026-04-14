@@ -186,6 +186,33 @@ func TestGatewayReconciler(t *testing.T) {
 			},
 		},
 		{
+			name: "Gateway includes infrastructure annotations when configured",
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain: "example.com",
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							InfrastructureAnnotations: map[string]string{
+								"metallb.io/address-pool":    "public",
+								"metallb.io/loadBalancerIPs": "192.0.2.10",
+							},
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, gw *gatewayapiv1.Gateway) {
+				if gw.Spec.Infrastructure == nil {
+					t.Fatal("Expected infrastructure settings to be configured")
+				}
+				if got := string(gw.Spec.Infrastructure.Annotations["metallb.io/address-pool"]); got != "public" {
+					t.Errorf("Expected infrastructure annotation metallb.io/address-pool=%q, got %q", "public", got)
+				}
+				if got := string(gw.Spec.Infrastructure.Annotations["metallb.io/loadBalancerIPs"]); got != "192.0.2.10" {
+					t.Errorf("Expected infrastructure annotation metallb.io/loadBalancerIPs=%q, got %q", "192.0.2.10", got)
+				}
+			},
+		},
+		{
 			name: "Gateway AllowedRoutes has correct namespace selector",
 			config: &kubermaticv1.KubermaticConfiguration{
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
@@ -345,6 +372,147 @@ func TestGatewayReconcilerKeepsAnnotations(t *testing.T) {
 			for k, v := range existingAnnotations {
 				if reconciledValue := reconciled.Annotations[k]; reconciledValue != v {
 					t.Errorf("Expected annotation %q with value %q, but got %q.", k, v, reconciledValue)
+				}
+			}
+		})
+	}
+}
+
+func TestGatewayReconcilerClearsManagedAnnotationsWhenConfigEmpty(t *testing.T) {
+	testCases := []struct {
+		name          string
+		gatewayConfig *kubermaticv1.KubermaticGatewayConfiguration
+	}{
+		{
+			name:          "gateway block removed",
+			gatewayConfig: nil,
+		},
+		{
+			name:          "infrastructure annotations removed",
+			gatewayConfig: &kubermaticv1.KubermaticGatewayConfiguration{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain:  "example.com",
+						Gateway: tc.gatewayConfig,
+					},
+				},
+			}
+
+			existing := &gatewayapiv1.Gateway{
+				Spec: gatewayapiv1.GatewaySpec{
+					Infrastructure: &gatewayapiv1.GatewayInfrastructure{
+						Annotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{
+							"metallb.io/address-pool":    "public",
+							"metallb.io/loadBalancerIPs": "192.0.2.10",
+						},
+					},
+				},
+			}
+
+			creatorGetter := GatewayReconciler(cfg, "kubermatic", nil)
+			_, creator := creatorGetter()
+
+			reconciled, err := creator(existing)
+			if err != nil {
+				t.Fatalf("GatewayReconciler failed: %v", err)
+			}
+
+			if reconciled.Spec.Infrastructure != nil {
+				t.Fatalf("expected managed infrastructure annotations to be cleared, got %#v", reconciled.Spec.Infrastructure)
+			}
+		})
+	}
+}
+
+func TestGatewayReconcilerPreservesUnmanagedInfrastructureFields(t *testing.T) {
+	parametersRef := &gatewayapiv1.LocalParametersReference{
+		Group: "gateway.envoyproxy.io",
+		Kind:  "EnvoyProxy",
+		Name:  "shared-config",
+	}
+
+	testCases := []struct {
+		name            string
+		gatewayConfig   *kubermaticv1.KubermaticGatewayConfiguration
+		wantAnnotations map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue
+	}{
+		{
+			name:            "removing managed annotations keeps labels and parametersRef",
+			gatewayConfig:   &kubermaticv1.KubermaticGatewayConfiguration{},
+			wantAnnotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{},
+		},
+		{
+			name: "updating managed annotations replaces existing annotations and keeps labels and parametersRef",
+			gatewayConfig: &kubermaticv1.KubermaticGatewayConfiguration{
+				InfrastructureAnnotations: map[string]string{
+					"metallb.io/address-pool": "public",
+				},
+			},
+			wantAnnotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{
+				"metallb.io/address-pool": "public",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain:  "example.com",
+						Gateway: tc.gatewayConfig,
+					},
+				},
+			}
+
+			existing := &gatewayapiv1.Gateway{
+				Spec: gatewayapiv1.GatewaySpec{
+					Infrastructure: &gatewayapiv1.GatewayInfrastructure{
+						Labels: map[gatewayapiv1.LabelKey]gatewayapiv1.LabelValue{
+							"team": "platform",
+						},
+						Annotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{
+							"metallb.io/address-pool": "private",
+							"example.com/stale":       "value",
+						},
+						ParametersRef: parametersRef,
+					},
+				},
+			}
+
+			creatorGetter := GatewayReconciler(cfg, "kubermatic", nil)
+			_, creator := creatorGetter()
+
+			reconciled, err := creator(existing)
+			if err != nil {
+				t.Fatalf("GatewayReconciler failed: %v", err)
+			}
+
+			if reconciled.Spec.Infrastructure == nil {
+				t.Fatal("expected infrastructure to be preserved")
+			}
+			if got := reconciled.Spec.Infrastructure.Labels["team"]; got != "platform" {
+				t.Fatalf("expected infrastructure label team=%q, got %q", "platform", got)
+			}
+			if reconciled.Spec.Infrastructure.ParametersRef == nil {
+				t.Fatal("expected parametersRef to be preserved")
+			}
+			if *reconciled.Spec.Infrastructure.ParametersRef != *parametersRef {
+				t.Fatalf("expected parametersRef %#v, got %#v", *parametersRef, *reconciled.Spec.Infrastructure.ParametersRef)
+			}
+
+			if len(reconciled.Spec.Infrastructure.Annotations) != len(tc.wantAnnotations) {
+				t.Fatalf("expected %d infrastructure annotations, got %d", len(tc.wantAnnotations), len(reconciled.Spec.Infrastructure.Annotations))
+			}
+			for key, value := range tc.wantAnnotations {
+				if got := reconciled.Spec.Infrastructure.Annotations[key]; got != value {
+					t.Fatalf("expected infrastructure annotation %s=%q, got %q", key, value, got)
 				}
 			}
 		})
@@ -630,6 +798,111 @@ func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 	}
 	if updated.Labels["old-label"] != "old-value" {
 		t.Errorf("expected user label 'old-label' to be preserved, got %q", updated.Labels["old-label"])
+	}
+}
+
+func TestEnsureGatewayReconcilesInfrastructureAnnotationsOwnership(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	parametersRef := &gatewayapiv1.LocalParametersReference{
+		Group: "gateway.envoyproxy.io",
+		Kind:  "EnvoyProxy",
+		Name:  "shared-config",
+	}
+
+	testCases := []struct {
+		name            string
+		gatewayConfig   *kubermaticv1.KubermaticGatewayConfiguration
+		wantAnnotations map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue
+	}{
+		{
+			name:            "removing config annotations clears managed annotations",
+			gatewayConfig:   &kubermaticv1.KubermaticGatewayConfiguration{},
+			wantAnnotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{},
+		},
+		{
+			name: "configured annotations replace existing annotations",
+			gatewayConfig: &kubermaticv1.KubermaticGatewayConfiguration{
+				InfrastructureAnnotations: map[string]string{
+					"metallb.io/address-pool": "public",
+				},
+			},
+			wantAnnotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{
+				"metallb.io/address-pool": "public",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			existing := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      gatewayName,
+					Namespace: namespace,
+				},
+				Spec: gatewayapiv1.GatewaySpec{
+					GatewayClassName: "old-class-name",
+					Infrastructure: &gatewayapiv1.GatewayInfrastructure{
+						Labels: map[gatewayapiv1.LabelKey]gatewayapiv1.LabelValue{
+							"team": "platform",
+						},
+						Annotations: map[gatewayapiv1.AnnotationKey]gatewayapiv1.AnnotationValue{
+							"metallb.io/address-pool": "private",
+							"example.com/stale":       "value",
+						},
+						ParametersRef: parametersRef,
+					},
+					Listeners: []gatewayapiv1.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapiv1.HTTPProtocolType,
+							Port:     gatewayapiv1.PortNumber(80),
+						},
+					},
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+			cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain:  "kubermatic.example.com",
+					Gateway: tc.gatewayConfig,
+				},
+			})
+
+			if err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme); err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+
+			var updated gatewayapiv1.Gateway
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &updated); err != nil {
+				t.Fatalf("Gateway should exist: %v", err)
+			}
+
+			if updated.Spec.Infrastructure == nil {
+				t.Fatal("expected infrastructure to be preserved")
+			}
+			if got := updated.Spec.Infrastructure.Labels["team"]; got != "platform" {
+				t.Fatalf("expected infrastructure label team=%q, got %q", "platform", got)
+			}
+			if updated.Spec.Infrastructure.ParametersRef == nil {
+				t.Fatal("expected parametersRef to be preserved")
+			}
+			if *updated.Spec.Infrastructure.ParametersRef != *parametersRef {
+				t.Fatalf("expected parametersRef %#v, got %#v", *parametersRef, *updated.Spec.Infrastructure.ParametersRef)
+			}
+			if len(updated.Spec.Infrastructure.Annotations) != len(tc.wantAnnotations) {
+				t.Fatalf("expected %d infrastructure annotations, got %d", len(tc.wantAnnotations), len(updated.Spec.Infrastructure.Annotations))
+			}
+			for key, value := range tc.wantAnnotations {
+				if got := updated.Spec.Infrastructure.Annotations[key]; got != value {
+					t.Fatalf("expected infrastructure annotation %s=%q, got %q", key, value, got)
+				}
+			}
+		})
 	}
 }
 
