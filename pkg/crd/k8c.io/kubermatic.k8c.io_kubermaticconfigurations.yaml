@@ -682,6 +682,24 @@ spec:
                             operator-managed Gateway so the Gateway implementation can propagate them to the
                             generated infrastructure resources.
                           type: object
+                        tls:
+                          description: TLS configures TLS for the operator-managed default Gateway.
+                          properties:
+                            secretRef:
+                              description: |-
+                                SecretRef references an existing TLS Secret that should be used by the
+                                default HTTPS listener.
+                              properties:
+                                name:
+                                  description: Name is the name of the TLS Secret.
+                                  type: string
+                                namespace:
+                                  description: |-
+                                    Namespace is the namespace of the TLS Secret. If unset, the Gateway namespace is used.
+                                    Cross-namespace references require a Gateway API ReferenceGrant in the target namespace.
+                                  type: string
+                              type: object
+                          type: object
                       type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
