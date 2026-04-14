@@ -387,15 +387,19 @@ func EnsureGateway(
 		return client.Create(ctx, desired)
 	}
 
-	updated := existing.DeepCopy()
-	updated.Spec = desired.Spec
-	kubernetes.EnsureLabels(updated, desired.Labels)
+		updated := existing.DeepCopy()
+		updated.Spec = desired.Spec
+		kubernetes.EnsureLabels(updated, desired.Labels)
 
-	annotations := updated.GetAnnotations()
-	delete(annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
-	delete(annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
-	updated.SetAnnotations(annotations)
-	kubernetes.EnsureAnnotations(updated, desired.Annotations)
+		// Remove stale cert-manager ownership markers before merging desired annotations.
+		// EnsureAnnotations preserves unrelated keys, but it does not delete managed keys
+		// that are no longer part of the desired state (for example after switching to
+		// manual Gateway TLS).
+		annotations := updated.GetAnnotations()
+		delete(annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
+		delete(annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
+		updated.SetAnnotations(annotations)
+		kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
 	if err := setControllerReference(cfg, updated, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference on Gateway: %w", err)
