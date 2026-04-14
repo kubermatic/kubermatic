@@ -87,11 +87,49 @@ func csiRoleReconciler(name string) reconciling.NamedRoleReconcilerFactory {
 				{
 					APIGroups: []string{""},
 					Resources: []string{"persistentvolumeclaims"},
+					Verbs:     []string{"get", "list", "watch", "update", "patch"},
+				},
+			}
+
+			return r, nil
+		}
+	}
+}
+
+func csiClusterRoleReconciler(name string) reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
+		return name, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"persistentvolumes"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
 
 			return r, nil
+		}
+	}
+}
+
+func csiClusterRoleBindingReconciler(name, namespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
+		return name, func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      name,
+					Namespace: namespace,
+				},
+			}
+
+			rb.RoleRef = rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     name,
+			}
+
+			return rb, nil
 		}
 	}
 }
@@ -118,7 +156,7 @@ func csiRoleBindingReconciler(name, namespace string) reconciling.NamedRoleBindi
 	}
 }
 
-// reconcileCSIRoleRoleBinding reconciles the Role and RoleBinding needed by CSI driver.
+// reconcileCSIRoleRoleBinding reconciles the Role, RoleBinding, ClusterRole and ClusterRoleBinding needed by CSI driver.
 func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
 		csiRoleReconciler(resources.KubeVirtCSIServiceAccountName),
@@ -131,6 +169,21 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 		csiRoleBindingReconciler(resources.KubeVirtCSIServiceAccountName, namespace),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, namespace, client); err != nil {
+		return err
+	}
+
+	// ClusterRole and ClusterRoleBinding for cluster-scoped resources (persistentvolumes)
+	clusterRoleReconcilers := []reconciling.NamedClusterRoleReconcilerFactory{
+		csiClusterRoleReconciler(resources.KubeVirtCSIServiceAccountName),
+	}
+	if err := reconciling.ReconcileClusterRoles(ctx, clusterRoleReconcilers, "", client); err != nil {
+		return err
+	}
+
+	clusterRoleBindingReconcilers := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		csiClusterRoleBindingReconciler(resources.KubeVirtCSIServiceAccountName, namespace),
+	}
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconcilers, "", client); err != nil {
 		return err
 	}
 
