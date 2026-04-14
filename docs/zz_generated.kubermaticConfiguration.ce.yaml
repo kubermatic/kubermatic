@@ -255,6 +255,16 @@ spec:
       # operator-managed Gateway so the Gateway implementation can propagate them to the
       # generated infrastructure resources.
       infrastructureAnnotations: null
+      # TLS configures TLS for the operator-managed default Gateway.
+      tls:
+        # SecretRef references an existing TLS Secret that should be used by the
+        # default HTTPS listener.
+        secretRef:
+          # Name is the name of the TLS Secret.
+          name: ""
+          # Namespace is the namespace of the TLS Secret. If unset, the Gateway namespace is used.
+          # Cross-namespace references require a Gateway API ReferenceGrant in the target namespace.
+          namespace: ""
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.

@@ -483,10 +483,30 @@ type KubermaticGatewayConfiguration struct {
 	// ClassName is the GatewayClass to use.
 	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
+
 	// InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
 	// operator-managed Gateway so the Gateway implementation can propagate them to the
 	// generated infrastructure resources.
 	InfrastructureAnnotations map[string]string `json:"infrastructureAnnotations,omitempty"`
+
+	// TLS configures TLS for the operator-managed default Gateway.
+	TLS *KubermaticGatewayTLSConfiguration `json:"tls,omitempty"`
+}
+
+// KubermaticGatewayTLSConfiguration configures TLS for the operator-managed default Gateway.
+type KubermaticGatewayTLSConfiguration struct {
+	// SecretRef references an existing TLS Secret that should be used by the
+	// default HTTPS listener.
+	SecretRef *KubermaticGatewaySecretReference `json:"secretRef,omitempty"`
+}
+
+// KubermaticGatewaySecretReference references a TLS Secret for the operator-managed default Gateway.
+type KubermaticGatewaySecretReference struct {
+	// Name is the name of the TLS Secret.
+	Name string `json:"name,omitempty"`
+	// Namespace is the namespace of the TLS Secret. If unset, the Gateway namespace is used.
+	// Cross-namespace references require a Gateway API ReferenceGrant in the target namespace.
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
