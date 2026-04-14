@@ -483,6 +483,10 @@ type KubermaticGatewayConfiguration struct {
 	// ClassName is the GatewayClass to use.
 	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
+	// InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
+	// operator-managed Gateway so the Gateway implementation can propagate them to the
+	// generated infrastructure resources.
+	InfrastructureAnnotations map[string]string `json:"infrastructureAnnotations,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
