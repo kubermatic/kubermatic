@@ -262,12 +262,8 @@ func TestValidateMirrorImages(t *testing.T) {
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			spec := &kubermaticv1.KubermaticConfigurationSpec{
-				MirrorImages: tt.mirrorImages,
-			}
-			version := semver.NewSemverOrDie("v1.11.1")
-			spec.Versions.Default = version
-			spec.Versions.Versions = append(spec.Versions.Versions, *version)
+			spec := newValidKubermaticConfigurationSpec()
+			spec.MirrorImages = tt.mirrorImages
 			errs := ValidateKubermaticConfigurationSpec(spec)
 			if tt.valid {
 				if len(errs) > 0 {
@@ -280,4 +276,18 @@ func TestValidateMirrorImages(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newValidKubermaticConfigurationSpec() *kubermaticv1.KubermaticConfigurationSpec {
+	spec := &kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "example.com",
+		},
+	}
+
+	version := semver.NewSemverOrDie("v1.11.1")
+	spec.Versions.Default = version
+	spec.Versions.Versions = append(spec.Versions.Versions, *version)
+
+	return spec
 }
