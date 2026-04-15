@@ -130,6 +130,19 @@ func ByAnnotation(key, value string, checkValue bool) predicate.Funcs {
 	})
 }
 
+// SkipCreateEvents returns a predicate that filters out Create events.
+// This is useful for secondary watches where the initial informer cache fill
+// generates synthetic Create events for all existing objects. With thousands
+// of objects, the expensive mapper calls during cache fill can exceed the
+// controller-runtime CacheSyncTimeout (2 minutes).
+func SkipCreateEvents() predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+	}
+}
+
 // TrueFilter is a helper filter implementation that always returns true, e.g. for use with MultiFactory.
 func TrueFilter(_ ctrlruntimeclient.Object) bool {
 	return true

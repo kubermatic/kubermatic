@@ -56,6 +56,17 @@ func MergeListeners(core, existing []gatewayapiv1.Listener) []gatewayapiv1.Liste
 	return result
 }
 
+// CoreListener returns the named core listener from the provided slice, or nil when absent.
+func CoreListener(listeners []gatewayapiv1.Listener, name gatewayapiv1.SectionName) *gatewayapiv1.Listener {
+	for i := range listeners {
+		if listeners[i].Name == name {
+			return &listeners[i]
+		}
+	}
+
+	return nil
+}
+
 // SortListenersByName sorts listeners alphabetically by name for deterministic ordering.
 func SortListenersByName(listeners []gatewayapiv1.Listener) {
 	slices.SortFunc(listeners, func(a, b gatewayapiv1.Listener) int {

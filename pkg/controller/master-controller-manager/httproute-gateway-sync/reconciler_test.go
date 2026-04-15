@@ -17,10 +17,20 @@ limitations under the License.
 package httproutegatewaysync
 
 import (
+	"context"
+	"reflect"
 	"strings"
 	"testing"
 
+	"go.uber.org/zap"
+
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -276,5 +286,218 @@ func TestReferencesGateway(t *testing.T) {
 				t.Errorf("referencesGateway() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDesiredListenersReuseGatewayTLSCertificateRefs(t *testing.T) {
+	r := &Reconciler{}
+
+	sharedNamespace := gatewayapiv1.Namespace("shared-certs")
+	gateway := &gatewayapiv1.Gateway{
+		Spec: gatewayapiv1.GatewaySpec{
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+				{
+					Name:     "https",
+					Protocol: gatewayapiv1.HTTPSProtocolType,
+					Port:     443,
+					TLS: &gatewayapiv1.ListenerTLSConfig{
+						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
+						CertificateRefs: []gatewayapiv1.SecretObjectReference{
+							{
+								Name:      "manual-wildcard",
+								Namespace: &sharedNamespace,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	routes := []gatewayapiv1.HTTPRoute{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "grafana",
+				Namespace: "monitoring",
+			},
+			Spec: gatewayapiv1.HTTPRouteSpec{
+				Hostnames: []gatewayapiv1.Hostname{"grafana.example.com"},
+			},
+		},
+	}
+
+	listeners := r.desiredListeners(zap.NewNop().Sugar(), gateway, routes, r.listenerSyncConfig(gateway))
+
+	var routeListener *gatewayapiv1.Listener
+	for i := range listeners {
+		if listeners[i].Name == gatewayapiv1.SectionName("grafana-example-com") {
+			routeListener = &listeners[i]
+			break
+		}
+	}
+
+	if routeListener == nil {
+		t.Fatalf("expected hostname listener for grafana.example.com, got %#v", listeners)
+	}
+
+	coreHTTPS := gatewayutil.CoreListener(gateway.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
+	if coreHTTPS == nil {
+		t.Fatal("expected core https listener to be present")
+	}
+
+	if !reflect.DeepEqual(routeListener.TLS.CertificateRefs, coreHTTPS.TLS.CertificateRefs) {
+		t.Fatalf("expected synced listener to reuse manual certificate refs, got %#v", routeListener.TLS.CertificateRefs)
+	}
+}
+
+func TestDesiredListenersDisabledPreservesExistingListeners(t *testing.T) {
+	r := &Reconciler{}
+
+	gateway := &gatewayapiv1.Gateway{
+		Spec: gatewayapiv1.GatewaySpec{
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+				{
+					Name:     "custom-tcp",
+					Protocol: gatewayapiv1.TLSProtocolType,
+					Port:     8443,
+				},
+			},
+		},
+	}
+
+	listeners := r.desiredListeners(zap.NewNop().Sugar(), gateway, nil, r.listenerSyncConfig(gateway))
+
+	if !reflect.DeepEqual(listeners, gateway.Spec.Listeners) {
+		t.Fatalf("expected all existing listeners to be preserved when TLS sync is disabled, got %#v", listeners)
+	}
+}
+
+func TestReconcileManualTLSRemovesStaleListeners(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	sharedNamespace := gatewayapiv1.Namespace("shared-certs")
+
+	gateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultGatewayName,
+			Namespace: namespace,
+		},
+		Spec: gatewayapiv1.GatewaySpec{
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "alertmanager-example-com",
+					Hostname: ptr.To(gatewayapiv1.Hostname("alertmanager.example.com")),
+					Protocol: gatewayapiv1.HTTPSProtocolType,
+					Port:     443,
+					TLS: &gatewayapiv1.ListenerTLSConfig{
+						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
+						CertificateRefs: []gatewayapiv1.SecretObjectReference{
+							{Name: "monitoring-alertmanager"},
+						},
+					},
+				},
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+				{
+					Name:     "https",
+					Hostname: ptr.To(gatewayapiv1.Hostname("example.com")),
+					Protocol: gatewayapiv1.HTTPSProtocolType,
+					Port:     443,
+					TLS: &gatewayapiv1.ListenerTLSConfig{
+						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
+						CertificateRefs: []gatewayapiv1.SecretObjectReference{
+							{
+								Name:      "manual-wildcard",
+								Namespace: &sharedNamespace,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	route := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "grafana-iap",
+			Namespace: "monitoring",
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayapiv1.ObjectName(defaulting.DefaultGatewayName),
+						Namespace: (*gatewayapiv1.Namespace)(ptr.To(namespace)),
+					},
+				},
+			},
+			Hostnames: []gatewayapiv1.Hostname{"grafana.example.com"},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(gateway, route).Build()
+	reconciler := &Reconciler{
+		Client:              client,
+		log:                 zap.NewNop().Sugar(),
+		namespace:           namespace,
+		watchedNamespaceSet: sets.New("monitoring"),
+	}
+
+	current := &gatewayapiv1.Gateway{}
+	if err := client.Get(ctx, types.NamespacedName{Name: defaulting.DefaultGatewayName, Namespace: namespace}, current); err != nil {
+		t.Fatalf("failed to get gateway: %v", err)
+	}
+
+	if err := reconciler.reconcile(ctx, zap.NewNop().Sugar(), current); err != nil {
+		t.Fatalf("reconcile failed: %v", err)
+	}
+
+	updated := &gatewayapiv1.Gateway{}
+	if err := client.Get(ctx, types.NamespacedName{Name: defaulting.DefaultGatewayName, Namespace: namespace}, updated); err != nil {
+		t.Fatalf("failed to get updated gateway: %v", err)
+	}
+
+	gotNames := make([]gatewayapiv1.SectionName, 0, len(updated.Spec.Listeners))
+	for _, listener := range updated.Spec.Listeners {
+		gotNames = append(gotNames, listener.Name)
+	}
+
+	wantNames := []gatewayapiv1.SectionName{"grafana-example-com", "http", "https"}
+	if !reflect.DeepEqual(gotNames, wantNames) {
+		t.Fatalf("unexpected listeners after reconcile: got %v, want %v", gotNames, wantNames)
+	}
+
+	var routeListener *gatewayapiv1.Listener
+	for i := range updated.Spec.Listeners {
+		if updated.Spec.Listeners[i].Name == "grafana-example-com" {
+			routeListener = &updated.Spec.Listeners[i]
+			break
+		}
+	}
+
+	if routeListener == nil {
+		t.Fatal("expected grafana hostname listener to be present")
+	}
+
+	coreHTTPS := gatewayutil.CoreListener(updated.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
+	if coreHTTPS == nil {
+		t.Fatal("expected core https listener to be present")
+	}
+
+	if !reflect.DeepEqual(routeListener.TLS.CertificateRefs, coreHTTPS.TLS.CertificateRefs) {
+		t.Fatalf("expected hostname listener to reuse manual certificate refs, got %#v", routeListener.TLS.CertificateRefs)
 	}
 }

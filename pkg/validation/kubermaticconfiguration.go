@@ -45,6 +45,27 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 		allErrs = append(allErrs, errs...)
 	}
 
+	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
+
+	return allErrs
+}
+
+func validateGatewayTLSConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if spec.Ingress.Gateway == nil || spec.Ingress.Gateway.TLS == nil || spec.Ingress.Gateway.TLS.SecretRef == nil {
+		return allErrs
+	}
+
+	secretRefPath := field.NewPath("spec", "ingress", "gateway", "tls", "secretRef")
+	if spec.Ingress.Gateway.TLS.SecretRef.Name == "" {
+		allErrs = append(allErrs, field.Required(secretRefPath.Child("name"), "must be set when gateway.tls.secretRef is configured"))
+	}
+
+	if spec.Ingress.CertificateIssuer.Name != "" {
+		allErrs = append(allErrs, field.Forbidden(secretRefPath, "cannot be set together with spec.ingress.certificateIssuer"))
+	}
+
 	return allErrs
 }
 
