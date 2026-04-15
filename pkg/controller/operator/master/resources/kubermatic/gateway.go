@@ -81,7 +81,7 @@ func GatewayReconciler(
 			g.Spec.GatewayClassName = gatewayapiv1.ObjectName(gatewayClassName)
 
 			// Build core listeners. HTTP is always present.
-			// HTTPS is only added when a CertificateIssuer is configured.
+			// HTTPS is added when either a CertificateIssuer or a Gateway TLS Secret is configured.
 			coreListeners := []gatewayapiv1.Listener{
 				{
 					Name:     "http",
@@ -101,6 +101,19 @@ func GatewayReconciler(
 			}
 
 			issuer := cfg.Spec.Ingress.CertificateIssuer
+			var tlsSecretRef *gatewayapiv1.SecretObjectReference
+			if cfg.Spec.Ingress.Gateway != nil && cfg.Spec.Ingress.Gateway.TLS != nil &&
+				cfg.Spec.Ingress.Gateway.TLS.SecretRef != nil &&
+				cfg.Spec.Ingress.Gateway.TLS.SecretRef.Name != "" {
+				tlsSecretRef = &gatewayapiv1.SecretObjectReference{
+					Name: gatewayapiv1.ObjectName(cfg.Spec.Ingress.Gateway.TLS.SecretRef.Name),
+				}
+				if cfg.Spec.Ingress.Gateway.TLS.SecretRef.Namespace != "" {
+					tlsNamespace := gatewayapiv1.Namespace(cfg.Spec.Ingress.Gateway.TLS.SecretRef.Namespace)
+					tlsSecretRef.Namespace = &tlsNamespace
+				}
+			}
+
 			if issuer.Name != "" {
 				if issuer.Kind != certmanagerv1.IssuerKind && issuer.Kind != certmanagerv1.ClusterIssuerKind {
 					return nil, fmt.Errorf("unknown Certificate Issuer Kind %q configured", issuer.Kind)
@@ -115,6 +128,14 @@ func GatewayReconciler(
 				case certmanagerv1.ClusterIssuerKind:
 					g.Annotations[certmanagerv1.IngressClusterIssuerNameAnnotationKey] = issuer.Name
 				}
+				if tlsSecretRef == nil {
+					tlsSecretRef = &gatewayapiv1.SecretObjectReference{
+						Name: certificateSecretName,
+					}
+				}
+			}
+
+			if tlsSecretRef != nil {
 				coreListeners = append(coreListeners, gatewayapiv1.Listener{
 					Name:     "https",
 					Hostname: ptr.To(gatewayapiv1.Hostname(cfg.Spec.Ingress.Domain)),
@@ -133,9 +154,7 @@ func GatewayReconciler(
 					TLS: &gatewayapiv1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
 						CertificateRefs: []gatewayapiv1.SecretObjectReference{
-							{
-								Name: certificateSecretName,
-							},
+							*tlsSecretRef,
 						},
 					},
 				})
@@ -371,6 +390,15 @@ func EnsureGateway(
 	updated := existing.DeepCopy()
 	updated.Spec = desired.Spec
 	kubernetes.EnsureLabels(updated, desired.Labels)
+
+	// Remove stale cert-manager ownership markers before merging desired annotations.
+	// EnsureAnnotations preserves unrelated keys, but it does not delete managed keys
+	// that are no longer part of the desired state (for example after switching to
+	// manual Gateway TLS).
+	annotations := updated.GetAnnotations()
+	delete(annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
+	delete(annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
+	updated.SetAnnotations(annotations)
 	kubernetes.EnsureAnnotations(updated, desired.Annotations)
 
 	if err := setControllerReference(cfg, updated, scheme); err != nil {

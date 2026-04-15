@@ -40,7 +40,7 @@ const (
 	ControllerName = "kkp-httproute-gateway-sync"
 )
 
-// Reconciler watches HTTPRoutes and syncs Gateway listeners for cert-manager.
+// Reconciler watches HTTPRoutes and syncs Gateway HTTPS listeners for watched routes.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
