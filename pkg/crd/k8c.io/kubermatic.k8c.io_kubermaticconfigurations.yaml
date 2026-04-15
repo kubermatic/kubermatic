@@ -688,7 +688,9 @@ spec:
                             secretRef:
                               description: |-
                                 SecretRef references an existing TLS Secret that should be used by the
-                                default HTTPS listener.
+                                default HTTPS listener. When hostname-specific HTTPS listeners are synced
+                                for watched HTTPRoutes, the referenced certificate must cover all served
+                                hostnames, for example via a wildcard or SAN certificate.
                               properties:
                                 name:
                                   description: Name is the name of the TLS Secret.

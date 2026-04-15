@@ -141,7 +141,7 @@ func (r *Reconciler) listenerSyncConfig(gtw *gatewayapiv1.Gateway) listenerSyncC
 		return listenerSyncConfig{tlsMode: listenerTLSModeCertManager}
 	}
 
-	httpsListener := coreHTTPSListener(gtw)
+	httpsListener := gatewayutil.CoreListener(gtw.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
 	if httpsListener == nil || httpsListener.TLS == nil || len(httpsListener.TLS.CertificateRefs) == 0 {
 		return listenerSyncConfig{tlsMode: listenerTLSModeDisabled}
 	}
@@ -160,17 +160,6 @@ func (r *Reconciler) hasNonCoreListeners(gtw *gatewayapiv1.Gateway) bool {
 	}
 
 	return false
-}
-
-func coreHTTPSListener(gtw *gatewayapiv1.Gateway) *gatewayapiv1.Listener {
-	for i := range gtw.Spec.Listeners {
-		listener := &gtw.Spec.Listeners[i]
-		if listener.Name == gatewayutil.CoreListenerHTTPS {
-			return listener
-		}
-	}
-
-	return nil
 }
 
 func (r *Reconciler) listHTTPRoutesForGateway(ctx context.Context, gtw *gatewayapiv1.Gateway) ([]gatewayapiv1.HTTPRoute, error) {
@@ -219,17 +208,16 @@ func (r *Reconciler) desiredListeners(
 	httpRoutes []gatewayapiv1.HTTPRoute,
 	syncConfig listenerSyncConfig,
 ) []gatewayapiv1.Listener {
+	if syncConfig.tlsMode == listenerTLSModeDisabled {
+		return slices.Clone(gateway.Spec.Listeners)
+	}
+
 	// preserve the core HTTP and HTTPS listeners.
 	listeners := make([]gatewayapiv1.Listener, 0)
 	for _, l := range gateway.Spec.Listeners {
 		if _, isCore := gatewayutil.CoreListenerNames[l.Name]; isCore {
 			listeners = append(listeners, l)
 		}
-	}
-
-	if syncConfig.tlsMode == listenerTLSModeDisabled {
-		gatewayutil.SortListenersByName(listeners)
-		return listeners
 	}
 
 	// sort routes for deterministic certificate naming: the first route with a hostname

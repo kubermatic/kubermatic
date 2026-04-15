@@ -496,7 +496,9 @@ type KubermaticGatewayConfiguration struct {
 // KubermaticGatewayTLSConfiguration configures TLS for the operator-managed default Gateway.
 type KubermaticGatewayTLSConfiguration struct {
 	// SecretRef references an existing TLS Secret that should be used by the
-	// default HTTPS listener.
+	// default HTTPS listener. When hostname-specific HTTPS listeners are synced
+	// for watched HTTPRoutes, the referenced certificate must cover all served
+	// hostnames, for example via a wildcard or SAN certificate.
 	SecretRef *KubermaticGatewaySecretReference `json:"secretRef,omitempty"`
 }
 
