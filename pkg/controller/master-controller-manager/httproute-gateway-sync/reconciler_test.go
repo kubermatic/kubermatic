@@ -24,6 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -344,13 +345,40 @@ func TestDesiredListenersReuseGatewayTLSCertificateRefs(t *testing.T) {
 		t.Fatalf("expected hostname listener for grafana.example.com, got %#v", listeners)
 	}
 
-	coreHTTPS := coreHTTPSListener(gateway)
+	coreHTTPS := gatewayutil.CoreListener(gateway.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
 	if coreHTTPS == nil {
 		t.Fatal("expected core https listener to be present")
 	}
 
 	if !reflect.DeepEqual(routeListener.TLS.CertificateRefs, coreHTTPS.TLS.CertificateRefs) {
 		t.Fatalf("expected synced listener to reuse manual certificate refs, got %#v", routeListener.TLS.CertificateRefs)
+	}
+}
+
+func TestDesiredListenersDisabledPreservesExistingListeners(t *testing.T) {
+	r := &Reconciler{}
+
+	gateway := &gatewayapiv1.Gateway{
+		Spec: gatewayapiv1.GatewaySpec{
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     80,
+				},
+				{
+					Name:     "custom-tcp",
+					Protocol: gatewayapiv1.TLSProtocolType,
+					Port:     8443,
+				},
+			},
+		},
+	}
+
+	listeners := r.desiredListeners(zap.NewNop().Sugar(), gateway, nil, r.listenerSyncConfig(gateway))
+
+	if !reflect.DeepEqual(listeners, gateway.Spec.Listeners) {
+		t.Fatalf("expected all existing listeners to be preserved when TLS sync is disabled, got %#v", listeners)
 	}
 }
 
@@ -464,7 +492,7 @@ func TestReconcileManualTLSRemovesStaleListeners(t *testing.T) {
 		t.Fatal("expected grafana hostname listener to be present")
 	}
 
-	coreHTTPS := coreHTTPSListener(updated)
+	coreHTTPS := gatewayutil.CoreListener(updated.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
 	if coreHTTPS == nil {
 		t.Fatal("expected core https listener to be present")
 	}

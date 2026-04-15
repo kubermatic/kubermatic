@@ -49,6 +49,7 @@ func testKubermaticConfiguration(spec kubermaticv1.KubermaticConfigurationSpec) 
 	}
 }
 
+//nolint:gocyclo
 func TestGatewayReconciler(t *testing.T) {
 	testCases := []struct {
 		name     string
