@@ -17,6 +17,8 @@ limitations under the License.
 package applicationdefinitions
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 
@@ -98,6 +100,9 @@ func systemApplicationDefinitionReconcilerFactory(
 			l[appskubermaticv1.ApplicationManagedByLabel] = appskubermaticv1.ApplicationManagedByKKPValue
 			fileAppDef.SetLabels(l)
 
+			// capture the stored hash before EnsureAnnotations potentially overwrites it
+			storedHash := clusterAppDef.Annotations[appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation]
+
 			// Labels and annotations specified in the ApplicationDefinition installed on the cluster are merged with the ones specified in the ApplicationDefinition
 			// that is generated from the system applications.
 			kubernetes.EnsureLabels(clusterAppDef, fileAppDef.Labels)
@@ -127,16 +132,54 @@ func systemApplicationDefinitionReconcilerFactory(
 				updateApplicationDefinition(fileAppDef, config)
 			}
 
-			// Also, we need to ensure that the default values are set correctly. To do this:
-			// 1. Get the default values from the currently being reconciled application definition (clusterAppDef)
-			// 2. If it's empty, use `fileAppDef` default values as a source of truth - ensuring the values are never empty
-			// 3. If it's not empty, use the current values from the reconciled object, allowing users to override the default values
-			if clusterAppDef.Spec.DefaultValuesBlock != "" && clusterAppDef.Spec.DefaultValuesBlock != "{}" {
+			// Decide whether to keep the cluster's defaultValuesBlock or replace
+			// it with the one from the embedded YAML file.
+			//
+			// When we already have a hash annotation, we can compare: if the cluster
+			// value changed since we last wrote it, the admin must have edited it, so
+			// we keep their version. Otherwise we apply the file value.
+			//
+			// Without a hash annotation (upgrade from an older KKP), we can't tell
+			// whether a differing value is an admin edit or a stale file value. We
+			// preserve it by default to avoid overwriting admin customizations. If the
+			// admin wants upstream changes to propagate, they can opt in by adding the
+			// allow-default-values-overwrite annotation.
+			fileHash := sha1Hex(fileAppDef.Spec.DefaultValuesBlock)
+			clusterHash := sha1Hex(clusterAppDef.Spec.DefaultValuesBlock)
+
+			clusterHasValue := clusterAppDef.Spec.DefaultValuesBlock != "" &&
+				clusterAppDef.Spec.DefaultValuesBlock != "{}"
+
+			_, allowOverwrite := clusterAppDef.Annotations[appskubermaticv1.ApplicationAllowDefaultValuesOverwriteAnnotation]
+
+			var keepAdminModifications bool
+			switch {
+			case storedHash != "" && clusterHasValue && storedHash != clusterHash:
+				// steady state, hash drifted from what we recorded -> admin edit
+				keepAdminModifications = true
+			case storedHash == "" && clusterHasValue && !allowOverwrite:
+				// upgrade from old controller, preserve by default
+				keepAdminModifications = true
+			}
+
+			// if there is an admin modification on default values block, preserve admin modifications.
+			// This means that the whatever KKP stores in ApplicationDefinition YAML file would be ignored.
+			if keepAdminModifications {
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
 			clusterAppDef.Name = fileAppDef.Name
 			clusterAppDef.Spec = fileAppDef.Spec
+
+			// record what file hash we applied so future reconciles can detect admin changes
+			annotations := clusterAppDef.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
+
+			annotations[appskubermaticv1.ApplicationFileDefaultValuesHashAnnotation] = fileHash
+			clusterAppDef.SetAnnotations(annotations)
+
 			return clusterAppDef, nil
 		}
 	}
@@ -168,4 +211,9 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.SystemApplications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.SystemApplications.PlainHTTP
 	}
+}
+
+func sha1Hex(s string) string {
+	sum := sha1.Sum([]byte(s))
+	return hex.EncodeToString(sum[:])
 }

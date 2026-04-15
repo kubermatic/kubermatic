@@ -48,4 +48,13 @@ const (
 	// for ApplicationInstallations created from this ApplicationDefinition.
 	// The value should be a valid Go duration string (e.g., "5m", "1h", "30s").
 	ApplicationReconciliationIntervalAnnotation = "apps.kubermatic.k8c.io/reconciliation-interval"
+
+	// ApplicationFileDefaultValuesHashAnnotation stores the SHA1 hash of the file-embedded
+	// defaultValuesBlock. Used to detect admin modifications to system ApplicationDefinitions.
+	ApplicationFileDefaultValuesHashAnnotation = "apps.kubermatic.k8c.io/file-default-values-hash"
+
+	// ApplicationAllowDefaultValuesOverwriteAnnotation signals that the admin allows KKP
+	// to overwrite defaultValuesBlock with upstream values during upgrade from an older
+	// controller that did not track the hash annotation.
+	ApplicationAllowDefaultValuesOverwriteAnnotation = "apps.kubermatic.k8c.io/allow-default-values-overwrite"
 )
