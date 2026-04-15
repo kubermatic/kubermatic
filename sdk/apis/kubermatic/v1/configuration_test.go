@@ -44,3 +44,33 @@ func TestKubermaticConfigurationDeepCopyGatewayInfrastructureAnnotations(t *test
 		t.Fatalf("expected original annotations to stay isolated from the copy, got %q", got)
 	}
 }
+
+func TestKubermaticConfigurationDeepCopyCopiesGatewayTLS(t *testing.T) {
+	cfg := &KubermaticConfiguration{
+		Spec: KubermaticConfigurationSpec{
+			Ingress: KubermaticIngressConfiguration{
+				Domain: "example.com",
+				Gateway: &KubermaticGatewayConfiguration{
+					TLS: &KubermaticGatewayTLSConfiguration{
+						SecretRef: &KubermaticGatewaySecretReference{
+							Name:      "manual-wildcard",
+							Namespace: "shared-certs",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cloned := cfg.DeepCopy()
+	cloned.Spec.Ingress.Gateway.TLS.SecretRef.Name = "other-secret"
+	cloned.Spec.Ingress.Gateway.TLS.SecretRef.Namespace = "other-namespace"
+
+	if cfg.Spec.Ingress.Gateway.TLS.SecretRef.Name != "manual-wildcard" {
+		t.Fatalf("expected original secret name to remain unchanged, got %q", cfg.Spec.Ingress.Gateway.TLS.SecretRef.Name)
+	}
+
+	if cfg.Spec.Ingress.Gateway.TLS.SecretRef.Namespace != "shared-certs" {
+		t.Fatalf("expected original secret namespace to remain unchanged, got %q", cfg.Spec.Ingress.Gateway.TLS.SecretRef.Namespace)
+	}
+}

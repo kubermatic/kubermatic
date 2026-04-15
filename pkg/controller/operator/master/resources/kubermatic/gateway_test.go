@@ -49,6 +49,7 @@ func testKubermaticConfiguration(spec kubermaticv1.KubermaticConfigurationSpec) 
 	}
 }
 
+//nolint:gocyclo
 func TestGatewayReconciler(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -131,6 +132,62 @@ func TestGatewayReconciler(t *testing.T) {
 				if gw.Annotations[expectedAnnotation] != "letsencrypt-prod" {
 					t.Errorf("Expected annotation %q=%q, got %q",
 						expectedAnnotation, "letsencrypt-prod", gw.Annotations[expectedAnnotation])
+				}
+			},
+		},
+		{
+			name: "Gateway created with HTTP and HTTPS listeners when Gateway TLS secretRef configured",
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain: "example.com",
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{
+								SecretRef: &kubermaticv1.KubermaticGatewaySecretReference{
+									Name:      "custom-tls-secret",
+									Namespace: "shared-certs",
+								},
+							},
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, gw *gatewayapiv1.Gateway) {
+				if len(gw.Spec.Listeners) != 2 {
+					t.Fatalf("Expected 2 listeners (HTTP and HTTPS), got %d", len(gw.Spec.Listeners))
+				}
+
+				var httpsListener *gatewayapiv1.Listener
+				for i := range gw.Spec.Listeners {
+					if gw.Spec.Listeners[i].Name == "https" {
+						httpsListener = &gw.Spec.Listeners[i]
+						break
+					}
+				}
+				if httpsListener == nil {
+					t.Fatal("HTTPS listener not found")
+				}
+				if httpsListener.Protocol != gatewayapiv1.HTTPSProtocolType {
+					t.Errorf("Expected HTTPS protocol, got %v", httpsListener.Protocol)
+				}
+				if httpsListener.TLS == nil {
+					t.Fatal("Expected TLS config for HTTPS listener")
+				}
+				if len(httpsListener.TLS.CertificateRefs) != 1 {
+					t.Errorf("Expected 1 certificate ref, got %d", len(httpsListener.TLS.CertificateRefs))
+				}
+				if httpsListener.TLS.CertificateRefs[0].Name != gatewayapiv1.ObjectName("custom-tls-secret") {
+					t.Errorf("Expected certificate ref name %q, got %q",
+						"custom-tls-secret", httpsListener.TLS.CertificateRefs[0].Name)
+				}
+				if httpsListener.TLS.CertificateRefs[0].Namespace == nil || *httpsListener.TLS.CertificateRefs[0].Namespace != gatewayapiv1.Namespace("shared-certs") {
+					t.Errorf("Expected certificate ref namespace %q, got %v", "shared-certs", httpsListener.TLS.CertificateRefs[0].Namespace)
+				}
+				if _, exists := gw.Annotations[certmanagerv1.IngressIssuerNameAnnotationKey]; exists {
+					t.Errorf("Annotation %q should not exist when Gateway TLS secret is used", certmanagerv1.IngressIssuerNameAnnotationKey)
+				}
+				if _, exists := gw.Annotations[certmanagerv1.IngressClusterIssuerNameAnnotationKey]; exists {
+					t.Errorf("Annotation %q should not exist when Gateway TLS secret is used", certmanagerv1.IngressClusterIssuerNameAnnotationKey)
 				}
 			},
 		},
@@ -1059,6 +1116,36 @@ func TestEnsureGatewayPreservesUserMetadata(t *testing.T) {
 				"team":                  "platform",
 			},
 			wantAnnotations: map[string]string{},
+		},
+		{
+			name: "manual TLS secret removes stale cert-manager annotations",
+			cfg: testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{
+							SecretRef: &kubermaticv1.KubermaticGatewaySecretReference{
+								Name: "custom-tls-secret",
+							},
+						},
+					},
+				},
+			}),
+			existingLabels: map[string]string{
+				"team": "platform",
+			},
+			existingAnnotations: map[string]string{
+				"custom.io/owner": "team-alpha",
+				certmanagerv1.IngressClusterIssuerNameAnnotationKey: "letsencrypt-prod",
+			},
+			wantLabels: map[string]string{
+				"team":                  "platform",
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantAnnotations: map[string]string{
+				"custom.io/owner": "team-alpha",
+			},
 		},
 	}
 

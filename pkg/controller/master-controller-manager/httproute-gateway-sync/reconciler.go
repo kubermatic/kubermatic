@@ -31,6 +31,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,6 +50,19 @@ const (
 	// listenerNameHashLen is the length of the hash suffix.
 	listenerNameHashLen = 8
 )
+
+type listenerTLSMode int
+
+const (
+	listenerTLSModeDisabled listenerTLSMode = iota
+	listenerTLSModeCertManager
+	listenerTLSModeStaticCertificateRefs
+)
+
+type listenerSyncConfig struct {
+	tlsMode         listenerTLSMode
+	certificateRefs []gatewayapiv1.SecretObjectReference
+}
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("gateway", request.NamespacedName)
@@ -74,8 +88,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, l *zap.SugaredLogger, gtw *gatewayapiv1.Gateway) error {
-	if !r.usesCertManager(gtw) {
-		l.Debug("Gateway does not use cert-manager, skipping")
+	if !r.managesGateway(gtw) {
+		l.Debug("Gateway is not the operator-managed default Gateway, skipping")
+		return nil
+	}
+
+	syncConfig := r.listenerSyncConfig(gtw)
+	if syncConfig.tlsMode == listenerTLSModeDisabled && !r.hasNonCoreListeners(gtw) {
+		l.Debug("Gateway has no TLS listener sync configuration, skipping")
 		return nil
 	}
 
@@ -91,13 +111,17 @@ func (r *Reconciler) reconcile(ctx context.Context, l *zap.SugaredLogger, gtw *g
 	}
 
 	// extract desired listeners from HTTPRoutes
-	desiredListeners := r.desiredListeners(l, gtw, httpRoutes)
+	desiredListeners := r.desiredListeners(l, gtw, httpRoutes, syncConfig)
 	if len(desiredListeners) > 64 {
 		return fmt.Errorf("listener limit reached: %d listeners (max 64)", len(desiredListeners))
 	}
 
 	// patch Gateway if listeners changed
 	return r.patchGatewayListeners(ctx, gtw, desiredListeners)
+}
+
+func (r *Reconciler) managesGateway(gtw *gatewayapiv1.Gateway) bool {
+	return gtw.Name == defaulting.DefaultGatewayName && gtw.Namespace == r.namespace
 }
 
 // usesCertManager checks if Gateway has cert-manager annotations.
@@ -110,6 +134,32 @@ func (r *Reconciler) usesCertManager(gtw *gatewayapiv1.Gateway) bool {
 	_, hasIssuer := annotations[certmanagerv1.IngressIssuerNameAnnotationKey]
 	_, hasClusterIssuer := annotations[certmanagerv1.IngressClusterIssuerNameAnnotationKey]
 	return hasIssuer || hasClusterIssuer
+}
+
+func (r *Reconciler) listenerSyncConfig(gtw *gatewayapiv1.Gateway) listenerSyncConfig {
+	if r.usesCertManager(gtw) {
+		return listenerSyncConfig{tlsMode: listenerTLSModeCertManager}
+	}
+
+	httpsListener := gatewayutil.CoreListener(gtw.Spec.Listeners, gatewayutil.CoreListenerHTTPS)
+	if httpsListener == nil || httpsListener.TLS == nil || len(httpsListener.TLS.CertificateRefs) == 0 {
+		return listenerSyncConfig{tlsMode: listenerTLSModeDisabled}
+	}
+
+	return listenerSyncConfig{
+		tlsMode:         listenerTLSModeStaticCertificateRefs,
+		certificateRefs: slices.Clone(httpsListener.TLS.CertificateRefs),
+	}
+}
+
+func (r *Reconciler) hasNonCoreListeners(gtw *gatewayapiv1.Gateway) bool {
+	for _, listener := range gtw.Spec.Listeners {
+		if _, isCore := gatewayutil.CoreListenerNames[listener.Name]; !isCore {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Reconciler) listHTTPRoutesForGateway(ctx context.Context, gtw *gatewayapiv1.Gateway) ([]gatewayapiv1.HTTPRoute, error) {
@@ -156,7 +206,12 @@ func (r *Reconciler) desiredListeners(
 	log *zap.SugaredLogger,
 	gateway *gatewayapiv1.Gateway,
 	httpRoutes []gatewayapiv1.HTTPRoute,
+	syncConfig listenerSyncConfig,
 ) []gatewayapiv1.Listener {
+	if syncConfig.tlsMode == listenerTLSModeDisabled {
+		return slices.Clone(gateway.Spec.Listeners)
+	}
+
 	// preserve the core HTTP and HTTPS listeners.
 	listeners := make([]gatewayapiv1.Listener, 0)
 	for _, l := range gateway.Spec.Listeners {
@@ -201,20 +256,25 @@ func (r *Reconciler) desiredListeners(
 
 	for _, hostname := range hostnames {
 		certName := hostnameToCertName[hostname]
+		certificateRefs := slices.Clone(syncConfig.certificateRefs)
+		if syncConfig.tlsMode == listenerTLSModeCertManager {
+			certificateRefs = []gatewayapiv1.SecretObjectReference{
+				{
+					Name:  gatewayapiv1.ObjectName(certName),
+					Group: (*gatewayapiv1.Group)(ptr.To("")),
+					Kind:  (*gatewayapiv1.Kind)(ptr.To("Secret")),
+				},
+			}
+		}
+
 		listener := gatewayapiv1.Listener{
 			Name:     gatewayapiv1.SectionName(sanitizeListenerName(hostname)),
 			Hostname: ptr.To(gatewayapiv1.Hostname(hostname)),
 			Port:     gatewayapiv1.PortNumber(443),
 			Protocol: gatewayapiv1.HTTPSProtocolType,
 			TLS: &gatewayapiv1.ListenerTLSConfig{
-				Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
-				CertificateRefs: []gatewayapiv1.SecretObjectReference{
-					{
-						Name:  gatewayapiv1.ObjectName(certName),
-						Group: (*gatewayapiv1.Group)(ptr.To("")),
-						Kind:  (*gatewayapiv1.Kind)(ptr.To("Secret")),
-					},
-				},
+				Mode:            ptr.To(gatewayapiv1.TLSModeTerminate),
+				CertificateRefs: certificateRefs,
 			},
 			AllowedRoutes: &gatewayapiv1.AllowedRoutes{
 				Namespaces: &gatewayapiv1.RouteNamespaces{
