@@ -651,7 +651,7 @@ const (
 	KubeOneOpenStack           = "openstack"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
-	KubeOneImageTag            = "v1.7.2"
+	KubeOneImageTag            = "v1.12.3"
 	KubeOneScript              = `
 #!/usr/bin/env bash
 
