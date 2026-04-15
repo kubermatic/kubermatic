@@ -40,9 +40,11 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const admissionControllerContainerName = "kyverno"
+
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		"kyverno": {
+		admissionControllerContainerName: {
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("384Mi"),
 			},
@@ -194,7 +196,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			repository = registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/kyverno"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "kyverno",
+					Name:            admissionControllerContainerName,
 					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Args: []string{
@@ -336,7 +338,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			if err := resources.SetResourceRequirements(
 				dep.Spec.Template.Spec.Containers,
 				defaultResourceRequirements,
-				kyverno.SingleContainerResourceOverride("kyverno", resourceOverride),
+				kyverno.SingleContainerResourceOverride(admissionControllerContainerName, resourceOverride),
 				dep.Annotations,
 			); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
