@@ -40,10 +40,10 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const controllerContainerName = "background-controller"
+const backgroundControllerContainerName = "controller"
 
 var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-	controllerContainerName: {
+	backgroundControllerContainerName: {
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
@@ -122,7 +122,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/background-controller"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            controllerContainerName,
+					Name:            backgroundControllerContainerName,
 					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
@@ -204,7 +204,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			if err := resources.SetResourceRequirements(
 				dep.Spec.Template.Spec.Containers,
 				defaultResourceRequirements,
-				kyverno.SingleContainerResourceOverride(controllerContainerName, resourceOverride),
+				kyverno.SingleContainerResourceOverride(backgroundControllerContainerName, resourceOverride),
 				dep.Annotations,
 			); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
