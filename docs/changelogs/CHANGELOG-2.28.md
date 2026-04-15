@@ -15,6 +15,10 @@
 
 **GitHub release: [v2.28.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.9)**
 
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.10 ([#15682](https://github.com/kubermatic/kubermatic/pull/15682))
+
 ### New Features
 
 - Add new alerts providing insights into health of cortex used by user-cluster MLA ([#15630](https://github.com/kubermatic/kubermatic/pull/15630))
@@ -23,10 +27,6 @@
 ### Bugfixes
 
 - Respect datacenter selectors for default/enforced apps.Prevent duplicate app additions when switching datacenters.Fix loading enforced apps in the edit/customize cluster template ([#7937](https://github.com/kubermatic/dashboard/pull/7937))
-
-### Updates
-
-- Add support for k8s patch release v1.33.10 ([#15682](https://github.com/kubermatic/kubermatic/pull/15682))
 
 ## v2.28.8
 

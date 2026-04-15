@@ -12,6 +12,10 @@
 
 **GitHub release: [v2.29.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.6)**
 
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.34.6/v1.33.10 ([#15680](https://github.com/kubermatic/kubermatic/pull/15680))
+
 ### API Changes
 
 - Add `spec.ingress.gateway.infrastructureAnnotations` to `KubermaticConfiguration` to configure `Gateway.spec.infrastructure.annotations` on the operator managed Gateway ([#15725](https://github.com/kubermatic/kubermatic/pull/15725))
@@ -33,10 +37,6 @@
 - Fixed Kubeconfig download with non nginx ingresses ([#7800](https://github.com/kubermatic/dashboard/pull/7800))
 - Fix missing OIDC group scope for kubelogin kubeconfig to fix group mapping for KKP user clusters ([#7990](https://github.com/kubermatic/dashboard/pull/7990))
 - Respect datacenter selectors for default/enforced apps.Prevent duplicate app additions when switching datacenters.Fix loading enforced apps in the edit/customize cluster template ([#7936](https://github.com/kubermatic/dashboard/pull/7936))
-
-### Updates
-
-- Add support for k8s patch releases v1.34.6/v1.33.10 ([#15680](https://github.com/kubermatic/kubermatic/pull/15680))
 
 ## v2.29.5
 
