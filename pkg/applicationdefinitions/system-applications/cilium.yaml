@@ -174,6 +174,13 @@ spec:
         source:
           helm:
             chartName: cilium
+            chartVersion: 1.17.14
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: 1.17.14
+    - template:
+        source:
+          helm:
+            chartName: cilium
             chartVersion: 1.18.2
             url: oci://quay.io/kubermatic-mirror/helm-charts
       version: 1.18.2
@@ -184,6 +191,13 @@ spec:
             chartVersion: 1.18.6
             url: oci://quay.io/kubermatic-mirror/helm-charts
       version: 1.18.6
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.18.8
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: 1.18.8
   documentationURL: https://docs.cilium.io/en/stable/
   sourceURL: https://github.com/cilium/cilium
   logo: |+
