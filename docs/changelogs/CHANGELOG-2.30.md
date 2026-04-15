@@ -1,6 +1,52 @@
 # Kubermatic 2.30
 
 - [v2.30.0](#v2300)
+- [v2.30.1](#v2301)
+
+## v2.30.1
+
+**GitHub release: [v2.30.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.1)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.35.3/v1.34.6/v1.33.10 ([#15679](https://github.com/kubermatic/kubermatic/pull/15679))
+
+### API Changes
+
+- Add `spec.ingress.gateway.infrastructureAnnotations` to `KubermaticConfiguration` to configure `Gateway.spec.infrastructure.annotations` on the operator managed Gateway ([#15725](https://github.com/kubermatic/kubermatic/pull/15725))
+- Add support for configuring an existing TLS Secret for the operator-managed default Gateway via `spec.ingress.gateway.tls.secretRef`. Hostname-based Gateway listeners synced from watched `HTTPRoute`s now also work in manual TLS mode by reusing the configured certificate references. When using manual TLS, the provided certificate must cover all served hostnames, including MLA/IAP hostnames ([#15732](https://github.com/kubermatic/kubermatic/pull/15732))
+
+### New Features
+
+- Add new alerts providing insights into health of cortex used by user-cluster MLA ([#15630](https://github.com/kubermatic/kubermatic/pull/15630))
+- Dex HTTPRoute path and pathType are now configurable via `httpRoute.path` and `httpRoute.pathType` values, allowing users to deploy Dex on a separate subdomain with root path instead of being limited to path-based routing ([#15627](https://github.com/kubermatic/kubermatic/pull/15627))
+- Envoy-gateway-controller: The envoyProxy image configuration now supports separate repository and tag fields for easier image mirroring. The legacy single-string format continues to work for backward compatibility ([#15595](https://github.com/kubermatic/kubermatic/pull/15595))
+- Seed Grafana now has 12 new grafana dashboards under MLA Stack folder ([#15603](https://github.com/kubermatic/kubermatic/pull/15603))
+
+### Bugfixes
+
+- Add missing condition to skip MLA Secrets deployment ([#15659](https://github.com/kubermatic/kubermatic/pull/15659))
+- Fix Gateway API listener churn where kubermatic-operator would cyclically remove and re-add dynamic listeners during reconciliation. Dynamic listeners added by httproute-gateway-sync controller are now preserved ([#15628](https://github.com/kubermatic/kubermatic/pull/15628))
+- Fix ineffective anti-affinity for the seed nodeport-proxy-envoy Deployment by aligning its anti-affinity selector with the pod labels actually used by the Deployment ([#15601](https://github.com/kubermatic/kubermatic/pull/15601))
+- Fix kubermatic-installer attempting to mirror a non-existent kubectl image from docker.io/bitnamilegacy for v1.35 ([#15576](https://github.com/kubermatic/kubermatic/pull/15576))
+- Fix KubeVirt CSI RBAC permissions by adding the missing patch and update verbs for persistentvolumeclaims, and introducing a ClusterRole and ClusterRoleBinding for persistentvolumes with get, list, and watch permissions ([#15602](https://github.com/kubermatic/kubermatic/pull/15602))
+- Fix seed-controller-manager cache sync timeout issue on large kkp instance clusters ([#15722](https://github.com/kubermatic/kubermatic/pull/15722))
+- Fix the datasource error on the `Kubermatic/Controller Manager` and `Kubermatic/Controller-Runtime Metrics` Grafana dashboards ([#14857](https://github.com/kubermatic/kubermatic/pull/14857))
+- Mirror the missing cluster-autoscaler images ([#15651](https://github.com/kubermatic/kubermatic/pull/15651))
+- System ApplicationDefinitions now receive upstream `defaultValuesBlock` changes during KKP upgrades. Admin customizations are preserved via hash-based detection ([#15691](https://github.com/kubermatic/kubermatic/pull/15691))
+- Update the kubectl image tag to `1.33.4` to fix container startup failures referenced in Velero charts ([#15643](https://github.com/kubermatic/kubermatic/pull/15643))
+- Canal v3.30 and v3.31 now pull Calico images from quay.io instead of docker.io to avoid Docker Hub rate limits that could block cluster bootstrap ([#15620](https://github.com/kubermatic/kubermatic/pull/15620))
+- Gateway and HTTPRoute resources are now properly owned by KubermaticConfiguration and will be garbage collected on deletion. User-added labels and annotations on these resources are no longer overwritten during reconciliation ([#15687](https://github.com/kubermatic/kubermatic/pull/15687))
+- The label key used for network policies for kubevirt virtual machines changed from `cluster.x-k8s.io/cluster-name` to `kubermatic.k8c.io/cluster-id` ([#15606](https://github.com/kubermatic/kubermatic/pull/15606))
+- A regression bug has been fixed where default kkp kubevirt instancetypes were displayed regardless of disabling them ([#8000](https://github.com/kubermatic/dashboard/pull/8000))
+- Fix a bug in vSphere provider configuration where networks were incorrectly assigned. Added validation to prevent using both the deprecated `vmNetName` and the `networks` field at the same time ([#7924](https://github.com/kubermatic/dashboard/pull/7924))
+- Fix missing OIDC group scope for kubelogin kubeconfig to fix group mapping for KKP user clusters ([#7990](https://github.com/kubermatic/dashboard/pull/7990))
+
+### Updates
+
+- Update OSM version to [v1.10.3](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.3) ([#15696](https://github.com/kubermatic/kubermatic/pull/15696))
+- Update application-catalog-manager ([#15593](https://github.com/kubermatic/kubermatic/pull/15593))
+- Update KubeLB to v1.3.7 ([#15664](https://github.com/kubermatic/kubermatic/pull/15664))
 
 ## v2.30.0
 
