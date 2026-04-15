@@ -467,6 +467,26 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 type KyvernoSettings struct {
 	// Controls whether Kyverno is deployed or not.
 	Enabled bool `json:"enabled"`
+	// Optional: AdmissionController configures the Kyverno admission controller.
+	AdmissionController *KyvernoAdmissionControllerSettings `json:"admissionController,omitempty"`
+	// Optional: BackgroundController configures the Kyverno background controller.
+	BackgroundController *KyvernoControllerSettings `json:"backgroundController,omitempty"`
+	// Optional: CleanupController configures the Kyverno cleanup controller.
+	CleanupController *KyvernoControllerSettings `json:"cleanupController,omitempty"`
+	// Optional: ReportsController configures the Kyverno reports controller.
+	ReportsController *KyvernoControllerSettings `json:"reportsController,omitempty"`
+}
+
+// KyvernoControllerSettings configures resource requirements for a Kyverno controller.
+type KyvernoControllerSettings struct {
+	// Optional: Resources is the resource requirements for the Kyverno controller.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+// KyvernoAdmissionControllerSettings configures resource requirements for the Kyverno admission controller.
+type KyvernoAdmissionControllerSettings struct {
+	// Optional: Resources is the resource requirements for the main container of the Kyverno admission controller deployment.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 func (c ClusterSpec) IsKyvernoEnabled() bool {
