@@ -40,6 +40,20 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+var (
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		"kyverno": {
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("384Mi"),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("128Mi"),
+			},
+		},
+	}
+)
+
 // DeploymentReconciler returns the function to create and update the Kyverno admission controller deployment.
 func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -191,15 +205,6 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 						fmt.Sprintf("--backgroundServiceAccountName=system:serviceaccount:%s:kyverno-background-controller", namespace),
 						fmt.Sprintf("--reportsServiceAccountName=system:serviceaccount:%s:kyverno-reports-controller", namespace),
 					},
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("384Mi"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-						},
-					},
 					SecurityContext: &corev1.SecurityContext{
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
@@ -321,6 +326,20 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 						},
 					},
 				},
+			}
+
+			var resourceOverride *corev1.ResourceRequirements
+			if data.Cluster().Spec.Kyverno != nil && data.Cluster().Spec.Kyverno.AdmissionController != nil {
+				resourceOverride = data.Cluster().Spec.Kyverno.AdmissionController.Resources
+			}
+
+			if err := resources.SetResourceRequirements(
+				dep.Spec.Template.Spec.Containers,
+				defaultResourceRequirements,
+				kyverno.SingleContainerResourceOverride("kyverno", resourceOverride),
+				dep.Annotations,
+			); err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
