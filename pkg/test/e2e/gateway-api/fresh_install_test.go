@@ -58,7 +58,7 @@ func TestGatewayAPIFreshInstall(t *testing.T) {
 }
 
 func TestGatewayAPIDeploymentFailureTolerance(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	rawLogger := log.NewFromOptions(logOptions)
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
 	logger := rawLogger.Sugar()
