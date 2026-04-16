@@ -203,6 +203,25 @@ spec:
                             type: object
                           minItems: 1
                           type: array
+                        defaultDeployOptions:
+                          description: |-
+                            DefaultDeployOptions holds the settings specific to the templating method
+                            used to deploy the application. These are propagated to the generated
+                            ApplicationDefinition.
+                          properties:
+                            helm:
+                              description: Helm holds deployment settings when the
+                                templating method is Helm.
+                              properties:
+                                wait:
+                                  description: |-
+                                    Wait corresponds to the --wait flag on Helm CLI.
+                                    If set, will wait until all Pods, PVCs, Services, and minimum number of Pods
+                                    of a Deployment, StatefulSet, or ReplicaSet are in a ready state before
+                                    marking the release as successful.
+                                  type: boolean
+                              type: object
+                          type: object
                         defaultValuesBlock:
                           description: |-
                             DefaultValuesBlock contains the default Helm values for this application.
