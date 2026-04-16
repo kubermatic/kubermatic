@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	"sigs.k8s.io/yaml"
 )
@@ -41,7 +42,7 @@ func SystemApplicationDefinitionReconcilerFactories(
 		return nil, nil
 	}
 
-	sysAppDefFiles, err := GetSysAppDefFiles()
+	sysAppDefFiles, err := getSysAppDefFilesFunc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get system application definition files: %w", err)
 	}
@@ -68,6 +69,10 @@ func SystemApplicationDefinitionReconcilerFactories(
 		err = yaml.Unmarshal(b, appDef)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		if errs := validation.ValidateApplicationDefinitionSpec(*appDef); len(errs) > 0 {
+			return nil, fmt.Errorf("invalid ApplicationDefinition %q: %v", appDef.Name, errs.ToAggregate())
 		}
 
 		if filterApps {
