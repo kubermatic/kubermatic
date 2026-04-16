@@ -42,7 +42,7 @@ func TestDeploymentReconcilerUsesConfiguredResources(t *testing.T) {
 		Spec: kubermaticv1.ClusterSpec{
 			Kyverno: &kubermaticv1.KyvernoSettings{
 				Enabled: true,
-				AdmissionController: &kubermaticv1.KyvernoAdmissionControllerSettings{
+				AdmissionController: &kubermaticv1.KyvernoControllerSettings{
 					Resources: &corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceMemory: resource.MustParse("768Mi"),
