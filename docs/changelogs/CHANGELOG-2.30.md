@@ -4,9 +4,9 @@
 - [v2.30.1](#v2301)
 - [v2.30.2](#v2302)
 
-## v2.30.1
+## v2.30.2
 
-**GitHub release: [2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/2.30.2)
+**GitHub release: [2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/2.30.2)**
 
 ### Supported Kubernetes Versions
 
