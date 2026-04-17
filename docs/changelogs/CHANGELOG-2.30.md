@@ -2,6 +2,30 @@
 
 - [v2.30.0](#v2300)
 - [v2.30.1](#v2301)
+- [v2.30.2](#v2302)
+
+## v2.30.1
+
+**GitHub release: [2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/2.30.2)
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.35.4/v1.34.7/v1.33.11 ([#15748](https://github.com/kubermatic/kubermatic/pull/15748))
+
+### New Features
+
+- Add cluster-level resource configuration for Kyverno. Users can now configure resource requests and limits for the Kyverno admission, background, cleanup, and reports controllers ([#15736](https://github.com/kubermatic/kubermatic/pull/15736))
+- Update gpu-operator application to v26.3.0 ([#15739](https://github.com/kubermatic/kubermatic/pull/15739))
+
+### Bugfixes
+
+- Kubermatic-operator now reconciles Gateway API resources before Deployments, preventing missing ConfigMaps from blocking Gateway creation ([#15712](https://github.com/kubermatic/kubermatic/pull/15712))
+
+### Updates
+
+- Update containerd version to v2.0.3 from v2.0.2 ([#15747](https://github.com/kubermatic/kubermatic/pull/15747))
+- Update KubeLB  version to 1.3.9 ([#15762](https://github.com/kubermatic/kubermatic/pull/15762))
+- Update OSM version to [v1.10.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.4) ([#15767](https://github.com/kubermatic/kubermatic/pull/15767))
 
 ## v2.30.1
 
