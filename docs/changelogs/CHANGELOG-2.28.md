@@ -10,6 +10,19 @@
 - [v2.28.7](#v2287)
 - [v2.28.8](#v2288)
 - [v2.28.9](#v2289)
+- [v2.28.10](#v22810)
+
+## v2.28.10
+
+**GitHub release:[v2.28.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.10)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.11 ([#15750](https://github.com/kubermatic/kubermatic/pull/15750))
+
+### Updates
+
+- Update gpu-operator application to v26.3.0 ([#15761](https://github.com/kubermatic/kubermatic/pull/15761))
 
 ## v2.28.9
 
