@@ -40,6 +40,20 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const cleanupControllerContainerName = "controller"
+
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	cleanupControllerContainerName: {
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		},
+	},
+}
+
 // DeploymentReconciler returns the function to create and update the Kyverno cleanup controller deployment.
 func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -109,7 +123,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/cleanup-controller"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "controller",
+					Name:            cleanupControllerContainerName,
 					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
@@ -170,15 +184,6 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 						{
 							Name:  "KYVERNO_SVC",
 							Value: kyverno.KyvernoCleanupControllerServiceName,
-						},
-					},
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
@@ -243,6 +248,20 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 						},
 					},
 				},
+			}
+
+			var resourceOverride *corev1.ResourceRequirements
+			if data.Cluster().Spec.Kyverno != nil && data.Cluster().Spec.Kyverno.CleanupController != nil {
+				resourceOverride = data.Cluster().Spec.Kyverno.CleanupController.Resources
+			}
+
+			if err := resources.SetResourceRequirements(
+				dep.Spec.Template.Spec.Containers,
+				defaultResourceRequirements,
+				kyverno.SingleContainerResourceOverride(cleanupControllerContainerName, resourceOverride),
+				dep.Annotations,
+			); err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
