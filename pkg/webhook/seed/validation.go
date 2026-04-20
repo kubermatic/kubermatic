@@ -161,6 +161,12 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 			}
 		}
 
+		if dc.Spec.AuthenticationConfiguration != nil {
+			if dc.Spec.AuthenticationConfiguration.SecretName == "" || dc.Spec.AuthenticationConfiguration.SecretKey == "" {
+				return fmt.Errorf("datacenter %q: spec.authenticationConfiguration must contain a valid secret reference with secretName and secretKey", dcName)
+			}
+		}
+
 		if existingSeed == nil {
 			continue
 		}

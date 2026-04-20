@@ -260,6 +260,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to determine additional API server altnames: %w", err)
 	}
 
+	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, &datacenter)
+	if err != nil {
+		return nil, err
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -278,7 +283,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
-		WithAuthenticationConfigurationYAML(r.authenticationConfigurationYAML).
+		WithAuthenticationConfigurationYAML(authConfigYAML).
 		WithKubermaticImage(r.kubermaticImage).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
 		WithDnatControllerImage(r.dnatControllerImage).
@@ -1277,4 +1282,30 @@ func extractWebhookServerURL(configData []byte) (string, error) {
 	}
 
 	return cluster.Server, nil
+}
+
+// resolveAuthenticationConfigurationYAML returns the effective authentication configuration YAML
+// for the given datacenter, falling back to the seed-level configuration if the datacenter does not
+// define its own.
+func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, datacenter *kubermaticv1.Datacenter) ([]byte, error) {
+	if datacenter.Spec.AuthenticationConfiguration == nil {
+		return r.authenticationConfigurationYAML, nil
+	}
+
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{
+		Namespace: resources.KubermaticNamespace,
+		Name:      datacenter.Spec.AuthenticationConfiguration.SecretName,
+	}
+
+	if err := r.Get(ctx, key, secret); err != nil {
+		return nil, fmt.Errorf("failed to read datacenter authentication configuration secret %q: %w", key, err)
+	}
+
+	data, ok := secret.Data[datacenter.Spec.AuthenticationConfiguration.SecretKey]
+	if !ok {
+		return nil, fmt.Errorf("datacenter authentication configuration secret %q does not contain key %q", key, datacenter.Spec.AuthenticationConfiguration.SecretKey)
+	}
+
+	return data, nil
 }

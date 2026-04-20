@@ -596,6 +596,9 @@ type DatacenterSpec struct {
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
 
+	// AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
+
 	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
 	// These settings override seed and global configuration and apply to all user clusters
 	// in this datacenter.

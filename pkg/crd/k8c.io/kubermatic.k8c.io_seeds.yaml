@@ -454,6 +454,19 @@ spec:
                               - NodePort
                               - LoadBalancer
                             type: string
+                          authenticationConfiguration:
+                            description: AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+                            properties:
+                              secretKey:
+                                description: Name of the Secret key containing the AuthenticationConfiguration.
+                                type: string
+                              secretName:
+                                description: Name of the Secret containing the AuthenticationConfiguration.
+                                type: string
+                            required:
+                              - secretKey
+                              - secretName
+                            type: object
                           aws:
                             description: AWS configures an Amazon Web Services (AWS) datacenter.
                             properties:

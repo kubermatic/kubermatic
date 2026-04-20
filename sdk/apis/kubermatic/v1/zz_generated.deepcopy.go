@@ -2612,6 +2612,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(corev1.ServiceType)
 		**out = **in
 	}
+	if in.AuthenticationConfiguration != nil {
+		in, out := &in.AuthenticationConfiguration, &out.AuthenticationConfiguration
+		*out = new(AuthenticationConfiguration)
+		**out = **in
+	}
 	if in.Kyverno != nil {
 		in, out := &in.Kyverno, &out.Kyverno
 		*out = new(KyvernoConfigurations)

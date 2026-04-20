@@ -549,6 +549,69 @@ func TestValidate(t *testing.T) {
 			},
 			errExpected: true,
 		},
+		{
+			name: "Adding a seed with datacenter AuthenticationConfiguration should succeed",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"dc1": {
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake: &kubermaticv1.DatacenterSpecFake{},
+								AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+									SecretName: "dc-auth-config",
+									SecretKey:  "config.yaml",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Adding a seed with datacenter AuthenticationConfiguration with missing secretName should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"dc1": {
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake: &kubermaticv1.DatacenterSpecFake{},
+								AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+									SecretKey: "config.yaml",
+								},
+							},
+						},
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Adding a seed with datacenter AuthenticationConfiguration with missing secretKey should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"dc1": {
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake: &kubermaticv1.DatacenterSpecFake{},
+								AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+									SecretName: "dc-auth-config",
+								},
+							},
+						},
+					},
+				},
+			},
+			errExpected: true,
+		},
 	}
 
 	scheme := fake.NewScheme()

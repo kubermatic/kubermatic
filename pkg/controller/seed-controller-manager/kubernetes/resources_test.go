@@ -20,6 +20,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -32,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCloudControllerManagerDeployment(t *testing.T) {
@@ -366,4 +369,125 @@ func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployme
 	}
 	d.Spec.Template, _ = apiserver.IsRunningWrapper(td, d.Spec.Template, sets.New(resources.ControllerManagerDeploymentName))
 	return &d
+}
+
+func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
+	seedLevelYAML := []byte("seed-level-auth-config")
+	dcLevelYAML := []byte("datacenter-level-auth-config")
+
+	tests := []struct {
+		name           string
+		datacenter     *kubermaticv1.Datacenter
+		seedYAML       []byte
+		objects        []ctrlruntimeclient.Object
+		expectedResult []byte
+		expectError    string
+	}{
+		{
+			name: "no datacenter config returns seed-level YAML",
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake: &kubermaticv1.DatacenterSpecFake{},
+				},
+			},
+			seedYAML:       seedLevelYAML,
+			expectedResult: seedLevelYAML,
+		},
+		{
+			name: "no datacenter config and no seed config returns nil",
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake: &kubermaticv1.DatacenterSpecFake{},
+				},
+			},
+			seedYAML:       nil,
+			expectedResult: nil,
+		},
+		{
+			name: "datacenter config takes precedence over seed-level",
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake: &kubermaticv1.DatacenterSpecFake{},
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "dc-auth-secret",
+						SecretKey:  "config.yaml",
+					},
+				},
+			},
+			seedYAML: seedLevelYAML,
+			objects: []ctrlruntimeclient.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dc-auth-secret",
+						Namespace: resources.KubermaticNamespace,
+					},
+					Data: map[string][]byte{
+						"config.yaml": dcLevelYAML,
+					},
+				},
+			},
+			expectedResult: dcLevelYAML,
+		},
+		{
+			name: "datacenter config with missing secret returns error",
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake: &kubermaticv1.DatacenterSpecFake{},
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "nonexistent-secret",
+						SecretKey:  "config.yaml",
+					},
+				},
+			},
+			seedYAML:    seedLevelYAML,
+			expectError: "failed to read datacenter authentication configuration secret",
+		},
+		{
+			name: "datacenter config with missing key in secret returns error",
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake: &kubermaticv1.DatacenterSpecFake{},
+					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "dc-auth-secret",
+						SecretKey:  "missing-key.yaml",
+					},
+				},
+			},
+			seedYAML: seedLevelYAML,
+			objects: []ctrlruntimeclient.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dc-auth-secret",
+						Namespace: resources.KubermaticNamespace,
+					},
+					Data: map[string][]byte{
+						"config.yaml": dcLevelYAML,
+					},
+				},
+			},
+			expectError: "does not contain key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			client := fake.NewClientBuilder().WithObjects(tt.objects...).Build()
+
+			r := &Reconciler{
+				Client:                          client,
+				authenticationConfigurationYAML: tt.seedYAML,
+			}
+
+			result, err := r.resolveAuthenticationConfigurationYAML(ctx, tt.datacenter)
+			if tt.expectError != "" {
+				require.ErrorContains(t, err, tt.expectError)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedResult, result)
+		})
+	}
 }
