@@ -519,6 +519,11 @@ spec:
                             required:
                               - region
                             type: object
+                          disableAuditWebhookBackend:
+                            description: |-
+                              Optional: DisableAuditWebhookBackend disables the webhook backend for audit logs on every cluster within the DC,
+                              ignoring cluster-specific settings. This only applies to clusters created from the dashboard.
+                            type: boolean
                           disableCsiDriver:
                             description: |-
                               Optional: DisableCSIDriver disables the installation of CSI driver on every clusters within the DC
