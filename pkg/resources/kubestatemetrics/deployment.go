@@ -19,6 +19,7 @@ package kubestatemetrics
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -61,12 +62,16 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			dep.Spec.Replicas = resources.Int32(1)
 
-			override := data.Cluster().Spec.ComponentsOverride
-			if override.KubeStateMetrics != nil {
-				if override.KubeStateMetrics.Replicas != nil {
-					dep.Spec.Replicas = override.KubeStateMetrics.Replicas
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			override := data.Cluster().Spec.ComponentsOverride.KubeStateMetrics
+			if override != nil {
+				hostAntiAffinity = override.HostAntiAffinity
+				zoneAntiAffinity = override.ZoneAntiAffinity
+				if override.Replicas != nil {
+					dep.Spec.Replicas = override.Replicas
 				}
-				dep.Spec.Template.Spec.Tolerations = override.KubeStateMetrics.Tolerations
+				dep.Spec.Template.Spec.Tolerations = override.Tolerations
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
@@ -169,6 +174,12 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.OperatingSystemManagerDeploymentName, hostAntiAffinity)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.OperatingSystemManagerDeploymentName, zoneAntiAffinity)
+				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
 			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(name))

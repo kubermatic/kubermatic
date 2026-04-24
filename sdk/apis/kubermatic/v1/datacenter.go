@@ -485,6 +485,14 @@ type NodeportProxyComponent struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type Datacenter struct {
