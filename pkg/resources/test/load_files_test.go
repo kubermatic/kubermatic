@@ -488,6 +488,13 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
+									Name:            resources.ApiserverAuthenticationConfigurationSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
 									Name:            resources.KubeletClientCertificatesSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},

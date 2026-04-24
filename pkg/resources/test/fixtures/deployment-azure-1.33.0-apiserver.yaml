@@ -21,6 +21,7 @@ spec:
         prometheus.io/scrape_with_kube_cert: "true"
       labels:
         adm-control-configmap-revision: "123456"
+        apiserver-authentication-configuration-secret-revision: "123456"
         apiserver-etcd-client-certificate-secret-revision: "123456"
         apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
@@ -196,20 +197,10 @@ spec:
         - azure
         - --cloud-config
         - /etc/kubernetes/cloud/config
-        - --oidc-ca-file
-        - /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
-        - --oidc-issuer-url
-        - https://dev.kubermatic.io/dex
-        - --oidc-client-id
-        - kubermaticIssuer
-        - --oidc-username-claim
-        - email
-        - --oidc-groups-prefix
-        - 'oidc:'
-        - --oidc-groups-claim
-        - groups
+        - --authentication-config
+        - /etc/kubernetes/authentication-config/authentication-configuration.yaml
         - --feature-gates
-        - StrictCostEnforcementForVAP=true,StrictCostEnforcementForWebhooks=true
+        - StructuredAuthenticationConfiguration=true,StrictCostEnforcementForVAP=true,StrictCostEnforcementForWebhooks=true
         - --egress-selector-config-file
         - /etc/kubernetes/konnectivity/egress-selector-configuration.yaml
         command:
@@ -299,6 +290,9 @@ spec:
         - mountPath: /etc/kubernetes/adm-control
           name: adm-control
           readOnly: true
+        - mountPath: /etc/kubernetes/authentication-config
+          name: authentication-configuration
+          readOnly: true
         - mountPath: /etc/kubernetes/konnectivity-server
           name: konnectivity-uds
         - mountPath: /etc/kubernetes/konnectivity
@@ -367,6 +361,12 @@ spec:
       - configMap:
           name: adm-control
         name: adm-control
+      - name: authentication-configuration
+        secret:
+          items:
+          - key: authentication-configuration.yaml
+            path: authentication-configuration.yaml
+          secretName: apiserver-authentication-configuration
       - name: konnectivity-kubeconfig
         secret:
           defaultMode: 420

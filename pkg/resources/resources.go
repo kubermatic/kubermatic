@@ -222,6 +222,8 @@ const (
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
 	// ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth.
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
+	// ApiserverAuthenticationConfigurationSecretName is the name for the secret containing the apiserver's AuthenticationConfiguration.
+	ApiserverAuthenticationConfigurationSecretName = "apiserver-authentication-configuration"
 	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Account.
 	GoogleServiceAccountSecretName = "google-service-account"
 	// GoogleServiceAccountVolumeName is the name of the volume containing the Google Service Account secret.
@@ -605,10 +607,15 @@ const (
 	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert.
 	ServingCertKeySecretKey = "serving.key"
 
+	// AuthenticationConfigurationKey is the key for the authentication configuration file used by the apiserver.
+	AuthenticationConfigurationKey = "authentication-configuration.yaml"
+
 	// AuthorizationWebhookVolumeName is the name for the authorization-webhook config mounted volume.
 	AuthorizationWebhookVolumeName = "authorization-webhook"
 	// AuthorizationConfigurationVolumeName is the name for the authorization-configuration mounted volume.
 	AuthorizationConfigurationVolumeName = "authorization-configuration"
+	// AuthenticationConfigurationVolumeName is the name for the authentication-configuration mounted volume.
+	AuthenticationConfigurationVolumeName = "authentication-configuration"
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"

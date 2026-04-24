@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"net/url"
+	"slices"
 	"sort"
 	"time"
 
@@ -63,8 +65,14 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	apiserverconfig "k8s.io/apiserver/pkg/apis/apiserver"
+	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
+	apiserverv1beta1 "k8s.io/apiserver/pkg/apis/apiserver/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,6 +81,17 @@ import (
 
 const (
 	clusterIPUnknownRetryTimeout = 5 * time.Second
+)
+
+var (
+	authenticationConfigurationScheme = func() *runtime.Scheme {
+		scheme := runtime.NewScheme()
+		utilruntime.Must(apiserverconfig.AddToScheme(scheme))
+		utilruntime.Must(apiserverv1.AddToScheme(scheme))
+		utilruntime.Must(apiserverv1beta1.AddToScheme(scheme))
+		return scheme
+	}()
+	authenticationConfigurationDecoder = serializer.NewCodecFactory(authenticationConfigurationScheme).UniversalDeserializer()
 )
 
 func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
@@ -260,6 +279,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to determine additional API server altnames: %w", err)
 	}
 
+	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, &datacenter, seed)
+	if err != nil {
+		return nil, err
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -278,6 +302,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
+		WithAuthenticationConfigurationYAML(authConfigYAML).
 		WithKubermaticImage(r.kubermaticImage).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
 		WithDnatControllerImage(r.dnatControllerImage).
@@ -524,6 +549,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
 		apiserver.ServiceAccountKeyReconciler(),
+		apiserver.AuthenticationConfigurationReconciler(data, r.caBundle.String(), r.features.KubernetesOIDCAuthentication),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
@@ -739,23 +765,14 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			)
 		}
 
-		issuerURL := c.Spec.OIDC.IssuerURL
-		if issuerURL == "" && r.features.KubernetesOIDCAuthentication {
-			issuerURL = data.OIDCIssuerURL()
+		// allow egress traffic to OIDC issuer's external IPs
+		oidcIPs, err := oidcIssuerIPs(resolverCtx, c, data, r.features.KubernetesOIDCAuthentication)
+		if err != nil {
+			return fmt.Errorf("failed to fetch OIDC issuer IPs: %w", err)
 		}
 
-		if issuerURL != "" {
-			u, err := url.Parse(issuerURL)
-			if err != nil {
-				return fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
-			}
-
-			// allow egress traffic to OIDC issuer's external IPs
-			ipList, err := hostnameToIPList(resolverCtx, u.Hostname())
-			if err != nil {
-				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
-			}
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
+		if len(oidcIPs) > 0 {
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(oidcIPs, cfg.Spec.Ingress.NamespaceOverride))
 		}
 
 		if c.Spec.IsWebhookAuthorizationEnabled() {
@@ -791,6 +808,68 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 	}
 
 	return nil
+}
+
+// oidcIssuerIPs returns the list of OIDC issuer IPs specified within the AuthenticationConfiguration or the cluster's old OIDC configuration.
+func oidcIssuerIPs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, enableOIDCAuthentication bool) ([]net.IP, error) {
+	ipAllowList := make([]net.IP, 0, 1)
+	authConfigYAML := data.AuthenticationConfigurationYAML()
+
+	if len(authConfigYAML) > 0 {
+		// collect issuer URLs specified within the AuthenticationConfiguration and resolve their IPs
+		issuerURLs, err := issuerURLsFromAuthenticationConfigurationYAML(authConfigYAML)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract issuer URLs from AuthenticationConfiguration: %w", err)
+		}
+		ipList, err := urlsToIPList(ctx, issuerURLs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert issuer URLs to IP list: %w", err)
+		}
+		ipAllowList = append(ipAllowList, ipList...)
+	} else {
+		issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
+		if issuerURL == "" && enableOIDCAuthentication {
+			issuerURL = data.OIDCIssuerURL()
+		}
+
+		if issuerURL != "" {
+			u, err := url.Parse(issuerURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
+			}
+
+			// resolve OIDC issuer IPs
+			ipList, err := hostnameToIPList(ctx, u.Hostname())
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
+			}
+			ipAllowList = append(ipAllowList, ipList...)
+		}
+	}
+
+	return ipAllowList, nil
+}
+
+// issuerURLsFromAuthenticationConfigurationYAML parses the given apiserver AuthenticationConfiguration and returns the contained issuer URLs.
+func issuerURLsFromAuthenticationConfigurationYAML(authConfigYAML []byte) ([]string, error) {
+	obj, gvk, err := authenticationConfigurationDecoder.Decode(authConfigYAML, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode AuthenticationConfiguration YAML: %w", err)
+	}
+
+	authConfig := apiserverconfig.AuthenticationConfiguration{}
+	if err := authenticationConfigurationScheme.Convert(obj, &authConfig, nil); err != nil {
+		return nil, fmt.Errorf("failed to convert %q to internal AuthenticationConfiguration: %w", gvk.String(), err)
+	}
+
+	issuerURLs := make([]string, 0, len(authConfig.JWT))
+	for _, jwt := range authConfig.JWT {
+		if jwt.Issuer.URL != "" {
+			issuerURLs = append(issuerURLs, jwt.Issuer.URL)
+		}
+	}
+
+	return issuerURLs, nil
 }
 
 // GetConfigMapReconcilers returns all ConfigMapReconcilers that are currently in use.
@@ -1159,6 +1238,35 @@ func (r *Reconciler) listAPIServerAlternateNames(ctx context.Context, cluster *k
 	}, nil
 }
 
+// urlsToIPList returns a set of IPs for the given URLs.
+func urlsToIPList(ctx context.Context, urls []string) ([]net.IP, error) {
+	hostnames := make(map[string]struct{}, len(urls))
+	for _, u := range urls {
+		parsedURL, err := url.Parse(u)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse URL %q: %w", u, err)
+		}
+		hostnames[parsedURL.Hostname()] = struct{}{}
+	}
+
+	ipList := make([]net.IP, 0, len(hostnames))
+	ipSet := make(map[string]struct{}, len(hostnames))
+	for _, hostname := range slices.Sorted(maps.Keys(hostnames)) {
+		hostIPs, err := hostnameToIPList(ctx, hostname)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve hostname %q: %w", hostname, err)
+		}
+		for _, ip := range hostIPs {
+			if _, exists := ipSet[ip.String()]; !exists {
+				ipSet[ip.String()] = struct{}{}
+				ipList = append(ipList, ip)
+			}
+		}
+	}
+
+	return ipList, nil
+}
+
 // hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
 // If it is an IP address, returns it. If it is a domain name, resolves it.
 // The returned list of IPs is always sorted to produce the same result on each resolution attempt.
@@ -1275,4 +1383,35 @@ func extractWebhookServerURL(configData []byte) (string, error) {
 	}
 
 	return cluster.Server, nil
+}
+
+// resolveAuthenticationConfigurationYAML returns the effective authentication configuration YAML
+// for the given datacenter, falling back to the seed-level configuration if the datacenter does not
+// define its own.
+func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed) ([]byte, error) {
+	authConfigRef := datacenter.Spec.AuthenticationConfiguration
+	if authConfigRef == nil {
+		authConfigRef = seed.Spec.AuthenticationConfiguration
+	}
+
+	if authConfigRef == nil {
+		return nil, nil
+	}
+
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{
+		Namespace: resources.KubermaticNamespace,
+		Name:      authConfigRef.SecretName,
+	}
+
+	if err := r.Get(ctx, key, secret); err != nil {
+		return nil, fmt.Errorf("failed to read authentication configuration secret %q: %w", key, err)
+	}
+
+	data, ok := secret.Data[authConfigRef.SecretKey]
+	if !ok {
+		return nil, fmt.Errorf("authentication configuration secret %q does not contain key %q", key, authConfigRef.SecretKey)
+	}
+
+	return data, nil
 }
