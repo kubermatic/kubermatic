@@ -500,3 +500,123 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 		})
 	}
 }
+
+func TestIssuerURLsFromAuthenticationConfigurationYAML(t *testing.T) {
+	tests := []struct {
+		name        string
+		yaml        []byte
+		expected    []string
+		expectError string
+	}{
+		{
+			name: "v1 extracts issuer URLs",
+			yaml: []byte(`apiVersion: apiserver.config.k8s.io/v1
+kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://issuer-1.example
+  - issuer:
+      url: https://issuer-2.example
+`),
+			expected: []string{"https://issuer-1.example", "https://issuer-2.example"},
+		},
+		{
+			name: "v1beta1 extracts issuer URLs",
+			yaml: []byte(`apiVersion: apiserver.config.k8s.io/v1beta1
+kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://issuer-beta.example
+`),
+			expected: []string{"https://issuer-beta.example"},
+		},
+		{
+			name: "missing apiVersion returns error",
+			yaml: []byte(`kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://issuer.example
+`),
+			expectError: "failed to decode AuthenticationConfiguration YAML",
+		},
+		{
+			name: "unsupported apiVersion returns error",
+			yaml: []byte(`apiVersion: apiserver.config.k8s.io/v1alpha1
+kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://issuer.example
+`),
+			expectError: "failed to decode AuthenticationConfiguration YAML",
+		},
+		{
+			name:        "invalid yaml returns error",
+			yaml:        []byte(`jwt: [bad`),
+			expectError: "failed to decode AuthenticationConfiguration YAML",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			issuerURLs, err := issuerURLsFromAuthenticationConfigurationYAML(tt.yaml)
+			if tt.expectError != "" {
+				require.ErrorContains(t, err, tt.expectError)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.expected, issuerURLs)
+		})
+	}
+}
+
+func TestURLsToIPList(t *testing.T) {
+	tests := []struct {
+		name        string
+		urls        []string
+		expectedIPs []string
+		expectError string
+	}{
+		{
+			name: "deduplicates repeated hosts",
+			urls: []string{
+				"https://10.10.10.10/path-a",
+				"https://10.10.10.10/path-b",
+				"https://20.20.20.20",
+			},
+			expectedIPs: []string{"10.10.10.10", "20.20.20.20"},
+		},
+		{
+			name: "supports ipv6 hosts",
+			urls: []string{
+				"https://[2001:db8::1]",
+				"https://[2001:db8::2]",
+			},
+			expectedIPs: []string{"2001:db8::1", "2001:db8::2"},
+		},
+		{
+			name:        "invalid URL returns error",
+			urls:        []string{"://not-a-url"},
+			expectError: "failed to parse URL",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ips, err := urlsToIPList(context.Background(), tt.urls)
+			if tt.expectError != "" {
+				require.ErrorContains(t, err, tt.expectError)
+				return
+			}
+
+			require.NoError(t, err)
+
+			actual := make([]string, 0, len(ips))
+			for _, ip := range ips {
+				actual = append(actual, ip.String())
+			}
+
+			require.Equal(t, tt.expectedIPs, actual)
+		})
+	}
+}
