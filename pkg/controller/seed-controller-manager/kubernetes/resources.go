@@ -260,7 +260,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to determine additional API server altnames: %w", err)
 	}
 
-	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, &datacenter)
+	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, &datacenter, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -1287,24 +1287,34 @@ func extractWebhookServerURL(configData []byte) (string, error) {
 // resolveAuthenticationConfigurationYAML returns the effective authentication configuration YAML
 // for the given datacenter, falling back to the seed-level configuration if the datacenter does not
 // define its own.
-func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, datacenter *kubermaticv1.Datacenter) ([]byte, error) {
-	if datacenter.Spec.AuthenticationConfiguration == nil {
-		return r.authenticationConfigurationYAML, nil
+func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed) ([]byte, error) {
+	if datacenter.Spec.AuthenticationConfiguration == nil && seed.Spec.AuthenticationConfiguration == nil {
+		return nil, nil
+	}
+
+	var secretName, secretKey string
+
+	if datacenter.Spec.AuthenticationConfiguration != nil {
+		secretName = datacenter.Spec.AuthenticationConfiguration.SecretName
+		secretKey = datacenter.Spec.AuthenticationConfiguration.SecretKey
+	} else if seed.Spec.AuthenticationConfiguration != nil {
+		secretName = seed.Spec.AuthenticationConfiguration.SecretName
+		secretKey = seed.Spec.AuthenticationConfiguration.SecretKey
 	}
 
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{
 		Namespace: resources.KubermaticNamespace,
-		Name:      datacenter.Spec.AuthenticationConfiguration.SecretName,
+		Name:      secretName,
 	}
 
 	if err := r.Get(ctx, key, secret); err != nil {
-		return nil, fmt.Errorf("failed to read datacenter authentication configuration secret %q: %w", key, err)
+		return nil, fmt.Errorf("failed to read authentication configuration secret %q: %w", key, err)
 	}
 
-	data, ok := secret.Data[datacenter.Spec.AuthenticationConfiguration.SecretKey]
+	data, ok := secret.Data[secretKey]
 	if !ok {
-		return nil, fmt.Errorf("datacenter authentication configuration secret %q does not contain key %q", key, datacenter.Spec.AuthenticationConfiguration.SecretKey)
+		return nil, fmt.Errorf("authentication configuration secret %q does not contain key %q", key, secretKey)
 	}
 
 	return data, nil

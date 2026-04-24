@@ -155,7 +155,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.backupCount,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
-		ctrlCtx.runOptions.authenticationConfiguration,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,

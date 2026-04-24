@@ -74,6 +74,10 @@ func AuthenticationConfigurationReconciler(data authenticationConfigurationRecon
 			}
 
 			switch {
+			case len(seedAuthConf) > 0:
+				secret.Data = map[string][]byte{resources.AuthenticationConfigurationKey: seedAuthConf}
+
+				return secret, nil
 			case oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "":
 				// Old way of integrating OIDC: based on Cluster.spec.OIDC.
 				cfg.JWT = []apiserverv1.JWTAuthenticator{{
@@ -114,10 +118,6 @@ func AuthenticationConfigurationReconciler(data authenticationConfigurationRecon
 				if len(validationRules) > 0 {
 					cfg.JWT[0].ClaimValidationRules = validationRules
 				}
-			case len(seedAuthConf) > 0:
-				secret.Data = map[string][]byte{resources.AuthenticationConfigurationKey: seedAuthConf}
-
-				return secret, nil
 			case enableOIDCAuthentication:
 				usernameClaimPrefix := ""
 				groupClaimPrefix := "oidc:"

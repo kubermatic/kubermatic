@@ -374,96 +374,94 @@ func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployme
 func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 	seedLevelYAML := []byte("seed-level-auth-config")
 	dcLevelYAML := []byte("datacenter-level-auth-config")
+	fakeSecrets := []ctrlruntimeclient.Object{
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "seed-auth-secret",
+				Namespace: resources.KubermaticNamespace,
+			},
+			Data: map[string][]byte{
+				"config.yaml": seedLevelYAML,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dc-auth-secret",
+				Namespace: resources.KubermaticNamespace,
+			},
+			Data: map[string][]byte{
+				"config.yaml": dcLevelYAML,
+			},
+		},
+	}
 
 	tests := []struct {
 		name           string
-		datacenter     *kubermaticv1.Datacenter
-		seedYAML       []byte
-		objects        []ctrlruntimeclient.Object
+		datacenterConf *kubermaticv1.AuthenticationConfiguration
+		seedConf       *kubermaticv1.AuthenticationConfiguration
 		expectedResult []byte
 		expectError    string
 	}{
 		{
-			name: "no datacenter config returns seed-level YAML",
-			datacenter: &kubermaticv1.Datacenter{
-				Spec: kubermaticv1.DatacenterSpec{
-					Fake: &kubermaticv1.DatacenterSpecFake{},
-				},
+			name: "no datacenter config and no seed config returns nil",
+		},
+		{
+			name: "seed-level config is returned when no datacenter config specified",
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
 			},
-			seedYAML:       seedLevelYAML,
 			expectedResult: seedLevelYAML,
 		},
 		{
-			name: "no datacenter config and no seed config returns nil",
-			datacenter: &kubermaticv1.Datacenter{
-				Spec: kubermaticv1.DatacenterSpec{
-					Fake: &kubermaticv1.DatacenterSpecFake{},
-				},
-			},
-			seedYAML:       nil,
-			expectedResult: nil,
-		},
-		{
 			name: "datacenter config takes precedence over seed-level",
-			datacenter: &kubermaticv1.Datacenter{
-				Spec: kubermaticv1.DatacenterSpec{
-					Fake: &kubermaticv1.DatacenterSpecFake{},
-					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
-						SecretName: "dc-auth-secret",
-						SecretKey:  "config.yaml",
-					},
-				},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "dc-auth-secret",
+				SecretKey:  "config.yaml",
 			},
-			seedYAML: seedLevelYAML,
-			objects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "dc-auth-secret",
-						Namespace: resources.KubermaticNamespace,
-					},
-					Data: map[string][]byte{
-						"config.yaml": dcLevelYAML,
-					},
-				},
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
 			},
 			expectedResult: dcLevelYAML,
 		},
 		{
 			name: "datacenter config with missing secret returns error",
-			datacenter: &kubermaticv1.Datacenter{
-				Spec: kubermaticv1.DatacenterSpec{
-					Fake: &kubermaticv1.DatacenterSpecFake{},
-					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
-						SecretName: "nonexistent-secret",
-						SecretKey:  "config.yaml",
-					},
-				},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "nonexistent-secret",
+				SecretKey:  "config.yaml",
 			},
-			seedYAML:    seedLevelYAML,
-			expectError: "failed to read datacenter authentication configuration secret",
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectError: "failed to read authentication configuration secret",
 		},
 		{
 			name: "datacenter config with missing key in secret returns error",
-			datacenter: &kubermaticv1.Datacenter{
-				Spec: kubermaticv1.DatacenterSpec{
-					Fake: &kubermaticv1.DatacenterSpecFake{},
-					AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
-						SecretName: "dc-auth-secret",
-						SecretKey:  "missing-key.yaml",
-					},
-				},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "dc-auth-secret",
+				SecretKey:  "missing-key",
 			},
-			seedYAML: seedLevelYAML,
-			objects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "dc-auth-secret",
-						Namespace: resources.KubermaticNamespace,
-					},
-					Data: map[string][]byte{
-						"config.yaml": dcLevelYAML,
-					},
-				},
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectError: "does not contain key",
+		},
+		{
+			name: "seed config with missing secret returns error",
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "nonexistent-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectError: "failed to read authentication configuration secret",
+		},
+		{
+			name: "seed config with missing key in secret returns error",
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "missing-key",
 			},
 			expectError: "does not contain key",
 		},
@@ -473,14 +471,25 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			client := fake.NewClientBuilder().WithObjects(tt.objects...).Build()
+			client := fake.NewClientBuilder().WithObjects(fakeSecrets...).Build()
 
 			r := &Reconciler{
-				Client:                          client,
-				authenticationConfigurationYAML: tt.seedYAML,
+				Client: client,
 			}
 
-			result, err := r.resolveAuthenticationConfigurationYAML(ctx, tt.datacenter)
+			datacenter := &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Fake:                        &kubermaticv1.DatacenterSpecFake{},
+					AuthenticationConfiguration: tt.datacenterConf,
+				},
+			}
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					AuthenticationConfiguration: tt.seedConf,
+				},
+			}
+
+			result, err := r.resolveAuthenticationConfigurationYAML(ctx, datacenter, seed)
 			if tt.expectError != "" {
 				require.ErrorContains(t, err, tt.expectError)
 				return
