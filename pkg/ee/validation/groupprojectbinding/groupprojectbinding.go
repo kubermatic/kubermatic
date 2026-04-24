@@ -25,10 +25,29 @@
 package groupprojectbinding
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func ValidateCreate(ctx context.Context, binding *kubermaticv1.GroupProjectBinding, client ctrlruntimeclient.Client) error {
+	existingBindings := &kubermaticv1.GroupProjectBindingList{}
+	if err := client.List(ctx, existingBindings); err != nil {
+		return fmt.Errorf("failed to list GroupProjectBindings: %w", err)
+	}
+
+	for _, existing := range existingBindings.Items {
+		if existing.Spec.Group == binding.Spec.Group && existing.Spec.ProjectID == binding.Spec.ProjectID {
+			return fmt.Errorf("group %q is already bound to project %q", binding.Spec.Group, binding.Spec.ProjectID)
+		}
+	}
+
+	return nil
+}
 
 func ValidateUpdate(oldGroupProjectBinding *kubermaticv1.GroupProjectBinding, newGroupProjectBinding *kubermaticv1.GroupProjectBinding) error {
 	if oldGroupProjectBinding.Spec.ProjectID != newGroupProjectBinding.Spec.ProjectID {
