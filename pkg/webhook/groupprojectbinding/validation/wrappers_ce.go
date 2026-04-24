@@ -23,10 +23,13 @@ import (
 	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func validateCreate(_ context.Context,
 	_ *kubermaticv1.GroupProjectBinding,
+	_ ctrlruntimeclient.Client,
 ) error {
 	return errors.New("this resource is disabled for the Community Edition")
 }
