@@ -233,8 +233,8 @@ func main() {
 	// /////////////////////////////////////////
 	// setup GroupProjectBinding webhook
 
-	groupProjectBindingValidator := groupprojectbinding.NewValidator()
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
+		groupProjectBindingValidator := groupprojectbinding.NewValidator(mgr.GetClient())
 		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
 	}
 
