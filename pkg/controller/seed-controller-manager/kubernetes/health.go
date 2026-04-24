@@ -50,11 +50,6 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 
 	showKonnectivity := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
-
-	if !showKonnectivity {
-		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
-	}
-
 	for name := range healthMapping {
 		key := types.NamespacedName{Namespace: ns, Name: name}
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
