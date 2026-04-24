@@ -25,6 +25,21 @@ spec:
         prometheus-apiserver-certificate-secret-revision: "123456"
         prometheus-configmap-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: prometheus
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: prometheus
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
       containers:
       - args:
         - --config.file=/etc/prometheus/config/prometheus.yaml

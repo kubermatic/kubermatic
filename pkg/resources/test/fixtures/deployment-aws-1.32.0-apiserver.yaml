@@ -49,6 +49,12 @@ spec:
                   app: apiserver
               topologyKey: kubernetes.io/hostname
             weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: apiserver
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
       automountServiceAccountToken: true
       containers:
       - args:

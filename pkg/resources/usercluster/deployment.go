@@ -76,6 +76,7 @@ type userclusterControllerData interface {
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 // DeploymentReconciler returns the function to create and update the user cluster controller deployment
@@ -89,8 +90,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			dep.Spec.Replicas = resources.Int32(1)
 
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
 			override := data.Cluster().Spec.ComponentsOverride.UserClusterController
 			if override != nil {
+				hostAntiAffinity = override.HostAntiAffinity
+				zoneAntiAffinity = override.ZoneAntiAffinity
 				if override.Replicas != nil {
 					dep.Spec.Replicas = override.Replicas
 				}
@@ -336,6 +341,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.UserClusterControllerDeploymentName, hostAntiAffinity)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.UserClusterControllerDeploymentName, zoneAntiAffinity)
+				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+			}
 
 			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.UserClusterControllerContainerName))
 			if err != nil {
