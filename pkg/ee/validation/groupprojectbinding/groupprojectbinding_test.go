@@ -25,6 +25,7 @@
 package groupprojectbinding_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -32,9 +33,80 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func TestValidateCreate(t *testing.T) {
+	testCases := []struct {
+		name            string
+		existingBinding *kubermaticv1.GroupProjectBinding
+		newBinding      *kubermaticv1.GroupProjectBinding
+		errExpected     bool
+	}{
+		{
+			name: "no existing binding, create succeeds",
+			newBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "new-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project1", Role: "viewers"},
+			},
+			errExpected: false,
+		},
+		{
+			name: "same group and project already bound, create fails",
+			existingBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "existing-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project1", Role: "viewers"},
+			},
+			newBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "new-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project1", Role: "editors"},
+			},
+			errExpected: true,
+		},
+		{
+			name: "same group different project, create succeeds",
+			existingBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "existing-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project1", Role: "viewers"},
+			},
+			newBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "new-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project2", Role: "viewers"},
+			},
+			errExpected: false,
+		},
+		{
+			name: "different group same project, create succeeds",
+			existingBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "existing-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group1", ProjectID: "project1", Role: "viewers"},
+			},
+			newBinding: &kubermaticv1.GroupProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "new-binding"},
+				Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "group2", ProjectID: "project1", Role: "viewers"},
+			},
+			errExpected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var objs []ctrlruntimeclient.Object
+			if tc.existingBinding != nil {
+				objs = append(objs, tc.existingBinding)
+			}
+			client := fake.NewClientBuilder().WithObjects(objs...).Build()
+
+			err := groupprojectbinding.ValidateCreate(context.Background(), tc.newBinding, client)
+			if (err != nil) != tc.errExpected {
+				t.Fatalf("expected error: %v, got: %v", tc.errExpected, err)
+			}
+		})
+	}
+}
 
 func TestValidateUpdate(t *testing.T) {
 	testCases := []struct {
