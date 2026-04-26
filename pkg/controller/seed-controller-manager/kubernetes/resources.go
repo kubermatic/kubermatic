@@ -61,6 +61,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -156,6 +157,15 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// check that all ConfigMaps are available
 	if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
 		return nil, err
+	}
+
+	// Ensure the external CCM's RBAC exists in the user cluster before creating the CCM
+	// deployment to avoid a race condition where the CCM starts before its ClusterRoleBinding
+	// is created by the user-cluster-controller-manager.
+	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		if err := r.ensureExternalCCMRBAC(ctx, cluster); err != nil {
+			return nil, fmt.Errorf("failed to ensure external CCM RBAC in user cluster: %w", err)
+		}
 	}
 
 	// check that all Deployments are available
@@ -482,6 +492,44 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 
 	factories := GetDeploymentReconcilers(data, r.features, r.versions)
 	return reconciling.ReconcileDeployments(ctx, factories, cluster.Status.NamespaceName, r, modifiers...)
+}
+
+// ensureExternalCCMRBAC creates the ClusterRoleBinding for the external CCM in the user cluster.
+// This is done from the seed-controller-manager (rather than only from the user-cluster-controller-manager)
+// to avoid a race condition where the CCM pod starts before its RBAC is ready in the user cluster.
+func (r *Reconciler) ensureExternalCCMRBAC(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		func() (string, reconciling.ClusterRoleBindingReconciler) {
+			return resources.CloudControllerManagerRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+				crb.Labels = resources.BaseAppLabels(resources.CloudControllerManagerRoleBindingName, nil)
+				crb.RoleRef = rbacv1.RoleRef{
+					Name:     "cluster-admin",
+					Kind:     "ClusterRole",
+					APIGroup: rbacv1.GroupName,
+				}
+				crb.Subjects = []rbacv1.Subject{
+					{
+						Kind:     rbacv1.UserKind,
+						Name:     resources.CloudControllerManagerCertUsername,
+						APIGroup: rbacv1.GroupName,
+					},
+					{
+						Kind:      rbacv1.ServiceAccountKind,
+						Name:      resources.CloudControllerManagerServiceAccountName,
+						Namespace: metav1.NamespaceSystem,
+					},
+				}
+				return crb, nil
+			}
+		},
+	}
+
+	return reconciling.ReconcileClusterRoleBindings(ctx, creators, "", userClusterClient)
 }
 
 // In #13180 and its backports the label selectors for the Azure CCM were fixed, but since they are
