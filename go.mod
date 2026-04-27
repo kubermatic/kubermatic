@@ -41,7 +41,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19
 	github.com/aws/smithy-go v1.24.2
 	github.com/cert-manager/cert-manager v1.15.4
-	github.com/cilium/cilium v1.16.9
+	github.com/cilium/cilium v1.17.14
 	github.com/containerd/containerd/v2 v2.0.3
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.0.0
@@ -76,7 +76,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
-	github.com/vishvananda/netlink v1.3.1-0.20241022031324-976bd8de7d81
+	github.com/vishvananda/netlink v1.3.1-0.20250303224720-0e7078ed04c8
 	github.com/vmware-tanzu/velero v1.17.1
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.49.0
@@ -118,7 +118,7 @@ require (
 	k8s.io/kubectl v0.35.1
 	k8s.io/metrics v0.35.1
 	k8s.io/test-infra v0.0.0-20250329100633-7758a586d30c
-	k8s.io/utils v0.0.0-20260108192941-914a6e750570
+	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	kubevirt.io/api v1.3.1
 	kubevirt.io/containerized-data-importer-api v1.60.3
 	sigs.k8s.io/controller-runtime v0.23.1
@@ -211,9 +211,11 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
-	github.com/cilium/ebpf v0.15.0 // indirect
-	github.com/cilium/hive v0.0.0-20240529072208-d997f86e4219 // indirect
-	github.com/cilium/proxy v0.0.0-20250305113347-723568176820 // indirect
+	github.com/cilium/ebpf v0.17.1 // indirect
+	github.com/cilium/hive v0.0.0-20250522145610-0734675df148 // indirect
+	github.com/cilium/proxy v0.0.0-20250526114940-b80199397e8a // indirect
+	github.com/cilium/statedb v0.4.5 // indirect
+	github.com/cilium/stream v0.0.0-20241203114243-53c3e5d79744 // indirect
 	github.com/clarketm/json v1.13.4 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
@@ -305,10 +307,10 @@ require (
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.2 // indirect
+	github.com/gopacket/gopacket v1.3.1 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
@@ -445,7 +447,7 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/vbatts/tar-split v0.11.6 // indirect
-	github.com/vishvananda/netns v0.0.4 // indirect
+	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/go-gitlab v0.109.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
