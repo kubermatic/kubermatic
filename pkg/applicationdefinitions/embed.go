@@ -28,6 +28,10 @@ const (
 //go:embed system-applications
 var f embed.FS
 
+// getSysAppDefFilesFunc is the function used to load system ApplicationDefinition files.
+// It can be overridden in tests to inject custom definitions.
+var getSysAppDefFilesFunc = GetSysAppDefFiles
+
 func GetSysAppDefFiles() ([]fs.File, error) {
 	files := []fs.File{}
 	entries, err := f.ReadDir(systemApplicationsDirectory)
