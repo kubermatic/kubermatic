@@ -62,7 +62,6 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 
 			// Deployment spec
 			dep.Spec.Replicas = resources.Int32(kyverno.KyvernoBackgroundControllerReplicas)
-			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
