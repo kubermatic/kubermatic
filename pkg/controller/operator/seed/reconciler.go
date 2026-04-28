@@ -248,6 +248,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	modifiers := []reconciling.ObjectModifier{
 		modifier.Ownership(seed, common.OperatorName, r.scheme),
 		modifier.RelatedRevisionsLabels(ctx, client),
+		modifier.RevisionHistoryLimit(2),
 	}
 	// add the image pull secret wrapper only when an image pull secret is provided
 	if cfg.Spec.ImagePullSecret != "" {
@@ -575,9 +576,11 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 	}
 
 	volumeLabelModifier := modifier.RelatedRevisionsLabels(ctx, client)
+	revisionHistoryLimitModifier := modifier.RevisionHistoryLimit(2)
 	modifiers := []reconciling.ObjectModifier{
 		modifier.Ownership(seed, common.OperatorName, r.scheme),
 		modifier.VersionLabel(r.versions.GitVersion),
+		revisionHistoryLimitModifier,
 		volumeLabelModifier,
 	}
 	// add the image pull secret wrapper only when an image pull secret is
@@ -598,7 +601,8 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		}
 
 		// no ownership because these resources are not in the kubermatic namespace
-		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
+		err = reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier, revisionHistoryLimitModifier)
+		if err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %w", err)
 		}
 	}

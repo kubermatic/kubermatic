@@ -32,6 +32,7 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -360,7 +361,8 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		GatewayDeploymentReconciler(data, settings),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r); err != nil {
+	err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r, modifier.RevisionHistoryLimit(2))
+	if err != nil {
 		return err
 	}
 	return nil

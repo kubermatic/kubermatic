@@ -62,6 +62,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -969,6 +970,7 @@ func psaBaselineLabeler(namespace string) reconciling.NamedNamespaceReconcilerFa
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData) error {
+	revisionHistoryLimit := modifier.RevisionHistoryLimit(2)
 	var dsReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 
 	if r.nodeLocalDNSCache {
@@ -987,7 +989,8 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(data.cluster, r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r); err != nil {
+	err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r, revisionHistoryLimit)
+	if err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
 	}
 
@@ -995,7 +998,8 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		dsReconcilers = []reconciling.NamedDaemonSetReconcilerFactory{
 			mlaloggingagent.DaemonSetReconciler(data.loggingRequirements, r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.UserClusterMLANamespace, r); err != nil {
+		err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.UserClusterMLANamespace, r, revisionHistoryLimit)
+		if err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
 		}
 	}
@@ -1047,12 +1051,16 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 }
 
 func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileData) error {
+	revisionHistoryLimit := modifier.RevisionHistoryLimit(2)
+
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			kubernetesdashboard.DeploymentReconciler(r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
+
+		err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r, revisionHistoryLimit)
+		if err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -1061,7 +1069,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		coredns.DeploymentReconciler(r.clusterSemVer, data.cluster, r.imageRewriter),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, kubeSystemReconcilers, metav1.NamespaceSystem, r); err != nil {
+	err := reconciling.ReconcileDeployments(ctx, kubeSystemReconcilers, metav1.NamespaceSystem, r, revisionHistoryLimit)
+	if err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
@@ -1072,7 +1081,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 			gatekeeper.AuditDeploymentReconciler(r.imageRewriter, data.gatekeeperAuditRequirements),
 		}
 
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r, revisionHistoryLimit); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -1081,7 +1090,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			mlamonitoringagent.DeploymentReconciler(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r, revisionHistoryLimit); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -1097,7 +1106,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 			),
 			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r, revisionHistoryLimit); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 		}
 	}

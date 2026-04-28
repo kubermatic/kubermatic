@@ -99,6 +99,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),
 		modifier.ControlplaneComponent(cluster),
+		modifier.RevisionHistoryLimit(2),
 	}
 
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, modifiers...)
@@ -157,6 +158,7 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, cluster *kubermatic
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),
 		modifier.ControlplaneComponent(cluster),
+		modifier.RevisionHistoryLimit(2),
 	}
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r, modifiers...)

@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -94,7 +95,7 @@ func Deploy(
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentReconcilerFactory{
 		nodeportproxy.EnvoyDeploymentReconciler(cfg, seed, false, versions),
 		nodeportproxy.UpdaterDeploymentReconciler(cfg, seed, versions),
-	}, namespace, client); err != nil {
+	}, namespace, client, modifier.RevisionHistoryLimit(2)); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 

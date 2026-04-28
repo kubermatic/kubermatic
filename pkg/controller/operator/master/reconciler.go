@@ -506,6 +506,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		modifier.Ownership(config, common.OperatorName, r.scheme),
 		modifier.RelatedRevisionsLabels(ctx, r.Client),
 		modifier.VersionLabel(r.versions.GitVersion),
+		modifier.RevisionHistoryLimit(2),
 	}
 
 	// add the image pull secret wrapper only when an image pull secret is provided
