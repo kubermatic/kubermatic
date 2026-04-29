@@ -326,6 +326,12 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				},
 			}
 
+			d.Spec.Template.Spec.NodeSelector = cfg.Spec.Webhook.NodeSelector
+			d.Spec.Template.Spec.Affinity = cfg.Spec.Webhook.Affinity
+			d.Spec.Template.Spec.Tolerations = cfg.Spec.Webhook.Tolerations
+			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.Webhook.TopologySpreadConstraints
+			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.Webhook.PriorityClassName
+
 			return d, nil
 		}
 	}

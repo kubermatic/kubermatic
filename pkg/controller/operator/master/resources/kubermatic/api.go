@@ -281,6 +281,12 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				},
 			}
 
+			d.Spec.Template.Spec.NodeSelector = cfg.Spec.API.NodeSelector
+			d.Spec.Template.Spec.Affinity = cfg.Spec.API.Affinity
+			d.Spec.Template.Spec.Tolerations = cfg.Spec.API.Tolerations
+			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.API.TopologySpreadConstraints
+			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.API.PriorityClassName
+
 			return d, nil
 		}
 	}

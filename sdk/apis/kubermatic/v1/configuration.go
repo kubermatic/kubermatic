@@ -150,6 +150,26 @@ type KubermaticAuthConfiguration struct {
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
 }
 
+// PodSchedulingConfigurations controls pod scheduling configurations.
+type PodSchedulingConfigurations struct {
+	// NodeSelector restricts the set of nodes the component pods can run on.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity describes pod scheduling affinity rules for the component.
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allow the component pods to schedule onto nodes with matching taints.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// TopologySpreadConstraints describes how the component pods should be spread
+	// across topology domains (e.g. zones, nodes).
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// PriorityClassName indicates the component pods' priority class.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+}
+
 // KubermaticAPIConfiguration configures the dashboard.
 type KubermaticAPIConfiguration struct {
 	// DockerRepository is the repository containing the Kubermatic REST API image.
@@ -176,6 +196,9 @@ type KubermaticAPIConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the API deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -203,6 +226,9 @@ type KubermaticUIConfiguration struct {
 	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 	// ExtraVolumes allows to mount additional volumes into the UI container.
 	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
@@ -238,6 +264,9 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
 	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
 	BackupCount *int `json:"backupCount,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.
@@ -253,6 +282,9 @@ type KubermaticWebhookConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the webhook.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -526,6 +558,9 @@ type KubermaticMasterControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the master-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.

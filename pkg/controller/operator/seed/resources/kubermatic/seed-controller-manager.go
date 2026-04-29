@@ -221,6 +221,12 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				},
 			}
 
+			d.Spec.Template.Spec.NodeSelector = cfg.Spec.SeedController.NodeSelector
+			d.Spec.Template.Spec.Affinity = cfg.Spec.SeedController.Affinity
+			d.Spec.Template.Spec.Tolerations = cfg.Spec.SeedController.Tolerations
+			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.SeedController.TopologySpreadConstraints
+			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.SeedController.PriorityClassName
+
 			return d, nil
 		}
 	}

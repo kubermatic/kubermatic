@@ -109,6 +109,12 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, cfg.Spec.UI.ExtraVolumes...)
 			}
 
+			d.Spec.Template.Spec.NodeSelector = cfg.Spec.UI.NodeSelector
+			d.Spec.Template.Spec.Affinity = cfg.Spec.UI.Affinity
+			d.Spec.Template.Spec.Tolerations = cfg.Spec.UI.Tolerations
+			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.UI.TopologySpreadConstraints
+			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.UI.PriorityClassName
+
 			return d, nil
 		}
 	}

@@ -103,6 +103,12 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				},
 			}
 
+			d.Spec.Template.Spec.NodeSelector = cfg.Spec.MasterController.NodeSelector
+			d.Spec.Template.Spec.Affinity = cfg.Spec.MasterController.Affinity
+			d.Spec.Template.Spec.Tolerations = cfg.Spec.MasterController.Tolerations
+			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.MasterController.TopologySpreadConstraints
+			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.MasterController.PriorityClassName
+
 			return d, nil
 		}
 	}
