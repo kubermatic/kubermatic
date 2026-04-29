@@ -498,7 +498,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(
 			templateData.Cluster().Spec.Version, templateData.Cluster(),
 			"dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime,
-			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil,
+			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil, false,
 		))
 	}
 

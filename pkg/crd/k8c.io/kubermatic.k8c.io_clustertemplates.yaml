@@ -2625,6 +2625,16 @@ spec:
                           items:
                             type: string
                           type: array
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
@@ -2690,6 +2700,16 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     kubeStateMetrics:
                       description: KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
