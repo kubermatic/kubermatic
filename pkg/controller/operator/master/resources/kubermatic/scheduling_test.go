@@ -104,9 +104,6 @@ func fullScheduling() kubermaticv1.PodSchedulingConfigurations {
 // schedulingFieldSetter configures scheduling fields on the given config for a specific component.
 type schedulingFieldSetter func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations)
 
-// reconcilerFactory calls the component's deployment reconciler and returns its getter.
-type reconcilerFactory func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult
-
 type reconcilerResult struct {
 	name    string
 	creator func(d *appsv1.Deployment) (*appsv1.Deployment, error)
