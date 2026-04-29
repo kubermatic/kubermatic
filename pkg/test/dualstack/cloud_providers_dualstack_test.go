@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	awstypes "k8c.io/machine-controller/sdk/cloudprovider/aws"
 	"k8c.io/machine-controller/sdk/net"
 	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
@@ -577,6 +578,20 @@ func TestNewClusters(t *testing.T) {
 					WithNetworkConfig(&providerconfig.NetworkConfig{
 						IPFamily: net.IPFamilyIPv4IPv6,
 					})
+
+				// pin Flatcar AMI on AWS to a pre-4593.2.0 build until OSM ships a fix.
+				// Flatcar Stable 4593.2.0 made /etc/environment a symlink to read-only
+				// /usr/lib/pam/environment, which makes the OSP bootstrap's `tee -a /etc/environment`
+				// fail and bootstrap.service loop forever.
+				if test.cloudProvider == kubermaticv1.AWSCloudProvider && osName == providerconfig.OperatingSystemFlatcar {
+					osMachineJig.WithCloudProviderSpecPatch(func(spec interface{}) interface{} {
+						awsSpec := spec.(awstypes.RawConfig)
+						awsSpec.AMI = providerconfig.ConfigVarString{Value: "ami-07a16a557a7b240e3"} // Flatcar 4459.2.4, eu-west-1
+						return awsSpec
+					})
+
+					osMachineJig.WithOSSpec(flatcar.Config{DisableAutoUpdate: true})
+				}
 
 				// no need to keep track of machine cleanups, as KKP will delete all machines in the
 				// cluster when the cluster itself is being deleted
