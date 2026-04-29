@@ -398,7 +398,7 @@ func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cl
 		cleanupcontrollerresources.DeploymentReconciler(data),
 	}
 
-	err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client, modifier.RevisionHistoryLimit(2))
+	err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client, modifier.RevisionHistoryLimit(10))
 	if err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
