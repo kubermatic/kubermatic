@@ -279,7 +279,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to determine additional API server altnames: %w", err)
 	}
 
-	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, &datacenter, seed)
+	authConfigYAML, err := r.resolveAuthenticationConfigurationYAML(ctx, cluster, &datacenter, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -1385,13 +1385,17 @@ func extractWebhookServerURL(configData []byte) (string, error) {
 	return cluster.Server, nil
 }
 
-// resolveAuthenticationConfigurationYAML returns the effective authentication configuration YAML
-// for the given datacenter, falling back to the seed-level configuration if the datacenter does not
-// define its own.
-func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed) ([]byte, error) {
-	authConfigRef := datacenter.Spec.AuthenticationConfiguration
+// resolveAuthenticationConfigurationYAML returns the effective authentication configuration YAML for the given cluster, datacenter or seed, in that order of precedence.
+// If no authentication configuration is configured, nil is returned.
+func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed) ([]byte, error) {
+	namespace := cluster.Status.NamespaceName
+	authConfigRef := cluster.Spec.AuthenticationConfiguration
 	if authConfigRef == nil {
-		authConfigRef = seed.Spec.AuthenticationConfiguration
+		namespace = resources.KubermaticNamespace
+		authConfigRef = datacenter.Spec.AuthenticationConfiguration
+		if authConfigRef == nil {
+			authConfigRef = seed.Spec.AuthenticationConfiguration
+		}
 	}
 
 	if authConfigRef == nil {
@@ -1400,7 +1404,7 @@ func (r *Reconciler) resolveAuthenticationConfigurationYAML(ctx context.Context,
 
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{
-		Namespace: resources.KubermaticNamespace,
+		Namespace: namespace,
 		Name:      authConfigRef.SecretName,
 	}
 

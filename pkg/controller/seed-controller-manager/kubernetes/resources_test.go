@@ -372,8 +372,10 @@ func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployme
 }
 
 func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
+	clusterNamespace := "cluster-xyz"
 	seedLevelYAML := []byte("seed-level-auth-config")
 	dcLevelYAML := []byte("datacenter-level-auth-config")
+	clusterLevelYAML := []byte("cluster-level-auth-config")
 	fakeSecrets := []ctrlruntimeclient.Object{
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -393,17 +395,27 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 				"config.yaml": dcLevelYAML,
 			},
 		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cluster-auth-secret",
+				Namespace: clusterNamespace,
+			},
+			Data: map[string][]byte{
+				"config.yaml": clusterLevelYAML,
+			},
+		},
 	}
 
 	tests := []struct {
 		name           string
+		clusterConf    *kubermaticv1.AuthenticationConfiguration
 		datacenterConf *kubermaticv1.AuthenticationConfiguration
 		seedConf       *kubermaticv1.AuthenticationConfiguration
 		expectedResult []byte
 		expectError    string
 	}{
 		{
-			name: "no datacenter config and no seed config returns nil",
+			name: "no cluster config, no datacenter config and no seed config returns nil",
 		},
 		{
 			name: "seed-level config is returned when no datacenter config specified",
@@ -424,6 +436,54 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 				SecretKey:  "config.yaml",
 			},
 			expectedResult: dcLevelYAML,
+		},
+		{
+			name: "cluster config takes precedence over seed-level",
+			clusterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "cluster-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "dc-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectedResult: clusterLevelYAML,
+		},
+		{
+			name: "cluster config with missing secret returns error",
+			clusterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "nonexistent-secret",
+				SecretKey:  "config.yaml",
+			},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "dc-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectError: "failed to read authentication configuration secret",
+		},
+		{
+			name: "cluster config with missing key in secret returns error",
+			clusterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "cluster-auth-secret",
+				SecretKey:  "missing-key",
+			},
+			datacenterConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "dc-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			seedConf: &kubermaticv1.AuthenticationConfiguration{
+				SecretName: "seed-auth-secret",
+				SecretKey:  "config.yaml",
+			},
+			expectError: "does not contain key",
 		},
 		{
 			name: "datacenter config with missing secret returns error",
@@ -477,6 +537,14 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 				Client: client,
 			}
 
+			cluster := &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					AuthenticationConfiguration: tt.clusterConf,
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: clusterNamespace,
+				},
+			}
 			datacenter := &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Fake:                        &kubermaticv1.DatacenterSpecFake{},
@@ -489,7 +557,7 @@ func TestResolveAuthenticationConfigurationYAML(t *testing.T) {
 				},
 			}
 
-			result, err := r.resolveAuthenticationConfigurationYAML(ctx, datacenter, seed)
+			result, err := r.resolveAuthenticationConfigurationYAML(ctx, cluster, datacenter, seed)
 			if tt.expectError != "" {
 				require.ErrorContains(t, err, tt.expectError)
 				return
