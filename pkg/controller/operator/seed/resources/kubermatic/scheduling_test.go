@@ -17,6 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
+	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -59,10 +60,8 @@ func newTestSeed() *kubermaticv1.Seed {
 	}
 }
 
-func TestSeedControllerManagerDeploymentScheduling(t *testing.T) {
-	versions := kubermatic.GetFakeVersions()
-
-	scheduling := kubermaticv1.PodSchedulingConfigurations{
+func seedFullScheduling() kubermaticv1.PodSchedulingConfigurations {
+	return kubermaticv1.PodSchedulingConfigurations{
 		NodeSelector: map[string]string{"role": "seed-controller"},
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
@@ -100,65 +99,126 @@ func TestSeedControllerManagerDeploymentScheduling(t *testing.T) {
 		},
 		PriorityClassName: "system-cluster-critical",
 	}
+}
 
-	t.Run("with scheduling fields set", func(t *testing.T) {
-		cfg := newTestSeedConfig()
-		cfg.Spec.SeedController.PodSchedulingConfigurations = scheduling
+func TestSeedControllerManagerDeploymentScheduling(t *testing.T) {
+	versions := kubermatic.GetFakeVersions()
+	seed := newTestSeed()
 
-		creatorGetter := SeedControllerManagerDeploymentReconciler("", versions, cfg, newTestSeed())
-		_, creator := creatorGetter()
+	tests := []struct {
+		name        string
+		preExisting *kubermaticv1.PodSchedulingConfigurations
+		input       *kubermaticv1.PodSchedulingConfigurations
+		want        *kubermaticv1.PodSchedulingConfigurations
+	}{
+		{
+			name:  "all scheduling fields set",
+			input: seedSchedulingPtr(seedFullScheduling()),
+			want:  seedSchedulingPtr(seedFullScheduling()),
+		},
+		{
+			name: "no scheduling fields",
+			want: nil,
+		},
+		{
+			name: "only topologySpreadConstraints",
+			input: &kubermaticv1.PodSchedulingConfigurations{
+				TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+					{
+						MaxSkew:           1,
+						TopologyKey:       "topology.kubernetes.io/zone",
+						WhenUnsatisfiable: corev1.DoNotSchedule,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"app": "seed-controller"},
+						},
+					},
+				},
+			},
+			want: &kubermaticv1.PodSchedulingConfigurations{
+				TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+					{
+						MaxSkew:           1,
+						TopologyKey:       "topology.kubernetes.io/zone",
+						WhenUnsatisfiable: corev1.DoNotSchedule,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"app": "seed-controller"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "overwrites pre-existing scheduling fields",
+			preExisting: &kubermaticv1.PodSchedulingConfigurations{
+				NodeSelector:      map[string]string{"old": "value"},
+				PriorityClassName: "old-priority",
+			},
+			input: seedSchedulingPtr(seedFullScheduling()),
+			want:  seedSchedulingPtr(seedFullScheduling()),
+		},
+		{
+			name:        "clears pre-existing fields when config is empty",
+			preExisting: seedSchedulingPtr(seedFullScheduling()),
+			want:        nil,
+		},
+	}
 
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := newTestSeedConfig()
+			if tt.input != nil {
+				cfg.Spec.SeedController.PodSchedulingConfigurations = *tt.input
+			}
 
-		spec := result.Spec.Template.Spec
-		if spec.PriorityClassName != scheduling.PriorityClassName {
-			t.Errorf("PriorityClassName: expected %q, got %q", scheduling.PriorityClassName, spec.PriorityClassName)
-		}
-		if len(spec.NodeSelector) != len(scheduling.NodeSelector) {
-			t.Errorf("NodeSelector: expected %v, got %v", scheduling.NodeSelector, spec.NodeSelector)
-		}
-		if spec.Affinity == nil {
-			t.Error("Affinity: expected non-nil")
-		}
-		if len(spec.Tolerations) != len(scheduling.Tolerations) {
-			t.Errorf("Tolerations: expected %d, got %d", len(scheduling.Tolerations), len(spec.Tolerations))
-		}
-		if len(spec.TopologySpreadConstraints) != len(scheduling.TopologySpreadConstraints) {
-			t.Errorf("TopologySpreadConstraints: expected %d, got %d", len(scheduling.TopologySpreadConstraints), len(spec.TopologySpreadConstraints))
-		}
-	})
+			_, creator := SeedControllerManagerDeploymentReconciler("", versions, cfg, seed)()
 
-	t.Run("without scheduling fields", func(t *testing.T) {
-		cfg := newTestSeedConfig()
+			deploy := &appsv1.Deployment{}
+			if tt.preExisting != nil {
+				seedApplyScheduling(deploy, *tt.preExisting)
+			}
 
-		creatorGetter := SeedControllerManagerDeploymentReconciler("", versions, cfg, newTestSeed())
-		_, creator := creatorGetter()
+			result, err := creator(deploy)
+			if err != nil {
+				t.Fatalf("reconciler failed: %v", err)
+			}
 
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
+			seedAssertScheduling(t, result.Spec.Template.Spec, tt.want)
+		})
+	}
+}
 
-		spec := result.Spec.Template.Spec
-		if spec.PriorityClassName != "" {
-			t.Errorf("PriorityClassName: expected empty, got %q", spec.PriorityClassName)
-		}
-		if len(spec.NodeSelector) != 0 {
-			t.Errorf("NodeSelector: expected empty, got %v", spec.NodeSelector)
-		}
-		if spec.Affinity != nil {
-			t.Error("Affinity: expected nil")
-		}
-		if len(spec.Tolerations) != 0 {
-			t.Errorf("Tolerations: expected empty, got %v", spec.Tolerations)
-		}
-		if len(spec.TopologySpreadConstraints) != 0 {
-			t.Errorf("TopologySpreadConstraints: expected empty, got %v", spec.TopologySpreadConstraints)
-		}
-	})
+func seedSchedulingPtr(s kubermaticv1.PodSchedulingConfigurations) *kubermaticv1.PodSchedulingConfigurations {
+	return &s
+}
+
+func seedApplyScheduling(d *appsv1.Deployment, s kubermaticv1.PodSchedulingConfigurations) {
+	d.Spec.Template.Spec.NodeSelector = s.NodeSelector
+	d.Spec.Template.Spec.Affinity = s.Affinity
+	d.Spec.Template.Spec.Tolerations = s.Tolerations
+	d.Spec.Template.Spec.TopologySpreadConstraints = s.TopologySpreadConstraints
+	d.Spec.Template.Spec.PriorityClassName = s.PriorityClassName
+}
+
+func seedAssertScheduling(t *testing.T, spec corev1.PodSpec, want *kubermaticv1.PodSchedulingConfigurations) {
+	t.Helper()
+
+	if want == nil {
+		want = &kubermaticv1.PodSchedulingConfigurations{}
+	}
+
+	if spec.PriorityClassName != want.PriorityClassName {
+		t.Errorf("PriorityClassName: want %q, got %q", want.PriorityClassName, spec.PriorityClassName)
+	}
+	if !reflect.DeepEqual(spec.NodeSelector, want.NodeSelector) {
+		t.Errorf("NodeSelector: want %v, got %v", want.NodeSelector, spec.NodeSelector)
+	}
+	if !reflect.DeepEqual(spec.Affinity, want.Affinity) {
+		t.Errorf("Affinity: want %v, got %v", want.Affinity, spec.Affinity)
+	}
+	if !reflect.DeepEqual(spec.Tolerations, want.Tolerations) {
+		t.Errorf("Tolerations: want %v, got %v", want.Tolerations, spec.Tolerations)
+	}
+	if !reflect.DeepEqual(spec.TopologySpreadConstraints, want.TopologySpreadConstraints) {
+		t.Errorf("TopologySpreadConstraints: want %v, got %v", want.TopologySpreadConstraints, spec.TopologySpreadConstraints)
+	}
 }

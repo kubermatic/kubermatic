@@ -17,6 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
+	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -28,9 +29,7 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func pprofPtr(s string) *string {
-	return &s
-}
+func pprofPtr(s string) *string { return &s }
 
 func newTestConfig() *kubermaticv1.KubermaticConfiguration {
 	return &kubermaticv1.KubermaticConfiguration{
@@ -61,7 +60,7 @@ func newTestConfig() *kubermaticv1.KubermaticConfiguration {
 	}
 }
 
-func testSchedulingFields() kubermaticv1.PodSchedulingConfigurations {
+func fullScheduling() kubermaticv1.PodSchedulingConfigurations {
 	return kubermaticv1.PodSchedulingConfigurations{
 		NodeSelector: map[string]string{"role": "test"},
 		Affinity: &corev1.Affinity{
@@ -102,160 +101,234 @@ func testSchedulingFields() kubermaticv1.PodSchedulingConfigurations {
 	}
 }
 
-func assertSchedulingFields(t *testing.T, spec corev1.PodSpec, expected kubermaticv1.PodSchedulingConfigurations) {
-	t.Helper()
+// schedulingFieldSetter configures scheduling fields on the given config for a specific component.
+type schedulingFieldSetter func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations)
 
-	if spec.PriorityClassName != expected.PriorityClassName {
-		t.Errorf("PriorityClassName: expected %q, got %q", expected.PriorityClassName, spec.PriorityClassName)
+// reconcilerFactory calls the component's deployment reconciler and returns its getter.
+type reconcilerFactory func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult
+
+type reconcilerResult struct {
+	name    string
+	creator func(d *appsv1.Deployment) (*appsv1.Deployment, error)
+}
+
+func TestMasterComponentScheduling(t *testing.T) {
+	versions := kubermatic.GetFakeVersions()
+
+	tests := []struct {
+		name        string
+		setSched    schedulingFieldSetter
+		newReconc   func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult
+		preExisting *kubermaticv1.PodSchedulingConfigurations
+		input       *kubermaticv1.PodSchedulingConfigurations
+		want        *kubermaticv1.PodSchedulingConfigurations
+	}{
+		{
+			name: "api with all scheduling fields set",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.API.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := APIDeploymentReconciler(cfg, "", versions)()
+				return reconcilerResult{n, c}
+			},
+			input: ptrScheduling(fullScheduling()),
+			want:  ptrScheduling(fullScheduling()),
+		},
+		{
+			name: "api with no scheduling fields",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.API.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := APIDeploymentReconciler(cfg, "", versions)()
+				return reconcilerResult{n, c}
+			},
+			want: nil,
+		},
+		{
+			name: "api with only nodeSelector",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.API.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := APIDeploymentReconciler(cfg, "", versions)()
+				return reconcilerResult{n, c}
+			},
+			input: &kubermaticv1.PodSchedulingConfigurations{
+				NodeSelector: map[string]string{"role": "test"},
+			},
+			want: &kubermaticv1.PodSchedulingConfigurations{
+				NodeSelector: map[string]string{"role": "test"},
+			},
+		},
+		{
+			name: "api overwrites pre-existing scheduling fields",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.API.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := APIDeploymentReconciler(cfg, "", versions)()
+				return reconcilerResult{n, c}
+			},
+			preExisting: &kubermaticv1.PodSchedulingConfigurations{
+				NodeSelector:      map[string]string{"old": "value"},
+				PriorityClassName: "old-priority",
+			},
+			input: ptrScheduling(fullScheduling()),
+			want:  ptrScheduling(fullScheduling()),
+		},
+		{
+			name: "ui with all scheduling fields set",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.UI.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := UIDeploymentReconciler(cfg, versions)()
+				return reconcilerResult{n, c}
+			},
+			input: ptrScheduling(fullScheduling()),
+			want:  ptrScheduling(fullScheduling()),
+		},
+		{
+			name: "ui with no scheduling fields",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.UI.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := UIDeploymentReconciler(cfg, versions)()
+				return reconcilerResult{n, c}
+			},
+			want: nil,
+		},
+		{
+			name: "ui with only tolerations",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.UI.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := UIDeploymentReconciler(cfg, versions)()
+				return reconcilerResult{n, c}
+			},
+			input: &kubermaticv1.PodSchedulingConfigurations{
+				Tolerations: []corev1.Toleration{
+					{Key: "test", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule},
+				},
+			},
+			want: &kubermaticv1.PodSchedulingConfigurations{
+				Tolerations: []corev1.Toleration{
+					{Key: "test", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule},
+				},
+			},
+		},
+		{
+			name: "master-controller-manager with all scheduling fields set",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.MasterController.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)()
+				return reconcilerResult{n, c}
+			},
+			input: ptrScheduling(fullScheduling()),
+			want:  ptrScheduling(fullScheduling()),
+		},
+		{
+			name: "master-controller-manager with no scheduling fields",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.MasterController.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)()
+				return reconcilerResult{n, c}
+			},
+			want: nil,
+		},
+		{
+			name: "master-controller-manager with only priorityClassName",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.MasterController.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)()
+				return reconcilerResult{n, c}
+			},
+			input: &kubermaticv1.PodSchedulingConfigurations{
+				PriorityClassName: "system-cluster-critical",
+			},
+			want: &kubermaticv1.PodSchedulingConfigurations{
+				PriorityClassName: "system-cluster-critical",
+			},
+		},
+		{
+			name: "master-controller-manager clears pre-existing fields when config is empty",
+			setSched: func(cfg *kubermaticv1.KubermaticConfiguration, s kubermaticv1.PodSchedulingConfigurations) {
+				cfg.Spec.MasterController.PodSchedulingConfigurations = s
+			},
+			newReconc: func(cfg *kubermaticv1.KubermaticConfiguration) reconcilerResult {
+				n, c := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)()
+				return reconcilerResult{n, c}
+			},
+			preExisting: ptrScheduling(fullScheduling()),
+			want:        nil,
+		},
 	}
 
-	if len(spec.NodeSelector) != len(expected.NodeSelector) {
-		t.Errorf("NodeSelector: expected %v, got %v", expected.NodeSelector, spec.NodeSelector)
-	} else {
-		for k, v := range expected.NodeSelector {
-			if spec.NodeSelector[k] != v {
-				t.Errorf("NodeSelector[%q]: expected %q, got %q", k, v, spec.NodeSelector[k])
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := newTestConfig()
+			if tt.input != nil {
+				tt.setSched(cfg, *tt.input)
 			}
-		}
-	}
 
-	if spec.Affinity == nil && expected.Affinity != nil {
-		t.Error("Affinity: expected non-nil, got nil")
-	}
+			res := tt.newReconc(cfg)
+			deploy := &appsv1.Deployment{}
+			if tt.preExisting != nil {
+				applySchedulingToDeploy(deploy, *tt.preExisting)
+			}
 
-	if len(spec.Tolerations) != len(expected.Tolerations) {
-		t.Errorf("Tolerations: expected %d items, got %d", len(expected.Tolerations), len(spec.Tolerations))
-	}
+			result, err := res.creator(deploy)
+			if err != nil {
+				t.Fatalf("reconciler failed: %v", err)
+			}
 
-	if len(spec.TopologySpreadConstraints) != len(expected.TopologySpreadConstraints) {
-		t.Errorf("TopologySpreadConstraints: expected %d items, got %d", len(expected.TopologySpreadConstraints), len(spec.TopologySpreadConstraints))
+			assertPodScheduling(t, result.Spec.Template.Spec, tt.want)
+		})
 	}
 }
 
-func assertNoSchedulingFields(t *testing.T, spec corev1.PodSpec) {
+func ptrScheduling(s kubermaticv1.PodSchedulingConfigurations) *kubermaticv1.PodSchedulingConfigurations {
+	return &s
+}
+
+func applySchedulingToDeploy(d *appsv1.Deployment, s kubermaticv1.PodSchedulingConfigurations) {
+	d.Spec.Template.Spec.NodeSelector = s.NodeSelector
+	d.Spec.Template.Spec.Affinity = s.Affinity
+	d.Spec.Template.Spec.Tolerations = s.Tolerations
+	d.Spec.Template.Spec.TopologySpreadConstraints = s.TopologySpreadConstraints
+	d.Spec.Template.Spec.PriorityClassName = s.PriorityClassName
+}
+
+func assertPodScheduling(t *testing.T, spec corev1.PodSpec, want *kubermaticv1.PodSchedulingConfigurations) {
 	t.Helper()
 
-	if spec.PriorityClassName != "" {
-		t.Errorf("PriorityClassName: expected empty, got %q", spec.PriorityClassName)
+	if want == nil {
+		want = &kubermaticv1.PodSchedulingConfigurations{}
 	}
-	if len(spec.NodeSelector) != 0 {
-		t.Errorf("NodeSelector: expected empty, got %v", spec.NodeSelector)
+
+	if spec.PriorityClassName != want.PriorityClassName {
+		t.Errorf("PriorityClassName: want %q, got %q", want.PriorityClassName, spec.PriorityClassName)
 	}
-	if spec.Affinity != nil {
-		t.Error("Affinity: expected nil")
+	if !reflect.DeepEqual(spec.NodeSelector, want.NodeSelector) {
+		t.Errorf("NodeSelector: want %v, got %v", want.NodeSelector, spec.NodeSelector)
 	}
-	if len(spec.Tolerations) != 0 {
-		t.Errorf("Tolerations: expected empty, got %v", spec.Tolerations)
+	if !reflect.DeepEqual(spec.Affinity, want.Affinity) {
+		t.Errorf("Affinity: want %v, got %v", want.Affinity, spec.Affinity)
 	}
-	if len(spec.TopologySpreadConstraints) != 0 {
-		t.Errorf("TopologySpreadConstraints: expected empty, got %v", spec.TopologySpreadConstraints)
+	if !reflect.DeepEqual(spec.Tolerations, want.Tolerations) {
+		t.Errorf("Tolerations: want %v, got %v", want.Tolerations, spec.Tolerations)
 	}
-}
-
-func TestAPIDeploymentScheduling(t *testing.T) {
-	versions := kubermatic.GetFakeVersions()
-
-	t.Run("with scheduling fields set", func(t *testing.T) {
-		cfg := newTestConfig()
-		scheduling := testSchedulingFields()
-		cfg.Spec.API.PodSchedulingConfigurations = scheduling
-
-		creatorGetter := APIDeploymentReconciler(cfg, "", versions)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertSchedulingFields(t, result.Spec.Template.Spec, scheduling)
-	})
-
-	t.Run("without scheduling fields", func(t *testing.T) {
-		cfg := newTestConfig()
-
-		creatorGetter := APIDeploymentReconciler(cfg, "", versions)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertNoSchedulingFields(t, result.Spec.Template.Spec)
-	})
-}
-
-func TestUIDeploymentScheduling(t *testing.T) {
-	versions := kubermatic.GetFakeVersions()
-
-	t.Run("with scheduling fields set", func(t *testing.T) {
-		cfg := newTestConfig()
-		scheduling := testSchedulingFields()
-		cfg.Spec.UI.PodSchedulingConfigurations = scheduling
-
-		creatorGetter := UIDeploymentReconciler(cfg, versions)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertSchedulingFields(t, result.Spec.Template.Spec, scheduling)
-	})
-
-	t.Run("without scheduling fields", func(t *testing.T) {
-		cfg := newTestConfig()
-
-		creatorGetter := UIDeploymentReconciler(cfg, versions)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertNoSchedulingFields(t, result.Spec.Template.Spec)
-	})
-}
-
-func TestMasterControllerManagerDeploymentScheduling(t *testing.T) {
-	versions := kubermatic.GetFakeVersions()
-
-	t.Run("with scheduling fields set", func(t *testing.T) {
-		cfg := newTestConfig()
-		scheduling := testSchedulingFields()
-		cfg.Spec.MasterController.PodSchedulingConfigurations = scheduling
-
-		creatorGetter := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertSchedulingFields(t, result.Spec.Template.Spec, scheduling)
-	})
-
-	t.Run("without scheduling fields", func(t *testing.T) {
-		cfg := newTestConfig()
-
-		creatorGetter := MasterControllerManagerDeploymentReconciler(cfg, "", versions, nil)
-		_, creator := creatorGetter()
-
-		deploy := &appsv1.Deployment{}
-		result, err := creator(deploy)
-		if err != nil {
-			t.Fatalf("reconciler failed: %v", err)
-		}
-
-		assertNoSchedulingFields(t, result.Spec.Template.Spec)
-	})
+	if !reflect.DeepEqual(spec.TopologySpreadConstraints, want.TopologySpreadConstraints) {
+		t.Errorf("TopologySpreadConstraints: want %v, got %v", want.TopologySpreadConstraints, spec.TopologySpreadConstraints)
+	}
 }

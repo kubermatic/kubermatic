@@ -109,11 +109,35 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, cfg.Spec.UI.ExtraVolumes...)
 			}
 
-			d.Spec.Template.Spec.NodeSelector = cfg.Spec.UI.NodeSelector
-			d.Spec.Template.Spec.Affinity = cfg.Spec.UI.Affinity
-			d.Spec.Template.Spec.Tolerations = cfg.Spec.UI.Tolerations
-			d.Spec.Template.Spec.TopologySpreadConstraints = cfg.Spec.UI.TopologySpreadConstraints
-			d.Spec.Template.Spec.PriorityClassName = cfg.Spec.UI.PriorityClassName
+			var nodeSelector map[string]string
+			if cfg.Spec.UI.NodeSelector != nil {
+				nodeSelector = cfg.Spec.UI.NodeSelector
+			}
+			d.Spec.Template.Spec.NodeSelector = nodeSelector
+
+			var affinity *corev1.Affinity
+			if cfg.Spec.UI.Affinity != nil {
+				affinity = cfg.Spec.UI.Affinity
+			}
+			d.Spec.Template.Spec.Affinity = affinity
+
+			var tolerations []corev1.Toleration
+			if cfg.Spec.UI.Tolerations != nil {
+				tolerations = cfg.Spec.UI.Tolerations
+			}
+			d.Spec.Template.Spec.Tolerations = tolerations
+
+			var topologySpreadConstraints []corev1.TopologySpreadConstraint
+			if cfg.Spec.UI.TopologySpreadConstraints != nil {
+				topologySpreadConstraints = cfg.Spec.UI.TopologySpreadConstraints
+			}
+			d.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
+
+			var priorityClassName string
+			if cfg.Spec.UI.PriorityClassName != "" {
+				priorityClassName = cfg.Spec.UI.PriorityClassName
+			}
+			d.Spec.Template.Spec.PriorityClassName = priorityClassName
 
 			return d, nil
 		}
