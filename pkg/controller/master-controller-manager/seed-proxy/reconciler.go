@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -325,8 +324,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 		masterDeploymentReconciler(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
-	err = reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r, modifier.RevisionHistoryLimit(2))
-	if err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %w", seed.Namespace, err)
 	}
 
