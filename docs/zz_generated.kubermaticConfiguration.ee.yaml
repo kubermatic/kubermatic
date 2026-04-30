@@ -69,7 +69,7 @@ spec:
         # The default value is "quay.io/kubermatic/application-catalog-manager"
         repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
-        tag: 91dddf224f1cefd8dfe043e22628a23eca886142
+        tag: 4aa5a55d02734ff672a9f018d55430a55e90ef1a
       # Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
 
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
@@ -665,7 +665,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.34.6
+    default: v1.34.7
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -749,16 +749,19 @@ spec:
       - v1.33.8
       - v1.33.9
       - v1.33.10
+      - v1.33.11
       - v1.34.1
       - v1.34.2
       - v1.34.3
       - v1.34.4
       - v1.34.5
       - v1.34.6
+      - v1.34.7
       - v1.35.0
       - v1.35.1
       - v1.35.2
       - v1.35.3
+      - v1.35.4
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

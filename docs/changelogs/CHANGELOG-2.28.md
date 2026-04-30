@@ -9,6 +9,37 @@
 - [v2.28.6](#v2286)
 - [v2.28.7](#v2287)
 - [v2.28.8](#v2288)
+- [v2.28.9](#v2289)
+- [v2.28.10](#v22810)
+
+## v2.28.10
+
+**GitHub release:[v2.28.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.10)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.11 ([#15750](https://github.com/kubermatic/kubermatic/pull/15750))
+
+### Updates
+
+- Update gpu-operator application to v26.3.0 ([#15761](https://github.com/kubermatic/kubermatic/pull/15761))
+
+## v2.28.9
+
+**GitHub release: [v2.28.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.9)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.10 ([#15682](https://github.com/kubermatic/kubermatic/pull/15682))
+
+### New Features
+
+- Add new alerts providing insights into health of cortex used by user-cluster MLA ([#15630](https://github.com/kubermatic/kubermatic/pull/15630))
+- Seed Grafana now has 12 new grafana dashboards under MLA Stack folder ([#15633](https://github.com/kubermatic/kubermatic/pull/15633))
+
+### Bugfixes
+
+- Respect datacenter selectors for default/enforced apps.Prevent duplicate app additions when switching datacenters.Fix loading enforced apps in the edit/customize cluster template ([#7937](https://github.com/kubermatic/dashboard/pull/7937))
 
 ## v2.28.8
 

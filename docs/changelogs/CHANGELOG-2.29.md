@@ -6,6 +6,58 @@
 - [v2.29.3](#v2293)
 - [v2.29.4](#v2294)
 - [v2.29.5](#v2295)
+- [v2.29.6](#v2296)
+- [v2.29.7](#v2297)
+
+## v2.29.7
+
+**GitHub release: [v2.29.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.7)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.34.7/v1.33.11 ([#15749](https://github.com/kubermatic/kubermatic/pull/15749))
+
+### New Features
+
+- Add cluster-level resource configuration for Kyverno. Users can now configure resource requests and limits for the Kyverno admission, background, cleanup, and reports controllers ([#15770](https://github.com/kubermatic/kubermatic/pull/15770))
+
+### Bugfixes
+
+- Kubermatic-operator now reconciles Gateway API resources before Deployments, preventing missing ConfigMaps from blocking Gateway creation ([#15712](https://github.com/kubermatic/kubermatic/pull/15712))
+
+### Updates
+
+- Update gpu-operator application to v26.3.0 ([#15760](https://github.com/kubermatic/kubermatic/pull/15760))
+
+## v2.29.6
+
+**GitHub release: [v2.29.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.6)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.34.6/v1.33.10 ([#15680](https://github.com/kubermatic/kubermatic/pull/15680))
+
+### API Changes
+
+- Add `spec.ingress.gateway.infrastructureAnnotations` to `KubermaticConfiguration` to configure `Gateway.spec.infrastructure.annotations` on the operator managed Gateway ([#15725](https://github.com/kubermatic/kubermatic/pull/15725))
+
+### New Features
+
+- Add new alerts providing insights into health of cortex used by user-cluster MLA ([#15630](https://github.com/kubermatic/kubermatic/pull/15630))
+- Dex HTTPRoute path and pathType are now configurable via `httpRoute.path` and `httpRoute.pathType` values, allowing users to deploy Dex on a separate subdomain with root path instead of being limited to path-based routing ([#15627](https://github.com/kubermatic/kubermatic/pull/15627))
+- Envoy-gateway-controller: The envoyProxy image configuration now supports separate repository and tag fields for easier image mirroring. The legacy single-string format continues to work for backward compatibility ([#15595](https://github.com/kubermatic/kubermatic/pull/15595))
+- Seed Grafana now has 12 new grafana dashboards under MLA Stack folder ([#15603](https://github.com/kubermatic/kubermatic/pull/15603))
+
+### Bugfixes
+
+- Add missing condition to skip MLA Secrets deployment ([#15659](https://github.com/kubermatic/kubermatic/pull/15659))
+- Fix Gateway API listener churn where kubermatic-operator would cyclically remove and re-add dynamic listeners during reconciliation. Dynamic listeners added by httproute-gateway-sync controller are now preserved ([#15677](https://github.com/kubermatic/kubermatic/pull/15677))
+- Fix ineffective anti-affinity for the seed nodeport-proxy-envoy Deployment by aligning its anti-affinity selector with the pod labels actually used by the Deployment ([#15601](https://github.com/kubermatic/kubermatic/pull/15601))
+- Gateway and HTTPRoute resources are now properly owned by KubermaticConfiguration and will be garbage collected on deletion. User-added labels and annotations on these resources are no longer overwritten during reconciliation ([#15688](https://github.com/kubermatic/kubermatic/pull/15688))
+- The label key used for network policies for kubevirt virtual machines changed from `cluster.x-k8s.io/cluster-name` to `kubermatic.k8c.io/cluster-id` ([#15606](https://github.com/kubermatic/kubermatic/pull/15606))
+- Fixed Kubeconfig download with non nginx ingresses ([#7800](https://github.com/kubermatic/dashboard/pull/7800))
+- Fix missing OIDC group scope for kubelogin kubeconfig to fix group mapping for KKP user clusters ([#7990](https://github.com/kubermatic/dashboard/pull/7990))
+- Respect datacenter selectors for default/enforced apps.Prevent duplicate app additions when switching datacenters.Fix loading enforced apps in the edit/customize cluster template ([#7936](https://github.com/kubermatic/dashboard/pull/7936))
 
 ## v2.29.5
 

@@ -53,7 +53,7 @@ declare -A CHART_URLS=(
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.18.6"
+  ["cilium"]="1.18.8"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"

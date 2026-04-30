@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 // // TODO: Remove once we have vanity import support for application-catalog-manager
-replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260312121632-91dddf224f1c
+replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260415145230-4aa5a55d0273
 
 // required for compatibility with other OpenTelemetry dependencies
 replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.33.0
@@ -42,13 +42,13 @@ require (
 	github.com/aws/smithy-go v1.24.2
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.16.9
-	github.com/containerd/containerd/v2 v2.0.2
+	github.com/containerd/containerd/v2 v2.0.3
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/envoyproxy/go-control-plane v0.14.0
 	github.com/envoyproxy/go-control-plane/envoy v1.36.1-0.20260127061403-fa333f4b1886
-	github.com/go-git/go-git/v5 v5.17.1
+	github.com/go-git/go-git/v5 v5.18.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-test/deep v1.1.1
 	github.com/gobuffalo/flect v1.0.3
@@ -363,7 +363,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
-	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/term v0.5.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect

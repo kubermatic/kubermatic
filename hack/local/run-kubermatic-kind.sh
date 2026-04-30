@@ -215,10 +215,11 @@ retry 9 check_all_deployments_ready kube-system
 echodate "VPA is ready."
 
 echodate "Installing metallb"
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.12.1/manifests/namespace.yaml
+METALLB_VERSION="v0.14.9"
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
 kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.12.1/manifests/metallb.yaml
 echodate "Waiting for load balancer to be ready..."
 retry 10 check_all_deployments_ready metallb-system
 echodate "Load balancer is ready."
-kubectl apply -f "$DATA_FILE"/metallb-configmap.yaml
+kubectl wait --for condition=established --timeout 20s crd ipaddresspools.metallb.io
+kubectl apply -f "$DATA_FILE"/metallb-ipaddresspool.yaml

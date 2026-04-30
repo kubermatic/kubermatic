@@ -25,6 +25,8 @@
 package backgroundcontrollerresources
 
 import (
+	"fmt"
+
 	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -37,6 +39,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
+
+const backgroundControllerContainerName = "controller"
+
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	backgroundControllerContainerName: {
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		},
+	},
+}
 
 // DeploymentReconciler returns the function to create and update the Kyverno background controller deployment.
 func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
@@ -106,7 +122,7 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/background-controller"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "controller",
+					Name:            backgroundControllerContainerName,
 					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
@@ -158,15 +174,6 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 							},
 						},
 					},
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
-						},
-					},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
 						Capabilities: &corev1.Capabilities{
@@ -187,6 +194,20 @@ func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentR
 						},
 					},
 				},
+			}
+
+			var resourceOverride *corev1.ResourceRequirements
+			if data.Cluster().Spec.Kyverno != nil && data.Cluster().Spec.Kyverno.BackgroundController != nil {
+				resourceOverride = data.Cluster().Spec.Kyverno.BackgroundController.Resources
+			}
+
+			if err := resources.SetResourceRequirements(
+				dep.Spec.Template.Spec.Containers,
+				defaultResourceRequirements,
+				kyverno.SingleContainerResourceOverride(backgroundControllerContainerName, resourceOverride),
+				dep.Annotations,
+			); err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
