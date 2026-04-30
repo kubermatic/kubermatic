@@ -290,13 +290,13 @@ spec:
         - mountPath: /etc/kubernetes/adm-control
           name: adm-control
           readOnly: true
-        - mountPath: /etc/kubernetes/authentication-config
-          name: authentication-configuration
-          readOnly: true
         - mountPath: /etc/kubernetes/konnectivity-server
           name: konnectivity-uds
         - mountPath: /etc/kubernetes/konnectivity
           name: kube-apiserver-egress
+          readOnly: true
+        - mountPath: /etc/kubernetes/authentication-config
+          name: authentication-configuration
           readOnly: true
       dnsPolicy: ClusterFirst
       imagePullSecrets:
@@ -361,12 +361,6 @@ spec:
       - configMap:
           name: adm-control
         name: adm-control
-      - name: authentication-configuration
-        secret:
-          items:
-          - key: authentication-configuration.yaml
-            path: authentication-configuration.yaml
-          secretName: apiserver-authentication-configuration
       - name: konnectivity-kubeconfig
         secret:
           defaultMode: 420
@@ -381,4 +375,10 @@ spec:
           defaultMode: 420
           name: kube-apiserver-egress
         name: kube-apiserver-egress
+      - name: authentication-configuration
+        secret:
+          items:
+          - key: authentication-configuration.yaml
+            path: authentication-configuration.yaml
+          secretName: apiserver-authentication-configuration
 status: {}

@@ -883,6 +883,7 @@ func TestLoadFiles(t *testing.T) {
 						WithCABundle(caBundle).
 						WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
 						WithOIDCIssuerClientID("kubermaticIssuer").
+						WithOIDCAuthenticationFeatureEnabled(true).
 						WithKubermaticImage("quay.io/kubermatic/kubermatic").
 						WithEtcdLauncherImage("quay.io/kubermatic/etcd-launcher").
 						WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").
@@ -912,13 +913,7 @@ func generateAndVerifyResources(t *testing.T, ctx context.Context, client ctrlru
 
 	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
 	deploymentReconcilers = append(deploymentReconcilers,
-		kubernetescontroller.GetDeploymentReconcilers(
-			data,
-			kubernetescontroller.Features{
-				KubernetesOIDCAuthentication: true,
-			},
-			versions,
-		)...,
+		kubernetescontroller.GetDeploymentReconcilers(data, versions)...,
 	)
 	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
 	for _, factory := range deploymentReconcilers {

@@ -302,6 +302,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
+		WithOIDCAuthenticationFeatureEnabled(r.features.KubernetesOIDCAuthentication).
 		WithAuthenticationConfigurationYAML(authConfigYAML).
 		WithKubermaticImage(r.kubermaticImage).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
@@ -441,9 +442,9 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 }
 
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
-func GetDeploymentReconcilers(data *resources.TemplateData, features Features, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
+func GetDeploymentReconcilers(data *resources.TemplateData, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
-		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication),
+		apiserver.DeploymentReconciler(data),
 		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
@@ -505,7 +506,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 		modifier.ControlplaneComponent(cluster),
 	}
 
-	factories := GetDeploymentReconcilers(data, r.features, r.versions)
+	factories := GetDeploymentReconcilers(data, r.versions)
 	return reconciling.ReconcileDeployments(ctx, factories, cluster.Status.NamespaceName, r, modifiers...)
 }
 
@@ -549,7 +550,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
 		apiserver.ServiceAccountKeyReconciler(),
-		apiserver.AuthenticationConfigurationReconciler(data, r.caBundle.String(), r.features.KubernetesOIDCAuthentication),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
@@ -568,6 +568,10 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		// OSM
 		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
 		operatingsystemmanager.TLSServingCertificateReconciler(data),
+	}
+
+	if data.IsAuthenticationConfigurationEnabled() {
+		creators = append(creators, apiserver.AuthenticationConfigurationReconciler(data, r.caBundle.String()))
 	}
 
 	if data.Cluster().Spec.Cloud.Edge == nil {

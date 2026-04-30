@@ -36,13 +36,15 @@ type authenticationConfigurationReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	OIDCIssuerURL() string
 	OIDCIssuerClientID() string
+	IsAuthenticationConfigurationEnabled() bool
 	AuthenticationConfigurationYAML() []byte
 }
 
-func AuthenticationConfigurationReconciler(data authenticationConfigurationReconcilerData, caBundle string, enableOIDCAuthentication bool) reconciling.NamedSecretReconcilerFactory {
+func AuthenticationConfigurationReconciler(data authenticationConfigurationReconcilerData, caBundle string) reconciling.NamedSecretReconcilerFactory {
 	cluster := data.Cluster()
 
 	return func() (string, reconciling.SecretReconciler) {
+		// The conditions implemented here need to be aligned with the TemplateData.IsAuthenticationConfigurationEnabled method
 		if cluster.Spec.IsAuthenticationConfigurationEnabled() {
 			// User defined the Secret explicitly, don't modify it but ensure it exists.
 			return cluster.Spec.AuthenticationConfiguration.SecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
@@ -118,7 +120,8 @@ func AuthenticationConfigurationReconciler(data authenticationConfigurationRecon
 				if len(validationRules) > 0 {
 					cfg.JWT[0].ClaimValidationRules = validationRules
 				}
-			case enableOIDCAuthentication:
+			case data.IsAuthenticationConfigurationEnabled():
+				// Generate default AuthenticationConfiguration if KubernetesOIDCAuthentication feature is enabled but no issuer specified explicitly
 				usernameClaimPrefix := ""
 				groupClaimPrefix := "oidc:"
 				cfg.JWT = []apiserverv1.JWTAuthenticator{{

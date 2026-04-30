@@ -31,28 +31,29 @@ import (
 )
 
 type fakeAuthConfigData struct {
-	cluster   *kubermaticv1.Cluster
-	issuerURL string
-	clientID  string
-	authYAML  string
+	cluster         *kubermaticv1.Cluster
+	issuerURL       string
+	clientID        string
+	oidcAuthEnabled bool
+	authYAML        string
 }
 
-func (f *fakeAuthConfigData) Cluster() *kubermaticv1.Cluster          { return f.cluster }
-func (f *fakeAuthConfigData) OIDCIssuerURL() string                   { return f.issuerURL }
-func (f *fakeAuthConfigData) OIDCIssuerClientID() string              { return f.clientID }
-func (f *fakeAuthConfigData) AuthenticationConfigurationYAML() []byte { return []byte(f.authYAML) }
+func (f *fakeAuthConfigData) Cluster() *kubermaticv1.Cluster             { return f.cluster }
+func (f *fakeAuthConfigData) OIDCIssuerURL() string                      { return f.issuerURL }
+func (f *fakeAuthConfigData) OIDCIssuerClientID() string                 { return f.clientID }
+func (f *fakeAuthConfigData) IsAuthenticationConfigurationEnabled() bool { return f.oidcAuthEnabled }
+func (f *fakeAuthConfigData) AuthenticationConfigurationYAML() []byte    { return []byte(f.authYAML) }
 
 func TestAuthenticationConfigurationReconciler(t *testing.T) {
 	tests := []struct {
-		name                     string
-		data                     *fakeAuthConfigData
-		caBundle                 string
-		enableOIDCAuthentication bool
-		existingSecret           *corev1.Secret
-		expectName               string
-		expectError              string
-		expectYAMLContains       []string
-		expectDataRaw            string
+		name               string
+		data               *fakeAuthConfigData
+		caBundle           string
+		existingSecret     *corev1.Secret
+		expectName         string
+		expectError        string
+		expectYAMLContains []string
+		expectDataRaw      string
 	}{
 		{
 			name: "custom secret exists with correct key",
@@ -71,7 +72,7 @@ func TestAuthenticationConfigurationReconciler(t *testing.T) {
 			expectName: "my-auth-config",
 		},
 		{
-			name: "custom secret does not exist",
+			name: "custom secret does not exist should fail",
 			data: &fakeAuthConfigData{
 				cluster: &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("1.34.0"),
@@ -86,7 +87,7 @@ func TestAuthenticationConfigurationReconciler(t *testing.T) {
 			expectError:    "non-existing secret",
 		},
 		{
-			name: "custom secret missing required key",
+			name: "custom secret missing required key should fail",
 			data: &fakeAuthConfigData{
 				cluster: &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("1.34.0"),
@@ -200,17 +201,17 @@ func TestAuthenticationConfigurationReconciler(t *testing.T) {
 			expectDataRaw: "kind: AuthenticationConfiguration\napiVersion: apiserver.config.k8s.io/v1\njwt: []\n",
 		},
 		{
-			name: "enable OIDC authentication from seed",
+			name: "enable OIDC authentication from seed based on KubernetesOIDCAuthentication feature flag",
 			data: &fakeAuthConfigData{
 				cluster: &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("1.34.0"),
 				}},
-				issuerURL: "https://seed-issuer.example.com",
-				clientID:  "seed-client",
+				issuerURL:       "https://seed-issuer.example.com",
+				clientID:        "seed-client",
+				oidcAuthEnabled: true,
 			},
-			caBundle:                 "seed-ca",
-			enableOIDCAuthentication: true,
-			expectName:               resources.ApiserverAuthenticationConfigurationSecretName,
+			caBundle:   "seed-ca",
+			expectName: resources.ApiserverAuthenticationConfigurationSecretName,
 			expectYAMLContains: []string{
 				"kind: AuthenticationConfiguration",
 				"apiVersion: apiserver.config.k8s.io/v1",
@@ -240,7 +241,7 @@ func TestAuthenticationConfigurationReconciler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			factory := AuthenticationConfigurationReconciler(tt.data, tt.caBundle, tt.enableOIDCAuthentication)
+			factory := AuthenticationConfigurationReconciler(tt.data, tt.caBundle)
 			name, reconciler := factory()
 			require.Equal(t, tt.expectName, name)
 

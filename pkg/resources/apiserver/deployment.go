@@ -65,7 +65,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the API server deployment.
-func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
 
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -151,7 +151,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			flags, err := getApiserverFlags(
-				data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled,
+				data, etcdEndpoints, auditLogEnabled,
 				enableEncryptionConfiguration, auditWebhookBackendEnabled,
 			)
 			if err != nil {
@@ -289,7 +289,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 func getApiserverFlags(
 	data *resources.TemplateData,
 	etcdEndpoints []string,
-	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
+	auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
 ) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
@@ -434,9 +434,10 @@ func getApiserverFlags(
 
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
 
-	featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
-
-	flags = append(flags, "--authentication-config", filepath.Join("/etc/kubernetes/authentication-config", resources.AuthenticationConfigurationKey))
+	if data.IsAuthenticationConfigurationEnabled() {
+		featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
+		flags = append(flags, "--authentication-config", filepath.Join("/etc/kubernetes/authentication-config", resources.AuthenticationConfigurationKey))
+	}
 
 	if data.DRAEnabled() {
 		featureGates = append(featureGates, "DynamicResourceAllocation=true")
@@ -580,11 +581,6 @@ func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled, isAuditW
 			MountPath: "/etc/kubernetes/adm-control",
 			ReadOnly:  true,
 		},
-		{
-			Name:      resources.AuthenticationConfigurationVolumeName,
-			MountPath: "/etc/kubernetes/authentication-config",
-			ReadOnly:  true,
-		},
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -634,17 +630,18 @@ func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled, isAuditW
 		})
 	}
 
+	if data.IsAuthenticationConfigurationEnabled() {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.AuthenticationConfigurationVolumeName,
+			MountPath: "/etc/kubernetes/authentication-config",
+			ReadOnly:  true,
+		})
+	}
+
 	return vms
 }
 
-func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
-	authenticationConfigSecretName := resources.ApiserverAuthenticationConfigurationSecretName
-	authenticationConfigSecretKey := resources.AuthenticationConfigurationKey
-	if data.Cluster().Spec.IsAuthenticationConfigurationEnabled() {
-		authenticationConfigSecretName = data.Cluster().Spec.AuthenticationConfiguration.SecretName
-		authenticationConfigSecretKey = data.Cluster().Spec.AuthenticationConfiguration.SecretKey
-	}
-
+func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled, isAuditWebhookEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -761,18 +758,6 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 				},
 			},
 		},
-		{
-			Name: resources.AuthenticationConfigurationVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: authenticationConfigSecretName,
-					Items: []corev1.KeyToPath{{
-						Key:  authenticationConfigSecretKey,
-						Path: resources.AuthenticationConfigurationKey,
-					}},
-				},
-			},
-		},
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -884,6 +869,28 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: data.Cluster().Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretName,
+				},
+			},
+		})
+	}
+
+	if data.IsAuthenticationConfigurationEnabled() {
+		authenticationConfigSecretName := resources.ApiserverAuthenticationConfigurationSecretName
+		authenticationConfigSecretKey := resources.AuthenticationConfigurationKey
+		if data.Cluster().Spec.IsAuthenticationConfigurationEnabled() {
+			authenticationConfigSecretName = data.Cluster().Spec.AuthenticationConfiguration.SecretName
+			authenticationConfigSecretKey = data.Cluster().Spec.AuthenticationConfiguration.SecretKey
+		}
+
+		vs = append(vs, corev1.Volume{
+			Name: resources.AuthenticationConfigurationVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: authenticationConfigSecretName,
+					Items: []corev1.KeyToPath{{
+						Key:  authenticationConfigSecretKey,
+						Path: resources.AuthenticationConfigurationKey,
+					}},
 				},
 			},
 		})
