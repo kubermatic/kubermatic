@@ -27,21 +27,6 @@ spec:
         cluster: de-test-01
         scheduler-kubeconfig-secret-revision: "123456"
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: scheduler
-              topologyKey: kubernetes.io/hostname
-            weight: 100
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: scheduler
-              topologyKey: topology.kubernetes.io/zone
-            weight: 100
       containers:
       - args:
         - -endpoint

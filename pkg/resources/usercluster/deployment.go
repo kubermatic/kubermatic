@@ -342,10 +342,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.UserClusterControllerDeploymentName, hostAntiAffinity)
-			if data.SupportsFailureDomainZoneAntiAffinity() {
-				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.UserClusterControllerDeploymentName, zoneAntiAffinity)
-				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+			if dep.Spec.Replicas != nil && *dep.Spec.Replicas > 1 {
+				dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.UserClusterControllerDeploymentName, hostAntiAffinity)
+				if data.SupportsFailureDomainZoneAntiAffinity() {
+					failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.UserClusterControllerDeploymentName, zoneAntiAffinity)
+					dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+				}
 			}
 
 			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.UserClusterControllerContainerName))
