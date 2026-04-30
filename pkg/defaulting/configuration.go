@@ -232,16 +232,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.32
-			newSemver("v1.32.1"),
-			newSemver("v1.32.3"),
-			newSemver("v1.32.4"),
-			newSemver("v1.32.6"),
-			newSemver("v1.32.7"),
-			newSemver("v1.32.9"),
-			newSemver("v1.32.10"),
-			newSemver("v1.32.12"),
-			newSemver("v1.32.13"),
 			// Kubernetes 1.33
 			newSemver("v1.33.0"),
 			newSemver("v1.33.2"),
@@ -270,11 +260,6 @@ var (
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
-			{
-				// Allow to change to any patch version
-				From: "1.32.*",
-				To:   "1.32.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.32.*",

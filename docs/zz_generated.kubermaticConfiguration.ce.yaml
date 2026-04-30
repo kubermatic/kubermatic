@@ -706,8 +706,6 @@ spec:
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.32.*
-      - from: 1.32.*
         to: 1.33.*
       - from: 1.33.*
         to: 1.33.*
@@ -721,15 +719,6 @@ spec:
         to: 1.35.*
     # Versions lists the available versions.
     versions:
-      - v1.32.1
-      - v1.32.3
-      - v1.32.4
-      - v1.32.6
-      - v1.32.7
-      - v1.32.9
-      - v1.32.10
-      - v1.32.12
-      - v1.32.13
       - v1.33.0
       - v1.33.2
       - v1.33.3
