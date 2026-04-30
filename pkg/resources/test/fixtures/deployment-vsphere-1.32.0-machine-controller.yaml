@@ -32,13 +32,13 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app: operating-system-manager
+                  app: machine-controller
               topologyKey: kubernetes.io/hostname
             weight: 100
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app: operating-system-manager
+                  app: machine-controller
               topologyKey: topology.kubernetes.io/zone
             weight: 100
       containers:

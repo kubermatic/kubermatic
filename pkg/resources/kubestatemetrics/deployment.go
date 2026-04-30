@@ -176,9 +176,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.OperatingSystemManagerDeploymentName, hostAntiAffinity)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.KubeStateMetricsDeploymentName, hostAntiAffinity)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
-				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.OperatingSystemManagerDeploymentName, zoneAntiAffinity)
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.KubeStateMetricsDeploymentName, zoneAntiAffinity)
 				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 

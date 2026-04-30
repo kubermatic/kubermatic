@@ -221,9 +221,9 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.OperatingSystemManagerDeploymentName, hostAntiAffinity)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.MachineControllerDeploymentName, hostAntiAffinity)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
-				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.OperatingSystemManagerDeploymentName, zoneAntiAffinity)
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.MachineControllerDeploymentName, zoneAntiAffinity)
 				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 

@@ -164,7 +164,7 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
 			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
 			override := data.Cluster().Spec.ComponentsOverride.CoreDNS
-			if override != nil && override.HostAntiAffinity != "" {
+			if override != nil {
 				hostAntiAffinity = override.HostAntiAffinity
 				zoneAntiAffinity = override.ZoneAntiAffinity
 			}
