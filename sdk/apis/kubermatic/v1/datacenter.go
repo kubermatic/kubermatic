@@ -322,6 +322,8 @@ type SeedSpec struct {
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 	// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
 	OIDCProviderConfiguration *OIDCProviderConfiguration `json:"oidcProviderConfiguration,omitempty"`
+	// AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
 	// KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
 	// Only available in Enterprise Edition.
 	//
@@ -593,6 +595,9 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	// AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
 
 	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
 	// These settings override seed and global configuration and apply to all user clusters

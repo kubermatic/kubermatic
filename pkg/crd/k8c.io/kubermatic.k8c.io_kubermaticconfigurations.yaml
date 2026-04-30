@@ -175,16 +175,19 @@ spec:
                         limit:
                           description: |-
                             Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+
                             Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           properties:
                             metadataSelector:
                               description: |-
                                 MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+
                                 Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               properties:
                                 tiers:
                                   description: |-
                                     Tiers specifies the support tiers to filter ApplicationDefinitions.
+
                                     Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   items:
                                     type: string
@@ -193,6 +196,7 @@ spec:
                             nameSelector:
                               description: |-
                                 NameSelector defines criteria for selecting ApplicationDefinitions by name.
+
                                 Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               items:
                                 type: string
@@ -201,6 +205,7 @@ spec:
                         logLevel:
                           description: |-
                             LogLevel specifies the logging verbosity level for the application-catalog manager.
+
                             Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           type: string
                         managerSettings:
@@ -278,16 +283,19 @@ spec:
                         registrySettings:
                           description: |-
                             RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+
                             Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                           properties:
                             credentials:
                               description: |-
                                 Credentials optionally references a secret containing Helm registry authentication credentials.
+
                                 Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               properties:
                                 password:
                                   description: |-
                                     Password references the secret containing the registry password credential.
+
                                     Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
@@ -312,6 +320,7 @@ spec:
                                 registryConfigFile:
                                   description: |-
                                     RegistryConfigFile references the secret containing the Docker registry configuration file.
+
                                     Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
@@ -336,6 +345,7 @@ spec:
                                 username:
                                   description: |-
                                     Username references the secret containing the registry username credential.
+
                                     Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                                   properties:
                                     key:
@@ -361,17 +371,20 @@ spec:
                             registryURL:
                               description: |-
                                 RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+
                                 Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               type: string
                             tag:
                               description: |-
                                 Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+
                                 Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
                               type: string
                           type: object
                         resources:
                           description: |-
                             Resources describes the requested and maximum allowed CPU/memory usage.
+
                             Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
                           properties:
                             claims:
