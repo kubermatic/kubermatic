@@ -551,6 +551,10 @@ type DatacenterSpec struct {
 	// exactly (i.e. "example.com" will not match "user@test.example.com").
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
+	// Optional: DisableAuditWebhookBackend disables the webhook backend for audit logs on every cluster within the DC,
+	// ignoring cluster-specific settings. This only applies to clusters created from the dashboard.
+	DisableAuditWebhookBackend bool `json:"disableAuditWebhookBackend,omitempty"`
+
 	// Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
