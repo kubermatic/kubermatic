@@ -534,7 +534,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 
 func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedClusterRoleReconcilerFactory{
-		kubestatemetrics.ClusterRoleReconciler(),
 		prometheus.ClusterRoleReconciler(),
 		machinecontroller.ClusterRoleReconciler(),
 		dnatcontroller.ClusterRoleReconciler(),
@@ -557,6 +556,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, mlamonitoringagent.ClusterRoleReconciler())
+		creators = append(creators, kubestatemetrics.ClusterRoleReconciler())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r); err != nil {
@@ -567,7 +567,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 
 func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		kubestatemetrics.ClusterRoleBindingReconciler(),
 		prometheus.ClusterRoleBindingReconciler(),
 		machinecontroller.ClusterRoleBindingReconciler(),
 		machinecontroller.NodeBootstrapperClusterRoleBindingReconciler(),
@@ -598,6 +597,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, mlamonitoringagent.ClusterRoleBindingReconciler())
+		creators = append(creators, kubestatemetrics.ClusterRoleBindingReconciler())
 	}
 
 	if r.isKonnectivityEnabled {
