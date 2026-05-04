@@ -140,6 +140,31 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 
+	componentsOverridePath := parentFieldPath.Child("componentsOverride")
+	allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.Apiserver.Tolerations, componentsOverridePath.Child("apiserver", "tolerations"))...)
+	allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.ControllerManager.Tolerations, componentsOverridePath.Child("controllerManager", "tolerations"))...)
+	allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.Scheduler.Tolerations, componentsOverridePath.Child("scheduler", "tolerations"))...)
+	allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.Etcd.Tolerations, componentsOverridePath.Child("etcd", "tolerations"))...)
+	allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.Prometheus.Tolerations, componentsOverridePath.Child("prometheus", "tolerations"))...)
+	if spec.ComponentsOverride.UserClusterController != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.UserClusterController.Tolerations, componentsOverridePath.Child("userClusterController", "tolerations"))...)
+	}
+	if spec.ComponentsOverride.OperatingSystemManager != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.OperatingSystemManager.Tolerations, componentsOverridePath.Child("operatingSystemManager", "tolerations"))...)
+	}
+	if spec.ComponentsOverride.CoreDNS != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.CoreDNS.Tolerations, componentsOverridePath.Child("coreDNS", "tolerations"))...)
+	}
+	if spec.ComponentsOverride.KubeStateMetrics != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.KubeStateMetrics.Tolerations, componentsOverridePath.Child("kubeStateMetrics", "tolerations"))...)
+	}
+	if spec.ComponentsOverride.MachineController != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.MachineController.Tolerations, componentsOverridePath.Child("machineController", "tolerations"))...)
+	}
+	if spec.ComponentsOverride.EnvoyAgent != nil {
+		allErrs = append(allErrs, validateTolerations(spec.ComponentsOverride.EnvoyAgent.Tolerations, componentsOverridePath.Child("envoyAgent", "tolerations"))...)
+	}
+
 	externalCCM := false
 	if val, ok := spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
 		externalCCM = val
@@ -1215,6 +1240,39 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 	}
 
 	return nil
+}
+
+func validateTolerations(tolerations []corev1.Toleration, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for i, toleration := range tolerations {
+		idxPath := fldPath.Index(i)
+
+		if toleration.Operator == corev1.TolerationOpExists && toleration.Value != "" {
+			allErrs = append(allErrs, field.Invalid(idxPath.Child("value"), toleration.Value, "value must be empty when `operator` is 'Exists'"))
+		}
+
+		if toleration.Effect != "" &&
+			toleration.Effect != corev1.TaintEffectNoSchedule &&
+			toleration.Effect != corev1.TaintEffectPreferNoSchedule &&
+			toleration.Effect != corev1.TaintEffectNoExecute {
+			allErrs = append(allErrs, field.NotSupported(idxPath.Child("effect"), toleration.Effect,
+				[]string{string(corev1.TaintEffectNoSchedule), string(corev1.TaintEffectPreferNoSchedule), string(corev1.TaintEffectNoExecute)}))
+		}
+
+		if toleration.TolerationSeconds != nil && toleration.Effect != corev1.TaintEffectNoExecute {
+			allErrs = append(allErrs, field.Invalid(idxPath.Child("tolerationSeconds"), toleration.TolerationSeconds, "tolerationSeconds can only be set for effect 'NoExecute'"))
+		}
+
+		if toleration.Operator != "" &&
+			toleration.Operator != corev1.TolerationOpEqual &&
+			toleration.Operator != corev1.TolerationOpExists {
+			allErrs = append(allErrs, field.NotSupported(idxPath.Child("operator"), toleration.Operator,
+				[]string{string(corev1.TolerationOpEqual), string(corev1.TolerationOpExists)}))
+		}
+	}
+
+	return allErrs
 }
 
 func ValidateLeaderElectionSettings(l *kubermaticv1.LeaderElectionSettings, fldPath *field.Path) field.ErrorList {

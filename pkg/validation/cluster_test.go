@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
@@ -1673,6 +1674,100 @@ func TestValidateEventRateLimitConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			errs := ValidateEventRateLimitConfig(test.spec, field.NewPath("spec", "eventRateLimitConfig"))
+			if test.wantErr == (len(errs) == 0) {
+				t.Errorf("Want error: %t, but got: %v", test.wantErr, errs)
+			}
+		})
+	}
+}
+
+func TestValidateTolerations(t *testing.T) {
+	tests := []struct {
+		name        string
+		tolerations []corev1.Toleration
+		wantErr     bool
+	}{
+		{
+			name:        "empty tolerations",
+			tolerations: nil,
+			wantErr:     false,
+		},
+		{
+			name: "valid Equal operator with value",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpEqual, Value: "val", Effect: corev1.TaintEffectNoSchedule},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid Exists operator without value",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid NoExecute with tolerationSeconds",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute, TolerationSeconds: ptr.To[int64](30)},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wildcard toleration",
+			tolerations: []corev1.Toleration{
+				{Operator: corev1.TolerationOpExists},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Exists operator with non-empty value",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpExists, Value: "val", Effect: corev1.TaintEffectNoExecute},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid effect",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpEqual, Value: "val", Effect: "InvalidEffect"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "tolerationSeconds with non-NoExecute effect",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule, TolerationSeconds: ptr.To[int64](30)},
+			},
+			wantErr: true,
+		},
+		{
+			name: "tolerationSeconds without effect",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: corev1.TolerationOpExists, TolerationSeconds: ptr.To[int64](30)},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid operator",
+			tolerations: []corev1.Toleration{
+				{Key: "key", Operator: "InvalidOperator", Effect: corev1.TaintEffectNoSchedule},
+			},
+			wantErr: true,
+		},
+		{
+			name: "multiple tolerations, one invalid",
+			tolerations: []corev1.Toleration{
+				{Key: "key1", Operator: corev1.TolerationOpEqual, Value: "val", Effect: corev1.TaintEffectNoSchedule},
+				{Key: "key2", Operator: corev1.TolerationOpExists, Value: "val"},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			errs := validateTolerations(test.tolerations, field.NewPath("spec", "componentsOverride", "userClusterController", "tolerations"))
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: %v", test.wantErr, errs)
 			}
