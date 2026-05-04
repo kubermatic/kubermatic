@@ -3240,7 +3240,7 @@ spec:
                             - required
                           type: string
                         replicas:
-                          description: Replicas allows to override the number of desired Pods for the Deployment.
+                          description: Replicas allows to override the number of desired Pods for the StatefulSet.
                           format: int32
                           type: integer
                         resources:

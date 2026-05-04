@@ -640,7 +640,7 @@ spec:
       # Options are "preferred" (default) and "required". Please note that
       # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
       hostAntiAffinity: ""
-      # Replicas allows to override the number of desired Pods for the Deployment.
+      # Replicas allows to override the number of desired Pods for the StatefulSet.
       replicas: null
       # Resources allows to override the resource requirements.
       resources: null

@@ -989,7 +989,7 @@ type DaemonSetSettings struct {
 }
 
 type StatefulSetSettings struct {
-	// Replicas allows to override the number of desired Pods for the Deployment.
+	// Replicas allows to override the number of desired Pods for the StatefulSet.
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Resources allows to override the resource requirements.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
