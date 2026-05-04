@@ -74,6 +74,74 @@ func TestValidateClusterSpec(t *testing.T) {
 	}
 }
 
+func TestValidateAuthenticationConfiguration(t *testing.T) {
+	tests := []struct {
+		name string
+		spec *kubermaticv1.ClusterSpec
+		err  string
+	}{
+		{
+			name: "spec with authentication configuration should be valid",
+			spec: &kubermaticv1.ClusterSpec{
+				AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+					SecretName: "example-secret",
+					SecretKey:  "example-key",
+				},
+			},
+		},
+		{
+			name: "spec with both authentication configuration and OIDC issuer URL should be invalid",
+			err:  "authenticationConfiguration and oidc.issuerURL are mutually exclusive",
+			spec: &kubermaticv1.ClusterSpec{
+				OIDC: kubermaticv1.OIDCSettings{
+					IssuerURL: "https://example.com",
+					ClientID:  "example-client-id",
+				},
+				AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+					SecretName: "example-secret",
+					SecretKey:  "example-key",
+				},
+			},
+		},
+		{
+			name: "spec with empty authentication configuration should be invalid",
+			err:  "secretName and secretKey are required when authenticationConfiguration is specified",
+			spec: &kubermaticv1.ClusterSpec{
+				AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{},
+			},
+		},
+		{
+			name: "spec with authentication configuration without secretKey should be invalid",
+			err:  "secretName and secretKey are required when authenticationConfiguration is specified",
+			spec: &kubermaticv1.ClusterSpec{
+				AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+					SecretName: "example-secret",
+				},
+			},
+		},
+		{
+			name: "spec with authentication configuration without secretName should be invalid",
+			err:  "secretName and secretKey are required when authenticationConfiguration is specified",
+			spec: &kubermaticv1.ClusterSpec{
+				AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+					SecretKey: "example-key",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateAuthenticationConfiguration(test.spec, field.NewPath("spec")).ToAggregate()
+			if test.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.err)
+			}
+		})
+	}
+}
+
 func TestValidateContainerRuntime(t *testing.T) {
 	tests := []struct {
 		name  string

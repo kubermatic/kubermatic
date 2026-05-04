@@ -45,6 +45,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -397,7 +398,8 @@ func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cl
 		cleanupcontrollerresources.DeploymentReconciler(data),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client); err != nil {
+	err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client, modifier.RevisionHistoryLimit(10))
+	if err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 

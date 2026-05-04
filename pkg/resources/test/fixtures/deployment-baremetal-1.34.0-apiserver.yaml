@@ -21,6 +21,7 @@ spec:
         prometheus.io/scrape_with_kube_cert: "true"
       labels:
         adm-control-configmap-revision: "123456"
+        apiserver-authentication-configuration-secret-revision: "123456"
         apiserver-etcd-client-certificate-secret-revision: "123456"
         apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
@@ -183,20 +184,10 @@ spec:
         - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000,system:konnectivity-server
         - --kubelet-preferred-address-types
         - InternalIP,ExternalIP
-        - --oidc-ca-file
-        - /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
-        - --oidc-issuer-url
-        - https://dev.kubermatic.io/dex
-        - --oidc-client-id
-        - kubermaticIssuer
-        - --oidc-username-claim
-        - email
-        - --oidc-groups-prefix
-        - 'oidc:'
-        - --oidc-groups-claim
-        - groups
+        - --authentication-config
+        - /etc/kubernetes/authentication-config/authentication-configuration.yaml
         - --feature-gates
-        - StrictCostEnforcementForVAP=true,StrictCostEnforcementForWebhooks=true
+        - StructuredAuthenticationConfiguration=true,StrictCostEnforcementForVAP=true,StrictCostEnforcementForWebhooks=true
         - --egress-selector-config-file
         - /etc/kubernetes/konnectivity/egress-selector-configuration.yaml
         command:
@@ -291,6 +282,9 @@ spec:
         - mountPath: /etc/kubernetes/konnectivity
           name: kube-apiserver-egress
           readOnly: true
+        - mountPath: /etc/kubernetes/authentication-config
+          name: authentication-configuration
+          readOnly: true
       dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: dockercfg
@@ -368,4 +362,10 @@ spec:
           defaultMode: 420
           name: kube-apiserver-egress
         name: kube-apiserver-egress
+      - name: authentication-configuration
+        secret:
+          items:
+          - key: authentication-configuration.yaml
+            path: authentication-configuration.yaml
+          secretName: apiserver-authentication-configuration
 status: {}

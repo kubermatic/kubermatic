@@ -65,7 +65,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the API server deployment.
-func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
 
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -151,7 +151,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			flags, err := getApiserverFlags(
-				data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled,
+				data, etcdEndpoints, auditLogEnabled,
 				enableEncryptionConfiguration, auditWebhookBackendEnabled,
 			)
 			if err != nil {
@@ -292,11 +292,10 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-//nolint:gocyclo
 func getApiserverFlags(
 	data *resources.TemplateData,
 	etcdEndpoints []string,
-	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
+	auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
 ) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
@@ -439,41 +438,12 @@ func getApiserverFlags(
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	oidcSettings := cluster.Spec.OIDC
-	if oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "" {
-		flags = append(flags,
-			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
-			"--oidc-issuer-url", oidcSettings.IssuerURL,
-			"--oidc-client-id", oidcSettings.ClientID,
-		)
-
-		if oidcSettings.UsernameClaim != "" {
-			flags = append(flags, "--oidc-username-claim", oidcSettings.UsernameClaim)
-		}
-		if oidcSettings.GroupsClaim != "" {
-			flags = append(flags, "--oidc-groups-claim", oidcSettings.GroupsClaim)
-		}
-		if oidcSettings.RequiredClaim != "" {
-			flags = append(flags, "--oidc-required-claim", oidcSettings.RequiredClaim)
-		}
-		if oidcSettings.GroupsPrefix != "" {
-			flags = append(flags, "--oidc-groups-prefix", oidcSettings.GroupsPrefix)
-		}
-		if oidcSettings.UsernamePrefix != "" {
-			flags = append(flags, "--oidc-username-prefix", oidcSettings.UsernamePrefix)
-		}
-	} else if enableOIDCAuthentication {
-		flags = append(flags,
-			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
-			"--oidc-issuer-url", data.OIDCIssuerURL(),
-			"--oidc-client-id", data.OIDCIssuerClientID(),
-			"--oidc-username-claim", "email",
-			"--oidc-groups-prefix", "oidc:",
-			"--oidc-groups-claim", "groups",
-		)
-	}
-
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
+
+	if data.IsAuthenticationConfigurationEnabled() {
+		featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
+		flags = append(flags, "--authentication-config", filepath.Join("/etc/kubernetes/authentication-config", resources.AuthenticationConfigurationKey))
+	}
 
 	if data.DRAEnabled() {
 		featureGates = append(featureGates, "DynamicResourceAllocation=true")
@@ -550,7 +520,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled, isAuditWebhookEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -666,10 +636,18 @@ func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isA
 		})
 	}
 
+	if data.IsAuthenticationConfigurationEnabled() {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.AuthenticationConfigurationVolumeName,
+			MountPath: "/etc/kubernetes/authentication-config",
+			ReadOnly:  true,
+		})
+	}
+
 	return vms
 }
 
-func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
+func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled, isAuditWebhookEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -897,6 +875,28 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: data.Cluster().Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretName,
+				},
+			},
+		})
+	}
+
+	if data.IsAuthenticationConfigurationEnabled() {
+		authenticationConfigSecretName := resources.ApiserverAuthenticationConfigurationSecretName
+		authenticationConfigSecretKey := resources.AuthenticationConfigurationKey
+		if data.Cluster().Spec.IsAuthenticationConfigurationEnabled() {
+			authenticationConfigSecretName = data.Cluster().Spec.AuthenticationConfiguration.SecretName
+			authenticationConfigSecretKey = data.Cluster().Spec.AuthenticationConfiguration.SecretKey
+		}
+
+		vs = append(vs, corev1.Volume{
+			Name: resources.AuthenticationConfigurationVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: authenticationConfigSecretName,
+					Items: []corev1.KeyToPath{{
+						Key:  authenticationConfigSecretKey,
+						Path: resources.AuthenticationConfigurationKey,
+					}},
 				},
 			},
 		})
