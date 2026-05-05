@@ -29,15 +29,6 @@ spec:
         controllermanager-kubeconfig-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: controller-manager
-              topologyKey: kubernetes.io/hostname
-            weight: 100
       containers:
       - args:
         - -endpoint

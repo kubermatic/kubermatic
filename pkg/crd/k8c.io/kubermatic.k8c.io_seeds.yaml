@@ -1842,13 +1842,24 @@ spec:
                       properties:
                         endpointReconcilingDisabled:
                           type: boolean
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         nodePortRange:
                           type: string
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -1907,6 +1918,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -1945,10 +1957,30 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     controllerManager:
                       description: ControllerManager configures kube-controller-manager settings.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         leaderElection:
                           properties:
                             leaseDurationSeconds:
@@ -1972,10 +2004,11 @@ spec:
                               type: integer
                           type: object
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -2034,6 +2067,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -2072,15 +2106,36 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     coreDNS:
                       description: CoreDNS configures CoreDNS deployed as part of the cluster control plane.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -2139,6 +2194,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -2177,6 +2233,16 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     envoyAgent:
                       description: EnvoyAgent configures the envoy-agent deployed in the usercluster.
@@ -2445,6 +2511,16 @@ spec:
                           items:
                             type: string
                           type: array
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
@@ -2510,15 +2586,36 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     kubeStateMetrics:
                       description: KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -2577,6 +2674,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -2615,15 +2713,36 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     machineController:
                       description: MachineController configures the Kubermatic machine-controller deployment.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -2682,6 +2801,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -2720,6 +2840,16 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     nodePortProxyEnvoy:
                       description: |-
@@ -2729,6 +2859,16 @@ spec:
                       properties:
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
+                          type: string
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
                           type: string
                         resources:
                           description: Resources describes the requested and maximum allowed CPU/memory usage.
@@ -2789,10 +2929,30 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     operatingSystemManager:
                       description: OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         leaderElection:
                           properties:
                             leaseDurationSeconds:
@@ -2833,10 +2993,11 @@ spec:
                               type: string
                           type: object
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -2895,6 +3056,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -2933,15 +3095,36 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     prometheus:
                       description: Prometheus configures the Prometheus instance deployed into the cluster control plane.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the StatefulSet.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -3000,6 +3183,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -3038,10 +3222,30 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     scheduler:
                       description: Scheduler configures kube-scheduler settings.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         leaderElection:
                           properties:
                             leaseDurationSeconds:
@@ -3065,10 +3269,11 @@ spec:
                               type: integer
                           type: object
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -3127,6 +3332,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -3165,10 +3371,30 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     userClusterController:
                       description: UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
                       properties:
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         leaderElection:
                           properties:
                             leaseDurationSeconds:
@@ -3192,10 +3418,11 @@ spec:
                               type: integer
                           type: object
                         replicas:
+                          description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32
                           type: integer
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements.
                           properties:
                             claims:
                               description: |-
@@ -3254,6 +3481,7 @@ spec:
                               type: object
                           type: object
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches
@@ -3292,6 +3520,16 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                   type: object
                 disabledCollectors:
@@ -3673,6 +3911,16 @@ spec:
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
                           type: string
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         loadBalancerService:
                           properties:
                             annotations:
@@ -3759,12 +4007,32 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     envoyManager:
                       description: EnvoyManager configures the Kubermatic-internal Envoy manager.
                       properties:
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
+                          type: string
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
                           type: string
                         resources:
                           description: Resources describes the requested and maximum allowed CPU/memory usage.
@@ -3825,6 +4093,16 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     ipFamilies:
                       description: IPFamilies configures the IP families to use for the LoadBalancer service.
@@ -3845,6 +4123,16 @@ spec:
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
                           type: string
+                        hostAntiAffinity:
+                          description: |-
+                            HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         resources:
                           description: Resources describes the requested and maximum allowed CPU/memory usage.
                           properties:
@@ -3904,6 +4192,16 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        zoneAntiAffinity:
+                          description: |-
+                            ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+                            Options are "preferred" (default) and "required". Please note that
+                            enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                   type: object
                 oidcProviderConfiguration:

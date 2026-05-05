@@ -70,6 +70,7 @@ type operatingSystemManagerData interface {
 	OperatingSystemManagerImageRepository() string
 	OperatingSystemManagerDefaultOSPsDisabled() bool
 	DRAEnabled() bool
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 // DeploymentReconciler returns the function to create and update the operating system manager deployment.
@@ -102,9 +103,13 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
 			dep.Spec.Replicas = resources.Int32(1)
 			override := data.Cluster().Spec.ComponentsOverride.OperatingSystemManager
 			if override != nil {
+				hostAntiAffinity = override.HostAntiAffinity
+				zoneAntiAffinity = override.ZoneAntiAffinity
 				if override.Replicas != nil {
 					dep.Spec.Replicas = override.Replicas
 				}
@@ -235,6 +240,14 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			if dep.Spec.Replicas != nil && *dep.Spec.Replicas > 1 {
+				dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.OperatingSystemManagerDeploymentName, hostAntiAffinity)
+				if data.SupportsFailureDomainZoneAntiAffinity() {
+					failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.OperatingSystemManagerDeploymentName, zoneAntiAffinity)
+					dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+				}
 			}
 
 			return dep, nil

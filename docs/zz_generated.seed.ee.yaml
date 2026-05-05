@@ -505,12 +505,27 @@ spec:
     # Apiserver configures kube-apiserver settings.
     apiserver:
       endpointReconcilingDisabled: null
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       nodePortRange: 30000-32767
+      # Replicas allows to override the number of desired Pods for the Deployment.
       replicas: 2
+      # Resources allows to override the resource requirements.
       resources: null
+      # Tolerations allows to override the scheduling tolerations for Pods.
       tolerations: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # ControllerManager configures kube-controller-manager settings.
     controllerManager:
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
         # will wait to force acquire leadership. This is measured against time of
@@ -522,9 +537,16 @@ spec:
         # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
         # should wait between tries of actions.
         retryPeriodSeconds: null
+      # Replicas allows to override the number of desired Pods for the Deployment.
       replicas: 1
+      # Resources allows to override the resource requirements.
       resources: null
+      # Tolerations allows to override the scheduling tolerations for Pods.
       tolerations: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # CoreDNS configures CoreDNS deployed as part of the cluster control plane.
     coreDNS: null
     # EnvoyAgent configures the envoy-agent deployed in the usercluster.
@@ -564,12 +586,20 @@ spec:
     konnectivityProxy:
       # Args configures arguments (flags) for the Konnectivity deployments.
       args: null
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       # KeepaliveTime represents a duration of time to check if the transport is still alive.
       # The option is propagated to agents and server.
       # Defaults to 1m.
       keepaliveTime: ""
       # Resources configure limits/requests for Konnectivity components.
       resources: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
     kubeStateMetrics: null
     # MachineController configures the Kubermatic machine-controller deployment.
@@ -580,6 +610,10 @@ spec:
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: ""
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
@@ -598,15 +632,34 @@ spec:
         # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
     operatingSystemManager: null
     # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
+      # Replicas allows to override the number of desired Pods for the StatefulSet.
       replicas: null
+      # Resources allows to override the resource requirements.
       resources: null
+      # Tolerations allows to override the scheduling tolerations for Pods.
       tolerations: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # Scheduler configures kube-scheduler settings.
     scheduler:
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
         # will wait to force acquire leadership. This is measured against time of
@@ -618,9 +671,16 @@ spec:
         # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
         # should wait between tries of actions.
         retryPeriodSeconds: null
+      # Replicas allows to override the number of desired Pods for the Deployment.
       replicas: 1
+      # Resources allows to override the resource requirements.
       resources: null
+      # Tolerations allows to override the scheduling tolerations for Pods.
       tolerations: null
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
     userClusterController: null
   # DisabledCollectors contains a list of metrics collectors that should be disabled.
@@ -790,6 +850,10 @@ spec:
         upstreamTCPKeepaliveTime: 0s
       # DockerRepository is the repository containing the component's image.
       dockerRepository: docker.io/envoyproxy/envoy
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       loadBalancerService:
         # Annotations are used to further tweak the LoadBalancer integration with the
         # cloud provider.
@@ -825,10 +889,18 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # EnvoyManager configures the Kubermatic-internal Envoy manager.
     envoyManager:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: quay.io/kubermatic/nodeport-proxy
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
@@ -851,6 +923,10 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
     # IPFamilies configures the IP families to use for the LoadBalancer service.
     ipFamilies: null
     # IPFamilyPolicy configures the IP family policy for the LoadBalancer service.
@@ -860,6 +936,10 @@ spec:
     updater:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: quay.io/kubermatic/nodeport-proxy
+      # HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      hostAntiAffinity: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
@@ -882,6 +962,10 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+      # ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+      # Options are "preferred" (default) and "required". Please note that
+      # enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+      zoneAntiAffinity: ""
   # OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
   oidcProviderConfiguration: null
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the

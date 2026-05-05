@@ -178,6 +178,14 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
+			if set.Spec.Replicas != nil && *set.Spec.Replicas > 1 {
+				set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, override.HostAntiAffinity)
+				if data.SupportsFailureDomainZoneAntiAffinity() {
+					failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(name, override.ZoneAntiAffinity)
+					set.Spec.Template.Spec.Affinity = resources.MergeAffinities(set.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+				}
+			}
+
 			return set, nil
 		}
 	}

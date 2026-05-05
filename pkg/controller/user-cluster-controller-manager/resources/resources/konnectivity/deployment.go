@@ -59,6 +59,7 @@ func DeploymentReconciler(
 	kKeepaliveTime string,
 	imageRewriter registry.ImageRewriter,
 	kResourcesOverrides map[string]*corev1.ResourceRequirements,
+	supportsFailureDomainZoneAntiAffinity bool,
 ) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -151,21 +152,12 @@ func DeploymentReconciler(
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			ds.Spec.Template.Spec.Affinity = &corev1.Affinity{
-				PodAntiAffinity: &corev1.PodAntiAffinity{
-					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-						{
-							Weight: 10,
-							PodAffinityTerm: corev1.PodAffinityTerm{
-								LabelSelector: &metav1.LabelSelector{
-									MatchLabels: resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil),
-								},
-								TopologyKey: resources.TopologyKeyHostname,
-							},
-						},
-					},
-				},
+			ds.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.KonnectivityDeploymentName, cluster.Spec.ComponentsOverride.KonnectivityProxy.HostAntiAffinity)
+			if supportsFailureDomainZoneAntiAffinity {
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.KonnectivityDeploymentName, cluster.Spec.ComponentsOverride.KonnectivityProxy.ZoneAntiAffinity)
+				ds.Spec.Template.Spec.Affinity = resources.MergeAffinities(ds.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
+
 			return ds, nil
 		}
 	}

@@ -68,6 +68,7 @@ type machinecontrollerData interface {
 	MachineControllerImageTag() string
 	MachineControllerImageRepository() string
 	GetEnvVars() ([]corev1.EnvVar, error)
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 // DeploymentReconciler returns the function to create and update the machine controller deployment.
@@ -97,9 +98,13 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			baseLabels := resources.BaseAppLabels(resources.MachineControllerDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
 			dep.Spec.Replicas = resources.Int32(1)
 			overrides := data.Cluster().Spec.ComponentsOverride.MachineController
 			if overrides != nil {
+				hostAntiAffinity = overrides.HostAntiAffinity
+				zoneAntiAffinity = overrides.ZoneAntiAffinity
 				if overrides.Replicas != nil {
 					dep.Spec.Replicas = overrides.Replicas
 				}
@@ -214,6 +219,14 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			if dep.Spec.Replicas != nil && *dep.Spec.Replicas > 1 {
+				dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.MachineControllerDeploymentName, hostAntiAffinity)
+				if data.SupportsFailureDomainZoneAntiAffinity() {
+					failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.MachineControllerDeploymentName, zoneAntiAffinity)
+					dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+				}
 			}
 
 			return dep, nil

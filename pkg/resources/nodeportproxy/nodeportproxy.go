@@ -326,9 +326,10 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, kubermaticv1.AntiAffinityTypePreferred)
+			override := data.Cluster().Spec.ComponentsOverride.NodePortProxyEnvoy
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, override.HostAntiAffinity)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
-				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue, kubermaticv1.AntiAffinityTypePreferred)
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue, override.ZoneAntiAffinity)
 				d.Spec.Template.Spec.Affinity = resources.MergeAffinities(d.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
