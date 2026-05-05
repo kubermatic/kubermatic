@@ -217,6 +217,36 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				},
 			}
 
+			var nodeSelector map[string]string
+			if cfg.Spec.SeedController.NodeSelector != nil {
+				nodeSelector = cfg.Spec.SeedController.NodeSelector
+			}
+			d.Spec.Template.Spec.NodeSelector = nodeSelector
+
+			var affinity *corev1.Affinity
+			if cfg.Spec.SeedController.Affinity != nil {
+				affinity = cfg.Spec.SeedController.Affinity
+			}
+			d.Spec.Template.Spec.Affinity = affinity
+
+			var tolerations []corev1.Toleration
+			if cfg.Spec.SeedController.Tolerations != nil {
+				tolerations = cfg.Spec.SeedController.Tolerations
+			}
+			d.Spec.Template.Spec.Tolerations = tolerations
+
+			var topologySpreadConstraints []corev1.TopologySpreadConstraint
+			if cfg.Spec.SeedController.TopologySpreadConstraints != nil {
+				topologySpreadConstraints = cfg.Spec.SeedController.TopologySpreadConstraints
+			}
+			d.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
+
+			var priorityClassName string
+			if cfg.Spec.SeedController.PriorityClassName != "" {
+				priorityClassName = cfg.Spec.SeedController.PriorityClassName
+			}
+			d.Spec.Template.Spec.PriorityClassName = priorityClassName
+
 			return d, nil
 		}
 	}

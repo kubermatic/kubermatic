@@ -12,6 +12,8 @@ spec:
       - kube-state-metrics
       - multus
       - metallb
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
@@ -20,9 +22,13 @@ spec:
     # If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
     # With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
     dockerTagSuffix: ""
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the API deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -47,6 +53,11 @@ spec:
       requests:
         cpu: 200m
         memory: 150Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # Applications contains configuration for Application settings.
   applications:
     # CatalogManager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
@@ -271,13 +282,19 @@ spec:
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.
   masterController:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
     dockerRepository: quay.io/kubermatic/kubermatic-ee
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # ProjectsMigrator configures the migrator for user projects.
     projectsMigrator:
       # DryRun makes the migrator only log the actions it would take.
@@ -306,6 +323,11 @@ spec:
       requests:
         cpu: 200m
         memory: 128Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer mirror-images` command.
   # Each entry should be in the format "repository:tag".
   mirrorImages: null
@@ -328,6 +350,8 @@ spec:
     noProxy: ""
   # SeedController configures the seed-controller-manager.
   seedController:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # Deprecated: BackupCleanupContainer is the container used for removing expired backups from the storage location.
     # This field is a no-op and is no longer used. The old backup controller it was used for has been
     # removed. Do not set this field.
@@ -406,9 +430,13 @@ spec:
     # MaximumParallelReconciles limits the number of cluster reconciliations
     # that are active at any given time.
     maximumParallelReconciles: 10
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the seed-controller-manager.
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -433,8 +461,15 @@ spec:
       requests:
         cpu: 200m
         memory: 100Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # UI configures the dashboard.
   ui:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # Config sets flags for various dashboard features.
     config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
@@ -447,6 +482,10 @@ spec:
     extraVolumeMounts: null
     # ExtraVolumes allows to mount additional volumes into the UI container.
     extraVolumes: null
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -471,6 +510,11 @@ spec:
       requests:
         cpu: 100m
         memory: 64Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # UserCluster configures various aspects of the user-created clusters.
   userCluster:
     # Addons controls the optional additions installed into each user cluster.
@@ -841,13 +885,19 @@ spec:
           memory: 128Mi
   # Webhook configures the webhook.
   webhook:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic webhook image.
     dockerRepository: quay.io/kubermatic/kubermatic-ee
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the webhook should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the webhook.
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -872,6 +922,11 @@ spec:
       requests:
         cpu: 50m
         memory: 64Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
 status:
   # KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
   kubermaticEdition: ""

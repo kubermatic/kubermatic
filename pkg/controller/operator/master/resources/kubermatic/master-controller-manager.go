@@ -103,6 +103,36 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				},
 			}
 
+			var nodeSelector map[string]string
+			if cfg.Spec.MasterController.NodeSelector != nil {
+				nodeSelector = cfg.Spec.MasterController.NodeSelector
+			}
+			d.Spec.Template.Spec.NodeSelector = nodeSelector
+
+			var affinity *corev1.Affinity
+			if cfg.Spec.MasterController.Affinity != nil {
+				affinity = cfg.Spec.MasterController.Affinity
+			}
+			d.Spec.Template.Spec.Affinity = affinity
+
+			var tolerations []corev1.Toleration
+			if cfg.Spec.MasterController.Tolerations != nil {
+				tolerations = cfg.Spec.MasterController.Tolerations
+			}
+			d.Spec.Template.Spec.Tolerations = tolerations
+
+			var topologySpreadConstraints []corev1.TopologySpreadConstraint
+			if cfg.Spec.MasterController.TopologySpreadConstraints != nil {
+				topologySpreadConstraints = cfg.Spec.MasterController.TopologySpreadConstraints
+			}
+			d.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
+
+			var priorityClassName string
+			if cfg.Spec.MasterController.PriorityClassName != "" {
+				priorityClassName = cfg.Spec.MasterController.PriorityClassName
+			}
+			d.Spec.Template.Spec.PriorityClassName = priorityClassName
+
 			return d, nil
 		}
 	}

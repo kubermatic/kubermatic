@@ -281,6 +281,36 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				},
 			}
 
+			var nodeSelector map[string]string
+			if cfg.Spec.API.NodeSelector != nil {
+				nodeSelector = cfg.Spec.API.NodeSelector
+			}
+			d.Spec.Template.Spec.NodeSelector = nodeSelector
+
+			var affinity *corev1.Affinity
+			if cfg.Spec.API.Affinity != nil {
+				affinity = cfg.Spec.API.Affinity
+			}
+			d.Spec.Template.Spec.Affinity = affinity
+
+			var tolerations []corev1.Toleration
+			if cfg.Spec.API.Tolerations != nil {
+				tolerations = cfg.Spec.API.Tolerations
+			}
+			d.Spec.Template.Spec.Tolerations = tolerations
+
+			var topologySpreadConstraints []corev1.TopologySpreadConstraint
+			if cfg.Spec.API.TopologySpreadConstraints != nil {
+				topologySpreadConstraints = cfg.Spec.API.TopologySpreadConstraints
+			}
+			d.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
+
+			var priorityClassName string
+			if cfg.Spec.API.PriorityClassName != "" {
+				priorityClassName = cfg.Spec.API.PriorityClassName
+			}
+			d.Spec.Template.Spec.PriorityClassName = priorityClassName
+
 			return d, nil
 		}
 	}

@@ -326,6 +326,36 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				},
 			}
 
+			var nodeSelector map[string]string
+			if cfg.Spec.Webhook.NodeSelector != nil {
+				nodeSelector = cfg.Spec.Webhook.NodeSelector
+			}
+			d.Spec.Template.Spec.NodeSelector = nodeSelector
+
+			var affinity *corev1.Affinity
+			if cfg.Spec.Webhook.Affinity != nil {
+				affinity = cfg.Spec.Webhook.Affinity
+			}
+			d.Spec.Template.Spec.Affinity = affinity
+
+			var tolerations []corev1.Toleration
+			if cfg.Spec.Webhook.Tolerations != nil {
+				tolerations = cfg.Spec.Webhook.Tolerations
+			}
+			d.Spec.Template.Spec.Tolerations = tolerations
+
+			var topologySpreadConstraints []corev1.TopologySpreadConstraint
+			if cfg.Spec.Webhook.TopologySpreadConstraints != nil {
+				topologySpreadConstraints = cfg.Spec.Webhook.TopologySpreadConstraints
+			}
+			d.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
+
+			var priorityClassName string
+			if cfg.Spec.Webhook.PriorityClassName != "" {
+				priorityClassName = cfg.Spec.Webhook.PriorityClassName
+			}
+			d.Spec.Template.Spec.PriorityClassName = priorityClassName
+
 			return d, nil
 		}
 	}
