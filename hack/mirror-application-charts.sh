@@ -63,7 +63,7 @@ declare -A CHART_VERSIONS=(
   ["flux2"]="2.15.0"
   ["k8sgpt-operator"]="0.2.17"
   ["kube-vip"]="0.6.6"
-  ["metallb"]="0.14.9"
+  ["metallb"]="0.15.3"
   ["ingress-nginx"]="4.14.3"
   ["gpu-operator"]="v25.3.0"
   ["trivy"]="0.14.1"
@@ -193,4 +193,10 @@ main() {
 
 }
 
-main "$@"
+# only run main when this script is executed directly. when sourced
+# (e.g. by hack/ci/mirror-new-application-charts.sh to read CHART_URLS
+# and CHART_VERSIONS), skip main so the caller can inspect the arrays
+# without triggering registry login or mirroring.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
