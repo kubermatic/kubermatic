@@ -587,3 +587,169 @@ func TestSyncReconciliationInterval(t *testing.T) {
 		})
 	}
 }
+
+func TestIsTransientError(t *testing.T) {
+	testCases := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error is not transient",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "another operation in progress is transient",
+			err:      errors.New("another operation (install/upgrade/rollback) is in progress"),
+			expected: true,
+		},
+		{
+			name:     "wrapped transient error is detected",
+			err:      fmt.Errorf("handling installation: %w", errors.New("another operation (install/upgrade/rollback) is in progress")),
+			expected: true,
+		},
+		{
+			name:     "regular error is not transient",
+			err:      errors.New("some other error"),
+			expected: false,
+		},
+		{
+			name:     "timeout error is not transient",
+			err:      errors.New("context deadline exceeded"),
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := isTransientError(tc.err)
+			if result != tc.expected {
+				t.Errorf("isTransientError(%v) = %v, expected %v", tc.err, result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestResetFailuresIfCooldownPassed(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		applicationInstallation *appskubermaticv1.ApplicationInstallation
+		expectedFailures        int
+		expectReset             bool
+	}{
+		{
+			name: "no failures to reset",
+			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
+				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+				appInstall.Status.Failures = 0
+				return appInstall
+			}(),
+			expectedFailures: 0,
+			expectReset:      false,
+		},
+		{
+			name: "failures exist but no Ready condition",
+			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
+				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+				appInstall.Status.Failures = 3
+				appInstall.Status.Conditions = nil
+				return appInstall
+			}(),
+			expectedFailures: 3,
+			expectReset:      false,
+		},
+		{
+			name: "failures exist but Ready condition is True (success)",
+			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
+				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+				appInstall.Status.Failures = 3
+				appInstall.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
+					appskubermaticv1.Ready: {
+						Status:            corev1.ConditionTrue,
+						LastHeartbeatTime: metav1.NewTime(time.Now().Add(-2 * time.Hour)),
+					},
+				}
+				return appInstall
+			}(),
+			expectedFailures: 3,
+			expectReset:      false,
+		},
+		{
+			name: "failures exist, Ready is False, but cooldown not passed",
+			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
+				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+				appInstall.Status.Failures = 3
+				appInstall.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
+					appskubermaticv1.Ready: {
+						Status:            corev1.ConditionFalse,
+						LastHeartbeatTime: metav1.NewTime(time.Now().Add(-30 * time.Minute)), // Only 30 minutes ago
+					},
+				}
+				return appInstall
+			}(),
+			expectedFailures: 3,
+			expectReset:      false,
+		},
+		{
+			name: "failures exist, Ready is False, cooldown passed - should reset",
+			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
+				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+				appInstall.Status.Failures = 6
+				appInstall.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
+					appskubermaticv1.Ready: {
+						Status:            corev1.ConditionFalse,
+						LastHeartbeatTime: metav1.NewTime(time.Now().Add(-2 * time.Hour)), // 2 hours ago, exceeds 1 hour cooldown
+					},
+				}
+				return appInstall
+			}(),
+			expectedFailures: 0,
+			expectReset:      true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+			userClient := kubermaticfake.
+				NewClientBuilder().
+				WithObjects(tc.applicationInstallation).
+				WithStatusSubresource(tc.applicationInstallation).
+				Build()
+
+			r := reconciler{
+				log:        kubermaticlog.Logger,
+				seedClient: userClient,
+				userClient: userClient,
+			}
+
+			err := r.resetFailuresIfCooldownPassed(ctx, kubermaticlog.Logger, tc.applicationInstallation)
+			if err != nil {
+				t.Fatalf("resetFailuresIfCooldownPassed returned error: %v", err)
+			}
+
+			// Fetch the updated application installation
+			updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
+			if err := userClient.Get(ctx, types.NamespacedName{Name: tc.applicationInstallation.Name, Namespace: tc.applicationInstallation.Namespace}, updatedAppInstall); err != nil {
+				t.Fatalf("failed to get application installation: %v", err)
+			}
+
+			if updatedAppInstall.Status.Failures != tc.expectedFailures {
+				t.Errorf("expected failures %d, got %d", tc.expectedFailures, updatedAppInstall.Status.Failures)
+			}
+
+			if tc.expectReset {
+				// Check that the condition was updated
+				readyCondition, exists := updatedAppInstall.Status.Conditions[appskubermaticv1.Ready]
+				if !exists {
+					t.Error("expected Ready condition to exist after reset")
+				} else if readyCondition.Reason != "CooldownReset" {
+					t.Errorf("expected Ready condition reason to be 'CooldownReset', got '%s'", readyCondition.Reason)
+				}
+			}
+		})
+	}
+}
