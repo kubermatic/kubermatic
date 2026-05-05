@@ -17,7 +17,13 @@ limitations under the License.
 package applicationdefinitions
 
 import (
+	"io"
+	"io/fs"
+	"strings"
 	"testing"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -278,5 +284,56 @@ func TestReconcileWithKubermaticConfig(t *testing.T) {
 		if v.Template.Source.Helm.Credentials == nil {
 			t.Fatal("expected Helm credentials to be set from config")
 		}
+	}
+}
+
+func testLogger(t *testing.T) *zap.SugaredLogger {
+	return zaptest.NewLogger(t).Sugar()
+}
+
+// invalidAppDefFile is an fs.File that returns an ApplicationDefinition with no versions,
+// which violates the validation rules.
+type invalidAppDefFile struct {
+	r io.Reader
+}
+
+func (f *invalidAppDefFile) Read(b []byte) (int, error) { return f.r.Read(b) }
+func (f *invalidAppDefFile) Close() error               { return nil }
+func (f *invalidAppDefFile) Stat() (fs.FileInfo, error) { return nil, nil }
+
+func invalidAppDefFilesFunc() ([]fs.File, error) {
+	// A version with no source set triggers "no source provided" validation error.
+	yaml := `apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: broken-app
+spec:
+  method: helm
+  versions:
+    - version: "v1.0.0"
+      template:
+        source: {}
+`
+	return []fs.File{&invalidAppDefFile{r: strings.NewReader(yaml)}}, nil
+}
+
+func TestSystemApplicationDefinitionReconcilerFactories_ValidEmbedded(t *testing.T) {
+	config := &kubermaticv1.KubermaticConfiguration{}
+
+	_, err := SystemApplicationDefinitionReconcilerFactories(testLogger(t), config, false)
+	if err != nil {
+		t.Fatalf("expected embedded system ApplicationDefinitions to be valid, got error: %v", err)
+	}
+}
+
+func TestSystemApplicationDefinitionReconcilerFactories_InvalidDefinition(t *testing.T) {
+	original := getSysAppDefFilesFunc
+	t.Cleanup(func() { getSysAppDefFilesFunc = original })
+	getSysAppDefFilesFunc = invalidAppDefFilesFunc
+
+	config := &kubermaticv1.KubermaticConfiguration{}
+	_, err := SystemApplicationDefinitionReconcilerFactories(testLogger(t), config, false)
+	if err == nil {
+		t.Fatal("expected error for invalid ApplicationDefinition, got nil")
 	}
 }
