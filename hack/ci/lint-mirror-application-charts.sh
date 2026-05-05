@@ -39,7 +39,7 @@ sed '/^main "\$@"$/d' "$SCRIPT" > "$stripped"
 mismatch=$(
   (
     # shellcheck disable=SC1090
-    source "$stripped" >/dev/null 2>&1
+    source "$stripped" > /dev/null 2>&1
     {
       printf 'urls\n'
       for k in "${!CHART_URLS[@]}"; do printf '%s\n' "$k"; done | sort
@@ -69,7 +69,7 @@ fi
 count=$(
   (
     # shellcheck disable=SC1090
-    source "$stripped" >/dev/null 2>&1
+    source "$stripped" > /dev/null 2>&1
     echo "${#CHART_URLS[@]}"
   )
 )

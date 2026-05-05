@@ -56,11 +56,11 @@ read_chart_versions_from() {
 
   (
     # shellcheck disable=SC1090
-    source "$script_file" >/dev/null 2>&1 || exit 0
+    source "$script_file" > /dev/null 2>&1 || exit 0
     # guard against the sourced file not defining CHART_VERSIONS. without
     # this, set -u would cause "${!CHART_VERSIONS[@]}" to abort the subshell
     # and we'd silently lose pairs we should have read.
-    [[ "$(declare -p CHART_VERSIONS 2>/dev/null)" == "declare -A"* ]] || exit 0
+    [[ "$(declare -p CHART_VERSIONS 2> /dev/null)" == "declare -A"* ]] || exit 0
     for key in "${!CHART_VERSIONS[@]}"; do
       printf '%s=%s\n' "$key" "${CHART_VERSIONS[$key]}"
     done
@@ -74,7 +74,7 @@ main() {
   # write HEAD~1's version of the script (with the bare main "$@" stripped, in
   # case HEAD~1 predates the sourcing guard) so read_chart_versions_from can
   # source it. source(1) reads from a file path, not stdin.
-  if ! git show "HEAD~1:${SCRIPT_PATH}" 2>/dev/null | sed '/^main "\$@"$/d' > "$OLD_SCRIPT"; then
+  if ! git show "HEAD~1:${SCRIPT_PATH}" 2> /dev/null | sed '/^main "\$@"$/d' > "$OLD_SCRIPT"; then
     # no HEAD~1 (e.g. shallow clone, first commit) -- treat old as empty, which
     # means every current chart shows up as "added". the chart_exists_in_registry
     # check in the inner script makes that idempotent.
