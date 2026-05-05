@@ -23,12 +23,13 @@
 ###   2. Version bumps in CHART_VERSIONS for existing charts
 ### Then calls mirror-application-charts.sh for each affected chart.
 ###
-### Detection works by sourcing the current and previous (HEAD~1) versions of
+### Detection works by sourcing the current and previous versions of
 ### mirror-application-charts.sh in a subshell. This relies only on the file
 ### being valid bash with the two associative arrays - no formatting assumptions.
 ###
 ### Environment variables:
 ### * `DRY_RUN=true` - skip actual mirroring, only print charts that would be mirrored
+### * `MAX_HISTORY` - how many commits back to look for a valid previous version of the script (default: 5)
 
 set -euo pipefail
 
@@ -36,12 +37,13 @@ cd "$(dirname "$0")/../.."
 source hack/lib.sh
 
 SCRIPT_PATH="hack/mirror-application-charts.sh"
-DRY_RUN="${DRY_RUN:-false}"
+: "${DRY_RUN:=false}"
+: "${MAX_HISTORY:=5}" # how many commits back to look for a valid previous version of the script
 
-# temp file holding HEAD~1's version of the mirror script. declared at file
-# scope (not inside main) so the EXIT trap can resolve $OLD_SCRIPT at trigger
-# time -- if this were `local` inside main, the variable would be out of scope
-# by the time the trap fires and the temp file would leak.
+# temp file holding a previous commit's version of the mirror script. declared
+# at file scope (not inside main) so the EXIT trap can resolve $OLD_SCRIPT at
+# trigger time -- if this were `local` inside main, the variable would be out
+# of scope by the time the trap fires and the temp file would leak.
 OLD_SCRIPT=$(mktemp)
 trap 'rm -f "$OLD_SCRIPT"' EXIT
 
@@ -49,7 +51,7 @@ trap 'rm -f "$OLD_SCRIPT"' EXIT
 # lines from its CHART_VERSIONS array. the subshell isolates the source from
 # our environment so set -u, traps, and any other side effects don't leak.
 # returns empty output (exit 0) if the file is missing, unreadable, or doesn't
-# define CHART_VERSIONS (e.g. truncated HEAD~1, totally unrelated file).
+# define CHART_VERSIONS (e.g. truncated, totally unrelated file).
 read_chart_versions_from() {
   local script_file="$1"
   [[ -f "$script_file" ]] || return 0
@@ -71,14 +73,11 @@ read_chart_versions_from() {
 main() {
   echodate "Detecting changes in ${SCRIPT_PATH}..."
 
-  # write HEAD~1's version of the script (with the bare main "$@" stripped, in
-  # case HEAD~1 predates the sourcing guard) so read_chart_versions_from can
-  # source it. source(1) reads from a file path, not stdin.
-  if ! git show "HEAD~1:${SCRIPT_PATH}" 2> /dev/null | sed '/^main "\$@"$/d' > "$OLD_SCRIPT"; then
-    # no HEAD~1 (e.g. shallow clone, first commit) -- treat old as empty, which
-    # means every current chart shows up as "added". the chart_exists_in_registry
-    # check in the inner script makes that idempotent.
-    : > "$OLD_SCRIPT"
+  # Get a previous version of the script from git history for comparison and write it to the temp file.
+  # Remove the main function invocation from the old script to prevent side effects when sourcing it subsequently.
+  # ($SCRIPT_PATH is idempotent, not overwriting already synced chart versions subsequently.)
+  if ! git show "HEAD~${MAX_HISTORY}:${SCRIPT_PATH}" 2> /dev/null | sed '/^main "\$@"$/d' > "$OLD_SCRIPT"; then
+    echo "WARNING: No previous version of ${SCRIPT_PATH} found in the last ${MAX_HISTORY} commits. Treating all charts as new." >&2
   fi
 
   local old_pairs new_pairs
