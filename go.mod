@@ -99,7 +99,6 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.20.2
-	k8c.io/kubelb v1.3.5
 	k8c.io/kubeone v1.12.3
 	k8c.io/kubermatic/sdk/v2 v2.28.1
 	k8c.io/machine-controller/sdk v1.65.0

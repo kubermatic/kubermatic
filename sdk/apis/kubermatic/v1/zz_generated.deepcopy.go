@@ -23,7 +23,6 @@ package v1
 import (
 	"encoding/json"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	"k8c.io/kubelb/api/ee/kubelb.k8c.io/v1alpha1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/machine-controller/sdk/providerconfig"
 	corev1 "k8s.io/api/core/v1"
@@ -7109,7 +7108,7 @@ func (in *ProjectSpec) DeepCopyInto(out *ProjectSpec) {
 	}
 	if in.DefaultTenantSpec != nil {
 		in, out := &in.DefaultTenantSpec, &out.DefaultTenantSpec
-		*out = new(v1alpha1.TenantSpec)
+		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
 }
