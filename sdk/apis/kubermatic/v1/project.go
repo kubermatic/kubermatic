@@ -17,9 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	kubelbv1alpha1 "k8c.io/kubelb/api/ee/kubelb.k8c.io/v1alpha1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +kubebuilder:validation:Enum=Active;Inactive;Terminating
@@ -73,8 +72,15 @@ type ProjectSpec struct {
 	Name string `json:"name"`
 	// AllowedOperatingSystems defines a map of operating systems that can be used for the machines inside this project.
 	AllowedOperatingSystems allowedOperatingSystems `json:"allowedOperatingSystems,omitempty"`
-	// DefaultTenantSpec
-	DefaultTenantSpec *kubelbv1alpha1.TenantSpec `json:"defaultTenantSpec,omitempty"`
+	// DefaultTenantSpec is an opaque KubeLB Tenant Spec passed through to the
+	// kubelb management cluster as-is. This can be used to override the default
+	// Tenant Spec that is used for all Tenants created for this project. This is useful for
+	// users who want to use custom features of KubeLB that are not exposed by the default Tenant Spec.
+	// The default Tenant Spec is defined in the KubeLB documentation and can be found
+	// here: https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	DefaultTenantSpec *runtime.RawExtension `json:"defaultTenantSpec,omitempty"`
 }
 
 // ProjectStatus represents the current status of a project.
