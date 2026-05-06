@@ -70,6 +70,17 @@ const (
 
 	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
 	initialRequeueDuration = 10 * time.Second
+
+	// transientErrorMessage is the error message returned by Helm when another operation is in progress.
+	// This is a transient error that should not count toward the failure limit.
+	transientErrorMessage = "another operation (install/upgrade/rollback) is in progress"
+
+	// transientErrorRequeueDuration is the duration to wait before retrying when a transient error occurs.
+	transientErrorRequeueDuration = 30 * time.Second
+
+	// failureResetDuration is the duration after which the failure counter is reset if no new failures occur.
+	// This allows the application to recover from transient issues after a cooldown period.
+	failureResetDuration = 1 * time.Hour
 )
 
 type reconciler struct {
@@ -149,6 +160,22 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, appInstallation)
 	if err != nil {
+		// Check if this is a transient error (e.g., "another operation in progress")
+		// For transient errors, we don't want to trigger the default exponential backoff
+		// which can exhaust retries too quickly. Instead, we requeue with a longer delay.
+		if isTransientError(err) {
+			log.Infow("Transient error detected, requeuing with longer delay",
+				"error", err.Error(),
+				"requeueAfter", transientErrorRequeueDuration)
+			// Update the condition to reflect the transient error, but don't increment failures
+			oldAppInstallation := appInstallation.DeepCopy()
+			appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "TransientError", err.Error())
+			if patchErr := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); patchErr != nil {
+				log.Errorw("Failed to update status for transient error", "error", patchErr)
+			}
+			return reconcile.Result{RequeueAfter: transientErrorRequeueDuration}, nil
+		}
+
 		r.userRecorder.Eventf(appInstallation, nil, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, "Reconciling", err.Error())
 		return reconcile.Result{}, err
 	}
@@ -163,6 +190,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		if err := r.handleDeletion(ctx, log, appInstallation); err != nil {
 			return fmt.Errorf("handling deletion of application installation: %w", err)
 		}
+		// Clean up metrics when the application is deleted
+		deleteMetrics(appInstallation.Namespace, appInstallation.Name, appInstallation.Spec.ApplicationRef.Name)
 		return nil
 	}
 
@@ -273,20 +302,15 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return err
 	}
 
-	// Install or upgrade application only if max number of retries is not exceeded.
-	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
-		oldAppInstallation := appInstallation.DeepCopy()
-		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
-
-		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
-			return fmt.Errorf("failed to update status: %w", err)
-		}
-		log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
-		return nil
+	// Reset failures if enough time has passed since the last failure (time-based recovery).
+	// This allows the application to recover from transient issues after a cooldown period.
+	if err := r.resetFailuresIfCooldownPassed(ctx, log, appInstallation); err != nil {
+		return err
 	}
 
+	// Check if the release is stuck BEFORE checking maxRetries.
+	// This ensures we can recover stuck releases even after hitting the retry limit.
 	// Because some upstream tools are not completely idempotent, we need a check to make sure a release is not stuck.
-	// This should be run before we make any changes to the status field, so we can use it in our analysis
 	stuck, err := r.appInstaller.IsStuck(ctx, log, r.seedClient, r.userClient, appInstallation)
 	if err != nil {
 		return fmt.Errorf("failed to check if the previous release is stuck: %w", err)
@@ -297,6 +321,26 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 			return fmt.Errorf("failed to rollback release: %w", err)
 		}
 		log.Infof("Release for ApplicationInstallation has been rolled back successfully")
+
+		// Reset failures after successful rollback to give the application another chance
+		oldAppInstallation := appInstallation.DeepCopy()
+		appInstallation.Status.Failures = 0
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionUnknown, "RollbackSuccessful", "Release was stuck and has been rolled back, retrying installation")
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status after rollback: %w", err)
+		}
+	}
+
+	// Install or upgrade application only if max number of retries is not exceeded.
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+		oldAppInstallation := appInstallation.DeepCopy()
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
+
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+		log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
+		return nil
 	}
 
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
@@ -337,7 +381,45 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 
+	// Update Prometheus metrics
+	r.updateApplicationMetrics(appInstallation, appDefinition)
+
 	return installErr
+}
+
+// updateApplicationMetrics updates the Prometheus metrics for an ApplicationInstallation.
+func (r *reconciler) updateApplicationMetrics(appInstallation *appskubermaticv1.ApplicationInstallation, appDefinition *appskubermaticv1.ApplicationDefinition) {
+	readyCondition, exists := appInstallation.Status.Conditions[appskubermaticv1.Ready]
+
+	// Determine ready status: 1=ready, 0=not ready, -1=unknown
+	readyStatus := -1
+	if exists {
+		switch readyCondition.Status {
+		case corev1.ConditionTrue:
+			readyStatus = 1
+		case corev1.ConditionFalse:
+			readyStatus = 0
+		}
+	}
+
+	// Determine if the application is stuck (failures > maxRetries and has limited retries)
+	isStuck := appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation)
+
+	// Get last success timestamp (when Ready condition became True)
+	var lastSuccessTime float64
+	if exists && readyCondition.Status == corev1.ConditionTrue && !readyCondition.LastTransitionTime.IsZero() {
+		lastSuccessTime = float64(readyCondition.LastTransitionTime.Unix())
+	}
+
+	updateMetrics(
+		appInstallation.Namespace,
+		appInstallation.Name,
+		appInstallation.Spec.ApplicationRef.Name,
+		appInstallation.Status.Failures,
+		isStuck,
+		readyStatus,
+		lastSuccessTime,
+	)
 }
 
 func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) bool {
@@ -364,6 +446,57 @@ func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstal
 		}
 	}
 	return nil
+}
+
+// resetFailuresIfCooldownPassed resets the failure counter if enough time has passed since the last failure.
+// This allows the application to recover from transient issues after a cooldown period.
+// We use the LastHeartbeatTime of the Ready condition as a proxy for the last failure time.
+func (r reconciler) resetFailuresIfCooldownPassed(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	// Only reset if there are failures to reset
+	if appInstallation.Status.Failures == 0 {
+		return nil
+	}
+
+	// Check if the Ready condition exists and has a LastHeartbeatTime
+	readyCondition, exists := appInstallation.Status.Conditions[appskubermaticv1.Ready]
+	if !exists || readyCondition.LastHeartbeatTime.IsZero() {
+		return nil
+	}
+
+	// Only reset if the condition indicates a failure (not successful)
+	if readyCondition.Status == corev1.ConditionTrue {
+		return nil
+	}
+
+	// Check if enough time has passed since the last failure
+	timeSinceLastFailure := time.Since(readyCondition.LastHeartbeatTime.Time)
+	if timeSinceLastFailure < failureResetDuration {
+		return nil
+	}
+
+	log.Infow("Resetting failure counter after cooldown period",
+		"failures", appInstallation.Status.Failures,
+		"timeSinceLastFailure", timeSinceLastFailure,
+		"cooldownDuration", failureResetDuration)
+
+	oldAppInstallation := appInstallation.DeepCopy()
+	appInstallation.Status.Failures = 0
+	appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionUnknown, "CooldownReset", "Failure counter reset after cooldown period, retrying installation")
+
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status after cooldown reset: %w", err)
+	}
+
+	return nil
+}
+
+// isTransientError checks if the error is a transient error that should not count toward the failure limit.
+// Transient errors are temporary conditions that are expected to resolve on their own.
+func isTransientError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), transientErrorMessage)
 }
 
 // handleDeletion uninstalls the application in the user cluster.
