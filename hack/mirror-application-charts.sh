@@ -124,19 +124,23 @@ resolve_chart_config() {
 
 # ─── Authenticate with Vault ──────────────────────────────────────────────────
 login_vault() {
+  if [ -z "${VAULT_ADDR:-}" ]; then
+    export VAULT_ADDR=https://vault.kubermatic.com/
+  fi
+
   if [ -n "${VAULT_TOKEN:-}" ] || vault token lookup &> /dev/null; then
     return 0 # already logged in
   fi
 
-  echo "Logging into Vault..."
-
   if [ -z "${VAULT_ROLE_ID:-}" ] || [ -z "${VAULT_SECRET_ID:-}" ]; then
     # Interactive user login outside the CI pipeline
-    vault login --method=oidc --path="$VAULT_OIDC_AUTH_PATH"
+    echo "🌐 Logging into Vault interactively using OIDC"
+    vault login --method=oidc --path="${VAULT_OIDC_AUTH_PATH:-loodse}"
     return 0
   fi
 
   # CI pipeline specific login (non-interactive)
+  echo "🌐 Logging into Vault using prow CI credentials"
   local token
   token=$(vault write --format=json auth/approle/login "role_id=$VAULT_ROLE_ID" "secret_id=$VAULT_SECRET_ID" | jq -r '.auth.client_token')
 
@@ -145,13 +149,9 @@ login_vault() {
 
 # ─── Authenticate to OCI registry ─────────────────────────────────────────────
 login_registry() {
-  echo "🌐 Authenticating to registry..."
-
-  if [ -z "${VAULT_ADDR:-}" ]; then
-    export VAULT_ADDR=https://vault.kubermatic.com/
-  fi
-
   login_vault
+
+  echo "🌐 Authenticating to registry..."
 
   REGISTRY_USER="${REGISTRY_USER:-$(vault kv get -field=username dev/kubermatic-mirror-quay.io)}"
   REGISTRY_PASSWORD="${REGISTRY_PASSWORD:-$(vault kv get -field=password dev/kubermatic-mirror-quay.io)}"
