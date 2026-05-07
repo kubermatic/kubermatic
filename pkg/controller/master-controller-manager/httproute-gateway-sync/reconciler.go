@@ -29,7 +29,6 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -126,17 +125,7 @@ func (r *Reconciler) managesGateway(gtw *gatewayapiv1.Gateway) bool {
 		return false
 	}
 
-	for _, ownerRef := range gtw.OwnerReferences {
-		if ownerRef.APIVersion != kubermaticv1.SchemeGroupVersion.String() || ownerRef.Kind != "KubermaticConfiguration" {
-			continue
-		}
-
-		if ownerRef.Controller != nil && *ownerRef.Controller {
-			return true
-		}
-	}
-
-	return false
+	return common.HasKubermaticConfigurationControllerOwnerReference(gtw.OwnerReferences, nil)
 }
 
 // usesCertManager checks if Gateway has cert-manager annotations.

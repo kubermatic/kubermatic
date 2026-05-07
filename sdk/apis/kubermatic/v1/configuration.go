@@ -482,7 +482,8 @@ type KubermaticIngressConfiguration struct {
 type KubermaticGatewayConfiguration struct {
 	// ExternalGateway references a user-managed Gateway. When configured,
 	// kubermatic-operator does not create the default Gateway and only points
-	// managed HTTPRoutes at this Gateway. ClassName, InfrastructureAnnotations,
+	// managed HTTPRoutes at this Gateway. The reference must not resolve to the
+	// operator-managed default Gateway. ClassName, InfrastructureAnnotations,
 	// and TLS are ignored when this field is set.
 	ExternalGateway *KubermaticExternalGatewayReference `json:"externalGateway,omitempty"`
 
@@ -501,6 +502,8 @@ type KubermaticGatewayConfiguration struct {
 
 // UsesExternalGateway returns true when Gateway API resources should attach to
 // a user-managed Gateway instead of the operator-managed default Gateway.
+// Invalid partial references such as externalGateway without a name are rejected
+// by KubermaticConfiguration validation before this predicate is used.
 func (c *KubermaticGatewayConfiguration) UsesExternalGateway() bool {
 	return c != nil && c.ExternalGateway != nil && c.ExternalGateway.Name != ""
 }
@@ -519,8 +522,12 @@ func (c *KubermaticGatewayConfiguration) ExternalGatewayNamespace(defaultNamespa
 type KubermaticExternalGatewayReference struct {
 	// Name is the name of the Gateway.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	Name string `json:"name"`
 	// Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern:=`^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	Namespace string `json:"namespace,omitempty"`
 }
 

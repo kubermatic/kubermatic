@@ -137,3 +137,79 @@ httpRoute:
 		})
 	}
 }
+
+func TestMasterHTTPRouteGatewayReference(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	testCases := []struct {
+		name          string
+		values        string
+		wantName      string
+		wantNamespace string
+	}{
+		{
+			name: "default values resolve to external Gateway",
+			values: `
+migrateGatewayAPI: true
+httpRoute:
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+`,
+			wantName:      "platform-gateway",
+			wantNamespace: "networking",
+		},
+		{
+			name: "explicit values are preserved",
+			values: `
+migrateGatewayAPI: true
+httpRoute:
+  gatewayName: dex-gateway
+  gatewayNamespace: dex-networking
+`,
+			wantName:      "dex-gateway",
+			wantNamespace: "dex-networking",
+		},
+		{
+			name: "migration disabled uses configured Helm values",
+			values: `
+migrateGatewayAPI: false
+httpRoute:
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+`,
+			wantName:      "kubermatic",
+			wantNamespace: "kubermatic",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			doc, err := yamled.Load(strings.NewReader(tc.values))
+			if err != nil {
+				t.Fatalf("failed to load Helm values: %v", err)
+			}
+
+			got := MasterHTTPRouteGatewayReference(cfg, doc)
+			if got.Name != tc.wantName {
+				t.Fatalf("expected Gateway name %s, got %s", tc.wantName, got.Name)
+			}
+			if got.Namespace != tc.wantNamespace {
+				t.Fatalf("expected Gateway namespace %s, got %s", tc.wantNamespace, got.Namespace)
+			}
+		})
+	}
+}

@@ -275,6 +275,10 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 				failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway.namespace is invalid: %s", strings.Join(errs, "; ")))
 			}
 		}
+
+		if gateway.UsesExternalGateway() && gateway.ExternalGateway.Name == defaulting.DefaultGatewayName && gateway.ExternalGatewayNamespace(config.Namespace) == config.Namespace {
+			failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway must not reference the operator-managed default Gateway %s/%s; use a distinct name or namespace", config.Namespace, defaulting.DefaultGatewayName))
+		}
 	}
 
 	// only validate auth-related keys if we are not setting up a headless system
@@ -351,7 +355,7 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
 
-		defaultDexGatewayHTTPRouteValues(config, helmValues, logger)
+		common.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
 
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
@@ -397,10 +401,6 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 	}
 
 	return failures
-}
-
-func defaultDexGatewayHTTPRouteValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) {
-	common.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
 }
 
 func prefixError(prefix string, e error) error {

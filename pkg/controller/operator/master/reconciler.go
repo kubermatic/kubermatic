@@ -617,6 +617,9 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 	}
 
 	if config.Spec.Ingress.Gateway.UsesExternalGateway() {
+		if config.Spec.Ingress.Gateway.ExternalGateway.Name == defaulting.DefaultGatewayName && config.Spec.Ingress.Gateway.ExternalGatewayNamespace(config.Namespace) == config.Namespace {
+			return fmt.Errorf("spec.ingress.gateway.externalGateway must not reference the operator-managed default Gateway %s/%s", config.Namespace, defaulting.DefaultGatewayName)
+		}
 		if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config, config.Namespace); err != nil {
 			return fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
 		}

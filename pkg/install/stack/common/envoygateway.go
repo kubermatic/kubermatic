@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,6 +50,10 @@ const (
 	EnvoyGatewayControllerChartName   = "envoy-gateway-controller"
 	EnvoyGatewayControllerReleaseName = EnvoyGatewayControllerChartName
 	EnvoyGatewayControllerNamespace   = EnvoyGatewayControllerChartName
+
+	gatewayAPICRDReadyTimeout       = 30 * time.Second
+	gatewayClassReadinessPollPeriod = 5 * time.Second
+	gatewayClassReadinessTimeout    = 5 * time.Minute
 )
 
 func DeployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
@@ -148,7 +153,7 @@ func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 			continue
 		}
 
-		existing := crdObject.DeepCopyObject().(ctrlruntimeclient.Object)
+		existing := &apiextensionsv1.CustomResourceDefinition{}
 		key := ctrlruntimeclient.ObjectKey{Name: crdObject.GetName()}
 		if err := kubeClient.Get(ctx, key, existing); err == nil {
 			logger.Debug("CRD already exists, leaving it untouched")
@@ -167,7 +172,7 @@ func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 		if crd.SkipCRDOnCluster(crdObject, crd.MasterCluster) {
 			continue
 		}
-		if err := util.WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), 30*time.Second); err != nil {
+		if err := util.WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), gatewayAPICRDReadyTimeout); err != nil {
 			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crdObject.GetName(), err)
 		}
 	}
@@ -199,7 +204,7 @@ func waitForGatewayClass(ctx context.Context, logger *logrus.Entry, kubeClient c
 	gcName := types.NamespacedName{Name: GatewayClassName}
 	gc := gatewayapiv1.GatewayClass{}
 
-	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, gatewayClassReadinessPollPeriod, gatewayClassReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gcName, &gc); err != nil {
 			return false, nil
 		}

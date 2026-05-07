@@ -73,11 +73,11 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 
 	if opt.SeparateSeed {
 		if opt.MigrateToGatewayAPI {
-			if seedUsesExternalGateway(opt) {
+			if seedGateway, ok := seedExternalGatewayFromHTTPRouteValues(opt); ok {
 				if err := common.EnsureGatewayAPICRDs(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 					return fmt.Errorf("failed to ensure Gateway API CRDs: %w", err)
 				}
-				opt.Logger.Infof("⭕ Skipping envoy-gateway-controller deployment because Helm values httpRoute.gatewayName/gatewayNamespace point to an externally managed seed Gateway.")
+				opt.Logger.WithField("gateway", seedGateway.String()).Info("⭕ Skipping envoy-gateway-controller deployment because seed HTTPRoute Helm values reference a non-default Gateway.")
 			} else {
 				if err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 					return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
@@ -174,29 +174,34 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	return nil
 }
 
-// seedUsesExternalGateway uses the seed-scoped HTTPRoute Helm values as the signal for BYO Gateway.
-// The KubermaticConfiguration externalGateway field describes the master Gateway only and must not
-// be reused for segregated seed clusters.
-func seedUsesExternalGateway(opt stack.DeployOptions) bool {
+// seedExternalGatewayFromHTTPRouteValues uses the seed-scoped HTTPRoute Helm values as the signal
+// for BYO Gateway. The KubermaticConfiguration externalGateway field describes the master Gateway
+// only and must not be reused for segregated seed clusters.
+func seedExternalGatewayFromHTTPRouteValues(opt stack.DeployOptions) (types.NamespacedName, bool) {
+	gateway := types.NamespacedName{
+		Name:      defaulting.DefaultGatewayName,
+		Namespace: kubermaticmaster.KubermaticOperatorNamespace,
+	}
+
 	if opt.HelmValues == nil {
-		return false
+		return gateway, false
 	}
 
 	if migrateGatewayAPI, _ := opt.HelmValues.GetBool(yamled.Path{"migrateGatewayAPI"}); !migrateGatewayAPI {
-		return false
+		return gateway, false
 	}
 
 	gatewayName, _ := opt.HelmValues.GetString(yamled.Path{"httpRoute", "gatewayName"})
-	if gatewayName == "" {
-		gatewayName = defaulting.DefaultGatewayName
+	if gatewayName != "" {
+		gateway.Name = gatewayName
 	}
 
 	gatewayNamespace, _ := opt.HelmValues.GetString(yamled.Path{"httpRoute", "gatewayNamespace"})
-	if gatewayNamespace == "" {
-		gatewayNamespace = kubermaticmaster.KubermaticOperatorNamespace
+	if gatewayNamespace != "" {
+		gateway.Namespace = gatewayNamespace
 	}
 
-	return gatewayName != defaulting.DefaultGatewayName || gatewayNamespace != kubermaticmaster.KubermaticOperatorNamespace
+	return gateway, gateway.Name != defaulting.DefaultGatewayName || gateway.Namespace != kubermaticmaster.KubermaticOperatorNamespace
 }
 
 func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {

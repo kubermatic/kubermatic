@@ -15,6 +15,10 @@
 # Gateway API migration: When true, creates HTTPRoute instead of using Ingress.
 # The HTTPRoutes will attach to the configured Gateway (cross-namespace).
 # The kubermatic-installer automatically labels the namespace for Gateway access.
+# In separate seed setups, configure these values for the seed Gateway explicitly;
+# they are not defaulted from spec.ingress.gateway.externalGateway. To use a BYO
+# seed Gateway, set a non-default gatewayName or gatewayNamespace so the installer
+# can distinguish it from the bundled kubermatic/kubermatic Gateway.
 migrateGatewayAPI: false
 
 # httpRoute configures HTTPRoute for IAP deployments (only used when migrateGatewayAPI: true)

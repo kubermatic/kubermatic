@@ -34,13 +34,18 @@ import (
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	testDirectoryMode os.FileMode = 0o755
+	testFileMode      os.FileMode = 0o644
+)
+
 func TestEnsureGatewayAPICRDsDoesNotReplaceExistingCRD(t *testing.T) {
 	ctx := context.Background()
 	crdName := "gateways.gateway.networking.k8s.io"
 
 	chartsDir := t.TempDir()
 	crdDir := filepath.Join(chartsDir, EnvoyGatewayControllerChartName, "crd")
-	if err := os.MkdirAll(crdDir, 0755); err != nil {
+	if err := os.MkdirAll(crdDir, testDirectoryMode); err != nil {
 		t.Fatalf("failed to create CRD directory: %v", err)
 	}
 
@@ -63,7 +68,7 @@ spec:
         openAPIV3Schema:
           type: object
 `)
-	if err := os.WriteFile(filepath.Join(crdDir, "gateway.yaml"), bundledCRD, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(crdDir, "gateway.yaml"), bundledCRD, testFileMode); err != nil {
 		t.Fatalf("failed to write test CRD: %v", err)
 	}
 

@@ -22,6 +22,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
+	"k8s.io/apimachinery/pkg/types"
+)
+
+var (
+	httpRouteGatewayNamePath      = yamled.Path{"httpRoute", "gatewayName"}
+	httpRouteGatewayNamespacePath = yamled.Path{"httpRoute", "gatewayNamespace"}
+	migrateGatewayAPIPath         = yamled.Path{"migrateGatewayAPI"}
 )
 
 // DefaultMasterHTTPRouteGatewayValues defaults master-cluster chart HTTPRoute parentRefs to
@@ -30,7 +38,33 @@ import (
 // seed-scoped charts: in separate seed setups, the master externalGateway does
 // not describe the seed Gateway.
 func DefaultMasterHTTPRouteGatewayValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) bool {
-	if config == nil {
+	if !shouldUseExternalMasterHTTPRouteGateway(config, helmValues) {
+		return false
+	}
+
+	externalGateway := masterExternalGatewayReference(config)
+
+	logger.Warnf("Helm values: %s/%s point to the default Gateway, setting them to spec.ingress.gateway.externalGateway", httpRouteGatewayNamePath.String(), httpRouteGatewayNamespacePath.String())
+	helmValues.Set(httpRouteGatewayNamePath, externalGateway.Name)
+	helmValues.Set(httpRouteGatewayNamespacePath, externalGateway.Namespace)
+
+	return true
+}
+
+// MasterHTTPRouteGatewayReference returns the effective Gateway reference for
+// master-scoped HTTPRoute charts. It mirrors DefaultMasterHTTPRouteGatewayValues
+// without mutating Helm values, so installer cleanup code can wait for the same
+// Gateway that the chart will attach to.
+func MasterHTTPRouteGatewayReference(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document) types.NamespacedName {
+	if shouldUseExternalMasterHTTPRouteGateway(config, helmValues) {
+		return masterExternalGatewayReference(config)
+	}
+
+	return currentMasterHTTPRouteGatewayReference(config, helmValues)
+}
+
+func shouldUseExternalMasterHTTPRouteGateway(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document) bool {
+	if config == nil || helmValues == nil {
 		return false
 	}
 
@@ -39,28 +73,39 @@ func DefaultMasterHTTPRouteGatewayValues(config *kubermaticv1.KubermaticConfigur
 		return false
 	}
 
-	if migrateGatewayAPI, _ := helmValues.GetBool(yamled.Path{"migrateGatewayAPI"}); !migrateGatewayAPI {
+	if migrateGatewayAPI, _ := helmValues.GetBool(migrateGatewayAPIPath); !migrateGatewayAPI {
 		return false
 	}
 
-	gatewayNamePath := yamled.Path{"httpRoute", "gatewayName"}
-	gatewayNamespacePath := yamled.Path{"httpRoute", "gatewayNamespace"}
+	currentGateway := currentMasterHTTPRouteGatewayReference(config, helmValues)
+	return currentGateway.Name == defaulting.DefaultGatewayName && currentGateway.Namespace == config.Namespace
+}
 
-	externalGatewayName := gatewayConfig.ExternalGateway.Name
-	externalGatewayNamespace := gatewayConfig.ExternalGatewayNamespace(config.Namespace)
-
-	currentGatewayName, _ := helmValues.GetString(gatewayNamePath)
-	currentGatewayNamespace, _ := helmValues.GetString(gatewayNamespacePath)
-
-	pointsAtDefaultGateway := (currentGatewayName == "" || currentGatewayName == defaulting.DefaultGatewayName) &&
-		(currentGatewayNamespace == "" || currentGatewayNamespace == config.Namespace)
-	if !pointsAtDefaultGateway {
-		return false
+func currentMasterHTTPRouteGatewayReference(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document) types.NamespacedName {
+	key := types.NamespacedName{
+		Name: defaulting.DefaultGatewayName,
+	}
+	if config != nil {
+		key.Namespace = config.Namespace
+	}
+	if helmValues == nil {
+		return key
 	}
 
-	logger.Warnf("Helm values: %s/%s point to the default Gateway, setting them to spec.ingress.gateway.externalGateway", gatewayNamePath.String(), gatewayNamespacePath.String())
-	helmValues.Set(gatewayNamePath, externalGatewayName)
-	helmValues.Set(gatewayNamespacePath, externalGatewayNamespace)
+	if name, _ := helmValues.GetString(httpRouteGatewayNamePath); name != "" {
+		key.Name = name
+	}
+	if namespace, _ := helmValues.GetString(httpRouteGatewayNamespacePath); namespace != "" {
+		key.Namespace = namespace
+	}
 
-	return true
+	return key
+}
+
+func masterExternalGatewayReference(config *kubermaticv1.KubermaticConfiguration) types.NamespacedName {
+	gatewayConfig := config.Spec.Ingress.Gateway
+	return types.NamespacedName{
+		Name:      gatewayConfig.ExternalGateway.Name,
+		Namespace: gatewayConfig.ExternalGatewayNamespace(config.Namespace),
+	}
 }

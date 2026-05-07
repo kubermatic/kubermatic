@@ -24,14 +24,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func TestSeedUsesExternalGateway(t *testing.T) {
+func TestSeedExternalGatewayFromHTTPRouteValues(t *testing.T) {
 	testCases := []struct {
 		name   string
 		values string
 		want   bool
 	}{
 		{
-			name: "default Gateway values use installer-managed seed Gateway",
+			name: "default Gateway values deploy bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true
 httpRoute:
@@ -71,7 +71,7 @@ httpRoute:
 			want: false,
 		},
 		{
-			name: "empty Gateway values default to installer-managed seed Gateway",
+			name: "empty Gateway values deploy bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true
 `,
@@ -86,8 +86,9 @@ migrateGatewayAPI: true
 				t.Fatalf("failed to load Helm values: %v", err)
 			}
 
-			if got := seedUsesExternalGateway(stack.DeployOptions{HelmValues: doc}); got != tc.want {
-				t.Fatalf("seedUsesExternalGateway() = %v, want %v", got, tc.want)
+			_, got := seedExternalGatewayFromHTTPRouteValues(stack.DeployOptions{HelmValues: doc})
+			if got != tc.want {
+				t.Fatalf("seedExternalGatewayFromHTTPRouteValues() = %v, want %v", got, tc.want)
 			}
 		})
 	}

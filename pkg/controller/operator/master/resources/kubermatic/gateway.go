@@ -353,26 +353,6 @@ func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Ob
 	return nil
 }
 
-func isControllerOwnedByKubermaticConfiguration(ownerRefs []metav1.OwnerReference, cfg *kubermaticv1.KubermaticConfiguration) bool {
-	for _, ownerRef := range ownerRefs {
-		if ownerRef.APIVersion != kubermaticv1.SchemeGroupVersion.String() || ownerRef.Kind != "KubermaticConfiguration" {
-			continue
-		}
-
-		if ownerRef.Controller == nil || !*ownerRef.Controller {
-			continue
-		}
-
-		if cfg != nil && cfg.UID != "" && ownerRef.UID != cfg.UID {
-			continue
-		}
-
-		return true
-	}
-
-	return false
-}
-
 // EnsureManagedGatewayAbsent deletes the operator-owned default Gateway when BYO Gateway is configured.
 // It intentionally leaves unowned or externally owned Gateways untouched.
 func EnsureManagedGatewayAbsent(
@@ -392,7 +372,7 @@ func EnsureManagedGatewayAbsent(
 		return fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
 	}
 
-	if !isControllerOwnedByKubermaticConfiguration(existing.OwnerReferences, cfg) {
+	if !common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, cfg) {
 		log.Debugw("Leaving non-operator-owned Gateway untouched", "name", gatewayName, "namespace", namespace)
 		return nil
 	}
