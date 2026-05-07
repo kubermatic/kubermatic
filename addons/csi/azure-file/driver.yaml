@@ -803,8 +803,10 @@ spec:
         - args:
             - --v=5
             - --endpoint=$(CSI_ENDPOINT)
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - --azurefile-proxy-endpoint=$(AZUREFILE_PROXY_ENDPOINT)
             - --enable-azurefile-proxy=true
+            {{- end }}
             - --nodeid=$(KUBE_NODE_NAME)
             - --kubeconfig=
             - --drivername=file.csi.azure.com
@@ -832,8 +834,10 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: AZURE_GO_SDK_LOG_LEVEL
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - name: AZUREFILE_PROXY_ENDPOINT
               value: unix:///csi/azurefile-proxy.sock
+            {{- end }}
           image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -911,6 +915,7 @@ spec:
               name: socket-dir
             - mountPath: /registration
               name: registration-dir
+        {{- if semverCompare .Cluster.Version ">= 1.34" }}
         - command:
             - azfilesrefresh
           image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
@@ -930,8 +935,10 @@ spec:
               name: azfilesauth
             - mountPath: /var/log/
               name: log-dir
+        {{- end }}
       dnsPolicy: Default
       hostNetwork: true
+      {{- if semverCompare .Cluster.Version ">= 1.33" }}
       hostPID: true
       initContainers:
         - command:
@@ -949,8 +956,10 @@ spec:
               value: /var/lib/kubelet
             - name: MIGRATE_K8S_REPO
               value: "false"
+            {{- if semverCompare .Cluster.Version ">= 1.34" }}
             - name: ENABLE_MI_AUTH
               value: "true"
+            {{- end }}
           image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           name: install-azurefile-proxy
@@ -967,6 +976,7 @@ spec:
             - mountPath: /var/lib/kubelet
               mountPropagation: Bidirectional
               name: mountpoint-dir
+      {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
