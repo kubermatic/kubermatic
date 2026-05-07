@@ -683,6 +683,23 @@ spec:
                         When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
                         are managed by kubermatic-operator, instead of Ingress.
                       properties:
+                        externalGateway:
+                          description: |-
+                            ExternalGateway references a user-managed Gateway. When configured,
+                            kubermatic-operator does not create the default Gateway and only points
+                            managed HTTPRoutes at this Gateway. ClassName, InfrastructureAnnotations,
+                            and TLS are ignored when this field is set.
+                          properties:
+                            name:
+                              description: Name is the name of the Gateway.
+                              minLength: 1
+                              type: string
+                            namespace:
+                              description: Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.
+                              type: string
+                          required:
+                            - name
+                          type: object
                         className:
                           default: kubermatic-envoy-gateway
                           description: ClassName is the GatewayClass to use.

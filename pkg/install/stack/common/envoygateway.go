@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -69,17 +70,13 @@ func DeployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
+	if err := DeployGatewayAPICRDs(ctx, logger, kubeClient, opt); err != nil {
+		return err
+	}
+
 	err = util.EnsureNamespace(ctx, sublogger, kubeClient, EnvoyGatewayControllerNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
-	}
-
-	sublogger.Info("Deploying Gateway API Custom Resource Definitions...")
-	crdDirectory := filepath.Join(opt.ChartsDirectory, EnvoyGatewayControllerChartName, "crd")
-
-	err = util.DeployCRDs(ctx, kubeClient, sublogger, crdDirectory, nil, crd.MasterCluster)
-	if err != nil {
-		return fmt.Errorf("failed to deploy Gateway API CRDs: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, EnvoyGatewayControllerNamespace, EnvoyGatewayControllerReleaseName)
@@ -110,6 +107,90 @@ func DeployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+func DeployGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	if skipGatewayAPICRDs(logger, opt) {
+		return nil
+	}
+
+	sublogger := log.Prefix(logger, "   ")
+	sublogger.Info("Deploying Gateway API Custom Resource Definitions...")
+
+	err := util.DeployCRDs(ctx, kubeClient, sublogger, gatewayAPICRDDirectory(opt), nil, crd.MasterCluster)
+	if err != nil {
+		return fmt.Errorf("failed to deploy Gateway API CRDs: %w", err)
+	}
+
+	return nil
+}
+
+// EnsureGatewayAPICRDs creates missing Gateway API CRDs without replacing
+// existing CRDs. This is used in BYO Gateway mode where another Gateway
+// implementation may own the installed Gateway API CRDs.
+func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	if skipGatewayAPICRDs(logger, opt) {
+		return nil
+	}
+
+	sublogger := log.Prefix(logger, "   ")
+	sublogger.Info("Ensuring Gateway API Custom Resource Definitions exist...")
+
+	crds, err := crd.LoadFromDirectory(gatewayAPICRDDirectory(opt))
+	if err != nil {
+		return fmt.Errorf("failed to load Gateway API CRDs: %w", err)
+	}
+
+	for _, crdObject := range crds {
+		logger := sublogger.WithField("name", crdObject.GetName())
+		if crd.SkipCRDOnCluster(crdObject, crd.MasterCluster) {
+			logger.Debug("Skipping CRD")
+			continue
+		}
+
+		existing := crdObject.DeepCopyObject().(ctrlruntimeclient.Object)
+		key := ctrlruntimeclient.ObjectKey{Name: crdObject.GetName()}
+		if err := kubeClient.Get(ctx, key, existing); err == nil {
+			logger.Debug("CRD already exists, leaving it untouched")
+			continue
+		} else if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to check Gateway API CRD %s: %w", crdObject.GetName(), err)
+		}
+
+		logger.Debug("Creating missing CRD…")
+		if err := kubeClient.Create(ctx, crdObject); err != nil && !apierrors.IsAlreadyExists(err) {
+			return fmt.Errorf("failed to create Gateway API CRD %s: %w", crdObject.GetName(), err)
+		}
+	}
+
+	for _, crdObject := range crds {
+		if crd.SkipCRDOnCluster(crdObject, crd.MasterCluster) {
+			continue
+		}
+		if err := util.WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), 30*time.Second); err != nil {
+			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crdObject.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
+func skipGatewayAPICRDs(logger *logrus.Entry, opt stack.DeployOptions) bool {
+	if slices.Contains(opt.SkipCharts, EnvoyGatewayControllerChartName) {
+		logger.Infof("⭕ Skipping Gateway API CRD deployment because %s deployment is skipped.", EnvoyGatewayControllerChartName)
+		return true
+	}
+
+	if opt.KubermaticConfiguration != nil && opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		log.Prefix(logger, "   ").Info("Headless installation requested, skipping Gateway API CRD deployment.")
+		return true
+	}
+
+	return false
+}
+
+func gatewayAPICRDDirectory(opt stack.DeployOptions) string {
+	return filepath.Join(opt.ChartsDirectory, EnvoyGatewayControllerChartName, "crd")
 }
 
 func waitForGatewayClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {

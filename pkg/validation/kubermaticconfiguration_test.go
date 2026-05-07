@@ -352,6 +352,57 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			name: "external gateway ignores leftover tls secretRef and certificate issuer",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "letsencrypt-prod",
+						Kind: "ClusterIssuer",
+					},
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{
+							SecretRef: &kubermaticv1.KubermaticGatewaySecretReference{},
+						},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "external gateway without name is invalid",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Namespace: "networking",
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "external gateway with invalid namespace is invalid",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "Not_Valid",
+						},
+					},
+				},
+			},
+			valid: false,
+		},
 	}
 
 	for _, tt := range testcases {

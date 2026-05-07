@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
@@ -33,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -40,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 func (*MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
@@ -260,6 +263,20 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
 	}
 
+	if gateway := config.Spec.Ingress.Gateway; gateway != nil && gateway.ExternalGateway != nil {
+		if gateway.ExternalGateway.Name == "" {
+			failures = append(failures, errors.New("spec.ingress.gateway.externalGateway.name cannot be left empty when externalGateway is configured"))
+		} else if errs := k8svalidation.IsDNS1123Subdomain(gateway.ExternalGateway.Name); len(errs) > 0 {
+			failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway.name is invalid: %s", strings.Join(errs, "; ")))
+		}
+
+		if gateway.ExternalGateway.Namespace != "" {
+			if errs := k8svalidation.IsDNS1123Label(gateway.ExternalGateway.Namespace); len(errs) > 0 {
+				failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway.namespace is invalid: %s", strings.Join(errs, "; ")))
+			}
+		}
+	}
+
 	// only validate auth-related keys if we are not setting up a headless system
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
@@ -334,6 +351,8 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
 
+		defaultDexGatewayHTTPRouteValues(config, helmValues, logger)
+
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
 		clients := []dexClient{}
@@ -378,6 +397,10 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 	}
 
 	return failures
+}
+
+func defaultDexGatewayHTTPRouteValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) {
+	common.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
 }
 
 func prefixError(prefix string, e error) error {

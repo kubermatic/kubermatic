@@ -441,7 +441,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
-	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.ClassName == "" {
+	if configCopy.Spec.Ingress.Gateway != nil && !configCopy.Spec.Ingress.Gateway.UsesExternalGateway() && configCopy.Spec.Ingress.Gateway.ClassName == "" {
 		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
 		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)
 	}

@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -45,7 +46,32 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 		allErrs = append(allErrs, errs...)
 	}
 
+	allErrs = append(allErrs, validateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
+
+	return allErrs
+}
+
+func validateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	gateway := spec.Ingress.Gateway
+	if gateway == nil || gateway.ExternalGateway == nil {
+		return allErrs
+	}
+
+	externalGatewayPath := field.NewPath("spec", "ingress", "gateway", "externalGateway")
+	if gateway.ExternalGateway.Name == "" {
+		allErrs = append(allErrs, field.Required(externalGatewayPath.Child("name"), "must be set when gateway.externalGateway is configured"))
+	} else if errs := k8svalidation.IsDNS1123Subdomain(gateway.ExternalGateway.Name); len(errs) > 0 {
+		allErrs = append(allErrs, field.Invalid(externalGatewayPath.Child("name"), gateway.ExternalGateway.Name, strings.Join(errs, "; ")))
+	}
+
+	if gateway.ExternalGateway.Namespace != "" {
+		if errs := k8svalidation.IsDNS1123Label(gateway.ExternalGateway.Namespace); len(errs) > 0 {
+			allErrs = append(allErrs, field.Invalid(externalGatewayPath.Child("namespace"), gateway.ExternalGateway.Namespace, strings.Join(errs, "; ")))
+		}
+	}
 
 	return allErrs
 }
@@ -53,12 +79,13 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 func validateGatewayTLSConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if spec.Ingress.Gateway == nil || spec.Ingress.Gateway.TLS == nil || spec.Ingress.Gateway.TLS.SecretRef == nil {
+	gateway := spec.Ingress.Gateway
+	if gateway == nil || gateway.UsesExternalGateway() || gateway.TLS == nil || gateway.TLS.SecretRef == nil {
 		return allErrs
 	}
 
 	secretRefPath := field.NewPath("spec", "ingress", "gateway", "tls", "secretRef")
-	if spec.Ingress.Gateway.TLS.SecretRef.Name == "" {
+	if gateway.TLS.SecretRef.Name == "" {
 		allErrs = append(allErrs, field.Required(secretRefPath.Child("name"), "must be set when gateway.tls.secretRef is configured"))
 	}
 

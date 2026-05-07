@@ -215,12 +215,9 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 				r.Annotations = make(map[string]string)
 			}
 
-			parentNs := gatewayapiv1.Namespace(namespace)
+			parentRef := gatewayParentReference(cfg, namespace)
 			r.Spec.ParentRefs = []gatewayapiv1.ParentReference{
-				{
-					Name:      gatewayName,
-					Namespace: &parentNs,
-				},
+				parentRef,
 			}
 
 			r.Spec.Hostnames = []gatewayapiv1.Hostname{
@@ -291,6 +288,22 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 	}
 }
 
+func gatewayParentReference(cfg *kubermaticv1.KubermaticConfiguration, namespace string) gatewayapiv1.ParentReference {
+	parentName := gatewayapiv1.ObjectName(gatewayName)
+	parentNamespace := gatewayapiv1.Namespace(namespace)
+
+	gatewayConfig := cfg.Spec.Ingress.Gateway
+	if gatewayConfig.UsesExternalGateway() {
+		parentName = gatewayapiv1.ObjectName(gatewayConfig.ExternalGateway.Name)
+		parentNamespace = gatewayapiv1.Namespace(gatewayConfig.ExternalGatewayNamespace(namespace))
+	}
+
+	return gatewayapiv1.ParentReference{
+		Name:      parentName,
+		Namespace: &parentNamespace,
+	}
+}
+
 // gatewayComparable holds the fields used to detect meaningful changes between
 // existing and desired Gateway state.
 type gatewayComparable struct {
@@ -338,6 +351,54 @@ func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Ob
 		}
 	}
 	return nil
+}
+
+func isControllerOwnedByKubermaticConfiguration(ownerRefs []metav1.OwnerReference, cfg *kubermaticv1.KubermaticConfiguration) bool {
+	for _, ownerRef := range ownerRefs {
+		if ownerRef.APIVersion != kubermaticv1.SchemeGroupVersion.String() || ownerRef.Kind != "KubermaticConfiguration" {
+			continue
+		}
+
+		if ownerRef.Controller == nil || !*ownerRef.Controller {
+			continue
+		}
+
+		if cfg != nil && cfg.UID != "" && ownerRef.UID != cfg.UID {
+			continue
+		}
+
+		return true
+	}
+
+	return false
+}
+
+// EnsureManagedGatewayAbsent deletes the operator-owned default Gateway when BYO Gateway is configured.
+// It intentionally leaves unowned or externally owned Gateways untouched.
+func EnsureManagedGatewayAbsent(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+) error {
+	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+
+	var existing gatewayapiv1.Gateway
+	if err := client.Get(ctx, key, &existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
+	}
+
+	if !isControllerOwnedByKubermaticConfiguration(existing.OwnerReferences, cfg) {
+		log.Debugw("Leaving non-operator-owned Gateway untouched", "name", gatewayName, "namespace", namespace)
+		return nil
+	}
+
+	log.Debugw("Deleting operator-managed Gateway because externalGateway is configured", "name", gatewayName, "namespace", namespace)
+	return client.Delete(ctx, &existing)
 }
 
 // EnsureGateway creates or updates the Gateway. Uses direct client operations instead of the standard reconciling
