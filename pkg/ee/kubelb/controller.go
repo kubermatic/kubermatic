@@ -31,12 +31,12 @@ import (
 
 	"go.uber.org/zap"
 
-	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
+	kubelbclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -51,6 +51,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -224,19 +225,18 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	// Check if tenant exists or not, if it doesn't we create it.
-	tenant := &kubelbv1alpha1.Tenant{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: cluster.Name,
-			Labels: map[string]string{
-				// These labels are used to identify the tenant in the kubelb management cluster.
-				"kubermatic.k8c.io/cluster-name":          cluster.Name,
-				"kubermatic.k8c.io/cluster-external-name": cluster.Status.Address.ExternalName,
-				"kubermatic.k8c.io/cluster-project-id":    cluster.Labels[kubermaticv1.ProjectIDLabelKey],
-			},
-		},
-	}
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), tenant); err != nil {
+	tenant := &unstructured.Unstructured{}
+	tenant.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
+	tenant.SetName(cluster.Name)
+	tenant.SetLabels(map[string]string{
+		"kubermatic.k8c.io/cluster-name":          cluster.Name,
+		"kubermatic.k8c.io/cluster-external-name": cluster.Status.Address.ExternalName,
+		"kubermatic.k8c.io/cluster-project-id":    cluster.Labels[kubermaticv1.ProjectIDLabelKey],
+	})
+
+	existing := &unstructured.Unstructured{}
+	existing.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), existing); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get tenant: %w", err)
 		}
