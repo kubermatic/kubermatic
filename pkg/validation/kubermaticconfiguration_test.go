@@ -389,7 +389,7 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "external gateway using managed default key with omitted namespace is invalid",
+			name: "external gateway using default key with omitted namespace is statically valid",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{
 					Domain: "example.com",
@@ -400,10 +400,10 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
-			name: "external gateway using managed default key with explicit namespace is invalid",
+			name: "external gateway using default key with explicit namespace is statically valid",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{
 					Domain: "example.com",
@@ -415,7 +415,7 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
 			name: "external gateway using default name in different namespace is valid",

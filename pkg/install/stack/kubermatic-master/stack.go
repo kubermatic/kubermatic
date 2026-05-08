@@ -521,11 +521,16 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 
 	hr := &gatewayapiv1.HTTPRoute{}
 
-	err = c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}, hr)
+	httpRouteKey := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}
+	err = c.Get(ctx, httpRouteKey, hr)
 	if err == nil {
-		err = c.Delete(ctx, hr)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete HTTPRoute: %w", err)
+		if isHTTPRouteOwnedByKubermaticConfiguration(hr, config) {
+			err = c.Delete(ctx, hr)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete HTTPRoute: %w", err)
+			}
+		} else {
+			l.WithField("httproute", httpRouteKey.String()).Debug("Leaving non-operator-owned HTTPRoute untouched during cleanup")
 		}
 	} else if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get HTTPRoute: %w", err)
@@ -536,6 +541,10 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 
 func isGatewayOwnedByKubermaticConfiguration(gw *gatewayapiv1.Gateway, config *kubermaticv1.KubermaticConfiguration) bool {
 	return operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, config)
+}
+
+func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute, config *kubermaticv1.KubermaticConfiguration) bool {
+	return operatorcommon.HasKubermaticConfigurationControllerOwnerReference(route.OwnerReferences, config)
 }
 
 // cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
@@ -571,6 +580,8 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		return nil
 	}
 
+	// Dex is installed as a separate Helm chart, so its HTTPRoute Gateway target can
+	// be overridden via Helm values instead of following only the KubermaticConfiguration.
 	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
 		types.NamespacedName{Namespace: dexNs, Name: dex},
 		types.NamespacedName{Namespace: dexNs, Name: dex},
@@ -717,7 +728,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 			return false, nil
 		}
 
-		if config.Spec.Ingress.Gateway.UsesExternalGateway() && isGatewayOwnedByKubermaticConfiguration(&gw, config) {
+		if config.Spec.Ingress.Gateway.UsesExternalGateway() && operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, nil) {
 			l.Debug("External Gateway reference resolves to an operator-owned Gateway")
 			return false, nil
 		}

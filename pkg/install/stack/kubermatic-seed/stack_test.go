@@ -24,11 +24,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func TestSeedExternalGatewayFromHTTPRouteValues(t *testing.T) {
+func TestSeedHTTPRouteGateway(t *testing.T) {
 	testCases := []struct {
-		name   string
-		values string
-		want   bool
+		name          string
+		values        string
+		wantName      string
+		wantNamespace string
+		wantExternal  bool
 	}{
 		{
 			name: "default Gateway values deploy bundled seed Gateway controller",
@@ -38,44 +40,69 @@ httpRoute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
 `,
-			want: false,
+			wantName:      "kubermatic",
+			wantNamespace: "kubermatic",
+			wantExternal:  false,
 		},
 		{
-			name: "custom Gateway name uses external seed Gateway",
+			name: "custom Gateway reference alone still deploys bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true
 httpRoute:
   gatewayName: seed-gateway
   gatewayNamespace: kubermatic
 `,
-			want: true,
+			wantName:      "seed-gateway",
+			wantNamespace: "kubermatic",
+			wantExternal:  false,
 		},
 		{
-			name: "custom Gateway namespace uses external seed Gateway",
+			name: "explicit external Gateway signal skips bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true
 httpRoute:
+  externalGateway: true
   gatewayName: kubermatic
-  gatewayNamespace: seed-ingress
+  gatewayNamespace: kubermatic
 `,
-			want: true,
+			wantName:      "kubermatic",
+			wantNamespace: "kubermatic",
+			wantExternal:  true,
 		},
 		{
-			name: "Gateway API migration disabled",
+			name: "explicit external custom Gateway skips bundled seed Gateway controller",
 			values: `
-migrateGatewayAPI: false
+migrateGatewayAPI: true
 httpRoute:
+  externalGateway: true
   gatewayName: seed-gateway
   gatewayNamespace: seed-ingress
 `,
-			want: false,
+			wantName:      "seed-gateway",
+			wantNamespace: "seed-ingress",
+			wantExternal:  true,
+		},
+		{
+			name: "Gateway API migration disabled ignores external Gateway signal",
+			values: `
+migrateGatewayAPI: false
+httpRoute:
+  externalGateway: true
+  gatewayName: seed-gateway
+  gatewayNamespace: seed-ingress
+`,
+			wantName:      "kubermatic",
+			wantNamespace: "kubermatic",
+			wantExternal:  false,
 		},
 		{
 			name: "empty Gateway values deploy bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true
 `,
-			want: false,
+			wantName:      "kubermatic",
+			wantNamespace: "kubermatic",
+			wantExternal:  false,
 		},
 	}
 
@@ -86,9 +113,12 @@ migrateGatewayAPI: true
 				t.Fatalf("failed to load Helm values: %v", err)
 			}
 
-			_, got := seedExternalGatewayFromHTTPRouteValues(stack.DeployOptions{HelmValues: doc})
-			if got != tc.want {
-				t.Fatalf("seedExternalGatewayFromHTTPRouteValues() = %v, want %v", got, tc.want)
+			gateway, gotExternal := seedHTTPRouteGateway(stack.DeployOptions{HelmValues: doc})
+			if gotExternal != tc.wantExternal {
+				t.Fatalf("seedHTTPRouteGateway() external = %v, want %v", gotExternal, tc.wantExternal)
+			}
+			if gateway.Name != tc.wantName || gateway.Namespace != tc.wantNamespace {
+				t.Fatalf("seedHTTPRouteGateway() Gateway = %s, want %s/%s", gateway.String(), tc.wantNamespace, tc.wantName)
 			}
 		})
 	}

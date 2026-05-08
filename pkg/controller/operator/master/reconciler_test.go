@@ -86,9 +86,8 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 	}
 
 	var gateway gatewayapiv1.Gateway
-	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway)
-	if !apierrors.IsNotFound(err) {
-		t.Fatalf("expected operator-managed Gateway to be deleted, got %v", err)
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway); err != nil {
+		t.Fatalf("expected operator-managed Gateway to be preserved until external route is accepted, got %v", err)
 	}
 
 	var route gatewayapiv1.HTTPRoute
@@ -96,8 +95,8 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		t.Fatalf("expected HTTPRoute to be reconciled, got %v", err)
 	}
 
-	if len(route.Spec.ParentRefs) != 1 {
-		t.Fatalf("expected one parentRef, got %d", len(route.Spec.ParentRefs))
+	if len(route.Spec.ParentRefs) != 2 {
+		t.Fatalf("expected external and old managed parentRefs, got %d", len(route.Spec.ParentRefs))
 	}
 
 	parentRef := route.Spec.ParentRefs[0]
@@ -108,12 +107,162 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		t.Fatalf("expected HTTPRoute parent Gateway namespace networking, got %v", parentRef.Namespace)
 	}
 
+	oldParentRef := route.Spec.ParentRefs[1]
+	if oldParentRef.Name != gatewayapiv1.ObjectName(defaulting.DefaultGatewayName) {
+		t.Fatalf("expected old managed parentRef %s, got %s", defaulting.DefaultGatewayName, oldParentRef.Name)
+	}
+	if oldParentRef.Namespace == nil || string(*oldParentRef.Namespace) != namespace {
+		t.Fatalf("expected old managed parentRef namespace %s, got %v", namespace, oldParentRef.Namespace)
+	}
+
+	route.Status.Parents = []gatewayapiv1.RouteParentStatus{
+		{
+			ParentRef: parentRef,
+			Conditions: []metav1.Condition{
+				{
+					Type:               string(gatewayapiv1.RouteConditionAccepted),
+					Status:             metav1.ConditionTrue,
+					ObservedGeneration: route.Generation,
+				},
+			},
+		},
+	}
+	if err := client.Update(ctx, &route); err != nil {
+		t.Fatalf("failed to update HTTPRoute status: %v", err)
+	}
+
+	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+		t.Fatalf("expected no error after external route acceptance, got %v", err)
+	}
+
+	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway)
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected operator-managed Gateway to be deleted after external route acceptance, got %v", err)
+	}
+
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}, &route); err != nil {
+		t.Fatalf("expected HTTPRoute to remain reconciled, got %v", err)
+	}
+	if len(route.Spec.ParentRefs) != 1 {
+		t.Fatalf("expected one parentRef after migration, got %d", len(route.Spec.ParentRefs))
+	}
+	if route.Spec.ParentRefs[0].Name != parentRef.Name || route.Spec.ParentRefs[0].Namespace == nil || *route.Spec.ParentRefs[0].Namespace != *parentRef.Namespace {
+		t.Fatalf("expected HTTPRoute to reference external Gateway only, got %v", route.Spec.ParentRefs)
+	}
+	if len(route.Status.Parents) != 1 || route.Status.Parents[0].ParentRef.Name != parentRef.Name {
+		t.Fatalf("expected HTTPRoute status to contain only external parent status, got %v", route.Status.Parents)
+	}
+
 	var ns corev1.Namespace
 	if err := client.Get(ctx, types.NamespacedName{Name: namespace}, &ns); err != nil {
 		t.Fatalf("expected namespace to be reconciled, got %v", err)
 	}
 	if ns.Labels[common.GatewayAccessLabelKey] != "true" {
 		t.Fatalf("expected namespace label %q=true, got %q", common.GatewayAccessLabelKey, ns.Labels[common.GatewayAccessLabelKey])
+	}
+}
+
+func TestReconcileGatewayAPIResourcesKeepsManagedGatewayWhenExternalRouteRejected(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: namespace,
+			UID:       types.UID("test-uid"),
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	managedGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultGatewayName,
+			Namespace: namespace,
+		},
+	}
+	if err := controllerutil.SetControllerReference(cfg, managedGateway, scheme); err != nil {
+		t.Fatalf("failed to set controller reference: %v", err)
+	}
+
+	externalParentRef := gatewayapiv1.ParentReference{
+		Name:      "platform-gateway",
+		Namespace: &externalNamespace,
+	}
+	existingRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       defaulting.DefaultHTTPRouteName,
+			Namespace:  namespace,
+			Generation: 2,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{externalParentRef},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: externalParentRef,
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             metav1.ConditionFalse,
+								Reason:             "NotAllowedByListeners",
+								ObservedGeneration: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	externalGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "platform-gateway",
+			Namespace: "networking",
+		},
+	}
+
+	client := ctrlruntimefakeclient.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cfg, managedGateway, externalGateway, existingRoute).
+		Build()
+
+	r := &Reconciler{
+		Client:            client,
+		scheme:            scheme,
+		gatewayAPIEnabled: true,
+	}
+
+	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	var gateway gatewayapiv1.Gateway
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway); err != nil {
+		t.Fatalf("expected operator-managed Gateway to remain while external route is rejected, got %v", err)
+	}
+
+	var route gatewayapiv1.HTTPRoute
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}, &route); err != nil {
+		t.Fatalf("expected HTTPRoute to exist, got %v", err)
+	}
+	if len(route.Spec.ParentRefs) != 2 {
+		t.Fatalf("expected HTTPRoute to keep external and old managed parentRefs, got %v", route.Spec.ParentRefs)
 	}
 }
 
@@ -174,6 +323,146 @@ func TestReconcileGatewayAPIResourcesRejectsExternalDefaultManagedGateway(t *tes
 	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}, &route)
 	if !apierrors.IsNotFound(err) {
 		t.Fatalf("expected HTTPRoute not to be reconciled, got %v", err)
+	}
+}
+
+func TestReconcileGatewayAPIResourcesAllowsUnownedExternalDefaultGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: namespace,
+			UID:       types.UID("test-uid"),
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name: defaulting.DefaultGatewayName,
+					},
+				},
+			},
+		},
+	}
+
+	externalGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultGatewayName,
+			Namespace: namespace,
+		},
+	}
+
+	client := ctrlruntimefakeclient.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cfg, externalGateway).
+		Build()
+
+	r := &Reconciler{
+		Client:            client,
+		scheme:            scheme,
+		gatewayAPIEnabled: true,
+	}
+
+	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	var gateway gatewayapiv1.Gateway
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway); err != nil {
+		t.Fatalf("expected unowned external Gateway to remain, got %v", err)
+	}
+	if len(gateway.OwnerReferences) > 0 {
+		t.Fatalf("expected external Gateway ownership to remain untouched, got %v", gateway.OwnerReferences)
+	}
+
+	var route gatewayapiv1.HTTPRoute
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}, &route); err != nil {
+		t.Fatalf("expected HTTPRoute to be reconciled, got %v", err)
+	}
+	if len(route.Spec.ParentRefs) != 1 || route.Spec.ParentRefs[0].Name != gatewayapiv1.ObjectName(defaulting.DefaultGatewayName) {
+		t.Fatalf("expected HTTPRoute to reference default-named external Gateway, got %v", route.Spec.ParentRefs)
+	}
+}
+
+func TestReconcileGatewayAPIResourcesSwitchesBackToManagedGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: namespace,
+			UID:       types.UID("test-uid"),
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: defaulting.DefaultGatewayClassName,
+				},
+			},
+		},
+	}
+
+	existingRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaulting.DefaultHTTPRouteName,
+			Namespace: namespace,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayapiv1.ObjectName("platform-gateway"),
+						Namespace: &externalNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	client := ctrlruntimefakeclient.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cfg, existingRoute).
+		Build()
+
+	r := &Reconciler{
+		Client:            client,
+		scheme:            scheme,
+		gatewayAPIEnabled: true,
+	}
+
+	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	var gateway gatewayapiv1.Gateway
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway); err != nil {
+		t.Fatalf("expected managed Gateway to be recreated, got %v", err)
+	}
+	if !common.HasKubermaticConfigurationControllerOwnerReference(gateway.OwnerReferences, cfg) {
+		t.Fatalf("expected managed Gateway to have KubermaticConfiguration owner reference, got %v", gateway.OwnerReferences)
+	}
+
+	var route gatewayapiv1.HTTPRoute
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}, &route); err != nil {
+		t.Fatalf("expected HTTPRoute to exist, got %v", err)
+	}
+	if len(route.Spec.ParentRefs) != 1 {
+		t.Fatalf("expected one parentRef, got %d", len(route.Spec.ParentRefs))
+	}
+	parentRef := route.Spec.ParentRefs[0]
+	if parentRef.Name != gatewayapiv1.ObjectName(defaulting.DefaultGatewayName) {
+		t.Fatalf("expected HTTPRoute to reference managed Gateway %s, got %s", defaulting.DefaultGatewayName, parentRef.Name)
+	}
+	if parentRef.Namespace == nil || *parentRef.Namespace != gatewayapiv1.Namespace(namespace) {
+		t.Fatalf("expected HTTPRoute parent namespace %s, got %v", namespace, parentRef.Namespace)
 	}
 }
 

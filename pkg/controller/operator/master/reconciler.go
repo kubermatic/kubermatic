@@ -47,6 +47,7 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // Reconciler (re)stores all components required for running a Kubermatic
@@ -617,16 +618,49 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 	}
 
 	if config.Spec.Ingress.Gateway.UsesExternalGateway() {
-		if config.Spec.Ingress.Gateway.ExternalGateway.Name == defaulting.DefaultGatewayName && config.Spec.Ingress.Gateway.ExternalGatewayNamespace(config.Namespace) == config.Namespace {
-			return fmt.Errorf("spec.ingress.gateway.externalGateway must not reference the operator-managed default Gateway %s/%s", config.Namespace, defaulting.DefaultGatewayName)
+		if err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace); err != nil {
+			return err
 		}
+
+		managedGatewayExists, err := kubermatic.ManagedGatewayExists(ctx, r.Client, config, config.Namespace)
+		if err != nil {
+			return fmt.Errorf("failed to check operator-managed Gateway: %w", err)
+		}
+
+		if managedGatewayExists {
+			externalAccepted, err := kubermatic.HTTPRouteAcceptedByExternalGateway(ctx, r.Client, config, config.Namespace)
+			if err != nil {
+				return err
+			}
+
+			if !externalAccepted {
+				// Keep the old managed Gateway attached until the new parent is accepted.
+				// This avoids downtime when the external Gateway is missing, misconfigured,
+				// or not yet allowing routes from this namespace.
+				if err := kubermatic.EnsureHTTPRouteWithAdditionalParentRefs(ctx, r.Client, logger, config, config.Namespace, r.scheme, []gatewayapiv1.ParentReference{
+					kubermatic.DefaultGatewayParentReference(config.Namespace),
+				}); err != nil {
+					return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+				}
+
+				logger.Debug("Keeping operator-managed Gateway until HTTPRoute is accepted by external Gateway")
+				return nil
+			}
+		}
+
+		if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
+			return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+		}
+
 		if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config, config.Namespace); err != nil {
 			return fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
 		}
-	} else {
-		if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
-			return fmt.Errorf("failed to reconcile Gateway: %w", err)
-		}
+
+		return nil
+	}
+
+	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
+		return fmt.Errorf("failed to reconcile Gateway: %w", err)
 	}
 
 	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {

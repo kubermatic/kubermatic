@@ -26,8 +26,6 @@ import (
 	"github.com/distribution/reference"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -75,24 +73,7 @@ func validateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigura
 		}
 	}
 
-	if externalGatewayReferencesDefaultManagedGateway(gateway) {
-		allErrs = append(allErrs, field.Forbidden(externalGatewayPath, fmt.Sprintf("must not reference the operator-managed default Gateway %s/%s; use a distinct name or namespace", resources.KubermaticNamespace, defaulting.DefaultGatewayName)))
-	}
-
 	return allErrs
-}
-
-func externalGatewayReferencesDefaultManagedGateway(gateway *kubermaticv1.KubermaticGatewayConfiguration) bool {
-	if !gateway.UsesExternalGateway() || gateway.ExternalGateway.Name != defaulting.DefaultGatewayName {
-		return false
-	}
-
-	namespace := gateway.ExternalGateway.Namespace
-	if namespace == "" {
-		namespace = resources.KubermaticNamespace
-	}
-
-	return namespace == resources.KubermaticNamespace
 }
 
 func validateGatewayTLSConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {

@@ -132,7 +132,9 @@ func DeployGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 
 // EnsureGatewayAPICRDs creates missing Gateway API CRDs without replacing
 // existing CRDs. This is used in BYO Gateway mode where another Gateway
-// implementation may own the installed Gateway API CRDs.
+// implementation may own the installed Gateway API CRDs. It still reads the
+// CRD manifests from the bundled envoy-gateway-controller chart, so installer
+// chart bundles must include that chart even when its deployment is skipped.
 func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	if skipGatewayAPICRDs(logger, opt) {
 		return nil

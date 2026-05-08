@@ -20,11 +20,42 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestValidateHelmValuesPreservesIAPGatewayValues(t *testing.T) {
+func TestValidateConfigurationDefaultsSharedIAPGatewayValues(t *testing.T) {
+	doc := seedMLAIAPValues(t)
+
+	monitoringStack := &MonitoringStack{}
+	_, gotDoc, failures := monitoringStack.ValidateConfiguration(seedMLAExternalGatewayConfig(), doc, stack.DeployOptions{MLAIncludeIap: true}, logrus.New())
+	if len(failures) > 0 {
+		t.Fatalf("expected no validation failures, got %v", failures)
+	}
+
+	assertIAPGatewayValues(t, gotDoc, "platform-gateway", "networking")
+}
+
+func TestValidateConfigurationPreservesSeparateSeedIAPGatewayValues(t *testing.T) {
+	doc := seedMLAIAPValues(t)
+
+	monitoringStack := &MonitoringStack{}
+	_, gotDoc, failures := monitoringStack.ValidateConfiguration(seedMLAExternalGatewayConfig(), doc, stack.DeployOptions{MLAIncludeIap: true, SeparateSeed: true}, logrus.New())
+	if len(failures) > 0 {
+		t.Fatalf("expected no validation failures, got %v", failures)
+	}
+
+	assertIAPGatewayValues(t, gotDoc, "kubermatic", "kubermatic")
+}
+
+func seedMLAIAPValues(t *testing.T) *yamled.Document {
+	t.Helper()
+
 	doc, err := yamled.Load(strings.NewReader(`
 migrateGatewayAPI: true
 httpRoute:
@@ -43,18 +74,35 @@ iap:
 		t.Fatalf("failed to load Helm values: %v", err)
 	}
 
-	failures := validateHelmValues(doc, stack.DeployOptions{MLAIncludeIap: true})
-	if len(failures) > 0 {
-		t.Fatalf("expected no validation failures, got %v", failures)
+	return doc
+}
+
+func seedMLAExternalGatewayConfig() *kubermaticv1.KubermaticConfiguration {
+	return &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "kubermatic"},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
 	}
+}
+
+func assertIAPGatewayValues(t *testing.T, doc *yamled.Document, wantName, wantNamespace string) {
+	t.Helper()
 
 	gatewayName, _ := doc.GetString(yamled.Path{"httpRoute", "gatewayName"})
-	if gatewayName != "kubermatic" {
-		t.Fatalf("expected seed IAP Gateway name to remain kubermatic, got %s", gatewayName)
+	if gatewayName != wantName {
+		t.Fatalf("expected seed IAP Gateway name %s, got %s", wantName, gatewayName)
 	}
 
 	gatewayNamespace, _ := doc.GetString(yamled.Path{"httpRoute", "gatewayNamespace"})
-	if gatewayNamespace != "kubermatic" {
-		t.Fatalf("expected seed IAP Gateway namespace to remain kubermatic, got %s", gatewayNamespace)
+	if gatewayNamespace != wantNamespace {
+		t.Fatalf("expected seed IAP Gateway namespace %s, got %s", wantNamespace, gatewayNamespace)
 	}
 }

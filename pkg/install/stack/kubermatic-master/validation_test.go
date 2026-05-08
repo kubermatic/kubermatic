@@ -69,7 +69,7 @@ func TestValidateKubermaticConfigurationRejectsExternalGatewayWithoutName(t *tes
 	}
 }
 
-func TestValidateKubermaticConfigurationRejectsExternalGatewayDefaultManagedKey(t *testing.T) {
+func TestValidateKubermaticConfigurationAllowsExternalGatewayDefaultKey(t *testing.T) {
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: KubermaticOperatorNamespace,
@@ -89,13 +89,8 @@ func TestValidateKubermaticConfigurationRejectsExternalGatewayDefaultManagedKey(
 		},
 	}
 
-	failures := validateKubermaticConfiguration(cfg)
-	if len(failures) == 0 {
-		t.Fatal("expected validation failure")
-	}
-
-	if !strings.Contains(failures[0].Error(), "operator-managed default Gateway") {
-		t.Fatalf("expected default Gateway validation failure, got %v", failures)
+	if failures := validateKubermaticConfiguration(cfg); len(failures) > 0 {
+		t.Fatalf("expected default Gateway key to be statically valid, got %v", failures)
 	}
 }
 
@@ -379,6 +374,74 @@ func TestIsGatewayOwnedByKubermaticConfiguration(t *testing.T) {
 	}
 	if isGatewayOwnedByKubermaticConfiguration(gw, cfg) {
 		t.Fatal("expected Gateway without KubermaticConfiguration controller owner reference not to be recognized as operator-owned")
+	}
+}
+
+func TestCleanupGatewayAPIResourcesRespectsHTTPRouteOwnership(t *testing.T) {
+	ctx := context.Background()
+	controller := true
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: KubermaticOperatorNamespace,
+			UID:       types.UID("test-uid"),
+		},
+	}
+
+	testCases := []struct {
+		name       string
+		ownerRefs  []metav1.OwnerReference
+		wantExists bool
+	}{
+		{
+			name:       "leaves unowned HTTPRoute",
+			wantExists: true,
+		},
+		{
+			name: "deletes operator-owned HTTPRoute",
+			ownerRefs: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       cfg.Name,
+					UID:        cfg.UID,
+					Controller: &controller,
+				},
+			},
+			wantExists: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			routeName := types.NamespacedName{Namespace: cfg.Namespace, Name: defaulting.DefaultHTTPRouteName}
+			route := &gatewayapiv1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            routeName.Name,
+					Namespace:       routeName.Namespace,
+					OwnerReferences: tc.ownerRefs,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithObjects(route).Build()
+			if err := cleanupGatewayAPIResources(ctx, logrus.NewEntry(logrus.New()), client, cfg); err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			var fetched gatewayapiv1.HTTPRoute
+			err := client.Get(ctx, routeName, &fetched)
+			if tc.wantExists {
+				if err != nil {
+					t.Fatalf("expected HTTPRoute to remain, got %v", err)
+				}
+				return
+			}
+
+			if !apierrors.IsNotFound(err) {
+				t.Fatalf("expected HTTPRoute to be deleted, got %v", err)
+			}
+		})
 	}
 }
 

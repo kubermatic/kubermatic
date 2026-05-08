@@ -482,9 +482,11 @@ type KubermaticIngressConfiguration struct {
 type KubermaticGatewayConfiguration struct {
 	// ExternalGateway references a user-managed Gateway. When configured,
 	// kubermatic-operator does not create the default Gateway and only points
-	// managed HTTPRoutes at this Gateway. The reference must not resolve to the
-	// operator-managed default Gateway. ClassName, InfrastructureAnnotations,
-	// and TLS are ignored when this field is set.
+	// managed HTTPRoutes at this Gateway. The reference must not resolve to an
+	// operator-managed Gateway. A Gateway with a KubermaticConfiguration controller
+	// ownerReference is considered operator-managed; remove stale ownerReferences
+	// before reusing a former managed Gateway as external. ClassName,
+	// InfrastructureAnnotations, and TLS are ignored when this field is set.
 	ExternalGateway *KubermaticExternalGatewayReference `json:"externalGateway,omitempty"`
 
 	// ClassName is the GatewayClass to use.
