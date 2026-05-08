@@ -28,6 +28,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -41,7 +42,6 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,6 +74,7 @@ const (
 
 var (
 	// Tests override these to avoid waiting on the production Gateway API timeout.
+	// Do not run tests that mutate these values with t.Parallel().
 	gatewayAPIReadinessPollInterval = 3 * time.Second
 	gatewayAPIReadinessTimeout      = 10 * time.Minute
 )
@@ -555,26 +556,40 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		return errors.New("kubermatic configuration is nil")
 	}
 
-	l.Info("Waiting Gateway to be ready...")
-	_, err := waitForGateway(ctx, l, c, config)
+	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
+	dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+
+	legacyIngressExists, err := ingressExists(ctx, c, kubermaticIngressName)
 	if err != nil {
-		l.Errorf("failed to wait for Gateway to be ready, err: %v", err)
 		return err
+	}
+	if !legacyIngressExists && !slices.Contains(opt.SkipCharts, DexChartName) {
+		legacyIngressExists, err = ingressExists(ctx, c, dexIngressName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if legacyIngressExists {
+		l.Info("Waiting for Gateway to be ready...")
+		_, err := waitForGateway(ctx, l, c, config)
+		if err != nil {
+			l.Errorf("failed to wait for Gateway to be ready, err: %v", err)
+			return err
+		}
+	} else {
+		l.Debug("No legacy Ingress resources found, skipping Gateway readiness wait")
 	}
 
 	gatewayName := gatewayObjectKey(config)
 	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
-		types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName},
+		kubermaticIngressName,
 		types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName},
 		gatewayName,
 	); err != nil {
 		return err
 	}
 
-	const (
-		dexNs = "dex"
-		dex   = "dex"
-	)
 	if slices.Contains(opt.SkipCharts, DexChartName) {
 		l.Info("Skipping Dex Ingress cleanup because the Dex chart is skipped")
 		return nil
@@ -583,8 +598,8 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 	// Dex is installed as a separate Helm chart, so its HTTPRoute Gateway target can
 	// be overridden via Helm values instead of following only the KubermaticConfiguration.
 	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
-		types.NamespacedName{Namespace: dexNs, Name: dex},
-		types.NamespacedName{Namespace: dexNs, Name: dex},
+		dexIngressName,
+		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
 		dexGatewayObjectKey(config, opt),
 	); err != nil {
 		return err
@@ -595,6 +610,18 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 
 func dexGatewayObjectKey(config *kubermaticv1.KubermaticConfiguration, opt stack.DeployOptions) types.NamespacedName {
 	return common.MasterHTTPRouteGatewayReference(config, opt.HelmValues)
+}
+
+func ingressExists(ctx context.Context, kubeClient ctrlruntimeclient.Client, ingressName types.NamespacedName) (bool, error) {
+	ingress := &networkingv1.Ingress{}
+	if err := kubeClient.Get(ctx, ingressName, ingress); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get Ingress %s: %w", ingressName.String(), err)
+	}
+
+	return true, nil
 }
 
 func deleteIngressAfterHTTPRouteReady(
@@ -636,12 +663,12 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 			return false, nil
 		}
 
-		if !httpRouteReferencesGateway(&route, gatewayName) {
+		if !gatewayutil.HTTPRouteReferencesGateway(&route, gatewayName) {
 			l.Debug("HTTPRoute does not reference the active Gateway yet")
 			return false, nil
 		}
 
-		if !httpRouteAcceptedByGateway(&route, gatewayName) {
+		if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayName) {
 			l.Debug("HTTPRoute has not been accepted by the active Gateway yet")
 			return false, nil
 		}
@@ -654,50 +681,6 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 	}
 
 	return &route, nil
-}
-
-func httpRouteReferencesGateway(route *gatewayapiv1.HTTPRoute, gatewayName types.NamespacedName) bool {
-	for _, parentRef := range route.Spec.ParentRefs {
-		if parentReferenceMatchesGateway(route.Namespace, parentRef, gatewayName) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func httpRouteAcceptedByGateway(route *gatewayapiv1.HTTPRoute, gatewayName types.NamespacedName) bool {
-	for _, parentStatus := range route.Status.Parents {
-		if !parentReferenceMatchesGateway(route.Namespace, parentStatus.ParentRef, gatewayName) {
-			continue
-		}
-
-		accepted := meta.FindStatusCondition(parentStatus.Conditions, string(gatewayapiv1.RouteConditionAccepted))
-		if accepted != nil && accepted.Status == metav1.ConditionTrue && accepted.ObservedGeneration >= route.Generation {
-			return true
-		}
-	}
-
-	return false
-}
-
-func parentReferenceMatchesGateway(routeNamespace string, parentRef gatewayapiv1.ParentReference, gatewayName types.NamespacedName) bool {
-	if parentRef.Group != nil && string(*parentRef.Group) != gatewayapiv1.GroupName {
-		return false
-	}
-	if parentRef.Kind != nil && string(*parentRef.Kind) != "Gateway" {
-		return false
-	}
-	if string(parentRef.Name) != gatewayName.Name {
-		return false
-	}
-
-	parentNamespace := routeNamespace
-	if parentRef.Namespace != nil {
-		parentNamespace = string(*parentRef.Namespace)
-	}
-
-	return parentNamespace == gatewayName.Namespace
 }
 
 // waitForGateway waits for the Gateway to be Programmed. Operator-managed
@@ -728,7 +711,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 			return false, nil
 		}
 
-		if config.Spec.Ingress.Gateway.UsesExternalGateway() && operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, nil) {
+		if config.Spec.Ingress.Gateway.UsesExternalGateway() && operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, config) {
 			l.Debug("External Gateway reference resolves to an operator-owned Gateway")
 			return false, nil
 		}

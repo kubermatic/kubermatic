@@ -52,6 +52,11 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 	return allErrs
 }
 
+// ValidateExternalGatewayConfiguration validates spec.ingress.gateway.externalGateway.
+func ValidateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
+	return validateExternalGatewayConfiguration(spec)
+}
+
 func validateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
 

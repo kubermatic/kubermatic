@@ -34,7 +34,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -316,25 +315,6 @@ func DefaultGatewayParentReference(namespace string) gatewayapiv1.ParentReferenc
 	}
 }
 
-func parentReferenceMatchesGateway(routeNamespace string, parentRef gatewayapiv1.ParentReference, gatewayName types.NamespacedName) bool {
-	if parentRef.Group != nil && string(*parentRef.Group) != gatewayapiv1.GroupName {
-		return false
-	}
-	if parentRef.Kind != nil && string(*parentRef.Kind) != "Gateway" {
-		return false
-	}
-	if string(parentRef.Name) != gatewayName.Name {
-		return false
-	}
-
-	parentNamespace := routeNamespace
-	if parentRef.Namespace != nil {
-		parentNamespace = string(*parentRef.Namespace)
-	}
-
-	return parentNamespace == gatewayName.Namespace
-}
-
 func appendParentReferenceIfMissing(routeNamespace string, parentRefs []gatewayapiv1.ParentReference, parentRef gatewayapiv1.ParentReference) []gatewayapiv1.ParentReference {
 	gatewayKey := types.NamespacedName{Name: string(parentRef.Name), Namespace: routeNamespace}
 	if parentRef.Namespace != nil {
@@ -342,7 +322,7 @@ func appendParentReferenceIfMissing(routeNamespace string, parentRefs []gatewaya
 	}
 
 	for _, existing := range parentRefs {
-		if parentReferenceMatchesGateway(routeNamespace, existing, gatewayKey) {
+		if gatewayutil.ParentReferenceMatchesGateway(routeNamespace, existing, gatewayKey) {
 			return parentRefs
 		}
 	}
@@ -376,18 +356,7 @@ func HTTPRouteAcceptedByExternalGateway(
 	}
 
 	gatewayKey := externalGatewayKey(cfg, namespace)
-	for _, parentStatus := range route.Status.Parents {
-		if !parentReferenceMatchesGateway(route.Namespace, parentStatus.ParentRef, gatewayKey) {
-			continue
-		}
-
-		accepted := meta.FindStatusCondition(parentStatus.Conditions, string(gatewayapiv1.RouteConditionAccepted))
-		if accepted != nil && accepted.Status == metav1.ConditionTrue && accepted.ObservedGeneration >= route.Generation {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayKey), nil
 }
 
 // gatewayComparable holds the fields used to detect meaningful changes between
@@ -467,7 +436,7 @@ func EnsureExternalGatewayNotOperatorOwned(
 		return fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
 	}
 
-	if common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, nil) {
+	if common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, cfg) {
 		return fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
 	}
 

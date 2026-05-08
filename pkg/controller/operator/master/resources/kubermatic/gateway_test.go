@@ -577,6 +577,7 @@ func TestGatewayReconcilerPreservesUnmanagedInfrastructureFields(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo
 func TestHTTPRouteReconciler(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -989,6 +990,67 @@ func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T)
 
 			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected Gateway to be deleted, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestEnsureExternalGatewayNotOperatorOwnedOnlyRejectsCurrentConfigurationOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	tests := []struct {
+		name      string
+		ownerUID  types.UID
+		wantError bool
+	}{
+		{
+			name:      "rejects current KubermaticConfiguration owner",
+			ownerUID:  cfg.UID,
+			wantError: true,
+		},
+		{
+			name:     "allows other KubermaticConfiguration owner",
+			ownerUID: types.UID("other-config-uid"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+							UID:        tt.ownerUID,
+							Controller: ptr.To(true),
+						},
+					},
+				},
+			}
+
+			client := fake.NewClientBuilder().WithObjects(existing).Build()
+			err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+			if tt.wantError && err == nil {
+				t.Fatal("expected error")
+			}
+			if !tt.wantError && err != nil {
+				t.Fatalf("expected no error, got: %v", err)
 			}
 		})
 	}

@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
@@ -40,9 +39,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	configvalidation "k8c.io/kubermatic/v2/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
-	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 func (*MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
@@ -263,18 +262,8 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
 	}
 
-	if gateway := config.Spec.Ingress.Gateway; gateway != nil && gateway.ExternalGateway != nil {
-		if gateway.ExternalGateway.Name == "" {
-			failures = append(failures, errors.New("spec.ingress.gateway.externalGateway.name cannot be left empty when externalGateway is configured"))
-		} else if errs := k8svalidation.IsDNS1123Subdomain(gateway.ExternalGateway.Name); len(errs) > 0 {
-			failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway.name is invalid: %s", strings.Join(errs, "; ")))
-		}
-
-		if gateway.ExternalGateway.Namespace != "" {
-			if errs := k8svalidation.IsDNS1123Label(gateway.ExternalGateway.Namespace); len(errs) > 0 {
-				failures = append(failures, fmt.Errorf("spec.ingress.gateway.externalGateway.namespace is invalid: %s", strings.Join(errs, "; ")))
-			}
-		}
+	for _, err := range configvalidation.ValidateExternalGatewayConfiguration(&config.Spec) {
+		failures = append(failures, err)
 	}
 
 	// only validate auth-related keys if we are not setting up a headless system

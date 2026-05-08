@@ -445,66 +445,6 @@ func TestCleanupGatewayAPIResourcesRespectsHTTPRouteOwnership(t *testing.T) {
 	}
 }
 
-func TestHTTPRouteReadinessForGateway(t *testing.T) {
-	gatewayName := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
-	gatewayNamespace := gatewayapiv1.Namespace(gatewayName.Namespace)
-
-	route := &gatewayapiv1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       "kubermatic",
-			Namespace:  "kubermatic",
-			Generation: 2,
-		},
-		Spec: gatewayapiv1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
-				ParentRefs: []gatewayapiv1.ParentReference{
-					{
-						Name:      gatewayapiv1.ObjectName(gatewayName.Name),
-						Namespace: &gatewayNamespace,
-					},
-				},
-			},
-		},
-		Status: gatewayapiv1.HTTPRouteStatus{
-			RouteStatus: gatewayapiv1.RouteStatus{
-				Parents: []gatewayapiv1.RouteParentStatus{
-					{
-						ParentRef: gatewayapiv1.ParentReference{
-							Name:      gatewayapiv1.ObjectName(gatewayName.Name),
-							Namespace: &gatewayNamespace,
-						},
-						Conditions: []metav1.Condition{
-							{
-								Type:               string(gatewayapiv1.RouteConditionAccepted),
-								Status:             metav1.ConditionTrue,
-								ObservedGeneration: 2,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	if !httpRouteReferencesGateway(route, gatewayName) {
-		t.Fatal("expected HTTPRoute to reference the active Gateway")
-	}
-	if !httpRouteAcceptedByGateway(route, gatewayName) {
-		t.Fatal("expected HTTPRoute to be accepted by the active Gateway")
-	}
-
-	route.Status.Parents[0].Conditions[0].ObservedGeneration = 1
-	if httpRouteAcceptedByGateway(route, gatewayName) {
-		t.Fatal("expected stale HTTPRoute Accepted condition not to be ready")
-	}
-
-	route.Status.Parents[0].Conditions[0].ObservedGeneration = 2
-	route.Status.Parents[0].ParentRef.Name = "other-gateway"
-	if httpRouteAcceptedByGateway(route, gatewayName) {
-		t.Fatal("expected HTTPRoute status for another Gateway not to be ready")
-	}
-}
-
 func TestDeleteIngressAfterHTTPRouteReady(t *testing.T) {
 	ctx := context.Background()
 	gatewayName := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
@@ -670,6 +610,32 @@ func TestCleanupIngressSkipsDexWhenDexChartIsSkipped(t *testing.T) {
 	var fetchedDexIngress networkingv1.Ingress
 	if err := client.Get(ctx, dexIngressName, &fetchedDexIngress); err != nil {
 		t.Fatalf("expected skipped Dex Ingress to remain, got %v", err)
+	}
+}
+
+func TestCleanupIngressSkipsGatewayWaitWhenNoLegacyIngressExists(t *testing.T) {
+	ctx := context.Background()
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: KubermaticOperatorNamespace,
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().Build()
+	if err := cleanupIngress(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		KubermaticConfiguration: cfg,
+	}); err != nil {
+		t.Fatalf("expected cleanup without legacy Ingress to skip Gateway wait, got %v", err)
 	}
 }
 
