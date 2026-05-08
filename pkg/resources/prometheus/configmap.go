@@ -422,7 +422,7 @@ scrape_configs:
 # - job_name: nodes
 #   scheme: https
 #   tls_config:
-# { {  .ApiserverTLSConfig | indent 4 } } 
+# { {  .ApiserverTLSConfig | indent 4 } }
 #
 #   kubernetes_sd_configs:
 #   - role: node
