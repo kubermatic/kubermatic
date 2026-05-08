@@ -270,14 +270,36 @@ scrape_configs:
   # drop very expensive apiserver metrics
   metric_relabel_configs:
   - source_labels: [__name__]
-    regex: 'apiserver_request_(duration|latencies)_.*'
+    regex: 'apiserver_request_(duration|latencies|body|filter|sli)_.*'
     action: drop
   - source_labels: [__name__]
     regex: 'apiserver_response_sizes_.*'
     action: drop
+  - source_labels: [__name__]
+    regex: 'apiserver_watch.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'aggregator_.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: '(apiextensions|rest_client)_.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'etcd_request_duration_.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'etcd_requests_total'
+    action: drop
+  - source_labels: [__name__]
+    regex: '(apiserver_request_total|scheduler_plugin_execution_duration_seconds_bucket|etcd_requests_total)'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'workqueue_.*'
+    action: drop
 
-# scrape other cluster control plane components, like kube-state-metrics, DNS resolver,
-# machine-controller etcd.
+# scrape other cluster control plane components,
+# except kube-state-metrics (handled separately below), DNS resolver,
+# machine-controller, etcd etc.
 - job_name: control-plane-pods
   kubernetes_sd_configs:
   - role: pod
@@ -286,8 +308,9 @@ scrape_configs:
       - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_init]
-    regex: "kube-state-metrics;true"
+  # EXCLUDE kube-state-metrics from this job so that it is not scraped twice
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    regex: "kube-state-metrics"
     action: drop
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     action: keep
@@ -311,6 +334,50 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+
+# Dedicated, highly-filtered job for KSM
+- job_name: kube-state-metrics
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_init]
+    regex: "kube-state-metrics;true"
+    action: drop
+  # Filter for ONLY the kube-state-metrics pod, main container
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    regex: 'kube-state-metrics'
+    action: keep
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - target_label: job
+    replacement: 'kube-state-metrics'
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+
+  metric_relabel_configs:
+  # Drop everything else except the explicitly mentioned
+  - source_labels: [__name__]
+    regex: '^(up|kube_node_info|kube_node_status_condition)$'
+    action: keep
+
 
 {{- if .TemplateData.IsKonnectivityEnabled }}
 # scrape Konnectivity server metrics from apiserver pods
@@ -350,27 +417,28 @@ scrape_configs:
 #######################################################################
 # These rules will scrape pods running inside the user cluster itself.
 
+# Note: Node scraping is commented since its already scraped by "kubelet" job
 # scrape node metrics
-- job_name: nodes
-  scheme: https
-  tls_config:
-{{ .ApiserverTLSConfig | indent 4 }}
-
-  kubernetes_sd_configs:
-  - role: node
-    api_server: 'https://{{ .APIServerHost }}'
-    tls_config:
-{{ .ApiserverTLSConfig | indent 6 }}
-
-  relabel_configs:
-  - action: labelmap
-    regex: __meta_kubernetes_node_label_(.+)
-  - target_label: __address__
-    replacement: '{{ .APIServerHost }}'
-  - source_labels: [__meta_kubernetes_node_name]
-    regex: (.+)
-    target_label: __metrics_path__
-    replacement: /api/v1/nodes/${1}/proxy/metrics
+# - job_name: nodes
+#   scheme: https
+#   tls_config:
+# { {  .ApiserverTLSConfig | indent 4 } } 
+#
+#   kubernetes_sd_configs:
+#   - role: node
+#     api_server: 'https: / / {  { .APIServerHost  } }'
+#     tls_config:
+# { {  .ApiserverTLSConfig | indent 6 } }
+#
+#   relabel_configs:
+#   - action: labelmap
+#     regex: __meta_kubernetes_node_label_(.+)
+#   - target_label: __address__
+#     replacement: ' { { .APIServerHost } } '
+#   - source_labels: [__meta_kubernetes_node_name]
+#     regex: (.+)
+#     target_label: __metrics_path__
+#     replacement: /api/v1/nodes/${1}/proxy/metrics
 
 # scrape node cadvisor
 - job_name: cadvisor
@@ -393,6 +461,11 @@ scrape_configs:
     regex: (.+)
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+  metric_relabel_configs:
+    # Currently we need ONLY up metric and nothing else
+    - source_labels: [__name__]
+      regex: 'up'
+      action: keep
 
 # scrape pods inside the user cluster with a special annotation
 - job_name: 'user-cluster-pods'
@@ -449,6 +522,19 @@ scrape_configs:
     regex: (.+)
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics
+  metric_relabel_configs:
+  - source_labels: [__name__]
+    regex: '(storage_operation|volume_operation|kubelet_runtime_operations)_.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'kubernetes_feature_enabled'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'csi_operations_.*'
+    action: drop
+  - source_labels: [__name__]
+    regex: 'kubelet_.*'
+    action: drop
 
 - job_name: resources
   scheme: https
