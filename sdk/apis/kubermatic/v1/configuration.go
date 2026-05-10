@@ -525,7 +525,7 @@ type KubermaticExternalGatewayReference struct {
 	// Name is the name of the Gateway.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
-	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	Name string `json:"name"`
 	// Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.
 	// +kubebuilder:validation:MaxLength=63

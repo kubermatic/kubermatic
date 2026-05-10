@@ -305,33 +305,51 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 		},
 	}
 
-	gw := &gatewayapiv1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "platform-gateway",
-			Namespace: "networking",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       "KubermaticConfiguration",
-					Name:       "kubermatic",
-					UID:        types.UID("test-uid"),
-					Controller: ptr.To(true),
-				},
-			},
+	tests := []struct {
+		name     string
+		ownerUID types.UID
+	}{
+		{
+			name:     "current owner",
+			ownerUID: cfg.UID,
 		},
-		Status: gatewayapiv1.GatewayStatus{
-			Conditions: []metav1.Condition{
-				{
-					Type:   string(gatewayapiv1.GatewayConditionProgrammed),
-					Status: metav1.ConditionTrue,
-				},
-			},
+		{
+			name:     "stale owner",
+			ownerUID: types.UID("other-config-uid"),
 		},
 	}
 
-	client := fake.NewClientBuilder().WithObjects(gw).Build()
-	if _, err := waitForGateway(ctx, logrus.NewEntry(logrus.New()), client, cfg); err == nil {
-		t.Fatal("expected operator-owned external Gateway not to be accepted")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gw := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+							UID:        tt.ownerUID,
+							Controller: ptr.To(true),
+						},
+					},
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			}
+
+			client := fake.NewClientBuilder().WithObjects(gw).Build()
+			if _, err := waitForGateway(ctx, logrus.NewEntry(logrus.New()), client, cfg); err == nil {
+				t.Fatal("expected operator-owned external Gateway not to be accepted")
+			}
+		})
 	}
 }
 
@@ -636,6 +654,97 @@ func TestCleanupIngressSkipsGatewayWaitWhenNoLegacyIngressExists(t *testing.T) {
 		KubermaticConfiguration: cfg,
 	}); err != nil {
 		t.Fatalf("expected cleanup without legacy Ingress to skip Gateway wait, got %v", err)
+	}
+}
+
+func TestCleanupIngressWaitsForDexOverrideGateway(t *testing.T) {
+	ctx := context.Background()
+	previousPollInterval := gatewayAPIReadinessPollInterval
+	previousTimeout := gatewayAPIReadinessTimeout
+	gatewayAPIReadinessPollInterval = time.Millisecond
+	gatewayAPIReadinessTimeout = 10 * time.Millisecond
+	t.Cleanup(func() {
+		gatewayAPIReadinessPollInterval = previousPollInterval
+		gatewayAPIReadinessTimeout = previousTimeout
+	})
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: KubermaticOperatorNamespace,
+		},
+	}
+
+	doc, err := yamled.Load(strings.NewReader(`
+migrateGatewayAPI: true
+httpRoute:
+  gatewayName: dex-gateway
+  gatewayNamespace: dex-networking
+`))
+	if err != nil {
+		t.Fatalf("failed to load Helm values: %v", err)
+	}
+
+	dexGatewayName := types.NamespacedName{Namespace: "dex-networking", Name: "dex-gateway"}
+	dexGatewayNamespace := gatewayapiv1.Namespace(dexGatewayName.Namespace)
+	dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+	dexIngress := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dexIngressName.Name,
+			Namespace: dexIngressName.Namespace,
+		},
+	}
+	dexRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       dexIngressName.Name,
+			Namespace:  dexIngressName.Namespace,
+			Generation: 1,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayapiv1.ObjectName(dexGatewayName.Name),
+						Namespace: &dexGatewayNamespace,
+					},
+				},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: gatewayapiv1.ParentReference{
+							Name:      gatewayapiv1.ObjectName(dexGatewayName.Name),
+							Namespace: &dexGatewayNamespace,
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             metav1.ConditionTrue,
+								ObservedGeneration: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(dexIngress, dexRoute).Build()
+	err = cleanupIngress(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		KubermaticConfiguration: cfg,
+		HelmValues:              doc,
+	})
+	if err == nil {
+		t.Fatal("expected cleanup to wait for the Dex Gateway")
+	}
+	if !strings.Contains(err.Error(), dexGatewayName.String()) {
+		t.Fatalf("expected error to mention Dex Gateway %s, got %v", dexGatewayName.String(), err)
+	}
+
+	var fetched networkingv1.Ingress
+	if err := client.Get(ctx, dexIngressName, &fetched); err != nil {
+		t.Fatalf("expected Dex Ingress to remain while Dex Gateway is not ready, got %v", err)
 	}
 }
 

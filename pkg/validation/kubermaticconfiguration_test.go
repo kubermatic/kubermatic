@@ -403,6 +403,21 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			valid: true,
 		},
 		{
+			name: "external gateway name with dots is valid",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform.gateway",
+							Namespace: "networking",
+						},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
 			name: "external gateway using default key with explicit namespace is statically valid",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{

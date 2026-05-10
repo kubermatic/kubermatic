@@ -701,7 +701,7 @@ spec:
                               description: Name is the name of the Gateway.
                               maxLength: 253
                               minLength: 1
-                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                               type: string
                             namespace:
                               description: Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.

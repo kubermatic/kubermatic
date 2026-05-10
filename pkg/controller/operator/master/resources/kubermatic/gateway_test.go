@@ -35,6 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -995,7 +996,7 @@ func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T)
 	}
 }
 
-func TestEnsureExternalGatewayNotOperatorOwnedOnlyRejectsCurrentConfigurationOwner(t *testing.T) {
+func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerOwner(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 
@@ -1011,18 +1012,47 @@ func TestEnsureExternalGatewayNotOperatorOwnedOnlyRejectsCurrentConfigurationOwn
 	})
 
 	tests := []struct {
-		name      string
-		ownerUID  types.UID
-		wantError bool
+		name            string
+		ownerReferences []metav1.OwnerReference
+		wantError       bool
 	}{
 		{
-			name:      "rejects current KubermaticConfiguration owner",
-			ownerUID:  cfg.UID,
+			name: "rejects current KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        cfg.UID,
+					Controller: ptr.To(true),
+				},
+			},
 			wantError: true,
 		},
 		{
-			name:     "allows other KubermaticConfiguration owner",
-			ownerUID: types.UID("other-config-uid"),
+			name: "rejects stale KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("other-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			wantError: true,
+		},
+		{
+			name: "allows non-controller KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("other-config-uid"),
+					Controller: ptr.To(false),
+				},
+			},
 		},
 	}
 
@@ -1030,17 +1060,9 @@ func TestEnsureExternalGatewayNotOperatorOwnedOnlyRejectsCurrentConfigurationOwn
 		t.Run(tt.name, func(t *testing.T) {
 			existing := &gatewayapiv1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "platform-gateway",
-					Namespace: "networking",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       "KubermaticConfiguration",
-							Name:       "kubermatic",
-							UID:        tt.ownerUID,
-							Controller: ptr.To(true),
-						},
-					},
+					Name:            "platform-gateway",
+					Namespace:       "networking",
+					OwnerReferences: tt.ownerReferences,
 				},
 			}
 
@@ -1051,6 +1073,138 @@ func TestEnsureExternalGatewayNotOperatorOwnedOnlyRejectsCurrentConfigurationOwn
 			}
 			if !tt.wantError && err != nil {
 				t.Fatalf("expected no error, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestHTTPRouteAcceptedByExternalGatewayRequiresProgrammedGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	route := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       httpRouteName,
+			Namespace:  namespace,
+			Generation: 2,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "platform-gateway",
+						Namespace: &externalNamespace,
+					},
+				},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: gatewayapiv1.ParentReference{
+							Name:      "platform-gateway",
+							Namespace: &externalNamespace,
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             metav1.ConditionTrue,
+								ObservedGeneration: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		gateway *gatewayapiv1.Gateway
+		want    bool
+	}{
+		{
+			name: "missing Gateway is not ready",
+		},
+		{
+			name: "unprogrammed Gateway is not ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+		{
+			name: "deleting Gateway is not ready",
+			gateway: func() *gatewayapiv1.Gateway {
+				deletionTime := metav1.Now()
+				return &gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "platform-gateway",
+						Namespace:         "networking",
+						DeletionTimestamp: &deletionTime,
+						Finalizers:        []string{"test/finalizer"},
+					},
+					Status: gatewayapiv1.GatewayStatus{
+						Conditions: []metav1.Condition{
+							{
+								Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+								Status: metav1.ConditionTrue,
+							},
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name: "programmed Gateway is ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{route.DeepCopy()}
+			if tt.gateway != nil {
+				objects = append(objects, tt.gateway)
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
+			got, err := HTTPRouteAcceptedByExternalGateway(ctx, client, cfg, namespace)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("HTTPRouteAcceptedByExternalGateway() = %v, want %v", got, tt.want)
 			}
 		})
 	}

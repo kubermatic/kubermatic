@@ -19,6 +19,7 @@ package master
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -49,6 +50,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+const externalGatewayReadinessRequeueAfter = 30 * time.Second
 
 // Reconciler (re)stores all components required for running a Kubermatic
 // master cluster.
@@ -89,104 +92,109 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	logger := r.log.With("config", identifier)
 
-	err = r.reconcile(ctx, config, logger)
+	result, err := r.reconcile(ctx, config, logger)
 	if err != nil {
 		r.recorder.Eventf(config, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
-	return reconcile.Result{}, err
+	return result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (reconcile.Result, error) {
 	logger.Debug("Reconciling Kubermatic configuration")
+	result := reconcile.Result{}
 
 	// config was deleted, let's clean up
 	if config.DeletionTimestamp != nil {
-		return r.cleanupDeletedConfiguration(ctx, config, logger)
+		return result, r.cleanupDeletedConfiguration(ctx, config, logger)
 	}
 
 	// ensure we always have a cleanup finalizer
 	if err := kubernetes.TryAddFinalizer(ctx, r, config, common.CleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add finalizer: %w", err)
+		return result, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// patching the config will refresh the object, so any attempts to set the default values
 	// before calling Patch() are pointless, as the defaults would be gone after the call
 	defaulted, err := defaulting.DefaultConfiguration(config, logger)
 	if err != nil {
-		return fmt.Errorf("failed to apply defaults: %w", err)
+		return result, fmt.Errorf("failed to apply defaults: %w", err)
 	}
 
 	if err := r.reconcileCRDs(ctx, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileServiceAccounts(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileRoles(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileRoleBindings(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileClusterRoles(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileClusterRoleBindings(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, defaulted, logger); err != nil {
-		return err
+	gatewayResult, err := r.reconcileGatewayAPIResources(ctx, defaulted, logger)
+	if err != nil {
+		return result, err
+	}
+	if gatewayResult.Requeue || gatewayResult.RequeueAfter > 0 {
+		result = gatewayResult
 	}
 
 	if err := r.reconcileSecrets(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileConfigMaps(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileDeployments(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcilePodDisruptionBudgets(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileServices(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileIngresses(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileValidatingWebhooks(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileMutatingWebhooks(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileAddonConfigs(ctx, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileApplicationDefinitions(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	if err := r.reconcileApplicationCatalog(ctx, defaulted, logger); err != nil {
-		return err
+		return result, err
 	}
 
 	// Since the new standalone webhook, the old service is not required anymore.
@@ -196,11 +204,11 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	// Clean up application catalog manager resources if feature gate is disabled
 	if !defaulted.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
 		if err := r.cleanupApplicationCatalogManagerResources(ctx, defaulted, logger); err != nil {
-			return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
+			return result, fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
@@ -596,15 +604,15 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 	return nil
 }
 
-func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (reconcile.Result, error) {
 	if !r.gatewayAPIEnabled {
 		logger.Debug("Skipping Gateway API resources creation because Gateway API is not enabled via --enable-gateway-api flag")
-		return nil
+		return reconcile.Result{}, nil
 	}
 
 	if config.Spec.FeatureGates[features.HeadlessInstallation] {
 		logger.Debug("Headless installation requested, skipping.")
-		return nil
+		return reconcile.Result{}, nil
 	}
 
 	logger.Debug("Reconciling Gateway API resources, Gateways and HTTPRoutes")
@@ -614,23 +622,23 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 		kubermatic.NamespaceReconciler(config.Namespace),
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, namespaceReconcilers, "", r.Client); err != nil {
-		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
 	if config.Spec.Ingress.Gateway.UsesExternalGateway() {
 		if err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace); err != nil {
-			return err
+			return reconcile.Result{}, err
 		}
 
 		managedGatewayExists, err := kubermatic.ManagedGatewayExists(ctx, r.Client, config, config.Namespace)
 		if err != nil {
-			return fmt.Errorf("failed to check operator-managed Gateway: %w", err)
+			return reconcile.Result{}, fmt.Errorf("failed to check operator-managed Gateway: %w", err)
 		}
 
 		if managedGatewayExists {
 			externalAccepted, err := kubermatic.HTTPRouteAcceptedByExternalGateway(ctx, r.Client, config, config.Namespace)
 			if err != nil {
-				return err
+				return reconcile.Result{}, err
 			}
 
 			if !externalAccepted {
@@ -640,34 +648,34 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 				if err := kubermatic.EnsureHTTPRouteWithAdditionalParentRefs(ctx, r.Client, logger, config, config.Namespace, r.scheme, []gatewayapiv1.ParentReference{
 					kubermatic.DefaultGatewayParentReference(config.Namespace),
 				}); err != nil {
-					return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+					return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 				}
 
-				logger.Debug("Keeping operator-managed Gateway until HTTPRoute is accepted by external Gateway")
-				return nil
+				logger.Debugw("Keeping operator-managed Gateway until HTTPRoute is accepted by external Gateway", "requeueAfter", externalGatewayReadinessRequeueAfter)
+				return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
 			}
 		}
 
 		if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
-			return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+			return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 		}
 
 		if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config, config.Namespace); err != nil {
-			return fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
+			return reconcile.Result{}, fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
 		}
 
-		return nil
+		return reconcile.Result{}, nil
 	}
 
 	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
-		return fmt.Errorf("failed to reconcile Gateway: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile Gateway: %w", err)
 	}
 
 	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
-		return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 	}
 
-	return nil
+	return reconcile.Result{}, nil
 }
 
 func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {

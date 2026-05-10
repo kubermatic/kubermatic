@@ -559,18 +559,13 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
 	dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
 
-	legacyIngressExists, err := ingressExists(ctx, c, kubermaticIngressName)
+	kubermaticIngressExists, err := ingressExists(ctx, c, kubermaticIngressName)
 	if err != nil {
 		return err
 	}
-	if !legacyIngressExists && !slices.Contains(opt.SkipCharts, DexChartName) {
-		legacyIngressExists, err = ingressExists(ctx, c, dexIngressName)
-		if err != nil {
-			return err
-		}
-	}
 
-	if legacyIngressExists {
+	gatewayName := gatewayObjectKey(config)
+	if kubermaticIngressExists {
 		l.Info("Waiting for Gateway to be ready...")
 		_, err := waitForGateway(ctx, l, c, config)
 		if err != nil {
@@ -578,10 +573,9 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 			return err
 		}
 	} else {
-		l.Debug("No legacy Ingress resources found, skipping Gateway readiness wait")
+		l.Debug("No legacy Kubermatic Ingress found, skipping Gateway readiness wait")
 	}
 
-	gatewayName := gatewayObjectKey(config)
 	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
 		kubermaticIngressName,
 		types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName},
@@ -595,12 +589,39 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		return nil
 	}
 
+	dexIngressExists, err := ingressExists(ctx, c, dexIngressName)
+	if err != nil {
+		return err
+	}
+
 	// Dex is installed as a separate Helm chart, so its HTTPRoute Gateway target can
 	// be overridden via Helm values instead of following only the KubermaticConfiguration.
+	dexGatewayName := dexGatewayObjectKey(config, opt)
+	if dexIngressExists {
+		if dexGatewayName == gatewayName {
+			if !kubermaticIngressExists {
+				l.Info("Waiting for Dex Gateway to be ready...")
+				_, err := waitForGateway(ctx, l, c, config)
+				if err != nil {
+					l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
+					return err
+				}
+			}
+		} else {
+			l.Info("Waiting for Dex Gateway to be ready...")
+			if _, err := waitForGatewayObject(ctx, l, c, dexGatewayName, false, false); err != nil {
+				l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
+				return err
+			}
+		}
+	} else {
+		l.Debug("No legacy Dex Ingress found, skipping Dex Gateway readiness wait")
+	}
+
 	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
 		dexIngressName,
 		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
-		dexGatewayObjectKey(config, opt),
+		dexGatewayName,
 	); err != nil {
 		return err
 	}
@@ -695,10 +716,22 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 	}
 
 	gatewayName := gatewayObjectKey(config)
+	requireAddress := !config.Spec.Ingress.Gateway.UsesExternalGateway()
+	rejectOperatorOwnedExternalGateway := config.Spec.Ingress.Gateway.UsesExternalGateway()
 
+	return waitForGatewayObject(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway)
+}
+
+func waitForGatewayObject(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	gatewayName types.NamespacedName,
+	requireAddress bool,
+	rejectOperatorOwnedExternalGateway bool,
+) (*gatewayapiv1.Gateway, error) {
 	l := logger.WithField("gateway", gatewayName.String())
 	gw := gatewayapiv1.Gateway{}
-	requireAddress := !config.Spec.Ingress.Gateway.UsesExternalGateway()
 
 	err := wait.PollUntilContextTimeout(ctx, gatewayAPIReadinessPollInterval, gatewayAPIReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
@@ -711,7 +744,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 			return false, nil
 		}
 
-		if config.Spec.Ingress.Gateway.UsesExternalGateway() && operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, config) {
+		if rejectOperatorOwnedExternalGateway && operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences) {
 			l.Debug("External Gateway reference resolves to an operator-owned Gateway")
 			return false, nil
 		}

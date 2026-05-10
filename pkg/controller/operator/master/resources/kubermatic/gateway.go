@@ -34,6 +34,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -338,8 +339,8 @@ func externalGatewayKey(cfg *kubermaticv1.KubermaticConfiguration, namespace str
 	}
 }
 
-// HTTPRouteAcceptedByExternalGateway returns true when the managed HTTPRoute has
-// been accepted by the configured external Gateway for its current generation.
+// HTTPRouteAcceptedByExternalGateway returns true when the configured external
+// Gateway is ready and has accepted the managed HTTPRoute for its current generation.
 func HTTPRouteAcceptedByExternalGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -356,7 +357,23 @@ func HTTPRouteAcceptedByExternalGateway(
 	}
 
 	gatewayKey := externalGatewayKey(cfg, namespace)
-	return gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayKey), nil
+	if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayKey) {
+		return false, nil
+	}
+
+	var gateway gatewayapiv1.Gateway
+	if err := client.Get(ctx, gatewayKey, &gateway); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get external Gateway %q: %w", gatewayKey.String(), err)
+	}
+
+	if gateway.DeletionTimestamp != nil {
+		return false, nil
+	}
+
+	return meta.IsStatusConditionTrue(gateway.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed)), nil
 }
 
 // gatewayComparable holds the fields used to detect meaningful changes between
@@ -436,7 +453,7 @@ func EnsureExternalGatewayNotOperatorOwned(
 		return fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
 	}
 
-	if common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, cfg) {
+	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
 		return fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
 	}
 

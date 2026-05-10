@@ -70,9 +70,24 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		t.Fatalf("failed to set controller reference: %v", err)
 	}
 
+	externalGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "platform-gateway",
+			Namespace: "networking",
+		},
+		Status: gatewayapiv1.GatewayStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
+
 	client := ctrlruntimefakeclient.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(cfg, managedGateway).
+		WithObjects(cfg, managedGateway, externalGateway).
 		Build()
 
 	r := &Reconciler{
@@ -81,8 +96,12 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
+	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.RequeueAfter != externalGatewayReadinessRequeueAfter {
+		t.Fatalf("expected requeue after %s while waiting for external Gateway acceptance, got %s", externalGatewayReadinessRequeueAfter, result.RequeueAfter)
 	}
 
 	var gateway gatewayapiv1.Gateway
@@ -131,11 +150,15 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		t.Fatalf("failed to update HTTPRoute status: %v", err)
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	result, err = r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
+	if err != nil {
 		t.Fatalf("expected no error after external route acceptance, got %v", err)
 	}
+	if result.RequeueAfter != 0 || result.Requeue {
+		t.Fatalf("expected no requeue after external route acceptance, got %+v", result)
+	}
 
-	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway)
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}, &gateway)
 	if !apierrors.IsNotFound(err) {
 		t.Fatalf("expected operator-managed Gateway to be deleted after external route acceptance, got %v", err)
 	}
@@ -248,8 +271,12 @@ func TestReconcileGatewayAPIResourcesKeepsManagedGatewayWhenExternalRouteRejecte
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
+	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.RequeueAfter != externalGatewayReadinessRequeueAfter {
+		t.Fatalf("expected requeue after %s while external route is rejected, got %s", externalGatewayReadinessRequeueAfter, result.RequeueAfter)
 	}
 
 	var gateway gatewayapiv1.Gateway
@@ -310,7 +337,7 @@ func TestReconcileGatewayAPIResourcesRejectsExternalDefaultManagedGateway(t *tes
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err == nil {
+	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err == nil {
 		t.Fatal("expected externalGateway pointing at the managed default Gateway to be rejected")
 	}
 
@@ -367,7 +394,7 @@ func TestReconcileGatewayAPIResourcesAllowsUnownedExternalDefaultGateway(t *test
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
@@ -438,7 +465,7 @@ func TestReconcileGatewayAPIResourcesSwitchesBackToManagedGateway(t *testing.T) 
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
@@ -501,7 +528,7 @@ func TestReconcileGatewayAPIResourcesCreatesExternalHTTPRouteWithoutManagedGatew
 		gatewayAPIEnabled: true,
 	}
 
-	if err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
