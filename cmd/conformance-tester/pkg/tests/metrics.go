@@ -100,7 +100,7 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		// kube controller-manager
 		"replicaset_controller_sorting_deletion_age_ratio_bucket",
 		// kube apiserver
-		"apiserver_resource_objects",
+		"apiserver_init_events_total",
 		// kube scheduler
 		"scheduler_schedule_attempts_total",
 		// all the metrics for cadvisor are dropped
