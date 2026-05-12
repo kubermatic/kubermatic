@@ -489,6 +489,76 @@ func TestGatewayReconcilerClearsManagedAnnotationsWhenConfigEmpty(t *testing.T) 
 	}
 }
 
+func TestGatewayParentReferenceDefaultsWhenConfigurationNil(t *testing.T) {
+	parentRef := gatewayParentReference(nil, "kubermatic")
+
+	if parentRef.Name != gatewayName {
+		t.Fatalf("expected default Gateway parentRef name %q, got %q", gatewayName, parentRef.Name)
+	}
+	if parentRef.Namespace == nil || string(*parentRef.Namespace) != "kubermatic" {
+		t.Fatalf("expected default Gateway parentRef namespace kubermatic, got %v", parentRef.Namespace)
+	}
+}
+
+func TestExternalGatewayKeyReportsMissingConfiguration(t *testing.T) {
+	testCases := []struct {
+		name string
+		cfg  *kubermaticv1.KubermaticConfiguration
+	}{
+		{
+			name: "nil configuration",
+			cfg:  nil,
+		},
+		{
+			name: "nil gateway configuration",
+			cfg:  &kubermaticv1.KubermaticConfiguration{},
+		},
+		{
+			name: "external gateway without name",
+			cfg: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if key, ok := ExternalGatewayKey(tc.cfg, "kubermatic"); ok {
+				t.Fatalf("expected no external Gateway key, got %s", key.String())
+			}
+		})
+	}
+}
+
+func TestExternalGatewayKeyReturnsConfiguredGateway(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	key, ok := ExternalGatewayKey(cfg, "kubermatic")
+	if !ok {
+		t.Fatal("expected external Gateway key")
+	}
+	if key != (types.NamespacedName{Name: "platform-gateway", Namespace: "networking"}) {
+		t.Fatalf("expected networking/platform-gateway, got %s", key.String())
+	}
+}
+
 func TestGatewayReconcilerPreservesUnmanagedInfrastructureFields(t *testing.T) {
 	parametersRef := &gatewayapiv1.LocalParametersReference{
 		Group: "gateway.envoyproxy.io",
@@ -1067,14 +1137,42 @@ func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerO
 			}
 
 			client := fake.NewClientBuilder().WithObjects(existing).Build()
-			err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+			exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
 			if tt.wantError && err == nil {
 				t.Fatal("expected error")
 			}
 			if !tt.wantError && err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
+			if !exists {
+				t.Fatal("expected external Gateway to exist")
+			}
 		})
+	}
+}
+
+func TestEnsureExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	client := fake.NewClientBuilder().Build()
+	exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if exists {
+		t.Fatal("expected missing external Gateway to be reported")
 	}
 }
 

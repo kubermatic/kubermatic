@@ -348,6 +348,8 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 			client := fake.NewClientBuilder().WithObjects(gw).Build()
 			if _, err := waitForGateway(ctx, logrus.NewEntry(logrus.New()), client, cfg); err == nil {
 				t.Fatal("expected operator-owned external Gateway not to be accepted")
+			} else if !strings.Contains(err.Error(), "operator-managed") {
+				t.Fatalf("expected error to mention operator-managed Gateway, got %v", err)
 			}
 		})
 	}

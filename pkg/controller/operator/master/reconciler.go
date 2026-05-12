@@ -53,6 +53,30 @@ import (
 
 const externalGatewayReadinessRequeueAfter = 30 * time.Second
 
+func mergeReconcileResults(result reconcile.Result, next reconcile.Result) reconcile.Result {
+	if next.Requeue {
+		result.Requeue = true
+	}
+
+	// In controller-runtime, RequeueAfter takes precedence over Requeue when
+	// both are set. Preserve an immediate requeue request by clearing any
+	// delayed requeue once Requeue is requested by any step.
+	if result.Requeue {
+		result.RequeueAfter = 0
+		return result
+	}
+
+	if next.RequeueAfter <= 0 {
+		return result
+	}
+
+	if result.RequeueAfter == 0 || next.RequeueAfter < result.RequeueAfter {
+		result.RequeueAfter = next.RequeueAfter
+	}
+
+	return result
+}
+
 // Reconciler (re)stores all components required for running a Kubermatic
 // master cluster.
 type Reconciler struct {
@@ -149,9 +173,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	if err != nil {
 		return result, err
 	}
-	if gatewayResult.Requeue || gatewayResult.RequeueAfter > 0 {
-		result = gatewayResult
-	}
+	result = mergeReconcileResults(result, gatewayResult)
 
 	if err := r.reconcileSecrets(ctx, defaulted, logger); err != nil {
 		return result, err
@@ -626,8 +648,14 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 	}
 
 	if config.Spec.Ingress.Gateway.UsesExternalGateway() {
-		if err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace); err != nil {
+		externalGatewayExists, err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace)
+		if err != nil {
 			return reconcile.Result{}, err
+		}
+		if !externalGatewayExists && r.recorder != nil {
+			if externalGatewayKey, ok := kubermatic.ExternalGatewayKey(config, config.Namespace); ok {
+				r.recorder.Eventf(config, nil, corev1.EventTypeWarning, "ExternalGatewayMissing", "Reconciling", "Configured external Gateway %q does not exist; Kubermatic HTTPRoutes will remain pending until it is created", externalGatewayKey.String())
+			}
 		}
 
 		managedGatewayExists, err := kubermatic.ManagedGatewayExists(ctx, r.Client, config, config.Namespace)

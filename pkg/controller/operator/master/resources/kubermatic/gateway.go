@@ -295,10 +295,12 @@ func gatewayParentReference(cfg *kubermaticv1.KubermaticConfiguration, namespace
 	parentName := gatewayapiv1.ObjectName(gatewayName)
 	parentNamespace := gatewayapiv1.Namespace(namespace)
 
-	gatewayConfig := cfg.Spec.Ingress.Gateway
-	if gatewayConfig.UsesExternalGateway() {
-		parentName = gatewayapiv1.ObjectName(gatewayConfig.ExternalGateway.Name)
-		parentNamespace = gatewayapiv1.Namespace(gatewayConfig.ExternalGatewayNamespace(namespace))
+	if cfg != nil {
+		gatewayConfig := cfg.Spec.Ingress.Gateway
+		if gatewayConfig.UsesExternalGateway() {
+			parentName = gatewayapiv1.ObjectName(gatewayConfig.ExternalGateway.Name)
+			parentNamespace = gatewayapiv1.Namespace(gatewayConfig.ExternalGatewayNamespace(namespace))
+		}
 	}
 
 	return gatewayapiv1.ParentReference{
@@ -333,12 +335,18 @@ func appendParentReferenceIfMissing(routeNamespace string, parentRefs []gatewaya
 	return append(parentRefs, parentRef)
 }
 
-func externalGatewayKey(cfg *kubermaticv1.KubermaticConfiguration, namespace string) types.NamespacedName {
+// ExternalGatewayKey returns the configured external Gateway key and whether
+// an external Gateway reference is configured.
+func ExternalGatewayKey(cfg *kubermaticv1.KubermaticConfiguration, namespace string) (types.NamespacedName, bool) {
+	if cfg == nil || !cfg.Spec.Ingress.Gateway.UsesExternalGateway() {
+		return types.NamespacedName{}, false
+	}
+
 	gatewayConfig := cfg.Spec.Ingress.Gateway
 	return types.NamespacedName{
 		Name:      gatewayConfig.ExternalGateway.Name,
 		Namespace: gatewayConfig.ExternalGatewayNamespace(namespace),
-	}
+	}, true
 }
 
 // HTTPRouteAcceptedByExternalGateway returns true when the configured external
@@ -358,7 +366,11 @@ func HTTPRouteAcceptedByExternalGateway(
 		return false, fmt.Errorf("failed to get HTTPRoute %q: %w", key.String(), err)
 	}
 
-	gatewayKey := externalGatewayKey(cfg, namespace)
+	gatewayKey, ok := ExternalGatewayKey(cfg, namespace)
+	if !ok {
+		return false, nil
+	}
+
 	if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayKey) {
 		return false, nil
 	}
@@ -453,20 +465,16 @@ func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Ob
 
 // EnsureExternalGatewayNotOperatorOwned rejects externalGateway references that point at an operator-managed Gateway.
 // Unowned Gateways, including a Gateway named kubermatic/kubermatic, are left to the user and are valid BYO targets.
+// The returned bool reports whether the referenced external Gateway currently exists.
 func EnsureExternalGatewayNotOperatorOwned(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
-) error {
-	gatewayConfig := cfg.Spec.Ingress.Gateway
-	if !gatewayConfig.UsesExternalGateway() {
-		return nil
-	}
-
-	key := types.NamespacedName{
-		Namespace: gatewayConfig.ExternalGatewayNamespace(namespace),
-		Name:      gatewayConfig.ExternalGateway.Name,
+) (bool, error) {
+	key, ok := ExternalGatewayKey(cfg, namespace)
+	if !ok {
+		return false, nil
 	}
 
 	var existing gatewayapiv1.Gateway
@@ -474,16 +482,16 @@ func EnsureExternalGatewayNotOperatorOwned(
 		if apierrors.IsNotFound(err) {
 			// The Gateway can be created independently/asynchronously by the platform team;
 			// the installer performs readiness checks when it needs the Gateway to exist.
-			return nil
+			return false, nil
 		}
-		return fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
+		return false, fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
 	}
 
 	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
-		return fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
+		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
 	}
 
-	return nil
+	return true, nil
 }
 
 // ManagedGatewayExists returns true when the operator-managed default Gateway exists.

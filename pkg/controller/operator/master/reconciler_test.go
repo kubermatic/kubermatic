@@ -18,7 +18,9 @@ package master
 
 import (
 	"context"
+	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -31,10 +33,58 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+func TestMergeReconcileResults(t *testing.T) {
+	tests := []struct {
+		name string
+		a    reconcile.Result
+		b    reconcile.Result
+		want reconcile.Result
+	}{
+		{
+			name: "keeps delayed requeue",
+			a:    reconcile.Result{RequeueAfter: time.Minute},
+			want: reconcile.Result{RequeueAfter: time.Minute},
+		},
+		{
+			name: "uses next delayed requeue",
+			b:    reconcile.Result{RequeueAfter: time.Minute},
+			want: reconcile.Result{RequeueAfter: time.Minute},
+		},
+		{
+			name: "uses sooner delayed requeue",
+			a:    reconcile.Result{RequeueAfter: time.Minute},
+			b:    reconcile.Result{RequeueAfter: 30 * time.Second},
+			want: reconcile.Result{RequeueAfter: 30 * time.Second},
+		},
+		{
+			name: "immediate requeue wins over delayed requeue",
+			a:    reconcile.Result{RequeueAfter: time.Minute},
+			b:    reconcile.Result{Requeue: true},
+			want: reconcile.Result{Requeue: true},
+		},
+		{
+			name: "existing immediate requeue wins over delayed requeue",
+			a:    reconcile.Result{Requeue: true},
+			b:    reconcile.Result{RequeueAfter: time.Minute},
+			want: reconcile.Result{Requeue: true},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := mergeReconcileResults(tt.a, tt.b); got != tt.want {
+				t.Fatalf("expected %#v, got %#v", tt.want, got)
+			}
+		})
+	}
+}
 
 func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 	ctx := context.Background()
@@ -182,6 +232,59 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 	}
 	if ns.Labels[common.GatewayAccessLabelKey] != "true" {
 		t.Fatalf("expected namespace label %q=true, got %q", common.GatewayAccessLabelKey, ns.Labels[common.GatewayAccessLabelKey])
+	}
+}
+
+func TestReconcileGatewayAPIResourcesRecordsMissingExternalGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: namespace,
+			UID:       types.UID("test-uid"),
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	client := ctrlruntimefakeclient.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cfg).
+		Build()
+	recorder := events.NewFakeRecorder(10)
+	r := &Reconciler{
+		Client:            client,
+		recorder:          recorder,
+		scheme:            scheme,
+		gatewayAPIEnabled: true,
+	}
+
+	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	select {
+	case event := <-recorder.Events:
+		if !strings.Contains(event, "Warning ExternalGatewayMissing") {
+			t.Fatalf("expected ExternalGatewayMissing warning event, got %q", event)
+		}
+		if !strings.Contains(event, "networking/platform-gateway") {
+			t.Fatalf("expected event to mention external Gateway, got %q", event)
+		}
+	default:
+		t.Fatal("expected ExternalGatewayMissing warning event")
 	}
 }
 

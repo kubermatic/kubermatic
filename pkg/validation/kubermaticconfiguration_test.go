@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/sdk/v2/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
 
@@ -353,7 +354,7 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "external gateway ignores leftover tls secretRef and certificate issuer",
+			name: "external gateway rejects leftover tls",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{
 					Domain: "example.com",
@@ -372,7 +373,57 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 					},
 				},
 			},
-			valid: true,
+			valid: false,
+		},
+		{
+			name: "external gateway rejects empty tls",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "external gateway rejects class name",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						ClassName: "kubermatic-envoy-gateway",
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "external gateway rejects infrastructure annotations",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						InfrastructureAnnotations: map[string]string{
+							"metallb.io/address-pool": "public",
+						},
+					},
+				},
+			},
+			valid: false,
 		},
 		{
 			name: "external gateway without name is invalid",
@@ -480,5 +531,48 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *testing.T) {
+	spec := &kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "example.com",
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+				ClassName:                 "kubermatic-envoy-gateway",
+				InfrastructureAnnotations: map[string]string{},
+				TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{
+					SecretRef: &kubermaticv1.KubermaticGatewaySecretReference{
+						Name: "kubermatic-tls",
+					},
+				},
+			},
+		},
+	}
+
+	errs := ValidateExternalGatewayConfiguration(spec)
+	wantForbiddenPaths := map[string]bool{
+		"spec.ingress.gateway.className":                 false,
+		"spec.ingress.gateway.infrastructureAnnotations": false,
+		"spec.ingress.gateway.tls":                       false,
+	}
+
+	for _, err := range errs {
+		if err.Type != field.ErrorTypeForbidden {
+			continue
+		}
+		if _, ok := wantForbiddenPaths[err.Field]; ok {
+			wantForbiddenPaths[err.Field] = true
+		}
+	}
+
+	for path, found := range wantForbiddenPaths {
+		if !found {
+			t.Fatalf("expected forbidden error for %s, got %v", path, errs.ToAggregate())
+		}
 	}
 }

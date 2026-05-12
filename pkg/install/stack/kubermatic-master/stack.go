@@ -745,8 +745,7 @@ func waitForGatewayObject(
 		}
 
 		if rejectOperatorOwnedExternalGateway && operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences) {
-			l.Debug("External Gateway reference resolves to an operator-owned Gateway")
-			return false, nil
+			return false, fmt.Errorf("external Gateway %s is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", gatewayName.String())
 		}
 
 		if requireAddress && len(gw.Status.Addresses) == 0 {

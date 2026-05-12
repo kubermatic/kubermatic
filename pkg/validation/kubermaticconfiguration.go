@@ -78,6 +78,18 @@ func validateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigura
 		}
 	}
 
+	gatewayPath := field.NewPath("spec", "ingress", "gateway")
+	externalGatewayConflictMessage := "cannot be set together with spec.ingress.gateway.externalGateway"
+	if gateway.ClassName != "" {
+		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("className"), externalGatewayConflictMessage))
+	}
+	if gateway.InfrastructureAnnotations != nil {
+		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("infrastructureAnnotations"), externalGatewayConflictMessage))
+	}
+	if gateway.TLS != nil {
+		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("tls"), externalGatewayConflictMessage))
+	}
+
 	return allErrs
 }
 
