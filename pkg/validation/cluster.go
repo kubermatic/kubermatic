@@ -180,6 +180,24 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
+	allErrs = append(allErrs, validateAuthenticationConfiguration(spec, parentFieldPath)...)
+
+	return allErrs
+}
+
+func validateAuthenticationConfiguration(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if spec.IsAuthenticationConfigurationEnabled() && spec.OIDC.IssuerURL != "" { //nolint:staticcheck
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("authenticationConfiguration"), "authenticationConfiguration and oidc.issuerURL are mutually exclusive"))
+	}
+
+	if spec.AuthenticationConfiguration != nil {
+		if spec.AuthenticationConfiguration.SecretName == "" || spec.AuthenticationConfiguration.SecretKey == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Child("authenticationConfiguration"), "secretName and secretKey are required when authenticationConfiguration is specified"))
+		}
+	}
+
 	return allErrs
 }
 

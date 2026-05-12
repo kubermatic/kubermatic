@@ -84,6 +84,8 @@ type TemplateData struct {
 	etcdDiskSize                          resource.Quantity
 	oidcIssuerURL                         string
 	oidcIssuerClientID                    string
+	oidcAuthenticationFeatureEnabled      bool
+	authenticationConfigurationYAML       []byte
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	networkIntfMgrImage                   string
@@ -199,6 +201,16 @@ func (td *TemplateDataBuilder) WithOIDCIssuerURL(url string) *TemplateDataBuilde
 
 func (td *TemplateDataBuilder) WithOIDCIssuerClientID(clientID string) *TemplateDataBuilder {
 	td.data.oidcIssuerClientID = clientID
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOIDCAuthenticationFeatureEnabled(enabled bool) *TemplateDataBuilder {
+	td.data.oidcAuthenticationFeatureEnabled = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithAuthenticationConfigurationYAML(yaml []byte) *TemplateDataBuilder {
+	td.data.authenticationConfigurationYAML = yaml
 	return td
 }
 
@@ -336,6 +348,22 @@ func (d *TemplateData) OIDCIssuerURL() string {
 // OIDCIssuerClientID return the issuer client ID.
 func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
+}
+
+// IsAuthenticationConfigurationEnabled returns true when the AuthenticationConfiguration is enabled.
+func (d *TemplateData) IsAuthenticationConfigurationEnabled() bool {
+	// Method implementation needs to be aligned with the conditions within AuthenticationConfigurationReconciler
+	oidcSettings := d.cluster.Spec.OIDC //nolint:staticcheck
+
+	return d.cluster.Spec.IsAuthenticationConfigurationEnabled() ||
+		len(d.authenticationConfigurationYAML) > 0 ||
+		d.oidcAuthenticationFeatureEnabled ||
+		oidcSettings.IssuerURL != "" && oidcSettings.ClientID != ""
+}
+
+// AuthenticationConfigurationYAML returns the seed's authentication configuration in YAML format.
+func (d *TemplateData) AuthenticationConfigurationYAML() []byte {
+	return d.authenticationConfigurationYAML
 }
 
 // Cluster returns the cluster.

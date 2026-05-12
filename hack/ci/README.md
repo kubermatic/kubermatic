@@ -49,6 +49,34 @@ tweaked by setting a number of environment variables, most importantly:
 Whenever this is changed, run the optional `pre-kubermatic-simulate-github-release`
 job to (mostly) ensure that the changes will work.
 
+## lint-mirror-application-charts.sh
+
+Lints hack/mirror-application-charts.sh by sourcing it and asserting
+CHART_URLS and CHART_VERSIONS have identical key sets.
+
+Catches the most common contributor mistake: adding a chart to one
+array but forgetting the other. Also serves as a smoke test that
+mirror-application-charts.sh remains sourceable (which the post-submit
+detection wrapper relies on).
+
+## mirror-new-application-charts.sh
+
+Detects newly added charts and version bumps in hack/mirror-application-charts.sh
+and mirrors them to the OCI registry.
+
+Runs as a Prow post-submit job when mirror-application-charts.sh changes.
+Detects two types of changes:
+  1. New chart entries added to CHART_URLS / CHART_VERSIONS
+  2. Version bumps in CHART_VERSIONS for existing charts
+Then calls mirror-application-charts.sh for each affected chart.
+
+Detection works by sourcing the current and previous (HEAD~1) versions of
+mirror-application-charts.sh in a subshell. This relies only on the file
+being valid bash with the two associative arrays - no formatting assumptions.
+
+Environment variables:
+* `DRY_RUN=true` - skip actual mirroring, only print charts that would be mirrored
+
 ## release-images.sh
 
 This script compiles the KKP binaries and then builds and pushes all
@@ -57,19 +85,36 @@ useful as part of another script to setup KKP for testing.
 
 ## run-addons-integration-test.sh
 
-Tests addon upgrade compatibility by verifying that addons can be successfully upgraded across versions.
+TBD
+
+## run-appcatalog-manager-e2e-tests.sh
+
+This script sets up a local KKP installation in kind and runs the
+Application Catalog Manager E2E tests.
+
+## run-application-definitions-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to main.
+
+## run-argocd-e2e-tests.sh
+
+This script sets a multi-seed Kubermatic installation in AWS, deploys various applications on it via ArgoCD
+and then runs validation e2e tests using chainsaw
 
 ## run-canal-e2e-test.sh
 
-Runs Canal CNI e2e tests, verifying Canal networking and kube-proxy proxy mode handling.
+This script runs Canal CNI e2e tests, verifying Canal networking
+and kube-proxy proxy mode handling.
 
 ## run-cilium-e2e-test.sh
 
-Runs Cilium CNI e2e tests, verifying Cilium networking, eBPF proxy mode, and Hubble observability.
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to main.
 
 ## run-cluster-backup-e2e-tests.sh
 
-Runs cluster backup e2e tests, verifying Velero-based backup and restore functionality.
+TBD
 
 ## run-conformance-tests.sh
 
@@ -78,8 +123,7 @@ used to run the conformance-tester for a given cloud provider.
 
 ## run-default-application-e2e-test.sh
 
-This script is used as a postsubmit job and updates the dev master
-cluster after every commit to main.
+TBD
 
 ## run-dualstack-e2e-test.sh
 
@@ -99,6 +143,15 @@ TBD
 
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the etcd-launcher tests.
+
+## run-gateway-api-e2e-tests.sh
+
+This script sets up a local KKP installation in kind with Gateway API enabled
+from the start (fresh install) and runs the Gateway API e2e tests.
+
+## run-gateway-api-migration-e2e.sh
+
+This script tests the migration from nginx-ingress-controller to Gateway API.
 
 ## run-ipam-e2e-tests.sh
 
@@ -210,14 +263,14 @@ Go cache again.
 This that when we're in a PR targeting a release branch, the minimum
 Go version used to build KKP is not bumped to a different minor version.
 
+## verify-user-cluster-prometheus-configs.sh
+
+This ensures that the Prometheus rules deployed into userclusters
+are valid Prometheus rules.
+
 ## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
-
-## verify-user-cluster-prometheus-configs.sh
-
-This ensures that the Prometheus rules deployed into userclusters
-are valid Prometheus rules.
 

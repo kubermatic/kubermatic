@@ -3,10 +3,30 @@
 - [v2.30.0](#v2300)
 - [v2.30.1](#v2301)
 - [v2.30.2](#v2302)
+- [v2.30.3](#v2303)
+
+## v2.30.3
+
+**GitHub release: [v2.30.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.3)**
+
+### Bugfixes
+
+- Remove the creation of cluster scope resources from KubeVirt provider and offload that functionality to the platform admin. Needed permissions to be created in the cluster:PersistentVolumes: "get", "list", "watch" ([#15830](https://github.com/kubermatic/kubermatic/pull/15830))
+- Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
+- Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/dashboard/pull/7956))
+- Fix the Azure availability zone selector data population within the MachineDeployment edit dialog ([#8028](https://github.com/kubermatic/dashboard/pull/8028))
+- Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/dashboard/pull/7927))
+- Fix VSphere provider ignoring project-level allowed operating system restrictions during cluster creation ([#8010](https://github.com/kubermatic/dashboard/pull/8010))
+- Update kubeone package to v1.12.3 ([#8042](https://github.com/kubermatic/dashboard/pull/8042))
+
+### Updates
+
+- Set Cilium v1.18.6 as the default Cilium CNI versionSet Canal v3.31 as the default Canal CNI version ([#15784](https://github.com/kubermatic/kubermatic/pull/15784), [#8027](https://github.com/kubermatic/dashboard/pull/8027))
+- Update KubeLB CCM version to 1.3.10 ([#15806](https://github.com/kubermatic/kubermatic/pull/15806))
 
 ## v2.30.2
 
-**GitHub release: [2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/2.30.2)**
+**GitHub release: [v2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.2)**
 
 ### Supported Kubernetes Versions
 

@@ -20,9 +20,6 @@
 
 {{ $version := "UNSUPPORTED" }}
 
-{{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.31.8" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
 {{ $version = "v1.32.9" }}
 {{ end }}
@@ -635,7 +632,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-provisioner:v6.1.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-provisioner:v6.1.1" }}'
           imagePullPolicy: IfNotPresent
           name: csi-provisioner
           resources:
@@ -661,7 +658,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-snapshotter:v8.4.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-snapshotter:v8.5.0" }}'
           name: csi-snapshotter
           resources:
             limits:
@@ -689,7 +686,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-resizer:v2.0.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-resizer:v2.1.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-resizer
           resources:
@@ -711,7 +708,7 @@ spec:
             - --probe-timeout=3s
             - --http-endpoint=localhost:29612
             - --v=2
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.17.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources:
@@ -809,7 +806,6 @@ spec:
             {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - --azurefile-proxy-endpoint=$(AZUREFILE_PROXY_ENDPOINT)
             - --enable-azurefile-proxy=true
-            - --enable-kata-cc-mount=false
             {{- end }}
             - --nodeid=$(KUBE_NODE_NAME)
             - --kubeconfig=
@@ -826,6 +822,7 @@ spec:
             - --mount-permissions=511
             - --allow-inline-volume-key-access-with-identity=false
             - --metrics-address=0.0.0.0:29615
+            - --enable-kata-cc-mount=false
           env:
             - name: AZURE_CREDENTIAL_FILE
               value: /etc/kubernetes/azure.json
@@ -883,7 +880,7 @@ spec:
             - --probe-timeout=10s
             - --http-endpoint=localhost:29613
             - --v=2
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.17.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources:
@@ -904,7 +901,7 @@ spec:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/file.csi.azure.com/csi.sock
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.15.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0" }}'
           imagePullPolicy: IfNotPresent
           name: node-driver-registrar
           resources:
@@ -1036,7 +1033,7 @@ kind: CSIDriver
 metadata:
   annotations:
     csiDriver: v1.35.0
-    snapshot: v8.4.0
+    snapshot: v8.5.0
   labels:
     app.kubernetes.io/component: csi-driver
     app.kubernetes.io/instance: azurefile-csi-driver
