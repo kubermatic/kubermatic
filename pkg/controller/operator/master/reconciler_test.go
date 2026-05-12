@@ -63,18 +63,6 @@ func TestMergeReconcileResults(t *testing.T) {
 			b:    reconcile.Result{RequeueAfter: 30 * time.Second},
 			want: reconcile.Result{RequeueAfter: 30 * time.Second},
 		},
-		{
-			name: "immediate requeue wins over delayed requeue",
-			a:    reconcile.Result{RequeueAfter: time.Minute},
-			b:    reconcile.Result{Requeue: true},
-			want: reconcile.Result{Requeue: true},
-		},
-		{
-			name: "existing immediate requeue wins over delayed requeue",
-			a:    reconcile.Result{Requeue: true},
-			b:    reconcile.Result{RequeueAfter: time.Minute},
-			want: reconcile.Result{Requeue: true},
-		},
 	}
 
 	for _, tt := range tests {
@@ -204,7 +192,7 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error after external route acceptance, got %v", err)
 	}
-	if result.RequeueAfter != 0 || result.Requeue {
+	if result.RequeueAfter != 0 {
 		t.Fatalf("expected no requeue after external route acceptance, got %+v", result)
 	}
 

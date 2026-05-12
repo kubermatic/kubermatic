@@ -57,18 +57,6 @@ import (
 const externalGatewayReadinessRequeueAfter = 30 * time.Second
 
 func mergeReconcileResults(result reconcile.Result, next reconcile.Result) reconcile.Result {
-	if next.Requeue {
-		result.Requeue = true
-	}
-
-	// In controller-runtime, RequeueAfter takes precedence over Requeue when
-	// both are set. Preserve an immediate requeue request by clearing any
-	// delayed requeue once Requeue is requested by any step.
-	if result.Requeue {
-		result.RequeueAfter = 0
-		return result
-	}
-
 	if next.RequeueAfter <= 0 {
 		return result
 	}
