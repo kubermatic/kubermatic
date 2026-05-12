@@ -177,6 +177,20 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				"fluentbit.io/parser":  "json_iso",
 			})
 
+			if len(cfg.Spec.Webhook.NodeSelector) > 0 {
+				d.Spec.Template.Spec.NodeSelector = cfg.Spec.Webhook.NodeSelector
+			}
+
+			if len(cfg.Spec.Webhook.Tolerations) > 0 {
+				d.Spec.Template.Spec.Tolerations = cfg.Spec.Webhook.Tolerations
+			}
+
+			if cfg.Spec.Webhook.Affinity.NodeAffinity != nil ||
+				cfg.Spec.Webhook.Affinity.PodAffinity != nil ||
+				cfg.Spec.Webhook.Affinity.PodAntiAffinity != nil {
+				d.Spec.Template.Spec.Affinity = &cfg.Spec.Webhook.Affinity
+			}
+
 			args := []string{
 				"-webhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
