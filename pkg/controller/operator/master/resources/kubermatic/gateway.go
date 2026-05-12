@@ -487,6 +487,7 @@ func EnsureExternalGatewayNotOperatorOwned(
 		return false, fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
 	}
 
+	// Reject any KubermaticConfiguration controller ownership, current or stale.
 	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
 		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
 	}

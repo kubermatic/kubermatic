@@ -230,14 +230,7 @@ func TestWaitForGatewayAllowsExternalGatewayWithoutAddress(t *testing.T) {
 
 func TestWaitForGatewayRejectsDeletingExternalGateway(t *testing.T) {
 	ctx := context.Background()
-	previousPollInterval := gatewayAPIReadinessPollInterval
-	previousTimeout := gatewayAPIReadinessTimeout
-	gatewayAPIReadinessPollInterval = time.Millisecond
-	gatewayAPIReadinessTimeout = 10 * time.Millisecond
-	t.Cleanup(func() {
-		gatewayAPIReadinessPollInterval = previousPollInterval
-		gatewayAPIReadinessTimeout = previousTimeout
-	})
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: 10 * time.Millisecond}
 
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "kubermatic"},
@@ -272,21 +265,14 @@ func TestWaitForGatewayRejectsDeletingExternalGateway(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithObjects(gw).Build()
-	if _, err := waitForGateway(ctx, logrus.NewEntry(logrus.New()), client, cfg); err == nil {
+	if _, err := waitForGatewayWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, cfg, pollConfig); err == nil {
 		t.Fatal("expected deleting external Gateway not to be accepted")
 	}
 }
 
 func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 	ctx := context.Background()
-	previousPollInterval := gatewayAPIReadinessPollInterval
-	previousTimeout := gatewayAPIReadinessTimeout
-	gatewayAPIReadinessPollInterval = time.Millisecond
-	gatewayAPIReadinessTimeout = 10 * time.Millisecond
-	t.Cleanup(func() {
-		gatewayAPIReadinessPollInterval = previousPollInterval
-		gatewayAPIReadinessTimeout = previousTimeout
-	})
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: 10 * time.Millisecond}
 
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -346,7 +332,7 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 			}
 
 			client := fake.NewClientBuilder().WithObjects(gw).Build()
-			if _, err := waitForGateway(ctx, logrus.NewEntry(logrus.New()), client, cfg); err == nil {
+			if _, err := waitForGatewayWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, cfg, pollConfig); err == nil {
 				t.Fatal("expected operator-owned external Gateway not to be accepted")
 			} else if !strings.Contains(err.Error(), "operator-managed") {
 				t.Fatalf("expected error to mention operator-managed Gateway, got %v", err)
@@ -661,14 +647,7 @@ func TestCleanupIngressSkipsGatewayWaitWhenNoLegacyIngressExists(t *testing.T) {
 
 func TestCleanupIngressWaitsForDexOverrideGateway(t *testing.T) {
 	ctx := context.Background()
-	previousPollInterval := gatewayAPIReadinessPollInterval
-	previousTimeout := gatewayAPIReadinessTimeout
-	gatewayAPIReadinessPollInterval = time.Millisecond
-	gatewayAPIReadinessTimeout = 10 * time.Millisecond
-	t.Cleanup(func() {
-		gatewayAPIReadinessPollInterval = previousPollInterval
-		gatewayAPIReadinessTimeout = previousTimeout
-	})
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: 10 * time.Millisecond}
 
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -733,10 +712,10 @@ httpRoute:
 	}
 
 	client := fake.NewClientBuilder().WithObjects(dexIngress, dexRoute).Build()
-	err = cleanupIngress(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+	err = cleanupIngressWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
 		KubermaticConfiguration: cfg,
 		HelmValues:              doc,
-	})
+	}, pollConfig)
 	if err == nil {
 		t.Fatal("expected cleanup to wait for the Dex Gateway")
 	}
@@ -755,15 +734,7 @@ func TestDeleteIngressWaitsForFreshHTTPRouteAcceptedGeneration(t *testing.T) {
 	gatewayName := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
 	gatewayNamespace := gatewayapiv1.Namespace(gatewayName.Namespace)
 	routeName := types.NamespacedName{Namespace: "dex", Name: "dex"}
-
-	previousPollInterval := gatewayAPIReadinessPollInterval
-	previousTimeout := gatewayAPIReadinessTimeout
-	gatewayAPIReadinessPollInterval = time.Millisecond
-	gatewayAPIReadinessTimeout = time.Second
-	t.Cleanup(func() {
-		gatewayAPIReadinessPollInterval = previousPollInterval
-		gatewayAPIReadinessTimeout = previousTimeout
-	})
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: time.Second}
 
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -832,7 +803,7 @@ func TestDeleteIngressWaitsForFreshHTTPRouteAcceptedGeneration(t *testing.T) {
 		}).
 		Build()
 
-	if err := deleteIngressAfterHTTPRouteReady(ctx, logrus.NewEntry(logrus.New()), client, routeName, routeName, gatewayName); err != nil {
+	if err := deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, routeName, routeName, gatewayName, pollConfig); err != nil {
 		t.Fatalf("expected no error after fresh HTTPRoute status, got %v", err)
 	}
 

@@ -143,9 +143,10 @@ func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 	sublogger := log.Prefix(logger, "   ")
 	sublogger.Info("Ensuring Gateway API Custom Resource Definitions exist...")
 
-	crds, err := crd.LoadFromDirectory(gatewayAPICRDDirectory(opt))
+	crdDirectory := gatewayAPICRDDirectory(opt)
+	crds, err := crd.LoadFromDirectory(crdDirectory)
 	if err != nil {
-		return fmt.Errorf("failed to load Gateway API CRDs: %w", err)
+		return fmt.Errorf("failed to load Gateway API CRDs from bundled %s chart directory %q; this chart must be present even when the controller deployment is skipped: %w", EnvoyGatewayControllerChartName, crdDirectory, err)
 	}
 
 	for _, crdObject := range crds {

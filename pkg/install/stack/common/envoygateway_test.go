@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -117,5 +118,31 @@ spec:
 
 	if fetched.Spec.Group != "gateway.networking.k8s.io" {
 		t.Fatalf("expected existing CRD to remain untouched, got group %q", fetched.Spec.Group)
+	}
+}
+
+func TestEnsureGatewayAPICRDsReportsBundledChartRequirement(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
+	client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).Build()
+	chartsDir := t.TempDir()
+	crdDir := filepath.Join(chartsDir, EnvoyGatewayControllerChartName, "crd")
+	if err := os.MkdirAll(crdDir, testDirectoryMode); err != nil {
+		t.Fatalf("failed to create CRD directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(crdDir, "gateway.yaml"), []byte("not: [valid"), testFileMode); err != nil {
+		t.Fatalf("failed to create invalid CRD file: %v", err)
+	}
+
+	err := EnsureGatewayAPICRDs(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{ChartsDirectory: chartsDir})
+	if err == nil {
+		t.Fatal("expected invalid bundled Gateway API CRDs to fail")
+	}
+
+	for _, want := range []string{EnvoyGatewayControllerChartName, "must be present even when the controller deployment is skipped"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
 	}
 }

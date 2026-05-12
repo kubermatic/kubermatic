@@ -68,16 +68,33 @@ const (
 
 	NodePortProxyService = "nodeport-proxy"
 
-	ingressReadinessPollInterval = 3 * time.Second
-	ingressReadinessTimeout      = 3 * time.Minute
+	ingressReadinessPollInterval           = 3 * time.Second
+	ingressReadinessTimeout                = 3 * time.Minute
+	defaultGatewayAPIReadinessPollInterval = 3 * time.Second
+	defaultGatewayAPIReadinessTimeout      = 10 * time.Minute
 )
 
-var (
-	// Tests override these to avoid waiting on the production Gateway API timeout.
-	// Do not run tests that mutate these values with t.Parallel().
-	gatewayAPIReadinessPollInterval = 3 * time.Second
-	gatewayAPIReadinessTimeout      = 10 * time.Minute
-)
+type gatewayAPIReadinessPollConfig struct {
+	interval time.Duration
+	timeout  time.Duration
+}
+
+func defaultGatewayAPIReadinessPollConfig() gatewayAPIReadinessPollConfig {
+	return gatewayAPIReadinessPollConfig{
+		interval: defaultGatewayAPIReadinessPollInterval,
+		timeout:  defaultGatewayAPIReadinessTimeout,
+	}
+}
+
+func (c gatewayAPIReadinessPollConfig) withDefaults() gatewayAPIReadinessPollConfig {
+	if c.interval <= 0 {
+		c.interval = defaultGatewayAPIReadinessPollInterval
+	}
+	if c.timeout <= 0 {
+		c.timeout = defaultGatewayAPIReadinessTimeout
+	}
+	return c
+}
 
 type MasterStack struct {
 	// showDNSHelp is used by the local command to skip a useless DNS probe.
@@ -97,6 +114,10 @@ func (*MasterStack) Name() string {
 }
 
 func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+	if opt.KubermaticConfiguration == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
@@ -550,6 +571,10 @@ func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute, co
 
 // cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
 func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	return cleanupIngressWithPollConfig(ctx, l, c, opt, defaultGatewayAPIReadinessPollConfig())
+}
+
+func cleanupIngressWithPollConfig(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions, pollConfig gatewayAPIReadinessPollConfig) error {
 	l.Info("Removing existing Ingress resources (if any) since Gateway API is enabled for Kubermatic")
 	config := opt.KubermaticConfiguration
 	if config == nil {
@@ -567,7 +592,7 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 	gatewayName := gatewayObjectKey(config)
 	if kubermaticIngressExists {
 		l.Info("Waiting for Gateway to be ready...")
-		_, err := waitForGateway(ctx, l, c, config)
+		_, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig)
 		if err != nil {
 			l.Errorf("failed to wait for Gateway to be ready, err: %v", err)
 			return err
@@ -576,10 +601,11 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		l.Debug("No legacy Kubermatic Ingress found, skipping Gateway readiness wait")
 	}
 
-	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
+	if err := deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, l, c,
 		kubermaticIngressName,
 		types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName},
 		gatewayName,
+		pollConfig,
 	); err != nil {
 		return err
 	}
@@ -601,7 +627,7 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		if dexGatewayName == gatewayName {
 			if !kubermaticIngressExists {
 				l.Info("Waiting for Dex Gateway to be ready...")
-				_, err := waitForGateway(ctx, l, c, config)
+				_, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig)
 				if err != nil {
 					l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
 					return err
@@ -609,7 +635,7 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 			}
 		} else {
 			l.Info("Waiting for Dex Gateway to be ready...")
-			if _, err := waitForGatewayObject(ctx, l, c, dexGatewayName, false, false); err != nil {
+			if _, err := waitForGatewayObjectWithPollConfig(ctx, l, c, dexGatewayName, false, false, pollConfig); err != nil {
 				l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
 				return err
 			}
@@ -618,10 +644,11 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 		l.Debug("No legacy Dex Ingress found, skipping Dex Gateway readiness wait")
 	}
 
-	if err := deleteIngressAfterHTTPRouteReady(ctx, l, c,
+	if err := deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, l, c,
 		dexIngressName,
 		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
 		dexGatewayName,
+		pollConfig,
 	); err != nil {
 		return err
 	}
@@ -653,6 +680,18 @@ func deleteIngressAfterHTTPRouteReady(
 	routeName types.NamespacedName,
 	gatewayName types.NamespacedName,
 ) error {
+	return deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, logger, kubeClient, ingressName, routeName, gatewayName, defaultGatewayAPIReadinessPollConfig())
+}
+
+func deleteIngressAfterHTTPRouteReadyWithPollConfig(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	ingressName types.NamespacedName,
+	routeName types.NamespacedName,
+	gatewayName types.NamespacedName,
+	pollConfig gatewayAPIReadinessPollConfig,
+) error {
 	ingress := &networkingv1.Ingress{}
 	if err := kubeClient.Get(ctx, ingressName, ingress); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -662,7 +701,7 @@ func deleteIngressAfterHTTPRouteReady(
 	}
 
 	logger.WithField("httproute", routeName.String()).Info("Waiting HTTPRoute to be accepted by Gateway...")
-	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName); err != nil {
+	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
 		return fmt.Errorf("failed to wait for HTTPRoute %s to be accepted by Gateway %s; verify the Gateway listener allowedRoutes accepts namespace %q: %w", routeName.String(), gatewayName.String(), routeName.Namespace, err)
 	}
 
@@ -674,11 +713,12 @@ func deleteIngressAfterHTTPRouteReady(
 }
 
 // waitForHTTPRoute waits for an HTTPRoute to reference and be accepted by the active Gateway.
-func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName) (*gatewayapiv1.HTTPRoute, error) {
+func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) (*gatewayapiv1.HTTPRoute, error) {
+	pollConfig = pollConfig.withDefaults()
 	l := logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String())
 	route := gatewayapiv1.HTTPRoute{}
 
-	err := wait.PollUntilContextTimeout(ctx, gatewayAPIReadinessPollInterval, gatewayAPIReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, routeName, &route); err != nil {
 			l.Debugf("failed to get HTTPRoute, err: %v", err)
 			return false, nil
@@ -698,7 +738,7 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 		return true, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %w", routeName.String(), gatewayName.String(), gatewayAPIReadinessTimeout, err)
+		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %w", routeName.String(), gatewayName.String(), pollConfig.timeout, err)
 	}
 
 	return &route, nil
@@ -711,6 +751,10 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 // TLS certificates that require DNS to be configured first, which only happens
 // after the installer finishes.
 func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) (*gatewayapiv1.Gateway, error) {
+	return waitForGatewayWithPollConfig(ctx, logger, kubeClient, config, defaultGatewayAPIReadinessPollConfig())
+}
+
+func waitForGatewayWithPollConfig(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration, pollConfig gatewayAPIReadinessPollConfig) (*gatewayapiv1.Gateway, error) {
 	if config == nil {
 		return nil, fmt.Errorf("Invalid KubermaticConfiguration provided")
 	}
@@ -719,7 +763,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 	requireAddress := !config.Spec.Ingress.Gateway.UsesExternalGateway()
 	rejectOperatorOwnedExternalGateway := config.Spec.Ingress.Gateway.UsesExternalGateway()
 
-	return waitForGatewayObject(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway)
+	return waitForGatewayObjectWithPollConfig(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway, pollConfig)
 }
 
 func waitForGatewayObject(
@@ -730,10 +774,23 @@ func waitForGatewayObject(
 	requireAddress bool,
 	rejectOperatorOwnedExternalGateway bool,
 ) (*gatewayapiv1.Gateway, error) {
+	return waitForGatewayObjectWithPollConfig(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway, defaultGatewayAPIReadinessPollConfig())
+}
+
+func waitForGatewayObjectWithPollConfig(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	gatewayName types.NamespacedName,
+	requireAddress bool,
+	rejectOperatorOwnedExternalGateway bool,
+	pollConfig gatewayAPIReadinessPollConfig,
+) (*gatewayapiv1.Gateway, error) {
+	pollConfig = pollConfig.withDefaults()
 	l := logger.WithField("gateway", gatewayName.String())
 	gw := gatewayapiv1.Gateway{}
 
-	err := wait.PollUntilContextTimeout(ctx, gatewayAPIReadinessPollInterval, gatewayAPIReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
 			l.Debugf("failed to get Gateway, err: %v", err)
 			return false, nil
@@ -778,7 +835,7 @@ func waitForGatewayObject(
 		return true, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Gateway %s failed to become ready within %s: %w", gatewayName.String(), gatewayAPIReadinessTimeout, err)
+		return nil, fmt.Errorf("Gateway %s failed to become ready within %s: %w", gatewayName.String(), pollConfig.timeout, err)
 	}
 
 	return &gw, nil
