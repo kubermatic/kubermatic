@@ -768,17 +768,6 @@ func waitForGatewayWithPollConfig(ctx context.Context, logger *logrus.Entry, kub
 	return waitForGatewayObjectWithPollConfig(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway, pollConfig)
 }
 
-func waitForGatewayObject(
-	ctx context.Context,
-	logger *logrus.Entry,
-	kubeClient ctrlruntimeclient.Client,
-	gatewayName types.NamespacedName,
-	requireAddress bool,
-	rejectOperatorOwnedExternalGateway bool,
-) (*gatewayapiv1.Gateway, error) {
-	return waitForGatewayObjectWithPollConfig(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway, defaultGatewayAPIReadinessPollConfig())
-}
-
 func waitForGatewayObjectWithPollConfig(
 	ctx context.Context,
 	logger *logrus.Entry,

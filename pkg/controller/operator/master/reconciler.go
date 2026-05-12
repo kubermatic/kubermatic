@@ -51,6 +51,9 @@ import (
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
+// Cross-namespace HTTPRoute changes do not necessarily enqueue the
+// KubermaticConfiguration, so external Gateway migration relies on this
+// periodic requeue while waiting for old managed-Gateway references to clear.
 const externalGatewayReadinessRequeueAfter = 30 * time.Second
 
 func mergeReconcileResults(result reconcile.Result, next reconcile.Result) reconcile.Result {

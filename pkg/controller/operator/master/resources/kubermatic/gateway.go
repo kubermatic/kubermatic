@@ -297,7 +297,7 @@ func gatewayParentReference(cfg *kubermaticv1.KubermaticConfiguration, namespace
 
 	if cfg != nil {
 		gatewayConfig := cfg.Spec.Ingress.Gateway
-		if gatewayConfig.UsesExternalGateway() {
+		if gatewayConfig != nil && gatewayConfig.UsesExternalGateway() {
 			parentName = gatewayapiv1.ObjectName(gatewayConfig.ExternalGateway.Name)
 			parentNamespace = gatewayapiv1.Namespace(gatewayConfig.ExternalGatewayNamespace(namespace))
 		}
@@ -391,7 +391,9 @@ func HTTPRouteAcceptedByExternalGateway(
 }
 
 // HTTPRoutesReferencingManagedGateway returns all HTTPRoutes that still point at
-// the operator-managed default Gateway.
+// the operator-managed default Gateway. This relies on a cluster-scoped cache:
+// migration blockers can live outside the operator namespace, for example Dex
+// and IAP HTTPRoutes.
 func HTTPRoutesReferencingManagedGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,

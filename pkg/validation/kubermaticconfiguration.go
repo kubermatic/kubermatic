@@ -46,7 +46,7 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 		allErrs = append(allErrs, errs...)
 	}
 
-	allErrs = append(allErrs, validateExternalGatewayConfiguration(spec)...)
+	allErrs = append(allErrs, ValidateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
 
 	return allErrs
@@ -54,10 +54,6 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 
 // ValidateExternalGatewayConfiguration validates spec.ingress.gateway.externalGateway.
 func ValidateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
-	return validateExternalGatewayConfiguration(spec)
-}
-
-func validateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	gateway := spec.Ingress.Gateway
