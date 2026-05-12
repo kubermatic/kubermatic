@@ -316,6 +316,8 @@ func DefaultGatewayParentReference(namespace string) gatewayapiv1.ParentReferenc
 	}
 }
 
+// appendParentReferenceIfMissing deduplicates whole-Gateway parentRefs; SectionName
+// and Port are intentionally ignored because the operator only owns Gateway-wide refs.
 func appendParentReferenceIfMissing(routeNamespace string, parentRefs []gatewayapiv1.ParentReference, parentRef gatewayapiv1.ParentReference) []gatewayapiv1.ParentReference {
 	gatewayKey := types.NamespacedName{Name: string(parentRef.Name), Namespace: routeNamespace}
 	if parentRef.Namespace != nil {

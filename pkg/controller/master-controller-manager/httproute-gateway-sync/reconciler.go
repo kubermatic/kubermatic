@@ -127,7 +127,7 @@ func (r *Reconciler) managesGateway(gtw *gatewayapiv1.Gateway) bool {
 		return false
 	}
 
-	return common.HasKubermaticConfigurationControllerOwnerReference(gtw.OwnerReferences, nil)
+	return common.HasAnyKubermaticConfigurationControllerOwnerReference(gtw.OwnerReferences)
 }
 
 // usesCertManager checks if Gateway has cert-manager annotations.
