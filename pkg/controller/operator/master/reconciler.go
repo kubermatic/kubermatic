@@ -660,6 +660,18 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 			return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 		}
 
+		if managedGatewayExists {
+			routes, err := kubermatic.HTTPRoutesReferencingManagedGateway(ctx, r.Client, config.Namespace)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			if len(routes) > 0 {
+				logger.Debugw("Keeping operator-managed Gateway because HTTPRoutes still reference it", "routes", routes, "requeueAfter", externalGatewayReadinessRequeueAfter)
+				return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
+			}
+		}
+
 		if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config, config.Namespace); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
 		}

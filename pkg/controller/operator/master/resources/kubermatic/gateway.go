@@ -376,6 +376,30 @@ func HTTPRouteAcceptedByExternalGateway(
 	return meta.IsStatusConditionTrue(gateway.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed)), nil
 }
 
+// HTTPRoutesReferencingManagedGateway returns all HTTPRoutes that still point at
+// the operator-managed default Gateway.
+func HTTPRoutesReferencingManagedGateway(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespace string,
+) ([]types.NamespacedName, error) {
+	var routeList gatewayapiv1.HTTPRouteList
+	if err := client.List(ctx, &routeList); err != nil {
+		return nil, fmt.Errorf("failed to list HTTPRoutes: %w", err)
+	}
+
+	gatewayKey := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+	references := []types.NamespacedName{}
+	for i := range routeList.Items {
+		route := &routeList.Items[i]
+		if gatewayutil.HTTPRouteReferencesGateway(route, gatewayKey) {
+			references = append(references, types.NamespacedName{Namespace: route.Namespace, Name: route.Name})
+		}
+	}
+
+	return references, nil
+}
+
 // gatewayComparable holds the fields used to detect meaningful changes between
 // existing and desired Gateway state.
 type gatewayComparable struct {
