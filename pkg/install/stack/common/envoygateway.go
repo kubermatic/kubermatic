@@ -19,6 +19,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"time"
@@ -144,9 +145,21 @@ func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 	sublogger.Info("Ensuring Gateway API Custom Resource Definitions exist...")
 
 	crdDirectory := gatewayAPICRDDirectory(opt)
+	if info, err := os.Stat(crdDirectory); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("failed to load Gateway API CRDs from bundled %s chart directory %q; this chart must be present even when the controller deployment is skipped: %w", EnvoyGatewayControllerChartName, crdDirectory, err)
+		}
+		return fmt.Errorf("failed to stat Gateway API CRD directory %q: %w", crdDirectory, err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("failed to load Gateway API CRDs from bundled %s chart directory %q; this chart must be present even when the controller deployment is skipped: not a directory", EnvoyGatewayControllerChartName, crdDirectory)
+	}
+
 	crds, err := crd.LoadFromDirectory(crdDirectory)
 	if err != nil {
 		return fmt.Errorf("failed to load Gateway API CRDs from bundled %s chart directory %q; this chart must be present even when the controller deployment is skipped: %w", EnvoyGatewayControllerChartName, crdDirectory, err)
+	}
+	if len(crds) == 0 {
+		return fmt.Errorf("failed to load Gateway API CRDs from bundled %s chart directory %q; this chart must be present even when the controller deployment is skipped: no CRD manifests found", EnvoyGatewayControllerChartName, crdDirectory)
 	}
 
 	for _, crdObject := range crds {

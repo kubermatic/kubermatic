@@ -121,28 +121,50 @@ spec:
 	}
 }
 
-func TestEnsureGatewayAPICRDsReportsBundledChartRequirement(t *testing.T) {
+func TestEnsureGatewayAPICRDsRejectsMissingOrInvalidBundle(t *testing.T) {
 	ctx := context.Background()
 	scheme := runtime.NewScheme()
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
-	client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).Build()
-	chartsDir := t.TempDir()
-	crdDir := filepath.Join(chartsDir, EnvoyGatewayControllerChartName, "crd")
-	if err := os.MkdirAll(crdDir, testDirectoryMode); err != nil {
-		t.Fatalf("failed to create CRD directory: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(crdDir, "gateway.yaml"), []byte("not: [valid"), testFileMode); err != nil {
-		t.Fatalf("failed to create invalid CRD file: %v", err)
+
+	testCases := []struct {
+		name  string
+		setup func(t *testing.T, chartsDir string)
+	}{
+		{
+			name: "missing CRD directory",
+		},
+		{
+			name: "invalid CRD manifest",
+			setup: func(t *testing.T, chartsDir string) {
+				crdDir := filepath.Join(chartsDir, EnvoyGatewayControllerChartName, "crd")
+				if err := os.MkdirAll(crdDir, testDirectoryMode); err != nil {
+					t.Fatalf("failed to create CRD directory: %v", err)
+				}
+				if err := os.WriteFile(filepath.Join(crdDir, "gateway.yaml"), []byte("not: [valid"), testFileMode); err != nil {
+					t.Fatalf("failed to create invalid CRD file: %v", err)
+				}
+			},
+		},
 	}
 
-	err := EnsureGatewayAPICRDs(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{ChartsDirectory: chartsDir})
-	if err == nil {
-		t.Fatal("expected invalid bundled Gateway API CRDs to fail")
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).Build()
+			chartsDir := t.TempDir()
+			if tc.setup != nil {
+				tc.setup(t, chartsDir)
+			}
 
-	for _, want := range []string{EnvoyGatewayControllerChartName, "must be present even when the controller deployment is skipped"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("expected error to contain %q, got %v", want, err)
-		}
+			err := EnsureGatewayAPICRDs(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{ChartsDirectory: chartsDir})
+			if err == nil {
+				t.Fatal("expected bundled Gateway API CRD loading to fail")
+			}
+
+			for _, want := range []string{EnvoyGatewayControllerChartName, "must be present even when the controller deployment is skipped"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Fatalf("expected error to contain %q, got %v", want, err)
+				}
+			}
+		})
 	}
 }

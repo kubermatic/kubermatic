@@ -575,6 +575,8 @@ func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Cl
 }
 
 func cleanupIngressWithPollConfig(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions, pollConfig gatewayAPIReadinessPollConfig) error {
+	pollConfig = pollConfig.withDefaults()
+
 	l.Info("Removing existing Ingress resources (if any) since Gateway API is enabled for Kubermatic")
 	config := opt.KubermaticConfiguration
 	if config == nil {
