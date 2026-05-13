@@ -28,6 +28,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	usersshkeysagent "k8c.io/kubermatic/v2/pkg/controller/usersshkeysagent"
 	"k8c.io/kubermatic/v2/pkg/util/podexec"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,6 @@ import (
 )
 
 const (
-	kkpManagedMarker   = "# kkp-managed"
 	agentLabelKey      = "app"
 	agentLabelValue    = "user-ssh-keys-agent"
 	agentContainer     = "user-ssh-keys-agent"
@@ -49,10 +49,7 @@ const (
 
 // authorizedKeysView is the parsed form of an authorized_keys file: KKP-managed
 // keys keyed by their UserSSHKey object name, plus external (unmarked) keys.
-type authorizedKeysView struct {
-	managed  map[string]string // UserSSHKey name -> public key value
-	external []string          // public key lines without a kkp-managed marker
-}
+type authorizedKeysView = usersshkeysagent.AuthorizedKeysView
 
 // generateSSHKey returns an OpenSSH-formatted ed25519 public key suitable for
 // authorized_keys and providerSpec.sshPublicKeys.
@@ -72,38 +69,10 @@ func generateSSHKey(t *testing.T) string {
 	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
 }
 
-// parseAuthorizedKeys mirrors the agent's contract: a "# kkp-managed[: name]"
-// comment line marks the next non-empty line as a KKP-managed key. Everything
-// else is external.
+// parseAuthorizedKeys parses an authorized_keys file using the same logic as
+// the agent controller, so the e2e tests validate against the real parser.
 func parseAuthorizedKeys(content string) authorizedKeysView {
-	view := authorizedKeysView{managed: map[string]string{}}
-
-	lines := strings.Split(content, "\n")
-	var pendingName string
-	skipNext := false
-
-	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
-		if line == "" {
-			continue
-		}
-		if strings.HasPrefix(line, kkpManagedMarker) {
-			pendingName = ""
-			if rest := strings.TrimPrefix(line, kkpManagedMarker); strings.HasPrefix(rest, ":") {
-				pendingName = strings.TrimSpace(strings.TrimPrefix(rest, ":"))
-			}
-			skipNext = true
-			continue
-		}
-		if skipNext {
-			view.managed[pendingName] = line
-			pendingName = ""
-			skipNext = false
-			continue
-		}
-		view.external = append(view.external, line)
-	}
-	return view
+	return usersshkeysagent.ParseAuthorizedKeys(content)
 }
 
 // findAgentPodForNode returns the user-ssh-keys-agent pod scheduled on the
