@@ -44,7 +44,7 @@ func DefaultMasterHTTPRouteGatewayValues(config *kubermaticv1.KubermaticConfigur
 
 	externalGateway := masterExternalGatewayReference(config)
 
-	logger.Warnf("Helm values: %s/%s point to the default Gateway, setting them to spec.ingress.gateway.externalGateway", httpRouteGatewayNamePath.String(), httpRouteGatewayNamespacePath.String())
+	logger.Infof("Helm values: %s/%s point to the default Gateway, setting them to spec.ingress.gateway.externalGateway", httpRouteGatewayNamePath.String(), httpRouteGatewayNamespacePath.String())
 	helmValues.Set(httpRouteGatewayNamePath, externalGateway.Name)
 	helmValues.Set(httpRouteGatewayNamespacePath, externalGateway.Namespace)
 

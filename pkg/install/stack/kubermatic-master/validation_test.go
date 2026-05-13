@@ -18,6 +18,7 @@ package kubermaticmaster
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -332,56 +333,95 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 			}
 
 			client := fake.NewClientBuilder().WithObjects(gw).Build()
-			if _, err := waitForGatewayWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, cfg, pollConfig); err == nil {
+			_, err := waitForGatewayWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, cfg, pollConfig)
+			if err == nil {
 				t.Fatal("expected operator-owned external Gateway not to be accepted")
-			} else if !strings.Contains(err.Error(), "operator-managed") {
-				t.Fatalf("expected error to mention operator-managed Gateway, got %v", err)
-			} else if !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
+			}
+			if !errors.Is(err, errOperatorOwnedExternalGateway) {
+				t.Fatalf("expected errOperatorOwnedExternalGateway sentinel, got %v", err)
+			}
+			if !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
 				t.Fatalf("expected error to include ownerReference recovery hint, got %v", err)
+			}
+			if strings.Contains(err.Error(), "failed to become ready within") {
+				t.Fatalf("operator-owned Gateway error must not be wrapped with the readiness-timeout message, got %v", err)
 			}
 		})
 	}
 }
 
 func TestIsGatewayOwnedByKubermaticConfiguration(t *testing.T) {
-	controller := true
-
-	cfg := &kubermaticv1.KubermaticConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			UID: types.UID("test-uid"),
-		},
-	}
-
-	gw := &gatewayapiv1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
+	tests := []struct {
+		name       string
+		ownerRefs  []metav1.OwnerReference
+		labels     map[string]string
+		wantOwned  bool
+	}{
+		{
+			name: "current KubermaticConfiguration controller owner is owned",
+			ownerRefs: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       "KubermaticConfiguration",
 					Name:       "kubermatic",
 					UID:        types.UID("test-uid"),
-					Controller: &controller,
+					Controller: ptr.To(true),
 				},
 			},
+			wantOwned: true,
+		},
+		{
+			name: "stale KubermaticConfiguration controller owner is owned",
+			ownerRefs: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("other-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			wantOwned: true,
+		},
+		{
+			name: "non-controller KubermaticConfiguration owner is not owned",
+			ownerRefs: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("test-uid"),
+					Controller: ptr.To(false),
+				},
+			},
+			wantOwned: false,
+		},
+		{
+			name: "operator-style labels without owner reference are not owned",
+			labels: map[string]string{
+				"app.kubernetes.io/name":       "kubermatic",
+				"app.kubernetes.io/managed-by": "kubermatic-operator",
+			},
+			wantOwned: false,
+		},
+		{
+			name:      "no owner references at all are not owned",
+			wantOwned: false,
 		},
 	}
 
-	if !isGatewayOwnedByKubermaticConfiguration(gw, cfg) {
-		t.Fatal("expected Gateway to be recognized as operator-owned")
-	}
-
-	gw.OwnerReferences[0].UID = types.UID("other-uid")
-	if isGatewayOwnedByKubermaticConfiguration(gw, cfg) {
-		t.Fatal("expected Gateway with another owner UID not to be recognized as operator-owned")
-	}
-
-	gw.OwnerReferences = nil
-	gw.Labels = map[string]string{
-		"app.kubernetes.io/name":       "kubermatic",
-		"app.kubernetes.io/managed-by": "kubermatic-operator",
-	}
-	if isGatewayOwnedByKubermaticConfiguration(gw, cfg) {
-		t.Fatal("expected Gateway without KubermaticConfiguration controller owner reference not to be recognized as operator-owned")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gw := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					OwnerReferences: tt.ownerRefs,
+					Labels:          tt.labels,
+				},
+			}
+			if got := isGatewayOwnedByKubermaticConfiguration(gw); got != tt.wantOwned {
+				t.Fatalf("isGatewayOwnedByKubermaticConfiguration() = %v, want %v", got, tt.wantOwned)
+			}
+		})
 	}
 }
 

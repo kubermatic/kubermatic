@@ -19,6 +19,9 @@ package defaulting_test
 import (
 	"testing"
 
+	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/validation"
 )
@@ -27,5 +30,57 @@ func TestDefaultConfigurationIsValid(t *testing.T) {
 	errs := validation.ValidateKubermaticVersioningConfiguration(defaulting.DefaultKubernetesVersioning, nil)
 	for _, err := range errs {
 		t.Error(err)
+	}
+}
+
+func TestDefaultConfigurationClearsLegacyGatewayClassNameWhenExternalGatewayIsSet(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: defaulting.DefaultGatewayClassName,
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Ingress.Gateway.ClassName != "" {
+		t.Fatalf("expected legacy default ClassName to be cleared, got %q", defaulted.Spec.Ingress.Gateway.ClassName)
+	}
+}
+
+func TestDefaultConfigurationPreservesExplicitGatewayClassNameWhenExternalGatewayIsSet(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: "my-custom-gatewayclass",
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Ingress.Gateway.ClassName != "my-custom-gatewayclass" {
+		t.Fatalf("expected explicit ClassName to be preserved so validation can reject the conflict, got %q", defaulted.Spec.Ingress.Gateway.ClassName)
 	}
 }

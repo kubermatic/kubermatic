@@ -441,6 +441,16 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
+	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.UsesExternalGateway() && configCopy.Spec.Ingress.Gateway.ClassName == DefaultGatewayClassName {
+		// Existing KubermaticConfiguration objects created while the CRD still
+		// defaulted ingress.gateway.className carry the legacy value even when
+		// the user transitions to spec.ingress.gateway.externalGateway. Clearing
+		// it here lets validation accept the migrated object without an explicit
+		// className cleanup.
+		configCopy.Spec.Ingress.Gateway.ClassName = ""
+		logger.Debugw("Clearing legacy default ClassName because externalGateway is configured")
+	}
+
 	if configCopy.Spec.Ingress.Gateway != nil && !configCopy.Spec.Ingress.Gateway.UsesExternalGateway() && configCopy.Spec.Ingress.Gateway.ClassName == "" {
 		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
 		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)

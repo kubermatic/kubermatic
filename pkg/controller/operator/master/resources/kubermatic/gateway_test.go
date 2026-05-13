@@ -987,19 +987,143 @@ func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 	}
 }
 
+func TestManagedGatewayExistsTreatsAnyConfigurationControllerOwnerAsManaged(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	testCases := []struct {
+		name   string
+		owner  []metav1.OwnerReference
+		create bool
+		want   bool
+	}{
+		{
+			name:   "missing Gateway is not managed",
+			create: false,
+			want:   false,
+		},
+		{
+			name:   "unowned Gateway is not managed",
+			create: true,
+			want:   false,
+		},
+		{
+			name: "current KubermaticConfiguration controller owner is managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        cfg.UID,
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   true,
+		},
+		{
+			name: "stale KubermaticConfiguration controller owner is managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   true,
+		},
+		{
+			name: "non-controller KubermaticConfiguration owner is not managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(false),
+				},
+			},
+			create: true,
+			want:   false,
+		},
+		{
+			name: "other controller owner is not managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+					Name:       "other-owner",
+					UID:        types.UID("other-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{}
+			if tc.create {
+				objects = append(objects, &gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            gatewayName,
+						Namespace:       namespace,
+						OwnerReferences: tc.owner,
+					},
+				})
+			}
+
+			client := fake.NewClientBuilder().WithObjects(objects...).Build()
+			got, err := ManagedGatewayExists(ctx, client, namespace)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+
+			if got != tc.want {
+				t.Fatalf("ManagedGatewayExists() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 
 	testCases := []struct {
-		name       string
-		setOwner   bool
-		labels     map[string]string
-		wantExists bool
+		name            string
+		setOwner        bool
+		ownerReferences []metav1.OwnerReference
+		labels          map[string]string
+		wantExists      bool
 	}{
 		{
 			name:       "deletes operator-owned Gateway",
 			setOwner:   true,
+			wantExists: false,
+		},
+		{
+			name: "deletes Gateway with stale KubermaticConfiguration controller owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
 			wantExists: false,
 		},
 		{
@@ -1034,9 +1158,10 @@ func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T)
 
 			existing := &gatewayapiv1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      gatewayName,
-					Namespace: namespace,
-					Labels:    tc.labels,
+					Name:            gatewayName,
+					Namespace:       namespace,
+					OwnerReferences: tc.ownerReferences,
+					Labels:          tc.labels,
 				},
 			}
 			if tc.setOwner {
@@ -1047,7 +1172,7 @@ func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T)
 
 			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-			if err := EnsureManagedGatewayAbsent(ctx, client, zap.NewNop().Sugar(), cfg, namespace); err != nil {
+			if err := EnsureManagedGatewayAbsent(ctx, client, zap.NewNop().Sugar(), namespace); err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 
@@ -1177,6 +1302,102 @@ func TestEnsureExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *te
 	}
 	if exists {
 		t.Fatal("expected missing external Gateway to be reported")
+	}
+}
+
+func TestEnsureExternalGatewayNotOperatorOwnedTreatsDeletingGatewayAsMissing(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	deletionTime := metav1.Now()
+	deletingGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "platform-gateway",
+			Namespace:         "networking",
+			DeletionTimestamp: &deletionTime,
+			Finalizers:        []string{"test/finalizer"},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(deletingGateway).Build()
+	exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if exists {
+		t.Fatal("expected deleting external Gateway to be reported as missing")
+	}
+}
+
+func TestHTTPRoutesReferencingManagedGatewayExcludesOperatorRoute(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	managedGatewayNamespace := gatewayapiv1.Namespace(namespace)
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	// Simulates a stale controller-runtime cache that still shows the KKP
+	// HTTPRoute referencing both the managed and external Gateways after
+	// EnsureHTTPRoute rewrote parentRefs to external-only.
+	kkpRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      httpRouteName,
+			Namespace: namespace,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "platform-gateway",
+						Namespace: &externalNamespace,
+					},
+					{
+						Name:      gatewayName,
+						Namespace: &managedGatewayNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	dexRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dex",
+			Namespace: "dex",
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayName,
+						Namespace: &managedGatewayNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(kkpRoute, dexRoute).Build()
+	references, err := HTTPRoutesReferencingManagedGateway(ctx, client, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if len(references) != 1 {
+		t.Fatalf("expected only the Dex HTTPRoute to be reported, got %v", references)
+	}
+	if references[0] != (types.NamespacedName{Namespace: "dex", Name: "dex"}) {
+		t.Fatalf("expected Dex HTTPRoute reference, got %s", references[0].String())
 	}
 }
 

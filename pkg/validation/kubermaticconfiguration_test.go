@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -392,7 +393,7 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "external gateway rejects class name",
+			name: "external gateway rejects custom class name",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{
 					Domain: "example.com",
@@ -401,11 +402,27 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 							Name:      "platform-gateway",
 							Namespace: "networking",
 						},
-						ClassName: "kubermatic-envoy-gateway",
+						ClassName: "my-custom-gatewayclass",
 					},
 				},
 			},
 			valid: false,
+		},
+		{
+			name: "external gateway accepts legacy default class name from removed CRD default",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						ClassName: defaulting.DefaultGatewayClassName,
+					},
+				},
+			},
+			valid: true,
 		},
 		{
 			name: "external gateway rejects infrastructure annotations",
@@ -582,7 +599,7 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 					Name:      "platform-gateway",
 					Namespace: "networking",
 				},
-				ClassName: "kubermatic-envoy-gateway",
+				ClassName: "my-custom-gatewayclass",
 				InfrastructureAnnotations: map[string]string{
 					"metallb.io/address-pool": "public",
 				},

@@ -26,6 +26,7 @@ import (
 	"github.com/distribution/reference"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -76,7 +77,11 @@ func ValidateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigura
 
 	gatewayPath := field.NewPath("spec", "ingress", "gateway")
 	externalGatewayConflictMessage := "cannot be set together with spec.ingress.gateway.externalGateway"
-	if gateway.ClassName != "" {
+	// gateway.ClassName == DefaultGatewayClassName is accepted because the
+	// KubermaticConfiguration CRD previously set it as a default. Existing
+	// objects therefore carry this value even when the user has switched to
+	// externalGateway; defaulting clears it before reconciliation runs.
+	if gateway.ClassName != "" && gateway.ClassName != defaulting.DefaultGatewayClassName {
 		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("className"), externalGatewayConflictMessage))
 	}
 	if len(gateway.InfrastructureAnnotations) > 0 {

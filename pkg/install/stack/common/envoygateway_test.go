@@ -121,6 +121,29 @@ spec:
 	}
 }
 
+func TestEnsureGatewayAPICRDsIgnoresSkippedControllerChart(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
+
+	client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).Build()
+	chartsDir := t.TempDir()
+
+	err := EnsureGatewayAPICRDs(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		ChartsDirectory: chartsDir,
+		SkipCharts:      []string{EnvoyGatewayControllerChartName},
+	})
+	if err == nil {
+		t.Fatal("expected bundled Gateway API CRD loading to fail")
+	}
+
+	for _, want := range []string{EnvoyGatewayControllerChartName, "must be present even when the controller deployment is skipped"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
+	}
+}
+
 func TestEnsureGatewayAPICRDsRejectsMissingOrInvalidBundle(t *testing.T) {
 	ctx := context.Background()
 	scheme := runtime.NewScheme()

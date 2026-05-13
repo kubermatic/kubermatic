@@ -116,7 +116,7 @@ func DeployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 }
 
 func DeployGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	if skipGatewayAPICRDs(logger, opt) {
+	if skipGatewayAPICRDDeployment(logger, opt) {
 		return nil
 	}
 
@@ -137,7 +137,7 @@ func DeployGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 // CRD manifests from the bundled envoy-gateway-controller chart, so installer
 // chart bundles must include that chart even when its deployment is skipped.
 func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	if skipGatewayAPICRDs(logger, opt) {
+	if skipGatewayAPICRDsForHeadlessInstallation(logger, opt) {
 		return nil
 	}
 
@@ -196,12 +196,16 @@ func EnsureGatewayAPICRDs(ctx context.Context, logger *logrus.Entry, kubeClient 
 	return nil
 }
 
-func skipGatewayAPICRDs(logger *logrus.Entry, opt stack.DeployOptions) bool {
+func skipGatewayAPICRDDeployment(logger *logrus.Entry, opt stack.DeployOptions) bool {
 	if slices.Contains(opt.SkipCharts, EnvoyGatewayControllerChartName) {
 		logger.Infof("⭕ Skipping Gateway API CRD deployment because %s deployment is skipped.", EnvoyGatewayControllerChartName)
 		return true
 	}
 
+	return skipGatewayAPICRDsForHeadlessInstallation(logger, opt)
+}
+
+func skipGatewayAPICRDsForHeadlessInstallation(logger *logrus.Entry, opt stack.DeployOptions) bool {
 	if opt.KubermaticConfiguration != nil && opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
 		log.Prefix(logger, "   ").Info("Headless installation requested, skipping Gateway API CRD deployment.")
 		return true

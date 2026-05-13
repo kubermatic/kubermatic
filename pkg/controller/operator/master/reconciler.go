@@ -160,11 +160,15 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return result, err
 	}
 
+	// Merge unconditionally so that a future code path returning both a requeue
+	// and an error does not silently lose the requeue. controller-runtime may
+	// still rate-limit-requeue on error, but the merged result keeps our own
+	// bookkeeping honest.
 	gatewayResult, err := r.reconcileGatewayAPIResources(ctx, defaulted, logger)
+	result = mergeReconcileResults(result, gatewayResult)
 	if err != nil {
 		return result, err
 	}
-	result = mergeReconcileResults(result, gatewayResult)
 
 	if err := r.reconcileSecrets(ctx, defaulted, logger); err != nil {
 		return result, err
@@ -639,63 +643,7 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 	}
 
 	if config.Spec.Ingress.Gateway.UsesExternalGateway() {
-		externalGatewayExists, err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if !externalGatewayExists && r.recorder != nil {
-			if externalGatewayKey, ok := kubermatic.ExternalGatewayKey(config, config.Namespace); ok {
-				r.recorder.Eventf(config, nil, corev1.EventTypeWarning, "ExternalGatewayMissing", "Reconciling", "Configured external Gateway %q does not exist; Kubermatic HTTPRoutes will remain pending until it is created", externalGatewayKey.String())
-			}
-		}
-
-		managedGatewayExists, err := kubermatic.ManagedGatewayExists(ctx, r.Client, config, config.Namespace)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to check operator-managed Gateway: %w", err)
-		}
-
-		if managedGatewayExists {
-			externalAccepted, err := kubermatic.HTTPRouteAcceptedByExternalGateway(ctx, r.Client, config, config.Namespace)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-
-			if !externalAccepted {
-				// Keep the old managed Gateway attached until the new parent is accepted.
-				// This avoids downtime when the external Gateway is missing, misconfigured,
-				// or not yet allowing routes from this namespace.
-				if err := kubermatic.EnsureHTTPRouteWithAdditionalParentRefs(ctx, r.Client, logger, config, config.Namespace, r.scheme, []gatewayapiv1.ParentReference{
-					kubermatic.DefaultGatewayParentReference(config.Namespace),
-				}); err != nil {
-					return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
-				}
-
-				logger.Debugw("Keeping operator-managed Gateway until HTTPRoute is accepted by external Gateway", "requeueAfter", externalGatewayReadinessRequeueAfter)
-				return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
-			}
-		}
-
-		if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
-		}
-
-		if managedGatewayExists {
-			routes, err := kubermatic.HTTPRoutesReferencingManagedGateway(ctx, r.Client, config.Namespace)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-
-			if len(routes) > 0 {
-				logger.Debugw("Keeping operator-managed Gateway because HTTPRoutes still reference it", "routes", routes, "requeueAfter", externalGatewayReadinessRequeueAfter)
-				return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
-			}
-		}
-
-		if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config, config.Namespace); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
-		}
-
-		return reconcile.Result{}, nil
+		return r.reconcileExternalGatewayMigration(ctx, config, logger)
 	}
 
 	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
@@ -704,6 +652,73 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 
 	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+	}
+
+	return reconcile.Result{}, nil
+}
+
+// reconcileExternalGatewayMigration handles the BYO Gateway path: it refuses to
+// touch an operator-managed Gateway, points the KKP HTTPRoute at the external
+// Gateway, and tears down the operator-managed Gateway once the external one
+// has accepted the route and no other HTTPRoute still references the managed
+// one. While the external Gateway is missing, not yet programmed, or has not
+// accepted the route, the managed Gateway is kept attached as a second
+// parentRef to avoid downtime.
+func (r *Reconciler) reconcileExternalGatewayMigration(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (reconcile.Result, error) {
+	externalGatewayExists, err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if !externalGatewayExists && r.recorder != nil {
+		if externalGatewayKey, ok := kubermatic.ExternalGatewayKey(config, config.Namespace); ok {
+			r.recorder.Eventf(config, nil, corev1.EventTypeWarning, "ExternalGatewayMissing", "Reconciling", "Configured external Gateway %q does not exist; Kubermatic HTTPRoutes will remain pending until it is created", externalGatewayKey.String())
+		}
+	}
+
+	managedGatewayExists, err := kubermatic.ManagedGatewayExists(ctx, r.Client, config.Namespace)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check operator-managed Gateway: %w", err)
+	}
+
+	if managedGatewayExists {
+		externalAccepted, err := kubermatic.HTTPRouteAcceptedByExternalGateway(ctx, r.Client, config, config.Namespace)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if !externalAccepted {
+			// Keep the old managed Gateway attached until the new parent is accepted.
+			// This avoids downtime when the external Gateway is missing, misconfigured,
+			// or not yet allowing routes from this namespace.
+			if err := kubermatic.EnsureHTTPRouteWithAdditionalParentRefs(ctx, r.Client, logger, config, config.Namespace, r.scheme, []gatewayapiv1.ParentReference{
+				kubermatic.DefaultGatewayParentReference(config.Namespace),
+			}); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+			}
+
+			logger.Debugw("Keeping operator-managed Gateway until HTTPRoute is accepted by external Gateway", "requeueAfter", externalGatewayReadinessRequeueAfter)
+			return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
+		}
+	}
+
+	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace, r.scheme); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
+	}
+
+	if managedGatewayExists {
+		routes, err := kubermatic.HTTPRoutesReferencingManagedGateway(ctx, r.Client, config.Namespace)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if len(routes) > 0 {
+			logger.Debugw("Keeping operator-managed Gateway because HTTPRoutes still reference it", "routes", routes, "requeueAfter", externalGatewayReadinessRequeueAfter)
+			return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
+		}
+	}
+
+	if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config.Namespace); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to delete operator-managed Gateway: %w", err)
 	}
 
 	return reconcile.Result{}, nil

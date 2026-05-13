@@ -74,6 +74,12 @@ const (
 	defaultGatewayAPIReadinessTimeout      = 10 * time.Minute
 )
 
+// errOperatorOwnedExternalGateway is returned when waitForGateway observes that
+// the configured external Gateway is operator-managed. It is a configuration
+// error rather than a readiness timeout and must not be wrapped with the
+// "failed to become ready within X" message that surrounds genuine timeouts.
+var errOperatorOwnedExternalGateway = errors.New("external Gateway is operator-managed")
+
 type gatewayAPIReadinessPollConfig struct {
 	interval time.Duration
 	timeout  time.Duration
@@ -529,7 +535,7 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 
 	err := c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultGatewayName}, gtw)
 	if err == nil {
-		if isGatewayOwnedByKubermaticConfiguration(gtw, config) {
+		if isGatewayOwnedByKubermaticConfiguration(gtw) {
 			err = c.Delete(ctx, gtw)
 			if err != nil && !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete Gateway: %w", err)
@@ -546,7 +552,7 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 	httpRouteKey := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}
 	err = c.Get(ctx, httpRouteKey, hr)
 	if err == nil {
-		if isHTTPRouteOwnedByKubermaticConfiguration(hr, config) {
+		if isHTTPRouteOwnedByKubermaticConfiguration(hr) {
 			err = c.Delete(ctx, hr)
 			if err != nil && !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete HTTPRoute: %w", err)
@@ -561,12 +567,19 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 	return nil
 }
 
-func isGatewayOwnedByKubermaticConfiguration(gw *gatewayapiv1.Gateway, config *kubermaticv1.KubermaticConfiguration) bool {
-	return operatorcommon.HasKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences, config)
+// isGatewayOwnedByKubermaticConfiguration matches Gateways carrying a controller
+// owner reference from any KubermaticConfiguration, including stale references
+// left over after a KubermaticConfiguration was deleted and recreated. This
+// mirrors the operator runtime behavior so the installer does not leave behind
+// stale resources for the operator to clean up after the fact.
+// KubermaticConfiguration is a cluster-wide singleton, so the usual concern of
+// adopting unrelated controllers' children does not apply.
+func isGatewayOwnedByKubermaticConfiguration(gw *gatewayapiv1.Gateway) bool {
+	return operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences)
 }
 
-func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute, config *kubermaticv1.KubermaticConfiguration) bool {
-	return operatorcommon.HasKubermaticConfigurationControllerOwnerReference(route.OwnerReferences, config)
+func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute) bool {
+	return operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(route.OwnerReferences)
 }
 
 // cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
@@ -793,7 +806,7 @@ func waitForGatewayObjectWithPollConfig(
 		}
 
 		if rejectOperatorOwnedExternalGateway && operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences) {
-			return false, fmt.Errorf("external Gateway %s is operator-managed and cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", gatewayName.String())
+			return false, fmt.Errorf("%w: %s cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", errOperatorOwnedExternalGateway, gatewayName.String())
 		}
 
 		if requireAddress && len(gw.Status.Addresses) == 0 {
@@ -826,6 +839,9 @@ func waitForGatewayObjectWithPollConfig(
 		return true, nil
 	})
 	if err != nil {
+		if errors.Is(err, errOperatorOwnedExternalGateway) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("Gateway %s failed to become ready within %s: %w", gatewayName.String(), pollConfig.timeout, err)
 	}
 

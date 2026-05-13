@@ -393,7 +393,9 @@ func HTTPRouteAcceptedByExternalGateway(
 // HTTPRoutesReferencingManagedGateway returns all HTTPRoutes that still point at
 // the operator-managed default Gateway. This relies on a cluster-scoped cache:
 // migration blockers can live outside the operator namespace, for example Dex
-// and IAP HTTPRoutes.
+// and IAP HTTPRoutes. The operator-managed KKP HTTPRoute is excluded because
+// EnsureHTTPRoute rewrites its parentRefs in the same reconcile cycle and a
+// stale controller cache could otherwise count it as its own blocker.
 func HTTPRoutesReferencingManagedGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -408,6 +410,9 @@ func HTTPRoutesReferencingManagedGateway(
 	references := []types.NamespacedName{}
 	for i := range routeList.Items {
 		route := &routeList.Items[i]
+		if route.Namespace == namespace && route.Name == httpRouteName {
+			continue
+		}
 		if gatewayutil.HTTPRouteReferencesGateway(route, gatewayKey) {
 			references = append(references, types.NamespacedName{Namespace: route.Namespace, Name: route.Name})
 		}
@@ -489,6 +494,14 @@ func EnsureExternalGatewayNotOperatorOwned(
 		return false, fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
 	}
 
+	// A Gateway with a non-nil DeletionTimestamp will never serve new routes, so
+	// treat it as missing. The reconciler then records the "missing external
+	// Gateway" event and retries until the deletion finishes and the user (or
+	// platform team) recreates the Gateway.
+	if existing.DeletionTimestamp != nil {
+		return false, nil
+	}
+
 	// Reject any KubermaticConfiguration controller ownership, current or stale.
 	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
 		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", key.String())
@@ -501,7 +514,6 @@ func EnsureExternalGatewayNotOperatorOwned(
 func ManagedGatewayExists(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
-	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
 ) (bool, error) {
 	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
@@ -514,7 +526,7 @@ func ManagedGatewayExists(
 		return false, fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
 	}
 
-	return common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, cfg), nil
+	return common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences), nil
 }
 
 // EnsureManagedGatewayAbsent deletes the operator-owned default Gateway when BYO Gateway is configured.
@@ -523,7 +535,6 @@ func EnsureManagedGatewayAbsent(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
-	cfg *kubermaticv1.KubermaticConfiguration,
 	namespace string,
 ) error {
 	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
@@ -536,7 +547,7 @@ func EnsureManagedGatewayAbsent(
 		return fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
 	}
 
-	if !common.HasKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences, cfg) {
+	if !common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
 		log.Debugw("Leaving non-operator-owned Gateway untouched", "name", gatewayName, "namespace", namespace)
 		return nil
 	}
