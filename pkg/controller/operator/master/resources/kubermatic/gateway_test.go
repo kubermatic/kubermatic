@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -1140,6 +1141,9 @@ func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerO
 			exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
 			if tt.wantError && err == nil {
 				t.Fatal("expected error")
+			}
+			if tt.wantError && err != nil && !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
+				t.Fatalf("expected error to include ownerReference recovery hint, got: %v", err)
 			}
 			if !tt.wantError && err != nil {
 				t.Fatalf("expected no error, got: %v", err)

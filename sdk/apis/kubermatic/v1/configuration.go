@@ -486,7 +486,8 @@ type KubermaticGatewayConfiguration struct {
 	// operator-managed Gateway. A Gateway with a KubermaticConfiguration controller
 	// ownerReference is considered operator-managed; remove stale ownerReferences
 	// before reusing a former managed Gateway as external. ClassName,
-	// InfrastructureAnnotations, and TLS must not be set when this field is set.
+	// InfrastructureAnnotations, TLS, and spec.ingress.certificateIssuer must
+	// not be set when this field is set.
 	ExternalGateway *KubermaticExternalGatewayReference `json:"externalGateway,omitempty"`
 
 	// ClassName is the GatewayClass to use.

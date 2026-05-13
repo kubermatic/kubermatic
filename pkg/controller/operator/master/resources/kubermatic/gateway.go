@@ -491,7 +491,7 @@ func EnsureExternalGatewayNotOperatorOwned(
 
 	// Reject any KubermaticConfiguration controller ownership, current or stale.
 	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
-		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", key.String())
+		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", key.String())
 	}
 
 	return true, nil
@@ -545,9 +545,11 @@ func EnsureManagedGatewayAbsent(
 	return client.Delete(ctx, &existing)
 }
 
-// EnsureGateway creates or updates the Gateway. Uses direct client operations instead of the standard reconciling
-// helpers to avoid cache-wait timeouts. Envoy Gateway continuously updates the Gateway Status, which would cause
-// the cache-wait logic to time out.
+// EnsureGateway creates or updates the Gateway. It still uses GatewayReconciler
+// to build desired state, but applies it with direct client operations instead
+// of the standard reconciling helpers to avoid cache-wait timeouts. Envoy
+// Gateway continuously updates the Gateway Status, which would cause the
+// cache-wait logic to time out.
 func EnsureGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -621,9 +623,11 @@ func EnsureGateway(
 	return client.Update(ctx, updated)
 }
 
-// EnsureHTTPRoute creates or updates the HTTPRoute. Uses direct client operations instead of the standard reconciling
-// helpers to avoid cache-wait timeouts.Envoy Gateway continuously updates the HTTPRoute Status, which would cause
-// the cache-wait logic to time out.
+// EnsureHTTPRoute creates or updates the HTTPRoute. EnsureHTTPRouteWithAdditionalParentRefs
+// still uses HTTPRouteReconcilerWithParentRefs to build desired state, but
+// applies it with direct client operations instead of the standard reconciling
+// helpers to avoid cache-wait timeouts. Envoy Gateway continuously updates the
+// HTTPRoute Status, which would cause the cache-wait logic to time out.
 func EnsureHTTPRoute(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,

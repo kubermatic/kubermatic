@@ -426,6 +426,41 @@ func TestValidateGatewayTLSConfiguration(t *testing.T) {
 			valid: false,
 		},
 		{
+			name: "external gateway allows empty infrastructure annotations",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+						InfrastructureAnnotations: map[string]string{},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "external gateway rejects certificate issuer",
+			spec: &kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "example.com",
+					CertificateIssuer: corev1.TypedLocalObjectReference{
+						Name: "letsencrypt-prod",
+						Kind: "ClusterIssuer",
+					},
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
 			name: "external gateway without name is invalid",
 			spec: &kubermaticv1.KubermaticConfigurationSpec{
 				Ingress: kubermaticv1.KubermaticIngressConfiguration{
@@ -538,13 +573,19 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 	spec := &kubermaticv1.KubermaticConfigurationSpec{
 		Ingress: kubermaticv1.KubermaticIngressConfiguration{
 			Domain: "example.com",
+			CertificateIssuer: corev1.TypedLocalObjectReference{
+				Name: "letsencrypt-prod",
+				Kind: "ClusterIssuer",
+			},
 			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
 				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
 					Name:      "platform-gateway",
 					Namespace: "networking",
 				},
-				ClassName:                 "kubermatic-envoy-gateway",
-				InfrastructureAnnotations: map[string]string{},
+				ClassName: "kubermatic-envoy-gateway",
+				InfrastructureAnnotations: map[string]string{
+					"metallb.io/address-pool": "public",
+				},
 				TLS: &kubermaticv1.KubermaticGatewayTLSConfiguration{
 					SecretRef: &kubermaticv1.KubermaticGatewaySecretReference{
 						Name: "kubermatic-tls",
@@ -559,6 +600,7 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 		"spec.ingress.gateway.className":                 false,
 		"spec.ingress.gateway.infrastructureAnnotations": false,
 		"spec.ingress.gateway.tls":                       false,
+		"spec.ingress.certificateIssuer":                 false,
 	}
 
 	for _, err := range errs {

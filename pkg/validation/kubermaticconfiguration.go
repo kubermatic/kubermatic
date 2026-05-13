@@ -79,11 +79,14 @@ func ValidateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigura
 	if gateway.ClassName != "" {
 		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("className"), externalGatewayConflictMessage))
 	}
-	if gateway.InfrastructureAnnotations != nil {
+	if len(gateway.InfrastructureAnnotations) > 0 {
 		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("infrastructureAnnotations"), externalGatewayConflictMessage))
 	}
 	if gateway.TLS != nil {
 		allErrs = append(allErrs, field.Forbidden(gatewayPath.Child("tls"), externalGatewayConflictMessage))
+	}
+	if spec.Ingress.CertificateIssuer.Name != "" {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "ingress", "certificateIssuer"), externalGatewayConflictMessage))
 	}
 
 	return allErrs

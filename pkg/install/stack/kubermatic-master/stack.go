@@ -793,7 +793,7 @@ func waitForGatewayObjectWithPollConfig(
 		}
 
 		if rejectOperatorOwnedExternalGateway && operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences) {
-			return false, fmt.Errorf("external Gateway %s is operator-managed and cannot be used as spec.ingress.gateway.externalGateway", gatewayName.String())
+			return false, fmt.Errorf("external Gateway %s is operator-managed and cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", gatewayName.String())
 		}
 
 		if requireAddress && len(gw.Status.Addresses) == 0 {

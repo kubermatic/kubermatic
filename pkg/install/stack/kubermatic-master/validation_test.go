@@ -336,6 +336,8 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 				t.Fatal("expected operator-owned external Gateway not to be accepted")
 			} else if !strings.Contains(err.Error(), "operator-managed") {
 				t.Fatalf("expected error to mention operator-managed Gateway, got %v", err)
+			} else if !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
+				t.Fatalf("expected error to include ownerReference recovery hint, got %v", err)
 			}
 		})
 	}
