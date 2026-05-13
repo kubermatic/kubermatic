@@ -187,7 +187,7 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 		// upgrade or when cloud-init injects the same key via MD
 		kkpSet := make(map[string]struct{}, len(kkpKeys))
 		for _, nk := range kkpKeys {
-			kkpSet[nk.key] = struct{}{}
+			kkpSet[nk.Key] = struct{}{}
 		}
 
 		filtered := make([]string, 0, len(externalKeys))
@@ -212,69 +212,88 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	return nil
 }
 
-// namedKey pairs a KKP UserSSHKey name with its public key value.
-type namedKey struct {
-	name string
-	key  string
+// NamedKey pairs a KKP UserSSHKey name with its public key value.
+type NamedKey struct {
+	Name string
+	Key  string
 }
 
 // sortedKKPKeys returns the KKP SSH keys sorted alphabetically by key value,
 // preserving the Secret map key (UserSSHKey object name) for marker comments.
-func sortedKKPKeys(sshKeys map[string][]byte) []namedKey {
-	keys := make([]namedKey, 0, len(sshKeys))
+func sortedKKPKeys(sshKeys map[string][]byte) []NamedKey {
+	keys := make([]NamedKey, 0, len(sshKeys))
 	for name, v := range sshKeys {
-		keys = append(keys, namedKey{
-			name: name,
-			key:  strings.TrimSpace(string(v)),
+		keys = append(keys, NamedKey{
+			Name: name,
+			Key:  strings.TrimSpace(string(v)),
 		})
 	}
 
 	sort.Slice(keys, func(i, j int) bool {
-		return keys[i].key < keys[j].key
+		return keys[i].Key < keys[j].Key
 	})
 
 	return keys
 }
 
-// extractExternalKeys parses an authorized_keys file and returns key lines
-// that are not preceded by the kkpManagedMarker comment. Marker comment lines
-// and the first non-empty line following each marker are considered KKP-managed
-// and excluded.
-func extractExternalKeys(content []byte) []string {
-	var external []string
-	lines := strings.Split(string(content), "\n")
+// AuthorizedKeysView is the parsed form of an authorized_keys file: KKP-managed
+// keys keyed by their UserSSHKey object name, plus external (unmarked) keys.
+type AuthorizedKeysView struct {
+	Managed  map[string]string // UserSSHKey name -> public key value
+	External []string          // public key lines without a kkp-managed marker
+}
 
+// ParseAuthorizedKeys parses an authorized_keys file and splits keys into
+// KKP-managed (preceded by a kkpManagedMarker comment) and external.
+func ParseAuthorizedKeys(content string) AuthorizedKeysView {
+	view := AuthorizedKeysView{Managed: map[string]string{}}
+
+	lines := strings.Split(content, "\n")
+	var pendingName string
 	skipNext := false
-	for i := range lines {
-		trimmed := strings.TrimSpace(lines[i])
-		if trimmed == "" {
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" {
 			continue
 		}
 
-		if strings.HasPrefix(trimmed, kkpManagedMarker) {
+		if strings.HasPrefix(line, kkpManagedMarker) {
+			pendingName = ""
+			if rest := strings.TrimPrefix(line, kkpManagedMarker); strings.HasPrefix(rest, ":") {
+				pendingName = strings.TrimSpace(strings.TrimPrefix(rest, ":"))
+			}
 			skipNext = true
 			continue
 		}
 
 		if skipNext {
+			view.Managed[pendingName] = line
+			pendingName = ""
 			skipNext = false
 			continue
 		}
 
-		external = append(external, trimmed)
+		view.External = append(view.External, line)
 	}
 
-	return external
+	return view
+}
+
+// extractExternalKeys parses an authorized_keys file and returns key lines
+// that are not preceded by the kkpManagedMarker comment.
+func extractExternalKeys(content []byte) []string {
+	return ParseAuthorizedKeys(string(content)).External
 }
 
 // mergeAuthorizedKeys builds the final authorized_keys content. Each KKP key
 // is preceded by a kkpManagedMarker comment (including the key name for
 // readability). External keys are appended without a marker.
-func mergeAuthorizedKeys(kkpKeys []namedKey, externalKeys []string) []byte {
+func mergeAuthorizedKeys(kkpKeys []NamedKey, externalKeys []string) []byte {
 	var buf bytes.Buffer
 
 	for _, nk := range kkpKeys {
-		fmt.Fprintf(&buf, "%s: %s\n%s\n", kkpManagedMarker, nk.name, nk.key)
+		fmt.Fprintf(&buf, "%s: %s\n%s\n", kkpManagedMarker, nk.Name, nk.Key)
 	}
 
 	for _, key := range externalKeys {

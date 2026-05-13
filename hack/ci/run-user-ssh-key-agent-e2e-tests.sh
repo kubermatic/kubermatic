@@ -49,7 +49,7 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 
 echodate "Running user-ssh-keys-agent e2e tests..."
 
-go_test user_ssh_keys_agent -timeout 60m -tags e2e,ee -v ./pkg/test/e2e/usersshkeysagent \
+go_test user_ssh_keys_agent -timeout 60m -tags e2e -v ./pkg/test/e2e/usersshkeysagent \
   -aws-kkp-datacenter aws-eu-west-1a \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 

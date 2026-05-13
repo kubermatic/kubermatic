@@ -141,12 +141,12 @@ func (r *runner) testKKPKeyMaterializes(ctx context.Context, project *kubermatic
 		})
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if got, ok := view.managed[key.Name]; !ok || got != kKKP {
+			if got, ok := view.Managed[key.Name]; !ok || got != kKKP {
 				return fmt.Errorf("expected managed[%q]=%q, got %q (ok=%v)", key.Name, kKKP, got, ok)
 			}
 
-			if !containsLine(view.external, kMD) {
-				return fmt.Errorf("cloud-init key %q not preserved as external line, got %v", kMD, view.external)
+			if !containsLine(view.External, kMD) {
+				return fmt.Errorf("cloud-init key %q not preserved as external line, got %v", kMD, view.External)
 			}
 
 			return nil
@@ -164,7 +164,7 @@ func (r *runner) testKKPKeyRemoved(ctx context.Context, project *kubermaticv1.Pr
 		}
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if view.managed[key.Name] != kKKP {
+			if view.Managed[key.Name] != kKKP {
 				return fmt.Errorf("KKP key not yet on node")
 			}
 
@@ -176,12 +176,12 @@ func (r *runner) testKKPKeyRemoved(ctx context.Context, project *kubermaticv1.Pr
 		}
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if _, present := view.managed[key.Name]; present {
-				return fmt.Errorf("KKP key still present in managed view: %v", view.managed)
+			if _, present := view.Managed[key.Name]; present {
+				return fmt.Errorf("KKP key still present in managed view: %v", view.Managed)
 			}
 
-			if !containsLine(view.external, kMD) {
-				return fmt.Errorf("cloud-init key %q no longer present after KKP key removal, got %v", kMD, view.external)
+			if !containsLine(view.External, kMD) {
+				return fmt.Errorf("cloud-init key %q no longer present after KKP key removal, got %v", kMD, view.External)
 			}
 
 			return nil
@@ -203,11 +203,11 @@ func (r *runner) testDedup(ctx context.Context, project *kubermaticv1.Project, c
 		})
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if view.managed[key.Name] != kMD {
-				return fmt.Errorf("expected cloud-init key to appear as managed[%q], got %v", key.Name, view.managed)
+			if view.Managed[key.Name] != kMD {
+				return fmt.Errorf("expected cloud-init key to appear as managed[%q], got %v", key.Name, view.Managed)
 			}
-			if containsLine(view.external, kMD) {
-				return fmt.Errorf("cloud-init key still present as external line (dedup failed): %v", view.external)
+			if containsLine(view.External, kMD) {
+				return fmt.Errorf("cloud-init key still present as external line (dedup failed): %v", view.External)
 			}
 			return nil
 		})
@@ -240,16 +240,16 @@ func (r *runner) testKKPKeyAddedAlongsideMD(ctx context.Context, project *kuberm
 		})
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if view.managed[keyA.Name] != kA {
-				return fmt.Errorf("expected keyA in managed[%q], got %v", keyA.Name, view.managed)
+			if view.Managed[keyA.Name] != kA {
+				return fmt.Errorf("expected keyA in managed[%q], got %v", keyA.Name, view.Managed)
 			}
 
-			if view.managed[keyB.Name] != kB {
-				return fmt.Errorf("expected keyB in managed[%q], got %v", keyB.Name, view.managed)
+			if view.Managed[keyB.Name] != kB {
+				return fmt.Errorf("expected keyB in managed[%q], got %v", keyB.Name, view.Managed)
 			}
 
-			if !containsLine(view.external, kMD) {
-				return fmt.Errorf("cloud-init key %q not preserved, got %v", kMD, view.external)
+			if !containsLine(view.External, kMD) {
+				return fmt.Errorf("cloud-init key %q not preserved, got %v", kMD, view.External)
 			}
 
 			return nil
@@ -284,15 +284,15 @@ func (r *runner) testMultipleKKPKeysSortedDeterministically(ctx context.Context,
 		})
 
 		r.expectOnEveryNode(ctx, t, func(view authorizedKeysView) error {
-			if len(view.managed) < 2 {
-				return fmt.Errorf("expected at least 2 managed keys, got %d", len(view.managed))
+			if len(view.Managed) < 2 {
+				return fmt.Errorf("expected at least 2 managed keys, got %d", len(view.Managed))
 			}
 
-			if _, ok := view.managed[keyA.Name]; !ok {
+			if _, ok := view.Managed[keyA.Name]; !ok {
 				return fmt.Errorf("keyA %q not found in managed keys", keyA.Name)
 			}
 
-			if _, ok := view.managed[keyB.Name]; !ok {
+			if _, ok := view.Managed[keyB.Name]; !ok {
 				return fmt.Errorf("keyB %q not found in managed keys", keyB.Name)
 			}
 
