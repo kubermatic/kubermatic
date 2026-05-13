@@ -350,6 +350,106 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 	}
 }
 
+func TestValidateExternalGatewayNotOperatorOwned(t *testing.T) {
+	ctx := context.Background()
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kubermatic",
+			UID:       types.UID("test-uid"),
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	operatorOwnerRef := metav1.OwnerReference{
+		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		Kind:       "KubermaticConfiguration",
+		Name:       "kubermatic",
+		UID:        cfg.UID,
+		Controller: ptr.To(true),
+	}
+	deletionTime := metav1.Now()
+
+	tests := []struct {
+		name    string
+		objects []ctrlruntimeclient.Object
+		wantErr bool
+	}{
+		{
+			name: "missing Gateway is allowed",
+		},
+		{
+			name: "unowned Gateway is allowed",
+			objects: []ctrlruntimeclient.Object{
+				&gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+		{
+			name: "deleting operator-owned Gateway is treated as not present",
+			objects: []ctrlruntimeclient.Object{
+				&gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "platform-gateway",
+						Namespace:         "networking",
+						OwnerReferences:   []metav1.OwnerReference{operatorOwnerRef},
+						DeletionTimestamp: &deletionTime,
+						Finalizers:        []string{"test/finalizer"},
+					},
+				},
+			},
+		},
+		{
+			name: "operator-owned Gateway is rejected",
+			objects: []ctrlruntimeclient.Object{
+				&gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "platform-gateway",
+						Namespace:       "networking",
+						OwnerReferences: []metav1.OwnerReference{operatorOwnerRef},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := fake.NewClientBuilder().WithObjects(tt.objects...).Build()
+			err := validateExternalGatewayNotOperatorOwned(ctx, client, cfg)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected validation error")
+				}
+				if !errors.Is(err, errOperatorOwnedExternalGateway) {
+					t.Fatalf("expected errOperatorOwnedExternalGateway sentinel, got %v", err)
+				}
+				if !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
+					t.Fatalf("expected error to include ownerReference recovery hint, got %v", err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no validation error, got %v", err)
+			}
+		})
+	}
+}
+
 func TestIsGatewayOwnedByKubermaticConfiguration(t *testing.T) {
 	tests := []struct {
 		name      string

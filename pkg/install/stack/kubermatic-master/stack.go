@@ -133,6 +133,9 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 			if err := common.EnsureGatewayAPICRDs(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 				return fmt.Errorf("failed to ensure Gateway API CRDs: %w", err)
 			}
+			if err := validateExternalGatewayNotOperatorOwned(ctx, opt.KubeClient, opt.KubermaticConfiguration); err != nil {
+				return fmt.Errorf("invalid external Gateway configuration: %w", err)
+			}
 			opt.Logger.Info("⭕ Skipping envoy-gateway-controller deployment because spec.ingress.gateway.externalGateway is configured.")
 		} else {
 			err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
@@ -582,6 +585,36 @@ func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute) bo
 	return operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(route.OwnerReferences)
 }
 
+func validateExternalGatewayNotOperatorOwned(ctx context.Context, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
+	if config == nil || config.Spec.Ingress.Gateway == nil || !config.Spec.Ingress.Gateway.UsesExternalGateway() {
+		return nil
+	}
+
+	gatewayName := gatewayObjectKey(config)
+	gw := &gatewayapiv1.Gateway{}
+	if err := c.Get(ctx, gatewayName, gw); err != nil {
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get external Gateway %s: %w", gatewayName.String(), err)
+	}
+
+	if gw.DeletionTimestamp != nil {
+		return nil
+	}
+
+	return rejectOperatorOwnedExternalGatewayReference(gatewayName, gw)
+}
+
+func rejectOperatorOwnedExternalGatewayReference(gatewayName types.NamespacedName, gw *gatewayapiv1.Gateway) error {
+	if !isGatewayOwnedByKubermaticConfiguration(gw) {
+		return nil
+	}
+
+	return fmt.Errorf("%w: %s cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", errOperatorOwnedExternalGateway, gatewayName.String())
+}
+
 // cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
 func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	return cleanupIngressWithPollConfig(ctx, l, c, opt, defaultGatewayAPIReadinessPollConfig())
@@ -805,8 +838,10 @@ func waitForGatewayObjectWithPollConfig(
 			return false, nil
 		}
 
-		if rejectOperatorOwnedExternalGateway && operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences) {
-			return false, fmt.Errorf("%w: %s cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", errOperatorOwnedExternalGateway, gatewayName.String())
+		if rejectOperatorOwnedExternalGateway {
+			if err := rejectOperatorOwnedExternalGatewayReference(gatewayName, &gw); err != nil {
+				return false, err
+			}
 		}
 
 		if requireAddress && len(gw.Status.Addresses) == 0 {
