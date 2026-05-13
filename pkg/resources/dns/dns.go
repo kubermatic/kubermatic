@@ -87,6 +87,7 @@ type deploymentReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	IsKonnectivityEnabled() bool
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 // DeploymentReconciler returns the function to create and update the DNS resolver deployment.
@@ -160,7 +161,19 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.DNSResolverDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			override := data.Cluster().Spec.ComponentsOverride.CoreDNS
+			if override != nil {
+				hostAntiAffinity = override.HostAntiAffinity
+				zoneAntiAffinity = override.ZoneAntiAffinity
+			}
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.DNSResolverDeploymentName, hostAntiAffinity)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.DNSResolverDeploymentName, zoneAntiAffinity)
+				dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
+			}
 
 			return dep, nil
 		}

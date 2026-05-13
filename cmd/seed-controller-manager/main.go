@@ -31,7 +31,6 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
-	kubelbv1alpha1 "k8c.io/kubelb/api/ee/kubelb.k8c.io/v1alpha1"
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -154,9 +153,6 @@ func main() {
 	}
 	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
-	}
-	if err := kubelbv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubelbv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer

@@ -180,7 +180,12 @@ type ClusterSpec struct {
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 
 	// Optional: OIDC specifies the OIDC configuration parameters for enabling authentication mechanism for the cluster.
+	//
+	// Deprecated: Specify authenticationConfiguration instead. This field is still supported for backward compatibility.
 	OIDC OIDCSettings `json:"oidc,omitempty"`
+
+	// Optional: AuthenticationConfiguration points to a Secret containing the AuthenticationConfiguration for the k8s api-server.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
 
 	// A map of optional or early-stage features that can be enabled for the user cluster.
 	// Some feature gates cannot be disabled after being enabled.
@@ -519,6 +524,13 @@ type AuthorizationConfigurationFile struct {
 	SecretMountPath string `json:"secretMountPath,omitempty"`
 }
 
+type AuthenticationConfiguration struct {
+	// Name of the Secret containing the AuthenticationConfiguration.
+	SecretName string `json:"secretName"`
+	// Name of the Secret key containing the AuthenticationConfiguration.
+	SecretKey string `json:"secretKey"`
+}
+
 func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {
 	if c.AuthorizationConfig == nil || c.AuthorizationConfig.EnabledModes == nil || c.AuthorizationConfig.AuthorizationWebhookConfiguration == nil {
 		return false
@@ -549,6 +561,18 @@ func (c ClusterSpec) IsAuthorizationConfigurationFileEnabled() bool {
 	}
 
 	if len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey) == 0 {
+		return false
+	}
+
+	return true
+}
+
+func (c ClusterSpec) IsAuthenticationConfigurationEnabled() bool {
+	if c.AuthenticationConfiguration == nil {
+		return false
+	}
+
+	if len(c.AuthenticationConfiguration.SecretName) == 0 || len(c.AuthenticationConfiguration.SecretKey) == 0 {
 		return false
 	}
 
@@ -944,6 +968,14 @@ type KonnectivityProxySettings struct {
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
 	// Args configures arguments (flags) for the Konnectivity deployments.
 	Args []string `json:"args,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type OSMControllerSettings struct {
@@ -959,9 +991,20 @@ type ControllerSettings struct {
 }
 
 type DeploymentSettings struct {
-	Replicas    *int32                       `json:"replicas,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+	// Replicas allows to override the number of desired Pods for the Deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources allows to override the resource requirements.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Tolerations allows to override the scheduling tolerations for Pods.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type DaemonSetSettings struct {
@@ -970,9 +1013,20 @@ type DaemonSetSettings struct {
 }
 
 type StatefulSetSettings struct {
-	Replicas    *int32                       `json:"replicas,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+	// Replicas allows to override the number of desired Pods for the StatefulSet.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources allows to override the resource requirements.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Tolerations allows to override the scheduling tolerations for Pods.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type EtcdStatefulSetSettings struct {

@@ -16,7 +16,7 @@
 
 OUTPUT_FILE = driver.yaml
 REPO_NAME = kkp-addons-csi-azure-disk
-CHART_VERSION = 1.34.1
+CHART_VERSION = 1.34.3
 
 .PHONY: default
 default: setup-helm build clean-helm
@@ -33,7 +33,6 @@ build:
 	kubectl kustomize . > $(OUTPUT_FILE).tmp
 	../../templatify.sh $(OUTPUT_FILE).tmp --dynamic "mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:version"
 	cat _header.txt $(OUTPUT_FILE).tmp _footer.txt > $(OUTPUT_FILE)
-	git apply --no-unsafe-paths --no-recount customizations.patch
 	rm $(OUTPUT_FILE).tmp
 
 .PHONY: setup-helm
