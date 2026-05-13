@@ -15,13 +15,13 @@
 loki:
   fullnameOverride: loki
 
-  # enable tracing for debug, need install jaeger and specify right jaeger_agent_host
   tracing:
-    jaegerAgentHost:
+    enabled: false
 
   loki:
     auth_enabled: false
     ingester:
+      chunk_encoding: snappy
       chunk_idle_period: 3m
       chunk_block_size: 262144
       chunk_retain_period: 1m
@@ -30,27 +30,20 @@ loki:
           kvstore:
             store: inmemory
           replication_factor: 1
+    querier:
+      # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
+      max_concurrent: 2
+    memberlistConfig:
+      # Force empty memberlist since we're running in single binary mode with 1 replica.
+      # This is instead of the single member loki-memberlist.logging.svc.cluster.local.
+      # Otherwise Loki logs an error at startup: "failed to fast-join the memberlist".
+      join_members: []
     limits_config:
-      enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 144h
       retention_period: 720h
     schemaConfig:
       configs:
-      - from: 2018-04-15
-        store: boltdb
-        object_store: filesystem
-        schema: v9
-        index:
-          prefix: index_
-          period: 144h
-      - from: 2021-07-01
-        store: boltdb-shipper
-        object_store: filesystem
-        schema: v11
-        index:
-          prefix: index_
-          period: 24h
       - from: 2022-01-11
         store: boltdb-shipper
         object_store: filesystem
@@ -58,6 +51,18 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
+      - from: 2026-05-13
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+    storage:
+      type: filesystem
+      filesystem:
+        chunks_directory: /var/loki/chunks
+        rules_directory: /var/loki/rules
     storage_config:
       boltdb:
         directory: /var/loki/index
@@ -67,12 +72,15 @@ loki:
         active_index_directory: /var/loki/boltdb-shipper-active
         cache_location: /var/loki/boltdb-shipper-cache
         cache_ttl: 24h
-        shared_store: filesystem
+      tsdb_shipper:
+        active_index_directory: /var/loki/tsdb-shipper/active
+        cache_location: /var/loki/tsdb-shipper/cache
+        cache_ttl: 24h
     chunk_store_config:
       max_look_back_period: 720h
     compactor:
-      working_directory: /var/loki/boltdb-shipper-compactor
-      shared_store: filesystem
+      working_directory: /var/loki/tsdb-shipper-compactor
+      delete_request_store: filesystem
       compaction_interval: 10m
       retention_enabled: true
       retention_delete_delay: 10m
@@ -83,6 +91,7 @@ loki:
     retention_deletes_enabled: true
     retention_period: 720h
 
+  deploymentMode: SingleBinary
   singleBinary:
     replicas: 1
 
@@ -100,6 +109,10 @@ loki:
       requests:
         cpu: 300m
         memory: 256Mi
+    extraEnv:
+      # Keep a little bit lower than memory limits
+      - name: GOMEMLIMIT
+        value: 750MiB
 
     podLabels: {}
     podAnnotations:
@@ -107,18 +120,26 @@ loki:
       prometheus.io/port: "3100"
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
 
+  chunksCache:
+    # if enabled, the chunks cache is served via a memcached StatefulSet
+    enabled: false
+
+  resultsCache:
+    # if enabled, the results cache is served via a memcached StatefulSet
+    enabled: false
+
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+
   gateway:
     enabled: false
 
   test:
     enabled: false
 
-  monitoring:
-    dashboards:
-      enabled: false
-    selfMonitoring:
-      enabled: false
-      grafanaAgent:
-        installOperator: false
-    lokiCanary:
-      enabled: false
+  lokiCanary:
+    enabled: false
