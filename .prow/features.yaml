@@ -465,7 +465,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-user-ssh-keys-agent-e2e
-    run_if_changed: "(pkg/controller/usersshkeysagent/|pkg/test/e2e/usersshkeysagent/|cmd/user-ssh-keys-agent/)"
+    run_if_changed: "(pkg/controller/usersshkeysagent/|pkg/test/e2e/usersshkeysagent/|cmd/user-ssh-keys-agent/|pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys/|hack/ci/run-user-ssh-key-agent-e2e-tests.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
