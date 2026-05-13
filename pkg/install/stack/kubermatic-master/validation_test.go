@@ -352,10 +352,10 @@ func TestWaitForGatewayRejectsOperatorOwnedExternalGateway(t *testing.T) {
 
 func TestIsGatewayOwnedByKubermaticConfiguration(t *testing.T) {
 	tests := []struct {
-		name       string
-		ownerRefs  []metav1.OwnerReference
-		labels     map[string]string
-		wantOwned  bool
+		name      string
+		ownerRefs []metav1.OwnerReference
+		labels    map[string]string
+		wantOwned bool
 	}{
 		{
 			name: "current KubermaticConfiguration controller owner is owned",
