@@ -17,10 +17,13 @@ limitations under the License.
 package kubermatic
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -178,9 +181,7 @@ func TestSeedControllerManagerDeploymentScheduling(t *testing.T) {
 			}
 
 			result, err := creator(deploy)
-			if err != nil {
-				t.Fatalf("reconciler failed: %v", err)
-			}
+			require.NoError(t, err)
 
 			seedAssertScheduling(t, result.Spec.Template.Spec, tt.want)
 		})
@@ -192,11 +193,7 @@ func seedSchedulingPtr(s kubermaticv1.PodSchedulingConfigurations) *kubermaticv1
 }
 
 func seedApplyScheduling(d *appsv1.Deployment, s kubermaticv1.PodSchedulingConfigurations) {
-	d.Spec.Template.Spec.NodeSelector = s.NodeSelector
-	d.Spec.Template.Spec.Affinity = s.Affinity
-	d.Spec.Template.Spec.Tolerations = s.Tolerations
-	d.Spec.Template.Spec.TopologySpreadConstraints = s.TopologySpreadConstraints
-	d.Spec.Template.Spec.PriorityClassName = s.PriorityClassName
+	common.ApplyPodScheduling(&d.Spec.Template.Spec, s)
 }
 
 func seedAssertScheduling(t *testing.T, spec corev1.PodSpec, want *kubermaticv1.PodSchedulingConfigurations) {
@@ -206,19 +203,9 @@ func seedAssertScheduling(t *testing.T, spec corev1.PodSpec, want *kubermaticv1.
 		want = &kubermaticv1.PodSchedulingConfigurations{}
 	}
 
-	if spec.PriorityClassName != want.PriorityClassName {
-		t.Errorf("PriorityClassName: want %q, got %q", want.PriorityClassName, spec.PriorityClassName)
-	}
-	if !reflect.DeepEqual(spec.NodeSelector, want.NodeSelector) {
-		t.Errorf("NodeSelector: want %v, got %v", want.NodeSelector, spec.NodeSelector)
-	}
-	if !reflect.DeepEqual(spec.Affinity, want.Affinity) {
-		t.Errorf("Affinity: want %v, got %v", want.Affinity, spec.Affinity)
-	}
-	if !reflect.DeepEqual(spec.Tolerations, want.Tolerations) {
-		t.Errorf("Tolerations: want %v, got %v", want.Tolerations, spec.Tolerations)
-	}
-	if !reflect.DeepEqual(spec.TopologySpreadConstraints, want.TopologySpreadConstraints) {
-		t.Errorf("TopologySpreadConstraints: want %v, got %v", want.TopologySpreadConstraints, spec.TopologySpreadConstraints)
-	}
+	assert.Equal(t, want.PriorityClassName, spec.PriorityClassName, "PriorityClassName")
+	assert.Equal(t, want.NodeSelector, spec.NodeSelector, "NodeSelector")
+	assert.Equal(t, want.Affinity, spec.Affinity, "Affinity")
+	assert.Equal(t, want.Tolerations, spec.Tolerations, "Tolerations")
+	assert.Equal(t, want.TopologySpreadConstraints, spec.TopologySpreadConstraints, "TopologySpreadConstraints")
 }

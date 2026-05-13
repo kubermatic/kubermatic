@@ -17,8 +17,10 @@ limitations under the License.
 package common
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -169,9 +171,7 @@ func TestWebhookDeploymentScheduling(t *testing.T) {
 			}
 
 			result, err := creator(deploy)
-			if err != nil {
-				t.Fatalf("reconciler failed: %v", err)
-			}
+			require.NoError(t, err)
 
 			webhookAssertScheduling(t, result.Spec.Template.Spec, tt.want)
 		})
@@ -183,11 +183,7 @@ func webhookSchedulingPtr(s kubermaticv1.PodSchedulingConfigurations) *kubermati
 }
 
 func webhookApplyScheduling(d *appsv1.Deployment, s kubermaticv1.PodSchedulingConfigurations) {
-	d.Spec.Template.Spec.NodeSelector = s.NodeSelector
-	d.Spec.Template.Spec.Affinity = s.Affinity
-	d.Spec.Template.Spec.Tolerations = s.Tolerations
-	d.Spec.Template.Spec.TopologySpreadConstraints = s.TopologySpreadConstraints
-	d.Spec.Template.Spec.PriorityClassName = s.PriorityClassName
+	ApplyPodScheduling(&d.Spec.Template.Spec, s)
 }
 
 func webhookAssertScheduling(t *testing.T, spec corev1.PodSpec, want *kubermaticv1.PodSchedulingConfigurations) {
@@ -197,19 +193,9 @@ func webhookAssertScheduling(t *testing.T, spec corev1.PodSpec, want *kubermatic
 		want = &kubermaticv1.PodSchedulingConfigurations{}
 	}
 
-	if spec.PriorityClassName != want.PriorityClassName {
-		t.Errorf("PriorityClassName: want %q, got %q", want.PriorityClassName, spec.PriorityClassName)
-	}
-	if !reflect.DeepEqual(spec.NodeSelector, want.NodeSelector) {
-		t.Errorf("NodeSelector: want %v, got %v", want.NodeSelector, spec.NodeSelector)
-	}
-	if !reflect.DeepEqual(spec.Affinity, want.Affinity) {
-		t.Errorf("Affinity: want %v, got %v", want.Affinity, spec.Affinity)
-	}
-	if !reflect.DeepEqual(spec.Tolerations, want.Tolerations) {
-		t.Errorf("Tolerations: want %v, got %v", want.Tolerations, spec.Tolerations)
-	}
-	if !reflect.DeepEqual(spec.TopologySpreadConstraints, want.TopologySpreadConstraints) {
-		t.Errorf("TopologySpreadConstraints: want %v, got %v", want.TopologySpreadConstraints, spec.TopologySpreadConstraints)
-	}
+	assert.Equal(t, want.PriorityClassName, spec.PriorityClassName, "PriorityClassName")
+	assert.Equal(t, want.NodeSelector, spec.NodeSelector, "NodeSelector")
+	assert.Equal(t, want.Affinity, spec.Affinity, "Affinity")
+	assert.Equal(t, want.Tolerations, spec.Tolerations, "Tolerations")
+	assert.Equal(t, want.TopologySpreadConstraints, spec.TopologySpreadConstraints, "TopologySpreadConstraints")
 }
