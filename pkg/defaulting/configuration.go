@@ -260,6 +260,7 @@ var (
 			newSemver("v1.33.9"),
 			newSemver("v1.33.10"),
 			newSemver("v1.33.11"),
+			newSemver("v1.33.12"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
