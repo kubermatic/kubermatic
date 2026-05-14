@@ -51,7 +51,7 @@ source hack/ci/setup-kind-cluster.sh
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
-kubectl apply -f pkg/crd/k8c.io
+create_crds_for_fresh_cluster pkg/crd/k8c.io
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
