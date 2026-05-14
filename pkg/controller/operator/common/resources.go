@@ -49,6 +49,9 @@ const (
 	// can route traffic through the Gateway.
 	GatewayAccessLabelKey = "kubermatic.io/gateway-access"
 
+	// GatewayAccessLabelValue is the label value used with GatewayAccessLabelKey.
+	GatewayAccessLabelValue = "true"
+
 	DockercfgSecretName = "dockercfg"
 
 	WebhookServiceName        = "kubermatic-webhook"

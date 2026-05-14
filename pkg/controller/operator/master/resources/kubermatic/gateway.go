@@ -93,7 +93,7 @@ func GatewayReconciler(
 							From: ptr.To(gatewayapiv1.NamespacesFromSelector),
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									common.GatewayAccessLabelKey: "true",
+									common.GatewayAccessLabelKey: common.GatewayAccessLabelValue,
 								},
 							},
 						},
@@ -147,7 +147,7 @@ func GatewayReconciler(
 							From: ptr.To(gatewayapiv1.NamespacesFromSelector),
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									common.GatewayAccessLabelKey: "true",
+									common.GatewayAccessLabelKey: common.GatewayAccessLabelValue,
 								},
 							},
 						},
@@ -215,7 +215,7 @@ func HTTPRouteReconcilerWithParentRefs(cfg *kubermaticv1.KubermaticConfiguration
 			if r.Labels == nil {
 				r.Labels = make(map[string]string)
 			}
-			r.Labels[common.NameLabel] = "kubermatic"
+			r.Labels[common.NameLabel] = common.GatewayName
 
 			if r.Annotations == nil {
 				r.Annotations = make(map[string]string)
