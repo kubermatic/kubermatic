@@ -217,6 +217,8 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				},
 			}
 
+			common.ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.SeedController.PodSchedulingConfigurations)
+
 			return d, nil
 		}
 	}

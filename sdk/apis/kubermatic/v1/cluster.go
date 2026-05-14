@@ -968,6 +968,14 @@ type KonnectivityProxySettings struct {
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
 	// Args configures arguments (flags) for the Konnectivity deployments.
 	Args []string `json:"args,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type OSMControllerSettings struct {
@@ -983,9 +991,20 @@ type ControllerSettings struct {
 }
 
 type DeploymentSettings struct {
-	Replicas    *int32                       `json:"replicas,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+	// Replicas allows to override the number of desired Pods for the Deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources allows to override the resource requirements.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Tolerations allows to override the scheduling tolerations for Pods.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type DaemonSetSettings struct {
@@ -994,9 +1013,20 @@ type DaemonSetSettings struct {
 }
 
 type StatefulSetSettings struct {
-	Replicas    *int32                       `json:"replicas,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+	// Replicas allows to override the number of desired Pods for the StatefulSet.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources allows to override the resource requirements.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Tolerations allows to override the scheduling tolerations for Pods.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type EtcdStatefulSetSettings struct {

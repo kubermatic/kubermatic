@@ -1098,11 +1098,17 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	if r.isKonnectivityEnabled {
 		konnectivityResources := resources.GetOverrides(data.cluster.Spec.ComponentsOverride)
 
+		supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, r)
+		if err != nil {
+			return fmt.Errorf("failed to determine if failure domain zone anti-affinity is supported: %w", err)
+		}
+
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			konnectivity.DeploymentReconciler(
 				data.clusterVersion, data.cluster,
 				r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime,
 				r.imageRewriter, konnectivityResources,
+				supportsFailureDomainZoneAntiAffinity,
 			),
 			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
 		}

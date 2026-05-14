@@ -262,3 +262,38 @@ presubmits:
             limits:
               memory: 4Gi
               cpu: 2
+
+  - name: pre-kubermatic-lint-mirror-application-charts
+    run_if_changed: "hack/mirror-application-charts.sh"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - "./hack/ci/lint-mirror-application-charts.sh"
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 256Mi
+
+postsubmits:
+  - name: post-kubermatic-mirror-new-application-charts
+    run_if_changed: "hack/mirror-application-charts.sh"
+    branches:
+      - ^main$
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-vault: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - "./hack/ci/mirror-new-application-charts.sh"
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 200m

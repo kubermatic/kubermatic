@@ -463,3 +463,39 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+
+  - name: pre-kubermatic-user-ssh-keys-agent-e2e
+    run_if_changed: "(pkg/controller/usersshkeysagent/|pkg/test/e2e/usersshkeysagent/|cmd/user-ssh-keys-agent/|pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys/|hack/ci/run-user-ssh-key-agent-e2e-tests.sh)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-e2e-ssh: "true"
+      preset-goproxy: "true"
+      preset-kind-volume-mounts: "true"
+      preset-kubeconfig-ci: "true"
+      preset-vault: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - "./hack/ci/run-user-ssh-key-agent-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi

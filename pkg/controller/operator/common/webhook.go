@@ -326,6 +326,8 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				},
 			}
 
+			ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.Webhook.PodSchedulingConfigurations)
+
 			return d, nil
 		}
 	}

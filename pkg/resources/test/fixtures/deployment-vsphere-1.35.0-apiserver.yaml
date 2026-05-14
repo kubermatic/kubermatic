@@ -40,15 +40,6 @@ spec:
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: apiserver
-              topologyKey: kubernetes.io/hostname
-            weight: 100
       automountServiceAccountToken: true
       containers:
       - args:
