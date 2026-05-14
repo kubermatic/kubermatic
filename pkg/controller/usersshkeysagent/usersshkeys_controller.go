@@ -169,6 +169,14 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	kkpKeys := sortedKKPKeys(sshKeys)
 
+	// deduplicate keys by dropping external keys that match a KKP key so we don't
+	// end up with two copies (one marked, one unmarked) after an
+	// upgrade or when cloud-init injects the same key via MD
+	kkpSet := make(map[string]struct{}, len(kkpKeys))
+	for _, nk := range kkpKeys {
+		kkpSet[nk.Key] = struct{}{}
+	}
+
 	for _, path := range r.authorizedKeysPath {
 		if err := updateOwnAndPermissions(path); err != nil {
 			return fmt.Errorf("failed updating permissions %s: %w", path, err)
@@ -181,14 +189,6 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 
 		// keep keys that are not marked as kkp-managed
 		externalKeys := extractExternalKeys(actualContent)
-
-		// deduplicate keys by dropping external keys that match a KKP key so we don't
-		// end up with two copies (one marked, one unmarked) after an
-		// upgrade or when cloud-init injects the same key via MD
-		kkpSet := make(map[string]struct{}, len(kkpKeys))
-		for _, nk := range kkpKeys {
-			kkpSet[nk.Key] = struct{}{}
-		}
 
 		filtered := make([]string, 0, len(externalKeys))
 		for _, k := range externalKeys {
