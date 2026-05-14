@@ -1480,14 +1480,16 @@ func TestHTTPRouteAcceptedByExternalGatewayRequiresProgrammedGateway(t *testing.
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "platform-gateway",
 						Namespace:         "networking",
+						Generation:        2,
 						DeletionTimestamp: &deletionTime,
 						Finalizers:        []string{"test/finalizer"},
 					},
 					Status: gatewayapiv1.GatewayStatus{
 						Conditions: []metav1.Condition{
 							{
-								Type:   string(gatewayapiv1.GatewayConditionProgrammed),
-								Status: metav1.ConditionTrue,
+								Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+								Status:             metav1.ConditionTrue,
+								ObservedGeneration: 2,
 							},
 						},
 					},
@@ -1495,17 +1497,56 @@ func TestHTTPRouteAcceptedByExternalGatewayRequiresProgrammedGateway(t *testing.
 			}(),
 		},
 		{
-			name: "programmed Gateway is ready",
+			name: "Gateway with stale programmed status is not ready",
 			gateway: &gatewayapiv1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "platform-gateway",
-					Namespace: "networking",
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Gateway with missing observed generation is not ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
 				},
 				Status: gatewayapiv1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
 							Type:   string(gatewayapiv1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "programmed Gateway is ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 2,
 						},
 					},
 				},

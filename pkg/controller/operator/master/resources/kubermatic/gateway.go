@@ -387,7 +387,14 @@ func HTTPRouteAcceptedByExternalGateway(
 		return false, nil
 	}
 
-	return meta.IsStatusConditionTrue(gateway.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed)), nil
+	return gatewayProgrammedForCurrentGeneration(&gateway), nil
+}
+
+func gatewayProgrammedForCurrentGeneration(gateway *gatewayapiv1.Gateway) bool {
+	programmed := meta.FindStatusCondition(gateway.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed))
+	return programmed != nil &&
+		programmed.Status == metav1.ConditionTrue &&
+		programmed.ObservedGeneration >= gateway.Generation
 }
 
 // HTTPRoutesReferencingManagedGateway returns all HTTPRoutes that still point at
