@@ -1192,7 +1192,7 @@ func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T)
 	}
 }
 
-func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerOwner(t *testing.T) {
+func TestIsExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerOwner(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 
@@ -1263,7 +1263,7 @@ func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerO
 			}
 
 			client := fake.NewClientBuilder().WithObjects(existing).Build()
-			exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+			exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
 			if tt.wantError && err == nil {
 				t.Fatal("expected error")
 			}
@@ -1280,7 +1280,7 @@ func TestEnsureExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerO
 	}
 }
 
-func TestEnsureExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *testing.T) {
+func TestIsExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 
@@ -1296,7 +1296,7 @@ func TestEnsureExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *te
 	})
 
 	client := fake.NewClientBuilder().Build()
-	exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -1305,7 +1305,7 @@ func TestEnsureExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *te
 	}
 }
 
-func TestEnsureExternalGatewayNotOperatorOwnedTreatsDeletingGatewayAsMissing(t *testing.T) {
+func TestIsExternalGatewayNotOperatorOwnedTreatsDeletingGatewayAsMissing(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
 
@@ -1331,7 +1331,7 @@ func TestEnsureExternalGatewayNotOperatorOwnedTreatsDeletingGatewayAsMissing(t *
 	}
 
 	client := fake.NewClientBuilder().WithObjects(deletingGateway).Build()
-	exists, err := EnsureExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}

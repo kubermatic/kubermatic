@@ -665,7 +665,7 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 // accepted the route, the managed Gateway is kept attached as a second
 // parentRef to avoid downtime.
 func (r *Reconciler) reconcileExternalGatewayMigration(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (reconcile.Result, error) {
-	externalGatewayExists, err := kubermatic.EnsureExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace)
+	externalGatewayExists, err := kubermatic.IsExternalGatewayNotOperatorOwned(ctx, r.Client, config, config.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

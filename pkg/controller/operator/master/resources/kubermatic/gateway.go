@@ -477,10 +477,10 @@ func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Ob
 	return nil
 }
 
-// EnsureExternalGatewayNotOperatorOwned rejects externalGateway references that point at an operator-managed Gateway.
+// IsExternalGatewayNotOperatorOwned rejects externalGateway references that point at an operator-managed Gateway.
 // Unowned Gateways, including a Gateway named kubermatic/kubermatic, are left to the user and are valid BYO targets.
 // The returned bool reports whether the referenced external Gateway currently exists.
-func EnsureExternalGatewayNotOperatorOwned(
+func IsExternalGatewayNotOperatorOwned(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	cfg *kubermaticv1.KubermaticConfiguration,
