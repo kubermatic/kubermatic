@@ -24,10 +24,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	stackcommon "k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 
@@ -62,7 +63,7 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	}
 
 	// label the `dex` namespace to allow HTTPRoute attachment to the kubermatic Gateway.
-	if err := util.EnsureNamespaceLabel(ctx, kubeClient, namespace, common.GatewayAccessLabelKey, "true"); err != nil {
+	if err := util.EnsureNamespaceLabel(ctx, kubeClient, namespace, operatorcommon.GatewayAccessLabelKey, "true"); err != nil {
 		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
@@ -70,6 +71,10 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
+
+	// ValidateConfiguration normally defaulted this already; keep this defensive
+	// for callers that invoke Deploy directly, such as the local installer path.
+	stackcommon.DefaultMasterHTTPRouteGatewayValues(opt.KubermaticConfiguration, opt.HelmValues, sublogger)
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, namespace, releaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)

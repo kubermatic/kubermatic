@@ -49,6 +49,8 @@ const (
 	listenerNamePrefixLen = maxListenerNameLength - 1 - 8 // 54 = 63 - 1 (dash) - 8 (hash)
 	// listenerNameHashLen is the length of the hash suffix.
 	listenerNameHashLen = 8
+	// maxGatewayListeners is the Gateway API maximum number of listeners per Gateway.
+	maxGatewayListeners = 64
 )
 
 type listenerTLSMode int
@@ -112,8 +114,8 @@ func (r *Reconciler) reconcile(ctx context.Context, l *zap.SugaredLogger, gtw *g
 
 	// extract desired listeners from HTTPRoutes
 	desiredListeners := r.desiredListeners(l, gtw, httpRoutes, syncConfig)
-	if len(desiredListeners) > 64 {
-		return fmt.Errorf("listener limit reached: %d listeners (max 64)", len(desiredListeners))
+	if len(desiredListeners) > maxGatewayListeners {
+		return fmt.Errorf("listener limit reached: %d listeners (max %d)", len(desiredListeners), maxGatewayListeners)
 	}
 
 	// patch Gateway if listeners changed
@@ -121,7 +123,11 @@ func (r *Reconciler) reconcile(ctx context.Context, l *zap.SugaredLogger, gtw *g
 }
 
 func (r *Reconciler) managesGateway(gtw *gatewayapiv1.Gateway) bool {
-	return gtw.Name == defaulting.DefaultGatewayName && gtw.Namespace == r.namespace
+	if gtw.Name != defaulting.DefaultGatewayName || gtw.Namespace != r.namespace {
+		return false
+	}
+
+	return common.HasAnyKubermaticConfigurationControllerOwnerReference(gtw.OwnerReferences)
 }
 
 // usesCertManager checks if Gateway has cert-manager annotations.

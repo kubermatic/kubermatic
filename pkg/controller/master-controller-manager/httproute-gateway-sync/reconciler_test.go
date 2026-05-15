@@ -24,6 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -289,6 +290,113 @@ func TestReferencesGateway(t *testing.T) {
 	}
 }
 
+func TestManagesGatewayRequiresKubermaticConfigurationOwner(t *testing.T) {
+	controller := true
+
+	testCases := []struct {
+		name    string
+		gateway gatewayapiv1.Gateway
+		want    bool
+	}{
+		{
+			name: "operator-managed default Gateway",
+			gateway: gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      defaulting.DefaultGatewayName,
+					Namespace: "kubermatic",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+							Controller: &controller,
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "external Gateway with default name is not managed without owner reference",
+			gateway: gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      defaulting.DefaultGatewayName,
+					Namespace: "kubermatic",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "external Gateway with matching owner kind but no controller is not managed",
+			gateway: gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      defaulting.DefaultGatewayName,
+					Namespace: "kubermatic",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "other Gateway name is not managed even with owner reference",
+			gateway: gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "other",
+					Namespace: "kubermatic",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+							Controller: &controller,
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "continues scanning after non-controller KubermaticConfiguration owner",
+			gateway: gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      defaulting.DefaultGatewayName,
+					Namespace: "kubermatic",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "non-controller",
+						},
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       "KubermaticConfiguration",
+							Name:       "kubermatic",
+							Controller: &controller,
+						},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	r := &Reconciler{namespace: "kubermatic"}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := r.managesGateway(&tc.gateway); got != tc.want {
+				t.Errorf("managesGateway() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestDesiredListenersReuseGatewayTLSCertificateRefs(t *testing.T) {
 	r := &Reconciler{}
 
@@ -391,6 +499,14 @@ func TestReconcileManualTLSRemovesStaleListeners(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaulting.DefaultGatewayName,
 			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					Controller: ptr.To(true),
+				},
+			},
 		},
 		Spec: gatewayapiv1.GatewaySpec{
 			Listeners: []gatewayapiv1.Listener{

@@ -480,8 +480,17 @@ type KubermaticIngressConfiguration struct {
 
 // KubermaticGatewayConfiguration configures the Gateway API integration.
 type KubermaticGatewayConfiguration struct {
+	// ExternalGateway references a user-managed Gateway. When configured,
+	// kubermatic-operator does not create the default Gateway and only points
+	// managed HTTPRoutes at this Gateway. The reference must not resolve to an
+	// operator-managed Gateway. A Gateway with a KubermaticConfiguration controller
+	// ownerReference is considered operator-managed; remove stale ownerReferences
+	// before reusing a former managed Gateway as external. ClassName,
+	// InfrastructureAnnotations, TLS, and spec.ingress.certificateIssuer must
+	// not be set when this field is set.
+	ExternalGateway *KubermaticExternalGatewayReference `json:"externalGateway,omitempty"`
+
 	// ClassName is the GatewayClass to use.
-	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
 
 	// InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
@@ -491,6 +500,37 @@ type KubermaticGatewayConfiguration struct {
 
 	// TLS configures TLS for the operator-managed default Gateway.
 	TLS *KubermaticGatewayTLSConfiguration `json:"tls,omitempty"`
+}
+
+// UsesExternalGateway returns true when Gateway API resources should attach to
+// a user-managed Gateway instead of the operator-managed default Gateway.
+// Invalid partial references such as externalGateway without a name are rejected
+// by KubermaticConfiguration validation before this predicate is used.
+func (c *KubermaticGatewayConfiguration) UsesExternalGateway() bool {
+	return c != nil && c.ExternalGateway != nil && c.ExternalGateway.Name != ""
+}
+
+// ExternalGatewayNamespace returns the referenced external Gateway namespace,
+// defaulting to the KKP namespace when no namespace is configured.
+func (c *KubermaticGatewayConfiguration) ExternalGatewayNamespace(defaultNamespace string) string {
+	if c == nil || c.ExternalGateway == nil || c.ExternalGateway.Namespace == "" {
+		return defaultNamespace
+	}
+
+	return c.ExternalGateway.Namespace
+}
+
+// KubermaticExternalGatewayReference references a user-managed Gateway.
+type KubermaticExternalGatewayReference struct {
+	// Name is the name of the Gateway.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	Name string `json:"name"`
+	// Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern:=`^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // KubermaticGatewayTLSConfiguration configures TLS for the operator-managed default Gateway.

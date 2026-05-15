@@ -48,6 +48,7 @@ type DeployOptions struct {
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
+	SeparateSeed     bool
 
 	Versions kubermaticversion.Versions
 
