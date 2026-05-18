@@ -108,6 +108,13 @@ go_test gateway_api_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
 
 echodate "Gateway API fresh install tests completed successfully!"
 
+echodate "Running Gateway API BYO Gateway migration tests..."
+
+go_test gateway_api_byo_gateway_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIExternalGatewayMigration"
+
+echodate "Gateway API BYO Gateway migration tests completed successfully!"
+
 # Reproduce issue #15711: patch KubermaticConfiguration with a missing ConfigMap
 # reference, then redeploy from scratch. The fix ensures Gateway is created
 # before Deployments, so the installer succeeds despite the broken volume ref.

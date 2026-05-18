@@ -46,7 +46,8 @@ import (
 )
 
 var (
-	logOptions = utils.DefaultLogOptions
+	logOptions                  = utils.DefaultLogOptions
+	kubermaticConfigurationName = "e2e"
 )
 
 const (
@@ -56,6 +57,7 @@ const (
 
 func init() {
 	jig.AddFlags(flag.CommandLine)
+	flag.StringVar(&kubermaticConfigurationName, "kubermatic-configuration-name", kubermaticConfigurationName, "Name of the KubermaticConfiguration")
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -309,6 +311,15 @@ func verifyIngressMode(ctx context.Context, t *testing.T, c ctrlruntimeclient.Cl
 func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
 	t.Helper()
 
+	return verifyGatewayHTTPConnectivityThroughGateway(ctx, t, c, l, types.NamespacedName{
+		Name:      defaulting.DefaultGatewayName,
+		Namespace: jig.KubermaticNamespace(),
+	}, "30080")
+}
+
+func verifyGatewayHTTPConnectivityThroughGateway(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger, gtwName types.NamespacedName, envoyNodePort string) error {
+	t.Helper()
+
 	l.Info("Testing HTTP connectivity through Gateway...")
 
 	httprouteName := types.NamespacedName{
@@ -334,11 +345,6 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	hostname := string(route.Spec.Hostnames[0])
 	l.Infof("Using HTTPRoute hostname: %s", hostname)
 
-	gtwName := types.NamespacedName{
-		Name:      defaulting.DefaultGatewayName,
-		Namespace: jig.KubermaticNamespace(),
-	}
-
 	var gatewayIP string
 	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		gw := &gatewayapiv1.Gateway{}
@@ -362,8 +368,6 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	if err != nil {
 		return fmt.Errorf("failed to get Gateway address: %w", err)
 	}
-
-	const envoyNodePort = "30080"
 
 	address := fmt.Sprintf("%s:%s", gatewayIP, envoyNodePort)
 
