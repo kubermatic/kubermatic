@@ -1,3 +1,5 @@
+//go:build ee
+
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -14,36 +16,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package applicationdefinitions
+package kubermaticmaster
 
 import (
-	"embed"
-	"io/fs"
+	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	applicationcatalog "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 )
 
-const (
-	systemApplicationsDirectory = "system-applications"
-)
-
-//go:embed system-applications
-var f embed.FS
-
-func GetSysAppDefFiles() ([]fs.File, error) {
-	files := []fs.File{}
-	entries, err := f.ReadDir(systemApplicationsDirectory)
-	if err != nil {
-		return nil, err
+func validateDefaultApplicationCatalog(config *kubermaticv1.KubermaticConfiguration) []error {
+	if _, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(zap.NewNop().Sugar(), config, false); err != nil {
+		return []error{prefixError("ApplicationDefinitions: ", err)}
 	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			file, err := f.Open(systemApplicationsDirectory + "/" + entry.Name())
-			if err != nil {
-				return nil, err
-			}
-			files = append(files, file)
-		}
-	}
-
-	return files, nil
+	return nil
 }
