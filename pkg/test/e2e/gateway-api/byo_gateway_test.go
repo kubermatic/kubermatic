@@ -133,6 +133,41 @@ func TestGatewayAPIExternalGatewayMigration(t *testing.T) {
 	}
 }
 
+func TestGatewayAPIManagedGatewayRestore(t *testing.T) {
+	ctx := t.Context()
+	rawLogger := log.NewFromOptions(logOptions)
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
+	logger := rawLogger.Sugar()
+
+	seedClient, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("Failed to build client: %v", err)
+	}
+
+	cfg, err := getGatewayTestKubermaticConfiguration(ctx, seedClient)
+	if err != nil {
+		t.Fatalf("Failed to get KubermaticConfiguration: %v", err)
+	}
+	if cfg.Spec.Ingress.Gateway != nil && cfg.Spec.Ingress.Gateway.UsesExternalGateway() {
+		t.Fatalf("Expected KubermaticConfiguration to use the managed Gateway, got external Gateway %#v", cfg.Spec.Ingress.Gateway.ExternalGateway)
+	}
+
+	managedGatewayKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
+	if err := waitForGatewayProgrammed(ctx, logger, seedClient, managedGatewayKey); err != nil {
+		t.Fatalf("Managed Gateway was not programmed: %v", err)
+	}
+
+	kkpRouteKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultHTTPRouteName}
+	if err := waitForHTTPRouteOnlyAcceptedByGateway(ctx, logger, seedClient, kkpRouteKey, managedGatewayKey); err != nil {
+		t.Fatalf("KKP HTTPRoute was not restored to managed Gateway: %v", err)
+	}
+
+	logger.Info("Verifying HTTP connectivity through the restored managed Gateway...")
+	if err := verifyGatewayHTTPConnectivity(ctx, t, seedClient, logger); err != nil {
+		t.Fatalf("Managed Gateway HTTP connectivity verification failed: %v", err)
+	}
+}
+
 func getGatewayTestKubermaticConfiguration(ctx context.Context, c ctrlruntimeclient.Client) (*kubermaticv1.KubermaticConfiguration, error) {
 	cfg := &kubermaticv1.KubermaticConfiguration{}
 	if err := c.Get(ctx, types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: kubermaticConfigurationName}, cfg); err != nil {

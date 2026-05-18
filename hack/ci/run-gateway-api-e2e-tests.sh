@@ -158,7 +158,7 @@ sleep 5
 retry 10 check_all_deployments_ready kubermatic
 
 go_test gateway_api_restore_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIFreshInstall"
+  -test.run "TestGatewayAPIManagedGatewayRestore"
 
 echodate "Managed Gateway API mode restored successfully."
 
