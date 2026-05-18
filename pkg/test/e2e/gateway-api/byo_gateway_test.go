@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -58,7 +57,7 @@ const (
 	externalHTTPSNodePort    = int64(30444)
 )
 
-func TestGatewayAPIExternalGatewayMigration(t *testing.T) {
+func TestGatewayAPIExternalGatewaySetup(t *testing.T) {
 	ctx := t.Context()
 	rawLogger := log.NewFromOptions(logOptions)
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
@@ -69,55 +68,7 @@ func TestGatewayAPIExternalGatewayMigration(t *testing.T) {
 		t.Fatalf("Failed to build client: %v", err)
 	}
 
-	cfg, err := getGatewayTestKubermaticConfiguration(ctx, seedClient)
-	if err != nil {
-		t.Fatalf("Failed to get KubermaticConfiguration: %v", err)
-	}
-	originalIngress := cfg.Spec.Ingress
-
-	dexRouteKey := types.NamespacedName{Namespace: "dex", Name: "dex"}
-	dexRoute := &gatewayapiv1.HTTPRoute{}
-	if err := seedClient.Get(ctx, dexRouteKey, dexRoute); err != nil {
-		t.Fatalf("Failed to get Dex HTTPRoute: %v", err)
-	}
-	originalDexRouteSpec := dexRoute.Spec
-
 	externalGatewayKey := types.NamespacedName{Namespace: externalGatewayNamespace, Name: externalGatewayName}
-	managedGatewayKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
-
-	t.Cleanup(func() {
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-		defer cancel()
-
-		if err := updateKubermaticConfiguration(cleanupCtx, logger, seedClient, func(cfg *kubermaticv1.KubermaticConfiguration) {
-			cfg.Spec.Ingress = originalIngress
-		}); err != nil {
-			t.Errorf("Failed to restore KubermaticConfiguration ingress settings: %v", err)
-		}
-
-		if err := updateHTTPRoute(cleanupCtx, logger, seedClient, dexRouteKey, func(route *gatewayapiv1.HTTPRoute) {
-			route.Spec = originalDexRouteSpec
-		}); err != nil {
-			t.Errorf("Failed to restore Dex HTTPRoute parentRefs: %v", err)
-		}
-
-		if err := verifyGatewayAPIModeResources(cleanupCtx, t, seedClient, logger); err != nil {
-			t.Errorf("Failed to restore managed Gateway API resources: %v", err)
-		}
-
-		if err := deleteIfExists(cleanupCtx, seedClient, externalGatewayObject(externalGatewayKey)); err != nil {
-			t.Errorf("Failed to delete external Gateway: %v", err)
-		}
-		if err := deleteIfExists(cleanupCtx, seedClient, externalGatewayClassObject()); err != nil {
-			t.Errorf("Failed to delete external GatewayClass: %v", err)
-		}
-		if err := deleteIfExists(cleanupCtx, seedClient, externalEnvoyProxyObject()); err != nil {
-			t.Errorf("Failed to delete external EnvoyProxy: %v", err)
-		}
-		if err := deleteIfExists(cleanupCtx, seedClient, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: externalGatewayNamespace}}); err != nil {
-			t.Errorf("Failed to delete external Gateway namespace: %v", err)
-		}
-	})
 
 	logger.Info("Creating externally managed Gateway data plane for BYO Gateway e2e test...")
 	if err := ensureExternalGatewayStack(ctx, seedClient); err != nil {
@@ -130,37 +81,46 @@ func TestGatewayAPIExternalGatewayMigration(t *testing.T) {
 	if err := waitForGatewayProgrammed(ctx, logger, seedClient, externalGatewayKey); err != nil {
 		t.Fatalf("External Gateway was not programmed: %v", err)
 	}
+}
 
-	logger.Info("Switching KubermaticConfiguration to external Gateway mode...")
-	if err := updateKubermaticConfiguration(ctx, logger, seedClient, func(cfg *kubermaticv1.KubermaticConfiguration) {
-		cfg.Spec.Ingress.CertificateIssuer = corev1.TypedLocalObjectReference{}
-		if cfg.Spec.Ingress.Gateway == nil {
-			cfg.Spec.Ingress.Gateway = &kubermaticv1.KubermaticGatewayConfiguration{}
-		}
-		cfg.Spec.Ingress.Gateway.ExternalGateway = &kubermaticv1.KubermaticExternalGatewayReference{
-			Name:      externalGatewayKey.Name,
-			Namespace: externalGatewayKey.Namespace,
-		}
-		cfg.Spec.Ingress.Gateway.ClassName = ""
-		cfg.Spec.Ingress.Gateway.InfrastructureAnnotations = nil
-		cfg.Spec.Ingress.Gateway.TLS = nil
-	}); err != nil {
-		t.Fatalf("Failed to configure external Gateway: %v", err)
+func TestGatewayAPIExternalGatewayMigration(t *testing.T) {
+	ctx := t.Context()
+	rawLogger := log.NewFromOptions(logOptions)
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
+	logger := rawLogger.Sugar()
+
+	seedClient, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("Failed to build client: %v", err)
+	}
+
+	externalGatewayKey := types.NamespacedName{Namespace: externalGatewayNamespace, Name: externalGatewayName}
+	managedGatewayKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
+
+	cfg, err := getGatewayTestKubermaticConfiguration(ctx, seedClient)
+	if err != nil {
+		t.Fatalf("Failed to get KubermaticConfiguration: %v", err)
+	}
+	if cfg.Spec.Ingress.Gateway == nil || !cfg.Spec.Ingress.Gateway.UsesExternalGateway() {
+		t.Fatalf("Expected KubermaticConfiguration to use an external Gateway, got %#v", cfg.Spec.Ingress.Gateway)
+	}
+	if cfg.Spec.Ingress.Gateway.ExternalGateway.Name != externalGatewayKey.Name ||
+		cfg.Spec.Ingress.Gateway.ExternalGatewayNamespace(cfg.Namespace) != externalGatewayKey.Namespace {
+		t.Fatalf("Expected external Gateway %q, got %s/%s", externalGatewayKey.String(), cfg.Spec.Ingress.Gateway.ExternalGatewayNamespace(cfg.Namespace), cfg.Spec.Ingress.Gateway.ExternalGateway.Name)
+	}
+
+	if err := waitForGatewayProgrammed(ctx, logger, seedClient, externalGatewayKey); err != nil {
+		t.Fatalf("External Gateway was not programmed: %v", err)
 	}
 
 	kkpRouteKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultHTTPRouteName}
-	if err := waitForHTTPRouteAcceptedByGateway(ctx, logger, seedClient, kkpRouteKey, externalGatewayKey); err != nil {
-		t.Fatalf("KKP HTTPRoute was not accepted by external Gateway: %v", err)
+	if err := waitForHTTPRouteOnlyAcceptedByGateway(ctx, logger, seedClient, kkpRouteKey, externalGatewayKey); err != nil {
+		t.Fatalf("KKP HTTPRoute was not moved to external Gateway: %v", err)
 	}
 
-	logger.Info("Moving Helm-managed Dex HTTPRoute to the external Gateway to complete the migration...")
-	if err := updateHTTPRoute(ctx, logger, seedClient, dexRouteKey, func(route *gatewayapiv1.HTTPRoute) {
-		route.Spec.ParentRefs = []gatewayapiv1.ParentReference{parentRefForGateway(externalGatewayKey)}
-	}); err != nil {
-		t.Fatalf("Failed to move Dex HTTPRoute to external Gateway: %v", err)
-	}
-	if err := waitForHTTPRouteAcceptedByGateway(ctx, logger, seedClient, dexRouteKey, externalGatewayKey); err != nil {
-		t.Fatalf("Dex HTTPRoute was not accepted by external Gateway: %v", err)
+	dexRouteKey := types.NamespacedName{Namespace: "dex", Name: "dex"}
+	if err := waitForHTTPRouteOnlyAcceptedByGateway(ctx, logger, seedClient, dexRouteKey, externalGatewayKey); err != nil {
+		t.Fatalf("Dex HTTPRoute was not moved to external Gateway: %v", err)
 	}
 
 	if err := waitForGatewayDeleted(ctx, logger, seedClient, managedGatewayKey); err != nil {
@@ -179,46 +139,6 @@ func getGatewayTestKubermaticConfiguration(ctx context.Context, c ctrlruntimecli
 		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 	return cfg, nil
-}
-
-func updateKubermaticConfiguration(ctx context.Context, logger *zap.SugaredLogger, c ctrlruntimeclient.Client, mutate func(*kubermaticv1.KubermaticConfiguration)) error {
-	return wait.PollImmediateLog(ctx, logger, time.Second, time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		cfg, err := getGatewayTestKubermaticConfiguration(ctx, c)
-		if err != nil {
-			return err, nil
-		}
-
-		mutate(cfg)
-
-		if err := c.Update(ctx, cfg); err != nil {
-			if apierrors.IsConflict(err) {
-				return fmt.Errorf("failed to update KubermaticConfiguration due to conflict: %w", err), nil
-			}
-			return nil, fmt.Errorf("failed to update KubermaticConfiguration: %w", err)
-		}
-
-		return nil, nil
-	})
-}
-
-func updateHTTPRoute(ctx context.Context, logger *zap.SugaredLogger, c ctrlruntimeclient.Client, key types.NamespacedName, mutate func(*gatewayapiv1.HTTPRoute)) error {
-	return wait.PollImmediateLog(ctx, logger, time.Second, time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		route := &gatewayapiv1.HTTPRoute{}
-		if err := c.Get(ctx, key, route); err != nil {
-			return err, nil
-		}
-
-		mutate(route)
-
-		if err := c.Update(ctx, route); err != nil {
-			if apierrors.IsConflict(err) {
-				return fmt.Errorf("failed to update HTTPRoute %q due to conflict: %w", key.String(), err), nil
-			}
-			return nil, fmt.Errorf("failed to update HTTPRoute %q: %w", key.String(), err)
-		}
-
-		return nil, nil
-	})
 }
 
 func ensureExternalGatewayStack(ctx context.Context, c ctrlruntimeclient.Client) error {
@@ -439,14 +359,14 @@ func waitForGatewayProgrammed(ctx context.Context, logger *zap.SugaredLogger, c 
 	})
 }
 
-func waitForHTTPRouteAcceptedByGateway(ctx context.Context, logger *zap.SugaredLogger, c ctrlruntimeclient.Client, routeKey, gatewayKey types.NamespacedName) error {
+func waitForHTTPRouteOnlyAcceptedByGateway(ctx context.Context, logger *zap.SugaredLogger, c ctrlruntimeclient.Client, routeKey, gatewayKey types.NamespacedName) error {
 	return wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
 		route := &gatewayapiv1.HTTPRoute{}
 		if err := c.Get(ctx, routeKey, route); err != nil {
 			return fmt.Errorf("HTTPRoute %q not found: %w", routeKey.String(), err), nil
 		}
 
-		if !gatewayutil.HTTPRouteReferencesGateway(route, gatewayKey) {
+		if len(route.Spec.ParentRefs) != 1 || !gatewayutil.ParentReferenceMatchesGateway(route.Namespace, route.Spec.ParentRefs[0], gatewayKey) {
 			return fmt.Errorf("HTTPRoute %q does not reference Gateway %q, parentRefs: %+v", routeKey.String(), gatewayKey.String(), route.Spec.ParentRefs), nil
 		}
 
@@ -470,20 +390,4 @@ func waitForGatewayDeleted(ctx context.Context, logger *zap.SugaredLogger, c ctr
 		}
 		return fmt.Errorf("Gateway %q still exists", key.String()), nil
 	})
-}
-
-func parentRefForGateway(key types.NamespacedName) gatewayapiv1.ParentReference {
-	namespace := gatewayapiv1.Namespace(key.Namespace)
-	return gatewayapiv1.ParentReference{
-		Name:      gatewayapiv1.ObjectName(key.Name),
-		Namespace: &namespace,
-	}
-}
-
-func deleteIfExists(ctx context.Context, c ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) error {
-	err := c.Delete(ctx, obj)
-	if err == nil || apierrors.IsNotFound(err) {
-		return nil
-	}
-	return err
 }
