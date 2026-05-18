@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	k8csemver "k8c.io/kubermatic/sdk/v2/semver"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -246,9 +247,21 @@ func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfigu
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
 
-	appDefFailures := validateDefaultApplicationCatalog(config)
+	appDefFailures := validateApplicationDefinitions(config)
 
 	return config, helmValues, append(append(kubermaticFailures, helmFailures...), appDefFailures...)
+}
+
+func validateApplicationDefinitions(config *kubermaticv1.KubermaticConfiguration) []error {
+	var errs []error
+
+	if _, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(zap.NewNop().Sugar(), config, false); err != nil {
+		errs = append(errs, prefixError("ApplicationDefinitions: ", err))
+	}
+
+	errs = append(errs, validateDefaultApplicationCatalog(config)...)
+
+	return errs
 }
 
 func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []error {
