@@ -296,4 +296,3 @@ func TestSystemApplicationDefinitionReconcilerFactories_ValidEmbedded(t *testing
 		t.Fatalf("expected embedded system ApplicationDefinitions to be valid, got error: %v", err)
 	}
 }
-
