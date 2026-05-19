@@ -318,6 +318,123 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 	}
 }
 
+func TestStuckReleaseRecoveryRunsBeforeMaxRetries(t *testing.T) {
+	ctx := context.Background()
+	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+	appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 1, 1)
+	userClient := kubermaticfake.NewClientBuilder().WithObjects(appInstall).Build()
+
+	rollbackCalled := false
+	applyCalled := false
+	appInstaller := fake.CustomApplicationInstaller{
+		IsStuckFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+			return true, nil
+		},
+		RollbackFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+			rollbackCalled = true
+			return nil
+		},
+		ApplyFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
+			applyCalled = true
+			return util.NoStatusUpdate, nil
+		},
+	}
+
+	r := reconciler{log: kubermaticlog.Logger, seedClient: userClient, userClient: userClient, appInstaller: appInstaller}
+	if err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1", nil), appInstall); err != nil {
+		t.Fatalf("expected stuck release recovery to succeed, got %v", err)
+	}
+	if !rollbackCalled {
+		t.Fatal("expected rollback/recovery to be called before enforcing max retries")
+	}
+	if !applyCalled {
+		t.Fatal("expected apply to run after stuck release recovery reset failures")
+	}
+
+	updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
+	if err := userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, updatedAppInstall); err != nil {
+		t.Fatalf("failed to get application installation: %v", err)
+	}
+	if updatedAppInstall.Status.Failures != 0 {
+		t.Fatalf("expected failures to be reset after recovery, got %d", updatedAppInstall.Status.Failures)
+	}
+}
+
+func TestDeployedReleaseClearsStaleMaxRetries(t *testing.T) {
+	ctx := context.Background()
+	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+	appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 1, 1)
+	userClient := kubermaticfake.NewClientBuilder().WithObjects(appInstall).Build()
+
+	applyCalled := false
+	appInstaller := fake.CustomApplicationInstaller{
+		IsDeployedFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+			return true, nil
+		},
+		ApplyFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
+			applyCalled = true
+			return util.NoStatusUpdate, nil
+		},
+	}
+
+	r := reconciler{log: kubermaticlog.Logger, seedClient: userClient, userClient: userClient, appInstaller: appInstaller}
+	if err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1", nil), appInstall); err != nil {
+		t.Fatalf("expected stale max retries on deployed release to recover, got %v", err)
+	}
+	if !applyCalled {
+		t.Fatal("expected apply to run after clearing stale max retries")
+	}
+
+	updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
+	if err := userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, updatedAppInstall); err != nil {
+		t.Fatalf("failed to get application installation: %v", err)
+	}
+	if updatedAppInstall.Status.Failures != 0 {
+		t.Fatalf("expected failures to be reset after successful apply, got %d", updatedAppInstall.Status.Failures)
+	}
+}
+
+func TestMaxRetriesMessageDoesNotGrow(t *testing.T) {
+	ctx := context.Background()
+	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+	appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 1, 1)
+	appInstall.Status.Conditions[appskubermaticv1.Ready] = appskubermaticv1.ApplicationInstallationCondition{
+		Status:             corev1.ConditionFalse,
+		Reason:             installationFailedRetriesExceededReason,
+		Message:            installationFailedRetriesExceededMessagePrefix + installationFailedRetriesExceededMessagePrefix + "previous error",
+		ObservedGeneration: appInstall.Generation,
+	}
+	userClient := kubermaticfake.NewClientBuilder().WithObjects(appInstall).Build()
+
+	applyCalled := false
+	appInstaller := fake.CustomApplicationInstaller{
+		ApplyFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
+			applyCalled = true
+			return util.NoStatusUpdate, nil
+		},
+	}
+
+	r := reconciler{log: kubermaticlog.Logger, seedClient: userClient, userClient: userClient, appInstaller: appInstaller}
+	if err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1", nil), appInstall); err != nil {
+		t.Fatalf("expected max retries handling to succeed, got %v", err)
+	}
+	if applyCalled {
+		t.Fatal("expected apply to remain blocked while max retries are exceeded and release is not deployed")
+	}
+
+	updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
+	if err := userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, updatedAppInstall); err != nil {
+		t.Fatalf("failed to get application installation: %v", err)
+	}
+	expectedMessage := installationFailedRetriesExceededMessagePrefix + "previous error"
+	if updatedAppInstall.Status.Conditions[appskubermaticv1.Ready].Message != expectedMessage {
+		t.Fatalf("expected max retries message %q, got %q", expectedMessage, updatedAppInstall.Status.Conditions[appskubermaticv1.Ready].Message)
+	}
+}
+
 func genApplicationDefinition(name string, defaultAppNamespace *appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{

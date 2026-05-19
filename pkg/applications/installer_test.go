@@ -179,6 +179,32 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 	}
 }
 
+func TestApplicationManager_IsStuckSkipsHelmLookupWhenTargetNamespaceDoesNotExist(t *testing.T) {
+	ctx := context.Background()
+	userClient := fake.NewClientBuilder().Build()
+
+	app := genApplicationInstallation(appskubermaticv1.AppNamespaceSpec{
+		Name:   "new-namespace",
+		Create: true,
+	})
+	app.Status.Method = appskubermaticv1.HelmTemplateMethod
+
+	appManager := &ApplicationManager{}
+	stuck, err := appManager.IsStuck(ctx, kubermaticlog.Logger, userClient, userClient, app)
+	if err != nil {
+		t.Fatalf("expected missing target namespace to skip the stuck check, got error: %v", err)
+	}
+	if stuck {
+		t.Fatal("expected missing target namespace to be treated as not stuck")
+	}
+
+	ns := &corev1.Namespace{}
+	err = userClient.Get(ctx, types.NamespacedName{Name: "new-namespace"}, ns)
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected stuck check to leave target namespace absent, got error: %v", err)
+	}
+}
+
 // contains returns an error if actual does not contain expected. If actual and expected are nil, no error is returned.
 func contains(actual map[string]string, expected map[string]string) error {
 	if expected == nil && actual != nil {

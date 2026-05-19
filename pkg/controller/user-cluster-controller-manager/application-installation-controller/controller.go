@@ -70,6 +70,9 @@ const (
 
 	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
 	initialRequeueDuration = 10 * time.Second
+
+	installationFailedRetriesExceededReason        = "InstallationFailedRetriesExceeded"
+	installationFailedRetriesExceededMessagePrefix = "Max number of retries was exceeded. Last error: "
 )
 
 type reconciler struct {
@@ -268,30 +271,39 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return err
 	}
 
-	// Install or upgrade application only if max number of retries is not exceeded.
-	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
-		oldAppInstallation := appInstallation.DeepCopy()
-		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
-
-		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
-			return fmt.Errorf("failed to update status: %w", err)
-		}
-		log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
-		return nil
-	}
-
 	// Because some upstream tools are not completely idempotent, we need a check to make sure a release is not stuck.
-	// This should be run before we make any changes to the status field, so we can use it in our analysis
+	// This must run before the retry limit is enforced so pending Helm releases can still be recovered.
 	stuck, err := r.appInstaller.IsStuck(ctx, log, r.seedClient, r.userClient, appInstallation)
 	if err != nil {
 		return fmt.Errorf("failed to check if the previous release is stuck: %w", err)
 	}
 	if stuck {
-		log.Infof("Release for ApplicationInstallation seems to be stuck, attempting rollback now")
+		log.Infof("Release for ApplicationInstallation seems to be stuck, attempting recovery now")
 		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
-			return fmt.Errorf("failed to rollback release: %w", err)
+			return fmt.Errorf("failed to recover release: %w", err)
 		}
-		log.Infof("Release for ApplicationInstallation has been rolled back successfully")
+		if err := r.resetFailures(ctx, appInstallation); err != nil {
+			return err
+		}
+		log.Infof("Release for ApplicationInstallation has been recovered successfully")
+	}
+
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+		deployed, err := r.appInstaller.IsDeployed(ctx, log, r.seedClient, r.userClient, appInstallation)
+		if err != nil {
+			return fmt.Errorf("failed to check if the previous release is deployed: %w", err)
+		}
+		if deployed {
+			log.Infow("ApplicationInstallation exceeded max retries but Helm release is deployed; resetting failures and reconciling", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
+			if err := r.resetFailures(ctx, appInstallation); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Install or upgrade application only if max number of retries is not exceeded.
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+		return r.stopAfterMaxRetries(ctx, log, appInstallation)
 	}
 
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
@@ -349,14 +361,49 @@ func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, ap
 	return false
 }
 
-// resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
-func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) stopAfterMaxRetries(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	oldAppInstallation := appInstallation.DeepCopy()
-	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
-		appInstallation.Status.Failures = 0
+	message := maxRetriesExceededMessage(oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
+	if oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Reason != installationFailedRetriesExceededReason ||
+		oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message != message {
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, installationFailedRetriesExceededReason, message)
+
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status: %w", err)
 		}
+	}
+	log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
+	return nil
+}
+
+func maxRetriesExceededMessage(previousMessage string) string {
+	return installationFailedRetriesExceededMessagePrefix + unwrapMaxRetriesExceededMessage(previousMessage)
+}
+
+func unwrapMaxRetriesExceededMessage(message string) string {
+	for strings.HasPrefix(message, installationFailedRetriesExceededMessagePrefix) {
+		message = strings.TrimPrefix(message, installationFailedRetriesExceededMessagePrefix)
+	}
+	return message
+}
+
+// resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
+func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
+		return r.resetFailures(ctx, appInstallation)
+	}
+	return nil
+}
+
+func (r reconciler) resetFailures(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	if appInstallation.Status.Failures == 0 {
+		return nil
+	}
+
+	oldAppInstallation := appInstallation.DeepCopy()
+	appInstallation.Status.Failures = 0
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
 	}
 	return nil
 }
