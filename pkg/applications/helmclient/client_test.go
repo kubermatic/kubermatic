@@ -119,17 +119,37 @@ func TestRollbackUsesLatestSuccessfulRevision(t *testing.T) {
 }
 
 func TestRollbackUninstallsOnlyWhenNoSuccessfulRevisionExists(t *testing.T) {
-	helmClient := newTestHelmClient(t, []*release.Release{
-		testRelease("test-release", "default", 1, release.StatusFailed),
-		testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
-	}, &kubefake.PrintingKubeClient{Out: io.Discard})
-
-	if err := helmClient.Rollback("test-release"); err != nil {
-		t.Fatalf("expected uninstall fallback to succeed, got %v", err)
+	tests := []struct {
+		name     string
+		releases []*release.Release
+	}{
+		{
+			name: "pending upgrade after failed revision",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusFailed),
+				testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
+			},
+		},
+		{
+			name: "pending install without any successful revision",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusPendingInstall),
+			},
+		},
 	}
 
-	if _, err := helmClient.actionConfig.Releases.History("test-release"); !errors.Is(err, driver.ErrReleaseNotFound) {
-		t.Fatalf("expected uninstall fallback to purge release history, got %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			helmClient := newTestHelmClient(t, tt.releases, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+			if err := helmClient.Rollback("test-release"); err != nil {
+				t.Fatalf("expected uninstall fallback to succeed, got %v", err)
+			}
+
+			if _, err := helmClient.actionConfig.Releases.History("test-release"); !errors.Is(err, driver.ErrReleaseNotFound) {
+				t.Fatalf("expected uninstall fallback to purge release history, got %v", err)
+			}
+		})
 	}
 }
 
