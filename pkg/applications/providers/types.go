@@ -63,6 +63,9 @@ type TemplateProvider interface {
 	// IsStuck checks if a release is stuck
 	IsStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
 
+	// IsDeployed checks if a release is deployed
+	IsDeployed(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
+
 	// Rollback the Application to the previous release
 	Rollback(applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
