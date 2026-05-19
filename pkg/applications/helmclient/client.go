@@ -470,22 +470,83 @@ func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 	return res, nil
 }
 
+// IsPending returns true when the latest release revision is in any Helm pending state.
+func (h HelmClient) IsPending(releaseName string) (bool, error) {
+	metadata, err := h.GetMetadata(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return release.Status(metadata.Status).IsPending(), nil
+}
+
+// IsDeployed returns true when the latest release revision is deployed.
+func (h HelmClient) IsDeployed(releaseName string) (bool, error) {
+	metadata, err := h.GetMetadata(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return release.Status(metadata.Status) == release.StatusDeployed, nil
+}
+
 // Rollback wraps helms Rollback command to be used with our ActionConfig.
 func (h HelmClient) Rollback(releaseName string) error {
 	client := action.NewRollback(h.actionConfig)
-	// we need to set the last successful deployed revision explicit because otherwise it would be the current revision minus 1
-	// which could lead to errors due to missing revisions when the latest ones failed because we configure history limits
-	// on upgrade actions
-	latestDeployedRelease, err := h.actionConfig.Releases.Deployed(releaseName)
+	// Set the last successful revision explicitly because otherwise Helm uses the current revision minus 1,
+	// which can point at a failed/pending release when history is incomplete or was pruned.
+	lastSuccessfulRelease, err := h.lastSuccessfulRelease(releaseName)
 	if err != nil {
+		if errors.Is(err, driver.ErrNoDeployedReleases) {
+			h.logger.Infow("No deployed release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName)
+			if _, uninstallErr := h.Uninstall(releaseName); uninstallErr != nil {
+				return fmt.Errorf("could not uninstall release %q after failing to fetch last successful release: %w", releaseName, uninstallErr)
+			}
+			return nil
+		}
 		return fmt.Errorf("could not fetch last successful release %q: %w", releaseName, err)
 	}
-	client.Version = latestDeployedRelease.Version
+	client.Version = lastSuccessfulRelease.Version
 	err = client.Run(releaseName)
 	if err != nil {
 		return fmt.Errorf("could not rollback release %q: %w", releaseName, err)
 	}
 	return nil
+}
+
+func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release, error) {
+	history, err := h.actionConfig.Releases.History(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return nil, driver.NewErrNoDeployedReleases(releaseName)
+		}
+		return nil, err
+	}
+
+	var latestSuccessfulRelease *release.Release
+	for _, rel := range history {
+		if rel == nil || rel.Info == nil {
+			continue
+		}
+		if rel.Info.Status != release.StatusDeployed && rel.Info.Status != release.StatusSuperseded {
+			continue
+		}
+		if latestSuccessfulRelease == nil || rel.Version > latestSuccessfulRelease.Version {
+			latestSuccessfulRelease = rel
+		}
+	}
+
+	if latestSuccessfulRelease == nil {
+		return nil, driver.NewErrNoDeployedReleases(releaseName)
+	}
+
+	return latestSuccessfulRelease, nil
 }
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies

@@ -64,6 +64,11 @@ func (a *ApplicationInstallerRecorder) IsStuck(ctx context.Context, log *zap.Sug
 	return false, nil
 }
 
+func (a *ApplicationInstallerRecorder) IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// NOOP
+	return false, nil
+}
+
 func (a *ApplicationInstallerRecorder) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	return nil
 }
@@ -95,6 +100,11 @@ func (a ApplicationInstallerLogger) IsStuck(ctx context.Context, log *zap.Sugare
 	return false, nil
 }
 
+func (a ApplicationInstallerLogger) IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// NOOP
+	return false, nil
+}
+
 func (a ApplicationInstallerLogger) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	// NOOP
 	return nil
@@ -107,6 +117,9 @@ type CustomApplicationInstaller struct {
 	DownloadSourceFunc func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error)
 	ApplyFunc          func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error)
 	DeleteFunc         func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
+	IsStuckFunc        func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
+	IsDeployedFunc     func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
+	RollbackFunc       func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
 
 func (c CustomApplicationInstaller) GetAppCache() string {
@@ -138,11 +151,22 @@ func (c CustomApplicationInstaller) Delete(ctx context.Context, log *zap.Sugared
 }
 
 func (c CustomApplicationInstaller) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
-	// NOOP
+	if c.IsStuckFunc != nil {
+		return c.IsStuckFunc(ctx, log, seedClient, userClient, applicationInstallation)
+	}
+	return false, nil
+}
+
+func (c CustomApplicationInstaller) IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	if c.IsDeployedFunc != nil {
+		return c.IsDeployedFunc(ctx, log, seedClient, userClient, applicationInstallation)
+	}
 	return false, nil
 }
 
 func (c CustomApplicationInstaller) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
-	// NOOP
+	if c.RollbackFunc != nil {
+		return c.RollbackFunc(ctx, log, seedClient, userClient, applicationInstallation)
+	}
 	return nil
 }

@@ -20,13 +20,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/kube"
+	kubefake "helm.sh/helm/v3/pkg/kube/fake"
 	"helm.sh/helm/v3/pkg/provenance"
+	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/storage"
+	"helm.sh/helm/v3/pkg/storage/driver"
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -50,6 +59,131 @@ func TestNewShouldFailWhenRESTClientGetterNamespaceIsDifferentThanTargetNamespac
 	expectedErrMsg := "namespace set in RESTClientGetter should be the same as targetNamespace"
 	if !strings.Contains(err.Error(), expectedErrMsg) {
 		t.Fatalf("helmclient.NewClient() fails for the wrong reason. expected error message: '%s' to contain: '%s'", err, expectedErrMsg)
+	}
+}
+
+func TestRollbackUsesLatestSuccessfulRevision(t *testing.T) {
+	tests := []struct {
+		name             string
+		releases         []*release.Release
+		expectedRollback int
+	}{
+		{
+			name: "pending upgrade with superseded revision and no deployed revision",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusSuperseded),
+				testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
+			},
+			expectedRollback: 1,
+		},
+		{
+			name: "pending rollback with deployed revision",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusDeployed),
+				testRelease("test-release", "default", 2, release.StatusPendingRollback),
+			},
+			expectedRollback: 1,
+		},
+		{
+			name: "latest successful revision is selected",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusDeployed),
+				testRelease("test-release", "default", 2, release.StatusSuperseded),
+				testRelease("test-release", "default", 3, release.StatusPendingUpgrade),
+			},
+			expectedRollback: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			helmClient := newTestHelmClient(t, tt.releases, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+			if err := helmClient.Rollback("test-release"); err != nil {
+				t.Fatalf("expected rollback to succeed, got %v", err)
+			}
+
+			latestRelease, err := helmClient.actionConfig.Releases.Last("test-release")
+			if err != nil {
+				t.Fatalf("failed to get latest release: %v", err)
+			}
+			if latestRelease.Info.Status != release.StatusDeployed {
+				t.Fatalf("expected rollback release to be deployed, got %s", latestRelease.Info.Status)
+			}
+			expectedDescription := "Rollback to " + strconv.Itoa(tt.expectedRollback)
+			if latestRelease.Info.Description != expectedDescription {
+				t.Fatalf("expected rollback description %q, got %q", expectedDescription, latestRelease.Info.Description)
+			}
+		})
+	}
+}
+
+func TestRollbackUninstallsOnlyWhenNoSuccessfulRevisionExists(t *testing.T) {
+	helmClient := newTestHelmClient(t, []*release.Release{
+		testRelease("test-release", "default", 1, release.StatusFailed),
+		testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
+	}, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+	if err := helmClient.Rollback("test-release"); err != nil {
+		t.Fatalf("expected uninstall fallback to succeed, got %v", err)
+	}
+
+	if _, err := helmClient.actionConfig.Releases.History("test-release"); !errors.Is(err, driver.ErrReleaseNotFound) {
+		t.Fatalf("expected uninstall fallback to purge release history, got %v", err)
+	}
+}
+
+func TestRollbackDoesNotUninstallWhenRollbackExecutionFails(t *testing.T) {
+	helmClient := newTestHelmClient(t, []*release.Release{
+		testRelease("test-release", "default", 1, release.StatusSuperseded),
+		testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
+	}, &kubefake.FailingKubeClient{
+		PrintingKubeClient: kubefake.PrintingKubeClient{Out: io.Discard},
+		UpdateError:        errors.New("update failed"),
+	})
+
+	if err := helmClient.Rollback("test-release"); err == nil {
+		t.Fatal("expected rollback error")
+	}
+
+	history, err := helmClient.actionConfig.Releases.History("test-release")
+	if err != nil {
+		t.Fatalf("expected release history to remain after rollback failure, got %v", err)
+	}
+	if len(history) == 0 {
+		t.Fatal("expected release history to remain after rollback failure")
+	}
+}
+
+func newTestHelmClient(t *testing.T, releases []*release.Release, kubeClient kube.Interface) HelmClient {
+	t.Helper()
+
+	actionConfig := &action.Configuration{
+		Releases:   storage.Init(driver.NewMemory()),
+		KubeClient: kubeClient,
+		Log:        func(string, ...interface{}) {},
+	}
+	for _, rel := range releases {
+		if err := actionConfig.Releases.Create(rel); err != nil {
+			t.Fatalf("failed to create test release: %v", err)
+		}
+	}
+
+	return HelmClient{
+		actionConfig: actionConfig,
+		logger:       kubermaticlog.Logger,
+	}
+}
+
+func testRelease(name, namespace string, version int, status release.Status) *release.Release {
+	return &release.Release{
+		Name:      name,
+		Namespace: namespace,
+		Version:   version,
+		Chart:     &chart.Chart{},
+		Info: &release.Info{
+			Status: status,
+		},
 	}
 }
 
