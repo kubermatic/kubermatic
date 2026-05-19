@@ -504,7 +504,7 @@ func (h HelmClient) Rollback(releaseName string) error {
 	lastSuccessfulRelease, err := h.lastSuccessfulRelease(releaseName)
 	if err != nil {
 		if errors.Is(err, driver.ErrNoDeployedReleases) {
-			h.logger.Infow("No deployed release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName)
+			h.logger.Infow("No successful release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName)
 			if _, uninstallErr := h.Uninstall(releaseName); uninstallErr != nil {
 				return fmt.Errorf("could not uninstall release %q after failing to fetch last successful release: %w", releaseName, uninstallErr)
 			}
