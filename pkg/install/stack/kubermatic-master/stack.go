@@ -477,7 +477,11 @@ func showIngressDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) (hostname, ip string) {
 	gatewayName := gatewayObjectKey(opt.KubermaticConfiguration)
 
-	logger.WithField("gateway", gatewayName).Debug("Waiting for Gateway to be ready")
+	if opt.KubermaticConfiguration.Spec.Ingress.Gateway.UsesExternalGateway() {
+		logger.WithField("gateway", gatewayName.String()).Info("Waiting for external Gateway to become ready...")
+	} else {
+		logger.WithField("gateway", gatewayName.String()).Info("Waiting for Gateway to become ready...")
+	}
 
 	gtw, err := waitForGateway(ctx, logger, kubeClient, opt.KubermaticConfiguration)
 	if err != nil {
@@ -629,6 +633,10 @@ func cleanupIngressWithPollConfig(ctx context.Context, l *logrus.Entry, c ctrlru
 		return errors.New("kubermatic configuration is nil")
 	}
 
+	if err := waitForExternalGatewayHTTPRoutesWithPollConfig(ctx, l, c, opt, pollConfig); err != nil {
+		return err
+	}
+
 	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
 	dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
 
@@ -708,6 +716,47 @@ func dexGatewayObjectKey(config *kubermaticv1.KubermaticConfiguration, opt stack
 	return common.MasterHTTPRouteGatewayReference(config, opt.HelmValues)
 }
 
+func waitForExternalGatewayHTTPRoutesWithPollConfig(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions, pollConfig gatewayAPIReadinessPollConfig) error {
+	config := opt.KubermaticConfiguration
+	if config == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+	if !config.Spec.Ingress.Gateway.UsesExternalGateway() {
+		return nil
+	}
+	if config.Spec.FeatureGates[features.HeadlessInstallation] {
+		l.Debug("Headless installation requested, skipping external Gateway HTTPRoute readiness checks")
+		return nil
+	}
+
+	gatewayName := gatewayObjectKey(config)
+	l.WithField("gateway", gatewayName.String()).Info("Waiting for external Gateway to become ready before completing BYO Gateway migration...")
+	if _, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig); err != nil {
+		return fmt.Errorf("failed to wait for external Gateway %s to become ready: %w", gatewayName.String(), err)
+	}
+
+	kubermaticRouteName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}
+	if err := waitForHTTPRouteAcceptedByGateway(ctx, l, c, kubermaticRouteName, gatewayName, pollConfig); err != nil {
+		return err
+	}
+
+	if slices.Contains(opt.SkipCharts, DexChartName) {
+		l.Info("Skipping Dex HTTPRoute readiness check because the Dex chart is skipped")
+		return nil
+	}
+
+	dexGatewayName := dexGatewayObjectKey(config, opt)
+	if dexGatewayName != gatewayName {
+		l.WithField("gateway", dexGatewayName.String()).Info("Waiting for Dex Gateway to become ready...")
+		if _, err := waitForGatewayObjectWithPollConfig(ctx, l, c, dexGatewayName, false, false, pollConfig); err != nil {
+			return fmt.Errorf("failed to wait for Dex Gateway %s to become ready: %w", dexGatewayName.String(), err)
+		}
+	}
+
+	dexRouteName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+	return waitForHTTPRouteAcceptedByGateway(ctx, l, c, dexRouteName, dexGatewayName, pollConfig)
+}
+
 func ingressExists(ctx context.Context, kubeClient ctrlruntimeclient.Client, ingressName types.NamespacedName) (bool, error) {
 	ingress := &networkingv1.Ingress{}
 	if err := kubeClient.Get(ctx, ingressName, ingress); err != nil {
@@ -748,13 +797,21 @@ func deleteIngressAfterHTTPRouteReadyWithPollConfig(
 		return fmt.Errorf("failed to get Ingress %s: %w", ingressName.String(), err)
 	}
 
-	logger.WithField("httproute", routeName.String()).Info("Waiting HTTPRoute to be accepted by Gateway...")
-	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
-		return fmt.Errorf("failed to wait for HTTPRoute %s to be accepted by Gateway %s; verify the Gateway listener allowedRoutes accepts namespace %q: %w", routeName.String(), gatewayName.String(), routeName.Namespace, err)
+	if err := waitForHTTPRouteAcceptedByGateway(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
+		return err
 	}
 
 	if err := kubeClient.Delete(ctx, ingress); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete Ingress %s: %w", ingressName.String(), err)
+	}
+
+	return nil
+}
+
+func waitForHTTPRouteAcceptedByGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) error {
+	logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String()).Info("Waiting for HTTPRoute to be accepted by Gateway...")
+	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
+		return fmt.Errorf("failed to wait for HTTPRoute %s to be accepted by Gateway %s; verify the Gateway listener hostname and allowedRoutes accept namespace %q: %w", routeName.String(), gatewayName.String(), routeName.Namespace, err)
 	}
 
 	return nil
@@ -765,12 +822,17 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 	pollConfig = pollConfig.withDefaults()
 	l := logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String())
 	route := gatewayapiv1.HTTPRoute{}
+	routeFound := false
 
 	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, routeName, &route); err != nil {
+			// Last-poll snapshot, not historical state: if the route disappears
+			// before timeout, report that it does not exist now.
+			routeFound = false
 			l.Debugf("failed to get HTTPRoute, err: %v", err)
 			return false, nil
 		}
+		routeFound = true
 
 		if !gatewayutil.HTTPRouteReferencesGateway(&route, gatewayName) {
 			l.Debug("HTTPRoute does not reference the active Gateway yet")
@@ -786,10 +848,35 @@ func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 		return true, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %w", routeName.String(), gatewayName.String(), pollConfig.timeout, err)
+		status := "HTTPRoute does not exist"
+		if routeFound {
+			status = httpRouteGatewayAcceptanceStatus(&route, gatewayName)
+		}
+		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %s: %w", routeName.String(), gatewayName.String(), pollConfig.timeout, status, err)
 	}
 
 	return &route, nil
+}
+
+func httpRouteGatewayAcceptanceStatus(route *gatewayapiv1.HTTPRoute, gatewayName types.NamespacedName) string {
+	if !gatewayutil.HTTPRouteReferencesGateway(route, gatewayName) {
+		return "HTTPRoute does not reference Gateway"
+	}
+
+	for _, parentStatus := range route.Status.Parents {
+		if !gatewayutil.ParentReferenceMatchesGateway(route.Namespace, parentStatus.ParentRef, gatewayName) {
+			continue
+		}
+
+		accepted := meta.FindStatusCondition(parentStatus.Conditions, string(gatewayapiv1.RouteConditionAccepted))
+		if accepted == nil {
+			return "Accepted condition is missing for Gateway parent"
+		}
+
+		return fmt.Sprintf("Accepted=%s reason=%q message=%q observedGeneration=%d routeGeneration=%d", accepted.Status, accepted.Reason, accepted.Message, accepted.ObservedGeneration, route.Generation)
+	}
+
+	return "HTTPRoute status has no parent entry for Gateway"
 }
 
 // waitForGateway waits for the Gateway to be Programmed. Operator-managed
@@ -826,10 +913,16 @@ func waitForGatewayObjectWithPollConfig(
 	pollConfig = pollConfig.withDefaults()
 	l := logger.WithField("gateway", gatewayName.String())
 	gw := gatewayapiv1.Gateway{}
+	reportedMissingGateway := false
 
 	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
-			l.Debugf("failed to get Gateway, err: %v", err)
+			if apierrors.IsNotFound(err) && !reportedMissingGateway {
+				l.Info("Gateway does not exist yet, waiting...")
+				reportedMissingGateway = true
+			} else {
+				l.Debugf("failed to get Gateway, err: %v", err)
+			}
 			return false, nil
 		}
 
