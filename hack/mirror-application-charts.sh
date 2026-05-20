@@ -149,14 +149,17 @@ login_vault() {
 
 # ─── Authenticate to OCI registry ─────────────────────────────────────────────
 login_registry() {
-  login_vault
+  if [ -z "${QUAY_IO_USERNAME:-}" ] || [ -z "${QUAY_IO_PASSWORD:-}" ]; then
+    # Use read-only registry credentials from Vault in case the script is run locally for testing purposes.
+    # Registry write access is only granted to the prow job which gets the QUAY_IO_* env vars injected by the preset.
+    echo "WARNING: Using read-only $REGISTRY_HOST registry credentials from Vault - for local testing purposes only!"
+    login_vault
+    : "${QUAY_IO_USERNAME:=$(vault kv get -field=username dev/kubermatic-mirror-quay.io)}"
+    : "${QUAY_IO_PASSWORD:=$(vault kv get -field=password dev/kubermatic-mirror-quay.io)}"
+  fi
 
   echo "🌐 Authenticating to registry..."
-
-  REGISTRY_USER="${REGISTRY_USER:-$(vault kv get -field=username dev/kubermatic-mirror-quay.io)}"
-  REGISTRY_PASSWORD="${REGISTRY_PASSWORD:-$(vault kv get -field=password dev/kubermatic-mirror-quay.io)}"
-
-  echo "${REGISTRY_PASSWORD}" | helm registry login "${REGISTRY_HOST}" --username "${REGISTRY_USER}" --password-stdin
+  echo "${QUAY_IO_PASSWORD}" | helm registry login "${REGISTRY_HOST}" --username "${QUAY_IO_USERNAME}" --password-stdin
 }
 
 # ─── Logout from the OCI registry ─────────────────────────────────────────────
