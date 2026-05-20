@@ -431,6 +431,7 @@ metadata:
     app.kubernetes.io/name: iap
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/managed-by: helm
+    kubermatic.io/gateway-route: "true"
 spec:
   parentRefs:
     - name: kubermatic
@@ -461,6 +462,7 @@ metadata:
     app.kubernetes.io/name: iap
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/managed-by: helm
+    kubermatic.io/gateway-route: "true"
 spec:
   parentRefs:
     - name: kubermatic

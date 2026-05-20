@@ -1401,6 +1401,99 @@ func TestHTTPRoutesReferencingManagedGatewayExcludesOperatorRoute(t *testing.T) 
 	}
 }
 
+func TestHTTPRoutesReferencingExternalGatewayNotAcceptedFiltersLabeledGatewayRoutes(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	externalNamespace := gatewayapiv1.Namespace("networking")
+	externalGateway := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      externalGateway.Name,
+					Namespace: externalGateway.Namespace,
+				},
+			},
+		},
+	})
+
+	route := func(name, routeNamespace string, gatewayRoute bool, accepted metav1.ConditionStatus) *gatewayapiv1.HTTPRoute {
+		labels := map[string]string{}
+		if gatewayRoute {
+			labels[common.GatewayHTTPRouteLabelKey] = common.GatewayHTTPRouteLabelValue
+		}
+
+		return &gatewayapiv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       name,
+				Namespace:  routeNamespace,
+				Generation: 1,
+				Labels:     labels,
+			},
+			Spec: gatewayapiv1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+					ParentRefs: []gatewayapiv1.ParentReference{
+						{
+							Name:      gatewayapiv1.ObjectName(externalGateway.Name),
+							Namespace: &externalNamespace,
+						},
+					},
+				},
+			},
+			Status: gatewayapiv1.HTTPRouteStatus{
+				RouteStatus: gatewayapiv1.RouteStatus{
+					Parents: []gatewayapiv1.RouteParentStatus{
+						{
+							ParentRef: gatewayapiv1.ParentReference{
+								Name:      gatewayapiv1.ObjectName(externalGateway.Name),
+								Namespace: &externalNamespace,
+							},
+							Conditions: []metav1.Condition{
+								{
+									Type:               string(gatewayapiv1.RouteConditionAccepted),
+									Status:             accepted,
+									ObservedGeneration: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	iapRoute := route("grafana-iap", "monitoring", true, metav1.ConditionFalse)
+	grafanaRoute := route("grafana", "monitoring", false, metav1.ConditionFalse)
+	dexRoute := route("dex", "dex", true, metav1.ConditionTrue)
+	kkpRoute := route(httpRouteName, namespace, true, metav1.ConditionTrue)
+	kkpRoute.Generation = 2
+
+	client := fake.NewClientBuilder().WithObjects(iapRoute, grafanaRoute, dexRoute, kkpRoute).Build()
+	pending, err := HTTPRoutesReferencingExternalGatewayNotAccepted(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if len(pending) != 2 {
+		t.Fatalf("expected rejected KKP and IAP routes to be pending, got %v", pending)
+	}
+	for _, expected := range []types.NamespacedName{
+		{Namespace: namespace, Name: httpRouteName},
+		{Namespace: "monitoring", Name: "grafana-iap"},
+	} {
+		found := false
+		for _, actual := range pending {
+			if actual == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected pending route %s, got %v", expected.String(), pending)
+		}
+	}
+}
+
 func TestHTTPRouteAcceptedByExternalGatewayRequiresProgrammedGateway(t *testing.T) {
 	ctx := context.Background()
 	namespace := "kubermatic"
@@ -1940,9 +2033,10 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
 			},
 			wantLabels: map[string]string{
-				"team":                  "platform",
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				"team":                          "platform",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
@@ -1953,8 +2047,9 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 			existingLabels:      map[string]string{},
 			existingAnnotations: map[string]string{},
 			wantLabels: map[string]string{
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{},
 		},
@@ -1970,10 +2065,11 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 				"custom.io/owner":                           "team-alpha",
 			},
 			wantLabels: map[string]string{
-				"team":                  "platform",
-				"environment":           "staging",
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				"team":                          "platform",
+				"environment":                   "staging",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
@@ -1989,9 +2085,10 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 			},
 			existingAnnotations: map[string]string{},
 			wantLabels: map[string]string{
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
-				"team":                  "platform",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
+				"team":                          "platform",
 			},
 			wantAnnotations: map[string]string{},
 		},
@@ -2243,6 +2340,9 @@ func TestEnsureHTTPRouteCreatesNew(t *testing.T) {
 	if created.Labels[modifier.ManagedByLabel] != common.OperatorName {
 		t.Errorf("expected managed-by label %q, got %q", common.OperatorName, created.Labels[modifier.ManagedByLabel])
 	}
+	if created.Labels[common.GatewayHTTPRouteLabelKey] != common.GatewayHTTPRouteLabelValue {
+		t.Errorf("expected Gateway HTTPRoute label %q=%q, got %q", common.GatewayHTTPRouteLabelKey, common.GatewayHTTPRouteLabelValue, created.Labels[common.GatewayHTTPRouteLabelKey])
+	}
 }
 
 func TestEnsureHTTPRouteUpdatesParentRefToExternalGateway(t *testing.T) {
@@ -2302,6 +2402,9 @@ func TestEnsureHTTPRouteUpdatesParentRefToExternalGateway(t *testing.T) {
 	if parentRef.Namespace == nil || *parentRef.Namespace != "networking" {
 		t.Errorf("expected parent ref namespace networking, got %v", parentRef.Namespace)
 	}
+	if updated.Labels[common.GatewayHTTPRouteLabelKey] != common.GatewayHTTPRouteLabelValue {
+		t.Errorf("expected Gateway HTTPRoute label %q=%q, got %q", common.GatewayHTTPRouteLabelKey, common.GatewayHTTPRouteLabelValue, updated.Labels[common.GatewayHTTPRouteLabelKey])
+	}
 }
 
 func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
@@ -2328,7 +2431,8 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 		t.Fatalf("failed to set owner reference: %v", err)
 	}
 	kubernetes.EnsureLabels(desired, map[string]string{
-		modifier.ManagedByLabel: common.OperatorName,
+		modifier.ManagedByLabel:         common.OperatorName,
+		common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
 	})
 
 	existing := desired.DeepCopy()
