@@ -295,7 +295,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		log.Infof("Release for ApplicationInstallation has been recovered successfully")
 	}
 
-	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) && hasCurrentReadyCondition(appInstallation) {
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) && readyConditionMatchesCurrentSpec(appInstallation) {
 		deployed, err := r.appInstaller.IsDeployed(ctx, log, r.seedClient, r.userClient, appInstallation)
 		if err != nil {
 			return fmt.Errorf("failed to check if the previous release is deployed: %w", err)
@@ -382,8 +382,9 @@ func (r *reconciler) stopAfterMaxRetries(ctx context.Context, log *zap.SugaredLo
 	return nil
 }
 
-func hasCurrentReadyCondition(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
+func readyConditionMatchesCurrentSpec(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
 	readyCondition, exists := appInstallation.Status.Conditions[appskubermaticv1.Ready]
+	// Failures is intentionally ignored: this gates recovery for stale counters that already exceed maxRetries.
 	return exists &&
 		readyCondition.Status == corev1.ConditionTrue &&
 		readyCondition.ObservedGeneration == appInstallation.Generation
