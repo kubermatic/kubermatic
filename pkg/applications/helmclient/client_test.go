@@ -36,6 +36,7 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage"
 	"helm.sh/helm/v3/pkg/storage/driver"
+	helmtime "helm.sh/helm/v3/pkg/time"
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -175,6 +176,69 @@ func TestRollbackDoesNotUninstallWhenRollbackExecutionFails(t *testing.T) {
 	}
 }
 
+func TestIsPending(t *testing.T) {
+	tests := []struct {
+		name        string
+		releases    []*release.Release
+		releaseName string
+		wantPending bool
+	}{
+		{
+			name:        "release does not exist",
+			releaseName: "missing-release",
+			wantPending: false,
+		},
+		{
+			name: "deployed release is not pending",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusDeployed),
+			},
+			releaseName: "test-release",
+			wantPending: false,
+		},
+		{
+			name: "pending install is pending",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusPendingInstall),
+			},
+			releaseName: "test-release",
+			wantPending: true,
+		},
+		{
+			name: "pending upgrade is pending",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusDeployed),
+				testRelease("test-release", "default", 2, release.StatusPendingUpgrade),
+			},
+			releaseName: "test-release",
+			wantPending: true,
+		},
+		{
+			name: "pending rollback is pending",
+			releases: []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusDeployed),
+				testRelease("test-release", "default", 2, release.StatusPendingRollback),
+			},
+			releaseName: "test-release",
+			wantPending: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			helmClient := newTestHelmClient(t, tt.releases, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+			got, err := helmClient.IsPending(tt.releaseName)
+			if err != nil {
+				t.Fatalf("expected IsPending to succeed, got %v", err)
+			}
+			if got != tt.wantPending {
+				t.Fatalf("IsPending() = %v, want %v", got, tt.wantPending)
+			}
+		})
+	}
+}
+
 func newTestHelmClient(t *testing.T, releases []*release.Release, kubeClient kube.Interface) HelmClient {
 	t.Helper()
 
@@ -200,9 +264,15 @@ func testRelease(name, namespace string, version int, status release.Status) *re
 		Name:      name,
 		Namespace: namespace,
 		Version:   version,
-		Chart:     &chart.Chart{},
+		Chart: &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "test-chart",
+				Version: "0.1.0",
+			},
+		},
 		Info: &release.Info{
-			Status: status,
+			Status:       status,
+			LastDeployed: helmtime.Now(),
 		},
 	}
 }
