@@ -33,7 +33,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-var minHelmVersion = semverlib.MustParse("v3.0.0")
+var (
+	minHelmVersionMajor uint64 = 3
+	maxHelmVersionMajor uint64 = 4
+)
 
 type cli struct {
 	binary      string
@@ -64,10 +67,21 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 		return nil, fmt.Errorf("failed to get Helm version: %w", err)
 	}
 
-	if helmVersion.LessThan(minHelmVersion) {
+	if helmVersion.Major() < minHelmVersionMajor {
 		return nil, fmt.Errorf(
-			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-			minHelmVersion,
+			"the installer requires Helm >= %d and <= %d, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			minHelmVersionMajor,
+			maxHelmVersionMajor,
+			binary,
+			helmVersion,
+		)
+	}
+
+	if helmVersion.Major() > maxHelmVersionMajor {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %d and <= %d, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			minHelmVersionMajor,
+			maxHelmVersionMajor,
 			binary,
 			helmVersion,
 		)
