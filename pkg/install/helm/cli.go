@@ -79,8 +79,8 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 }
 
 func (c *cli) detectHelmVersion() (*semverlib.Version, error) {
-	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
-	// Helm-2-style templating string "{{ .Client.SemVer }}"
+	// Helm 2 will output "<no value>" for this template, whereas Helm 3 returns
+	// the version string via "{{ .Version }}".
 	output, err := c.run("", "version", "--template", "{{ .Version }}")
 	if err != nil {
 		return nil, err
