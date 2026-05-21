@@ -425,6 +425,7 @@ func (r *reconciler) setFailures(ctx context.Context, appInstallation *appskuber
 	oldAppInstallation := appInstallation.DeepCopy()
 	appInstallation.Status.Failures = failures
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		appInstallation.Status.Failures = oldAppInstallation.Status.Failures
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 	return nil

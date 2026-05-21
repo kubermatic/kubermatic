@@ -273,6 +273,7 @@ func (h HelmTemplate) IsDeployed(applicationInstallation *appskubermaticv1.Appli
 }
 
 // Rollback rolls an Application back to the latest successful release, or uninstalls it when no successful release exists.
+// A successful uninstall fallback allows the next reconcile to install the desired release cleanly.
 func (h HelmTemplate) Rollback(applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	helmClient, cleanup, err := h.newHelmClient(applicationInstallation.Spec.Namespace.Name)
 	if err != nil {
