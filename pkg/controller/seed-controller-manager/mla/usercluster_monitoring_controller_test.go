@@ -315,10 +315,10 @@ func TestUserClusterMonitoringReconcile_Install(t *testing.T) {
 
 	t.Run("AppDef with defaultVersion uses that version", func(t *testing.T) {
 		t.Parallel()
-		neAd := makeAppDef(nodeExporterAppName, "1.0.0", neDefValues)
-		neAd.Spec.DefaultVersion = "1.99.0"
-		neAd.Spec.Versions = append(neAd.Spec.Versions, appskubermaticv1.ApplicationVersion{Version: "1.99.0"})
-		seedObjs := []ctrlruntimeclient.Object{neAd, makeAppDef(kubeStateMetricsAppName, ksmVersion, ksmDefValues)}
+		appDef := makeAppDef(nodeExporterAppName, "1.0.0", neDefValues)
+		appDef.Spec.DefaultVersion = "1.99.0"
+		appDef.Spec.Versions = append(appDef.Spec.Versions, appskubermaticv1.ApplicationVersion{Version: "1.99.0"})
+		seedObjs := []ctrlruntimeclient.Object{appDef, makeAppDef(kubeStateMetricsAppName, ksmVersion, ksmDefValues)}
 
 		client, err := runReconcile(t, makeHealthyCluster(testClusterName, true), seedObjs, nil)
 		if err != nil {
