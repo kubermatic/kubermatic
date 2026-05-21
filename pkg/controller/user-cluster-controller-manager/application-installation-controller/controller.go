@@ -284,12 +284,16 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 	if stuck {
 		log.Infof("Release for ApplicationInstallation seems to be stuck, attempting recovery now")
+		previousFailures := appInstallation.Status.Failures
 		// Persist the retry reset before changing Helm state so a crash after recovery cannot
 		// leave the release repaired while the ApplicationInstallation remains retry-blocked.
 		if err := r.resetFailures(ctx, appInstallation); err != nil {
 			return err
 		}
 		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
+			if restoreErr := r.setFailures(ctx, appInstallation, previousFailures); restoreErr != nil {
+				return fmt.Errorf("failed to recover release: %w; additionally failed to restore failure count: %v", err, restoreErr)
+			}
 			return fmt.Errorf("failed to recover release: %w", err)
 		}
 		log.Infof("Release for ApplicationInstallation has been recovered successfully")
@@ -410,12 +414,16 @@ func (r *reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInsta
 }
 
 func (r *reconciler) resetFailures(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
-	if appInstallation.Status.Failures == 0 {
+	return r.setFailures(ctx, appInstallation, 0)
+}
+
+func (r *reconciler) setFailures(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation, failures int) error {
+	if appInstallation.Status.Failures == failures {
 		return nil
 	}
 
 	oldAppInstallation := appInstallation.DeepCopy()
-	appInstallation.Status.Failures = 0
+	appInstallation.Status.Failures = failures
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
