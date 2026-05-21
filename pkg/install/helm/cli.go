@@ -192,7 +192,7 @@ func (c *cli) GetRelease(namespace string, name string) (*Release, error) {
 
 func (c *cli) ListReleases(namespace string) ([]Release, error) {
 	args := []string{"list", "-o", "json"}
-	if c.version.Major() < 4 {
+	if c.version.Major() == 3 {
 		// Helm 3 requires the --all flag in order to also return releases that are not deployed successfully.
 		// Helm 4 returns all releases by default, and the --all flag is not supported anymore.
 		args = append(args, "--all")
