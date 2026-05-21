@@ -33,11 +33,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
+var minHelmVersion = semverlib.MustParse("v3.0.0")
+
 type cli struct {
 	binary      string
 	kubeconfig  string
 	kubeContext string
 	timeout     time.Duration
+	version     semverlib.Version
 	logger      logrus.FieldLogger
 }
 
@@ -48,13 +51,52 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 		return nil, errors.New("timeout must be >= 10 seconds")
 	}
 
-	return &cli{
+	c := &cli{
 		binary:      binary,
 		kubeconfig:  kubeconfig,
 		kubeContext: kubeContext,
 		timeout:     timeout,
 		logger:      logger,
-	}, nil
+	}
+
+	helmVersion, err := c.detectHelmVersion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Helm version: %w", err)
+	}
+
+	if helmVersion.LessThan(minHelmVersion) {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			minHelmVersion,
+			binary,
+			helmVersion,
+		)
+	}
+
+	c.version = *helmVersion
+
+	return c, nil
+}
+
+func (c *cli) detectHelmVersion() (*semverlib.Version, error) {
+	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
+	// Helm-2-style templating string "{{ .Client.SemVer }}"
+	output, err := c.run("", "version", "--template", "{{ .Version }}")
+	if err != nil {
+		return nil, err
+	}
+
+	out := strings.TrimSpace(string(output))
+	if out == "<no value>" {
+		out = "v2.99.99"
+	}
+
+	version, err := semverlib.NewVersion(out)
+	if err != nil {
+		return nil, err
+	}
+
+	return version, nil
 }
 
 func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
@@ -149,7 +191,12 @@ func (c *cli) GetRelease(namespace string, name string) (*Release, error) {
 }
 
 func (c *cli) ListReleases(namespace string) ([]Release, error) {
-	args := []string{"list", "--all", "-o", "json"}
+	args := []string{"list", "-o", "json"}
+	if c.version.Major() < 4 {
+		// Helm 3 requires the --all flag in order to also return releases that are not deployed successfully.
+		// Helm 4 returns all releases by default, and the --all flag is not supported anymore.
+		args = append(args, "--all")
+	}
 	if namespace == "" {
 		args = append(args, "--all-namespaces")
 	}
@@ -232,22 +279,6 @@ func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document,
 	}
 
 	return yamled.Load(bytes.NewReader(output))
-}
-
-func (c *cli) Version() (*semverlib.Version, error) {
-	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
-	// Helm-2-style templating string "{{ .Client.SemVer }}"
-	output, err := c.run("", "version", "--template", "{{ .Version }}")
-	if err != nil {
-		return nil, err
-	}
-
-	out := strings.TrimSpace(string(output))
-	if out == "<no value>" {
-		out = "v2.99.99"
-	}
-
-	return semverlib.NewVersion(out)
 }
 
 func (c *cli) run(namespace string, args ...string) ([]byte, error) {
