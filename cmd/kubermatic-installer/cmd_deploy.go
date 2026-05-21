@@ -207,7 +207,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		}
 
 		deployOptions := stack.DeployOptions{
-			HelmClient:                         *helmClient,
+			HelmClient:                         helmClient,
 			HelmValues:                         helmValues,
 			KubermaticConfiguration:            kubermaticConfig,
 			RawKubermaticConfiguration:         rawKubermaticConfig,
@@ -356,13 +356,13 @@ func greeting() string {
 	return greetings[rand.Intn(len(greetings))]
 }
 
-func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (*helm.Client, error) {
+func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (helm.Client, error) {
 	helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Helm client: %w", err)
 	}
 
-	return &helmClient, nil
+	return helmClient, nil
 }
 
 func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptions) (stack.Stack, error) {
