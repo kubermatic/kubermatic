@@ -403,6 +403,10 @@ func gatewayProgrammedForCurrentGeneration(gateway *gatewayapiv1.Gateway) bool {
 // and IAP HTTPRoutes. The operator-managed KKP HTTPRoute is excluded because
 // EnsureHTTPRoute rewrites its parentRefs in the same reconcile cycle and a
 // stale controller cache could otherwise count it as its own blocker.
+//
+// This list is intentionally not label-filtered: third-party HTTPRoutes that
+// reference the operator-managed Gateway must also keep that Gateway alive until
+// their owners move them away.
 func HTTPRoutesReferencingManagedGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -414,7 +418,7 @@ func HTTPRoutesReferencingManagedGateway(
 	}
 
 	gatewayKey := types.NamespacedName{Namespace: namespace, Name: gatewayName}
-	references := []types.NamespacedName{}
+	var references []types.NamespacedName
 	for i := range routeList.Items {
 		route := &routeList.Items[i]
 		if route.Namespace == namespace && route.Name == httpRouteName {
@@ -426,6 +430,43 @@ func HTTPRoutesReferencingManagedGateway(
 	}
 
 	return references, nil
+}
+
+// HTTPRoutesReferencingExternalGatewayNotAccepted returns KKP-managed
+// HTTPRoutes that already point at the configured external Gateway but have not
+// been accepted by it for their current generation.
+func HTTPRoutesReferencingExternalGatewayNotAccepted(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+) ([]types.NamespacedName, error) {
+	gatewayKey, ok := ExternalGatewayKey(cfg, namespace)
+	if !ok {
+		return nil, nil
+	}
+
+	var pending []types.NamespacedName
+	var routeList gatewayapiv1.HTTPRouteList
+	if err := client.List(ctx, &routeList, ctrlruntimeclient.MatchingLabels{
+		common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to list HTTPRoutes: %w", err)
+	}
+
+	for i := range routeList.Items {
+		route := &routeList.Items[i]
+		if !gatewayutil.HTTPRouteReferencesGateway(route, gatewayKey) {
+			continue
+		}
+		if gatewayutil.HTTPRouteAcceptedByGateway(route, gatewayKey) {
+			continue
+		}
+
+		pending = append(pending, types.NamespacedName{Namespace: route.Namespace, Name: route.Name})
+	}
+
+	return pending, nil
 }
 
 // gatewayComparable holds the fields used to detect meaningful changes between
@@ -684,7 +725,8 @@ func EnsureHTTPRouteWithAdditionalParentRefs(
 		return fmt.Errorf("failed to set owner reference on HTTPRoute: %w", err)
 	}
 	kubernetes.EnsureLabels(desired, map[string]string{
-		modifier.ManagedByLabel: common.OperatorName,
+		modifier.ManagedByLabel:         common.OperatorName,
+		common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
 	})
 
 	key := types.NamespacedName{Namespace: namespace, Name: routeName}
