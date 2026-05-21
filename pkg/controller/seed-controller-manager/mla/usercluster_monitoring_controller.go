@@ -28,12 +28,14 @@ import (
 	"k8c.io/kubermatic/sdk/v2/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
@@ -41,6 +43,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -121,12 +124,30 @@ func newUserClusterMonitoringReconciler(
 		},
 	}
 
+	// When a legacy monitoring Addon is deleted, enqueue the owning cluster — but only if
+	// monitoring is actually enabled on that cluster, to avoid spurious reconciles.
+	addonPredicate := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
+		name := o.GetName()
+		return name == nodeExporterAppName || name == kubeStateMetricsAppName
+	})
+	enqueueClusterIfMonitoringEnabled := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
+		cluster, err := kubernetes.ClusterFromNamespace(ctx, mgr.GetClient(), o.GetNamespace())
+		if err != nil || cluster == nil {
+			return nil
+		}
+		if cluster.Spec.MLA == nil || !cluster.Spec.MLA.MonitoringEnabled {
+			return nil
+		}
+		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
+	})
+
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Cluster{}, builder.WithPredicates(clusterPredicate, workerlabel.Predicate(workerName))).
+		Watches(&kubermaticv1.Addon{}, enqueueClusterIfMonitoringEnabled, builder.WithPredicates(addonPredicate)).
 		Build(reconciler)
 
 	return err
@@ -180,39 +201,40 @@ func (r *userClusterMonitoringReconciler) reconcile(ctx context.Context, log *za
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	neVersion, neInitialValues, err := r.parseAppDefVersionAndDefaultValues(ctx, log, nodeExporterAppName)
-	if err != nil {
-		return nil, err
-	}
-	if neVersion == "" {
-		return nil, nil
-	}
-
-	ksmVersion, ksmInitialValues, err := r.parseAppDefVersionAndDefaultValues(ctx, log, kubeStateMetricsAppName)
-	if err != nil {
-		return nil, err
-	}
-	if ksmVersion == "" {
-		return nil, nil
-	}
-
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	neReconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		monitoringAppInstallationReconciler(nodeExporterAppName, nodeExporterNamespace, neVersion, neInitialValues),
-	}
-	if err := reconciling.ReconcileApplicationInstallations(ctx, neReconcilers, nodeExporterNamespace, userClusterClient); err != nil {
-		return nil, fmt.Errorf("failed to reconcile node-exporter ApplicationInstallation: %w", err)
-	}
+	for _, app := range []struct {
+		appName   string
+		namespace string
+	}{
+		{nodeExporterAppName, nodeExporterNamespace},
+		{kubeStateMetricsAppName, kubeStateMetricsNamespace},
+	} {
+		// If the user previously installed this app as an Addon, leave their setup untouched.
+		if managed, err := r.isAddonManaged(ctx, cluster, app.appName); err != nil {
+			return nil, err
+		} else if managed {
+			log.Debugf("%s is managed by an Addon CR, skipping ApplicationInstallation", app.appName)
+			continue
+		}
 
-	ksmReconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		monitoringAppInstallationReconciler(kubeStateMetricsAppName, kubeStateMetricsNamespace, ksmVersion, ksmInitialValues),
-	}
-	if err := reconciling.ReconcileApplicationInstallations(ctx, ksmReconcilers, kubeStateMetricsNamespace, userClusterClient); err != nil {
-		return nil, fmt.Errorf("failed to reconcile kube-state-metrics ApplicationInstallation: %w", err)
+		version, initialValues, err := r.parseAppDefVersionAndDefaultValues(ctx, log, app.appName)
+		if err != nil {
+			return nil, err
+		}
+		if version == "" {
+			continue
+		}
+
+		reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
+			monitoringAppInstallationReconciler(app.appName, app.namespace, version, initialValues),
+		}
+		if err := reconciling.ReconcileApplicationInstallations(ctx, reconcilers, app.namespace, userClusterClient); err != nil {
+			return nil, fmt.Errorf("failed to reconcile %s ApplicationInstallation: %w", app.appName, err)
+		}
 	}
 
 	return nil, nil
@@ -243,6 +265,23 @@ func (r *userClusterMonitoringReconciler) parseAppDefVersionAndDefaultValues(ctx
 	}
 
 	return version, values, nil
+}
+
+// isAddonManaged returns true if a user-installed Addon CR for appName already exists in the
+// cluster namespace. When it does, we leave the existing addon untouched and skip deploying
+// an ApplicationInstallation for the same app to avoid running duplicate workloads.
+func (r *userClusterMonitoringReconciler) isAddonManaged(ctx context.Context, cluster *kubermaticv1.Cluster, appName string) (bool, error) {
+	addon := &kubermaticv1.Addon{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: cluster.Status.NamespaceName,
+		},
+	}
+	err := r.Get(ctx, types.NamespacedName{Name: addon.Name, Namespace: addon.Namespace}, addon)
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (r *userClusterMonitoringReconciler) ensureApplicationInstallationsRemoved(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {

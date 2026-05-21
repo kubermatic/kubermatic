@@ -43,6 +43,15 @@ func (f *fakeUserClusterClientProvider) GetClient(_ context.Context, _ *kubermat
 	return f.client, nil
 }
 
+func makeAddon(name, clusterNamespace string) *kubermaticv1.Addon {
+	return &kubermaticv1.Addon{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: clusterNamespace,
+		},
+	}
+}
+
 func makeHealthyCluster(name string, monitoringEnabled bool) *kubermaticv1.Cluster {
 	var mlaSpec *kubermaticv1.MLASettings
 	if monitoringEnabled {
@@ -54,6 +63,7 @@ func makeHealthyCluster(name string, monitoringEnabled bool) *kubermaticv1.Clust
 			MLA: mlaSpec,
 		},
 		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: "cluster-" + name,
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusUp,
 				Scheduler:                    kubermaticv1.HealthStatusUp,
@@ -147,7 +157,7 @@ func TestUserClusterMonitoringReconcile(t *testing.T) {
 			},
 		},
 		{
-			name:    "monitoring enabled, node-exporter AppDef missing: nothing installed",
+			name:    "monitoring enabled, node-exporter AppDef missing: only kube-state-metrics installed",
 			cluster: makeHealthyCluster(clusterName, true),
 			seedObjects: []ctrlruntimeclient.Object{
 				makeAppDef(kubeStateMetricsAppName, ksmVersion, ksmDefValues),
@@ -157,17 +167,18 @@ func TestUserClusterMonitoringReconcile(t *testing.T) {
 				if reconcileErr != nil {
 					t.Fatalf("unexpected error: %v", reconcileErr)
 				}
-				list := &appskubermaticv1.ApplicationInstallationList{}
-				if err := userClusterClient.List(context.Background(), list); err != nil {
-					t.Fatalf("failed to list ApplicationInstallations: %v", err)
+				neApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: nodeExporterAppName, Namespace: nodeExporterNamespace}, neApp); err == nil {
+					t.Errorf("node-exporter ApplicationInstallation should not exist when its AppDef is missing")
 				}
-				if len(list.Items) != 0 {
-					t.Errorf("expected 0 ApplicationInstallations, got %d", len(list.Items))
+				ksmApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: kubeStateMetricsAppName, Namespace: kubeStateMetricsNamespace}, ksmApp); err != nil {
+					t.Errorf("kube-state-metrics ApplicationInstallation should still be installed: %v", err)
 				}
 			},
 		},
 		{
-			name:    "monitoring enabled, kube-state-metrics AppDef missing: nothing installed",
+			name:    "monitoring enabled, kube-state-metrics AppDef missing: only node-exporter installed",
 			cluster: makeHealthyCluster(clusterName, true),
 			seedObjects: []ctrlruntimeclient.Object{
 				makeAppDef(nodeExporterAppName, neVersion, neDefValues),
@@ -177,12 +188,13 @@ func TestUserClusterMonitoringReconcile(t *testing.T) {
 				if reconcileErr != nil {
 					t.Fatalf("unexpected error: %v", reconcileErr)
 				}
-				list := &appskubermaticv1.ApplicationInstallationList{}
-				if err := userClusterClient.List(context.Background(), list); err != nil {
-					t.Fatalf("failed to list ApplicationInstallations: %v", err)
+				neApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: nodeExporterAppName, Namespace: nodeExporterNamespace}, neApp); err != nil {
+					t.Errorf("node-exporter ApplicationInstallation should still be installed: %v", err)
 				}
-				if len(list.Items) != 0 {
-					t.Errorf("expected 0 ApplicationInstallations, got %d", len(list.Items))
+				ksmApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: kubeStateMetricsAppName, Namespace: kubeStateMetricsNamespace}, ksmApp); err == nil {
+					t.Errorf("kube-state-metrics ApplicationInstallation should not exist when its AppDef is missing")
 				}
 			},
 		},
@@ -324,6 +336,32 @@ func TestUserClusterMonitoringReconcile(t *testing.T) {
 				}
 				if len(list.Items) != 1 {
 					t.Errorf("expected user-owned ApplicationInstallation to remain, got %d items", len(list.Items))
+				}
+			},
+		},
+		{
+			name:    "monitoring enabled: existing Addon CR skips ApplicationInstallation for that app",
+			cluster: makeHealthyCluster(clusterName, true),
+			seedObjects: []ctrlruntimeclient.Object{
+				makeAppDef(nodeExporterAppName, neVersion, neDefValues),
+				makeAppDef(kubeStateMetricsAppName, ksmVersion, ksmDefValues),
+				// node-exporter was previously installed as a user-managed Addon
+				makeAddon(nodeExporterAppName, "cluster-"+clusterName),
+			},
+			validate: func(t *testing.T, userClusterClient ctrlruntimeclient.Client, reconcileErr error) {
+				t.Helper()
+				if reconcileErr != nil {
+					t.Fatalf("unexpected error: %v", reconcileErr)
+				}
+				// node-exporter ApplicationInstallation must NOT be created (addon takes precedence)
+				neApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: nodeExporterAppName, Namespace: nodeExporterNamespace}, neApp); err == nil {
+					t.Errorf("node-exporter ApplicationInstallation should not exist when an Addon CR is present")
+				}
+				// kube-state-metrics has no Addon CR, so it should be installed as an ApplicationInstallation
+				ksmApp := &appskubermaticv1.ApplicationInstallation{}
+				if err := userClusterClient.Get(context.Background(), types.NamespacedName{Name: kubeStateMetricsAppName, Namespace: kubeStateMetricsNamespace}, ksmApp); err != nil {
+					t.Fatalf("kube-state-metrics ApplicationInstallation should have been created: %v", err)
 				}
 			},
 		},
