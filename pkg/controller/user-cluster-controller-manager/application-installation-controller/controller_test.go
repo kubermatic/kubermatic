@@ -455,6 +455,9 @@ func TestStuckReleaseRecoveryDoesNotRollbackWhenFailureResetCannotBePersisted(t 
 	if rollbackCalled {
 		t.Fatal("expected rollback not to run when failure reset cannot be persisted")
 	}
+	if appInstall.Status.Failures != maxRetries+1 {
+		t.Fatalf("expected in-memory failures to remain unchanged after failed reset, got %d", appInstall.Status.Failures)
+	}
 }
 
 func TestStuckReleaseCheckErrorStopsReconcile(t *testing.T) {

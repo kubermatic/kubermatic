@@ -56,6 +56,11 @@ import (
 // More information at https://helm.sh/docs/topics/advanced/#storage-backends
 const secretStorageDriver = "secret"
 
+const (
+	helmInitialInstallDescription   = "Initial install underway"
+	helmPreparingUpgradeDescription = "Preparing upgrade"
+)
+
 // HelmSettings holds the Helm configuration for caching repositories.
 type HelmSettings struct {
 	// RepositoryConfig is the path to the repositories file.
@@ -497,8 +502,9 @@ func (h HelmClient) IsDeployed(releaseName string) (bool, error) {
 	return release.Status(metadata.Status) == release.StatusDeployed, nil
 }
 
-// Rollback wraps helms Rollback command to be used with our ActionConfig.
-// It rolls back to the latest successful revision, or uninstalls the release if no successful revision exists.
+// Rollback wraps helms Rollback command to be used with our ActionConfig. It rolls back to the
+// latest successful revision, or uninstalls the release if no successful revision exists. A successful
+// uninstall fallback means callers can proceed with a fresh install of the desired release.
 func (h HelmClient) Rollback(releaseName string) error {
 	client := action.NewRollback(h.actionConfig)
 	// Set the last successful revision explicitly because otherwise Helm uses the current revision minus 1,
@@ -592,6 +598,8 @@ func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release,
 
 func revisionsSupersededByFailedRollback(releaseName string, history []*release.Release) map[int]struct{} {
 	revisions := map[int]struct{}{}
+	// Helm storage history is not treated as ordered here; use a revision map so failed rollback
+	// records can be matched to their previous current revision regardless of slice order.
 	releasesByRevision := map[int]*release.Release{}
 	for _, rel := range history {
 		if rel != nil {
@@ -625,9 +633,15 @@ func wasUnsuccessfulSupersededByFailedRollback(releaseName string, rel *release.
 	if rel == nil || rel.Info == nil {
 		return false
 	}
-	return rel.Info.Description == "Initial install underway" ||
-		rel.Info.Description == "Preparing upgrade" ||
-		strings.HasPrefix(rel.Info.Description, fmt.Sprintf("Upgrade %q failed:", releaseName))
+	// These descriptions come from Helm's action package. If Helm changes them, the rollback
+	// history tests should be updated with the new emitted descriptions.
+	return rel.Info.Description == helmInitialInstallDescription ||
+		rel.Info.Description == helmPreparingUpgradeDescription ||
+		strings.HasPrefix(rel.Info.Description, helmFailedUpgradeDescriptionPrefix(releaseName))
+}
+
+func helmFailedUpgradeDescriptionPrefix(releaseName string) string {
+	return fmt.Sprintf("Upgrade %q failed:", releaseName)
 }
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies
