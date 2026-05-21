@@ -373,6 +373,50 @@ func TestStuckReleaseRecoveryRunsBeforeMaxRetries(t *testing.T) {
 	}
 }
 
+func TestStuckReleaseRecoveryRestoresFailuresWhenRollbackFails(t *testing.T) {
+	ctx := context.Background()
+	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+	previousFailures := maxRetries + 1
+	appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", previousFailures, 1, 1)
+	userClient := kubermaticfake.NewClientBuilder().WithObjects(appInstall).Build()
+
+	rollbackErr := errors.New("rollback failed")
+	applyCalled := false
+	appInstaller := fake.CustomApplicationInstaller{
+		IsStuckFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+			return true, nil
+		},
+		RollbackFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+			if applicationInstallation.Status.Failures != 0 {
+				t.Fatalf("expected failures to be reset before rollback, got %d", applicationInstallation.Status.Failures)
+			}
+			return rollbackErr
+		},
+		ApplyFunc: func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
+			applyCalled = true
+			return util.NoStatusUpdate, nil
+		},
+	}
+
+	r := reconciler{log: kubermaticlog.Logger, seedClient: userClient, userClient: userClient, appInstaller: appInstaller}
+	err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1", nil), appInstall)
+	if !errors.Is(err, rollbackErr) {
+		t.Fatalf("expected rollback error, got %v", err)
+	}
+	if applyCalled {
+		t.Fatal("expected apply not to run after rollback recovery fails")
+	}
+
+	updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
+	if err := userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, updatedAppInstall); err != nil {
+		t.Fatalf("failed to get application installation: %v", err)
+	}
+	if updatedAppInstall.Status.Failures != previousFailures {
+		t.Fatalf("expected failures to be restored after failed recovery, got %d", updatedAppInstall.Status.Failures)
+	}
+}
+
 func TestStuckReleaseRecoveryDoesNotRollbackWhenFailureResetCannotBePersisted(t *testing.T) {
 	ctx := context.Background()
 	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()

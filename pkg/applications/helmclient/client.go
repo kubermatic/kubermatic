@@ -565,12 +565,17 @@ func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release,
 		return nil, err
 	}
 
+	revisionsSupersededByFailedRollback := revisionsSupersededByFailedRollback(releaseName, history)
 	var latestSuccessfulRelease *release.Release
 	for _, rel := range history {
 		if rel == nil || rel.Info == nil {
 			continue
 		}
-		if rel.Info.Status != release.StatusDeployed && rel.Info.Status != release.StatusSuperseded {
+		if rel.Info.Status == release.StatusSuperseded {
+			if _, ok := revisionsSupersededByFailedRollback[rel.Version]; ok {
+				continue
+			}
+		} else if rel.Info.Status != release.StatusDeployed {
 			continue
 		}
 		if latestSuccessfulRelease == nil || rel.Version > latestSuccessfulRelease.Version {
@@ -583,6 +588,46 @@ func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release,
 	}
 
 	return latestSuccessfulRelease, nil
+}
+
+func revisionsSupersededByFailedRollback(releaseName string, history []*release.Release) map[int]struct{} {
+	revisions := map[int]struct{}{}
+	releasesByRevision := map[int]*release.Release{}
+	for _, rel := range history {
+		if rel != nil {
+			releasesByRevision[rel.Version] = rel
+		}
+	}
+
+	failedRollbackDescriptionPrefix := fmt.Sprintf("Rollback %q failed:", releaseName)
+	for _, rel := range history {
+		if rel == nil || rel.Info == nil || rel.Info.Status != release.StatusFailed {
+			continue
+		}
+		if !strings.HasPrefix(rel.Info.Description, failedRollbackDescriptionPrefix) {
+			continue
+		}
+		if rel.Version <= 1 {
+			continue
+		}
+		previousRevision := releasesByRevision[rel.Version-1]
+		if !wasUnsuccessfulSupersededByFailedRollback(releaseName, previousRevision) {
+			continue
+		}
+		// Helm marks the previous current revision as superseded when rollback execution fails. If
+		// that current revision was pending or failed, the superseded status does not mean it succeeded.
+		revisions[previousRevision.Version] = struct{}{}
+	}
+	return revisions
+}
+
+func wasUnsuccessfulSupersededByFailedRollback(releaseName string, rel *release.Release) bool {
+	if rel == nil || rel.Info == nil {
+		return false
+	}
+	return rel.Info.Description == "Initial install underway" ||
+		rel.Info.Description == "Preparing upgrade" ||
+		strings.HasPrefix(rel.Info.Description, fmt.Sprintf("Upgrade %q failed:", releaseName))
 }
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies

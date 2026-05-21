@@ -119,6 +119,74 @@ func TestRollbackUsesLatestSuccessfulRevision(t *testing.T) {
 	}
 }
 
+func TestRollbackIgnoresRevisionSupersededByFailedRollback(t *testing.T) {
+	tests := []struct {
+		name               string
+		supersededRevision string
+	}{
+		{
+			name:               "pending upgrade superseded by failed rollback",
+			supersededRevision: "Preparing upgrade",
+		},
+		{
+			name:               "failed upgrade superseded by failed rollback",
+			supersededRevision: `Upgrade "test-release" failed: update failed`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			helmClient := newTestHelmClient(t, []*release.Release{
+				testRelease("test-release", "default", 1, release.StatusSuperseded),
+				testReleaseWithDescription("test-release", "default", 2, release.StatusSuperseded, tt.supersededRevision),
+				testReleaseWithDescription("test-release", "default", 3, release.StatusFailed, `Rollback "test-release" failed: update failed`),
+				testRelease("test-release", "default", 4, release.StatusPendingUpgrade),
+			}, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+			if err := helmClient.Rollback("test-release"); err != nil {
+				t.Fatalf("expected rollback to succeed, got %v", err)
+			}
+
+			latestRelease, err := helmClient.actionConfig.Releases.Last("test-release")
+			if err != nil {
+				t.Fatalf("failed to get latest release: %v", err)
+			}
+			if latestRelease.Info.Status != release.StatusDeployed {
+				t.Fatalf("expected rollback release to be deployed, got %s", latestRelease.Info.Status)
+			}
+			expectedDescription := "Rollback to 1"
+			if latestRelease.Info.Description != expectedDescription {
+				t.Fatalf("expected rollback description %q, got %q", expectedDescription, latestRelease.Info.Description)
+			}
+		})
+	}
+}
+
+func TestRollbackKeepsDeployedRevisionSupersededByFailedRollback(t *testing.T) {
+	helmClient := newTestHelmClient(t, []*release.Release{
+		testRelease("test-release", "default", 1, release.StatusSuperseded),
+		testReleaseWithDescription("test-release", "default", 2, release.StatusSuperseded, "Upgrade complete"),
+		testReleaseWithDescription("test-release", "default", 3, release.StatusFailed, `Rollback "test-release" failed: update failed`),
+		testRelease("test-release", "default", 4, release.StatusPendingUpgrade),
+	}, &kubefake.PrintingKubeClient{Out: io.Discard})
+
+	if err := helmClient.Rollback("test-release"); err != nil {
+		t.Fatalf("expected rollback to succeed, got %v", err)
+	}
+
+	latestRelease, err := helmClient.actionConfig.Releases.Last("test-release")
+	if err != nil {
+		t.Fatalf("failed to get latest release: %v", err)
+	}
+	if latestRelease.Info.Status != release.StatusDeployed {
+		t.Fatalf("expected rollback release to be deployed, got %s", latestRelease.Info.Status)
+	}
+	expectedDescription := "Rollback to 2"
+	if latestRelease.Info.Description != expectedDescription {
+		t.Fatalf("expected rollback description %q, got %q", expectedDescription, latestRelease.Info.Description)
+	}
+}
+
 func TestRollbackUninstallsOnlyWhenNoSuccessfulRevisionExists(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -275,6 +343,12 @@ func testRelease(name, namespace string, version int, status release.Status) *re
 			LastDeployed: helmtime.Now(),
 		},
 	}
+}
+
+func testReleaseWithDescription(name, namespace string, version int, status release.Status, description string) *release.Release {
+	rel := testRelease(name, namespace, version, status)
+	rel.Info.Description = description
+	return rel
 }
 
 func TestNewDeploySettings(t *testing.T) {
