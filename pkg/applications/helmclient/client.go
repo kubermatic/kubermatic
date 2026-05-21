@@ -506,7 +506,8 @@ func (h HelmClient) Rollback(releaseName string) error {
 	lastSuccessfulRelease, err := h.lastSuccessfulRelease(releaseName)
 	if err != nil {
 		if errors.Is(err, driver.ErrNoDeployedReleases) {
-			h.logger.Warnw("No successful release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName, "status", h.latestReleaseStatus(releaseName))
+			status, revisionCount, latestRevision := h.releaseHistorySummary(releaseName)
+			h.logger.Warnw("No successful release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName, "latestStatus", status, "historyRevisions", revisionCount, "latestRevision", latestRevision)
 			if _, uninstallErr := h.Uninstall(releaseName); uninstallErr != nil {
 				return fmt.Errorf("could not uninstall release %q after failing to fetch last successful release: %w", releaseName, uninstallErr)
 			}
@@ -515,6 +516,7 @@ func (h HelmClient) Rollback(releaseName string) error {
 		return fmt.Errorf("could not fetch last successful release %q: %w", releaseName, err)
 	}
 	client.Version = lastSuccessfulRelease.Version
+	h.logger.Infow("Rolling back stuck Helm release to latest successful revision", "release", releaseName, "revision", lastSuccessfulRelease.Version, "status", lastSuccessfulRelease.Info.Status)
 	err = client.Run(releaseName)
 	if err != nil {
 		return fmt.Errorf("could not rollback release %q: %w", releaseName, err)
@@ -522,20 +524,35 @@ func (h HelmClient) Rollback(releaseName string) error {
 	return nil
 }
 
-func (h HelmClient) latestReleaseStatus(releaseName string) string {
-	latestRelease, err := h.actionConfig.Releases.Last(releaseName)
+func (h HelmClient) releaseHistorySummary(releaseName string) (string, int, int) {
+	history, err := h.actionConfig.Releases.History(releaseName)
 	if err != nil {
 		if errors.Is(err, driver.ErrReleaseNotFound) {
-			return "not-found"
+			return "not-found", 0, 0
 		}
-		h.logger.Debugw("Failed to retrieve Helm release status", "release", releaseName, "error", err)
-		return "unknown"
-	}
-	if latestRelease == nil || latestRelease.Info == nil {
-		return "unknown"
+		h.logger.Debugw("Failed to retrieve Helm release history", "release", releaseName, "error", err)
+		return "unknown", 0, 0
 	}
 
-	return string(latestRelease.Info.Status)
+	latestStatus := "unknown"
+	latestRevision := 0
+	revisionCount := 0
+	for _, rel := range history {
+		if rel == nil {
+			continue
+		}
+		revisionCount++
+		if rel.Version <= latestRevision {
+			continue
+		}
+		latestRevision = rel.Version
+		latestStatus = "unknown"
+		if rel.Info != nil {
+			latestStatus = string(rel.Info.Status)
+		}
+	}
+
+	return latestStatus, revisionCount, latestRevision
 }
 
 func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release, error) {
