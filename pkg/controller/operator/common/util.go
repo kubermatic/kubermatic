@@ -66,6 +66,36 @@ func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
 	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
 }
 
+// HasKubermaticConfigurationControllerOwnerReference returns true when ownerRefs
+// contains a controller owner reference to a KubermaticConfiguration. If cfg has
+// a UID, the owner reference must point to that exact configuration.
+func HasKubermaticConfigurationControllerOwnerReference(ownerRefs []metav1.OwnerReference, cfg *kubermaticv1.KubermaticConfiguration) bool {
+	for _, ownerRef := range ownerRefs {
+		if !isKubermaticConfiguration(ownerRef) {
+			continue
+		}
+
+		if ownerRef.Controller == nil || !*ownerRef.Controller {
+			continue
+		}
+
+		if cfg != nil && cfg.UID != "" && ownerRef.UID != cfg.UID {
+			continue
+		}
+
+		return true
+	}
+
+	return false
+}
+
+// HasAnyKubermaticConfigurationControllerOwnerReference returns true when
+// ownerRefs contains a controller owner reference to any KubermaticConfiguration,
+// regardless of UID.
+func HasAnyKubermaticConfigurationControllerOwnerReference(ownerRefs []metav1.OwnerReference) bool {
+	return HasKubermaticConfigurationControllerOwnerReference(ownerRefs, nil)
+}
+
 func isSeed(ref metav1.OwnerReference) bool {
 	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "Seed"
 }

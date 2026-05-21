@@ -34,6 +34,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -92,7 +93,7 @@ func GatewayReconciler(
 							From: ptr.To(gatewayapiv1.NamespacesFromSelector),
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									common.GatewayAccessLabelKey: "true",
+									common.GatewayAccessLabelKey: common.GatewayAccessLabelValue,
 								},
 							},
 						},
@@ -146,7 +147,7 @@ func GatewayReconciler(
 							From: ptr.To(gatewayapiv1.NamespacesFromSelector),
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									common.GatewayAccessLabelKey: "true",
+									common.GatewayAccessLabelKey: common.GatewayAccessLabelValue,
 								},
 							},
 						},
@@ -201,6 +202,11 @@ func reconcileGatewayInfrastructure(
 
 // HTTPRouteReconciler returns a reconciler for the HTTPRoute resource that routes to KKP services.
 func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace string) kkpreconciling.NamedGatewayAPIHTTPRouteReconcilerFactory {
+	return HTTPRouteReconcilerWithParentRefs(cfg, namespace, []gatewayapiv1.ParentReference{gatewayParentReference(cfg, namespace)})
+}
+
+// HTTPRouteReconcilerWithParentRefs returns a reconciler for the HTTPRoute resource with explicit parent references.
+func HTTPRouteReconcilerWithParentRefs(cfg *kubermaticv1.KubermaticConfiguration, namespace string, parentRefs []gatewayapiv1.ParentReference) kkpreconciling.NamedGatewayAPIHTTPRouteReconcilerFactory {
 	return func() (string, kkpreconciling.GatewayAPIHTTPRouteReconciler) {
 		return httpRouteName, func(r *gatewayapiv1.HTTPRoute) (*gatewayapiv1.HTTPRoute, error) {
 			r.Name = httpRouteName
@@ -209,19 +215,13 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 			if r.Labels == nil {
 				r.Labels = make(map[string]string)
 			}
-			r.Labels[common.NameLabel] = "kubermatic"
+			r.Labels[common.NameLabel] = common.GatewayName
 
 			if r.Annotations == nil {
 				r.Annotations = make(map[string]string)
 			}
 
-			parentNs := gatewayapiv1.Namespace(namespace)
-			r.Spec.ParentRefs = []gatewayapiv1.ParentReference{
-				{
-					Name:      gatewayName,
-					Namespace: &parentNs,
-				},
-			}
+			r.Spec.ParentRefs = parentRefs
 
 			r.Spec.Hostnames = []gatewayapiv1.Hostname{
 				gatewayapiv1.Hostname(cfg.Spec.Ingress.Domain),
@@ -291,6 +291,143 @@ func HTTPRouteReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace st
 	}
 }
 
+func gatewayParentReference(cfg *kubermaticv1.KubermaticConfiguration, namespace string) gatewayapiv1.ParentReference {
+	parentName := gatewayapiv1.ObjectName(gatewayName)
+	parentNamespace := gatewayapiv1.Namespace(namespace)
+
+	if cfg != nil {
+		gatewayConfig := cfg.Spec.Ingress.Gateway
+		if gatewayConfig != nil && gatewayConfig.UsesExternalGateway() {
+			parentName = gatewayapiv1.ObjectName(gatewayConfig.ExternalGateway.Name)
+			parentNamespace = gatewayapiv1.Namespace(gatewayConfig.ExternalGatewayNamespace(namespace))
+		}
+	}
+
+	return gatewayapiv1.ParentReference{
+		Name:      parentName,
+		Namespace: &parentNamespace,
+	}
+}
+
+// DefaultGatewayParentReference returns a parentRef to the operator-managed default Gateway.
+func DefaultGatewayParentReference(namespace string) gatewayapiv1.ParentReference {
+	parentNamespace := gatewayapiv1.Namespace(namespace)
+	return gatewayapiv1.ParentReference{
+		Name:      gatewayName,
+		Namespace: &parentNamespace,
+	}
+}
+
+// appendParentReferenceIfMissing deduplicates whole-Gateway parentRefs; SectionName
+// and Port are intentionally ignored because the operator only owns Gateway-wide refs.
+func appendParentReferenceIfMissing(routeNamespace string, parentRefs []gatewayapiv1.ParentReference, parentRef gatewayapiv1.ParentReference) []gatewayapiv1.ParentReference {
+	gatewayKey := types.NamespacedName{Name: string(parentRef.Name), Namespace: routeNamespace}
+	if parentRef.Namespace != nil {
+		gatewayKey.Namespace = string(*parentRef.Namespace)
+	}
+
+	for _, existing := range parentRefs {
+		if gatewayutil.ParentReferenceMatchesGateway(routeNamespace, existing, gatewayKey) {
+			return parentRefs
+		}
+	}
+
+	return append(parentRefs, parentRef)
+}
+
+// ExternalGatewayKey returns the configured external Gateway key and whether
+// an external Gateway reference is configured.
+func ExternalGatewayKey(cfg *kubermaticv1.KubermaticConfiguration, namespace string) (types.NamespacedName, bool) {
+	if cfg == nil || !cfg.Spec.Ingress.Gateway.UsesExternalGateway() {
+		return types.NamespacedName{}, false
+	}
+
+	gatewayConfig := cfg.Spec.Ingress.Gateway
+	return types.NamespacedName{
+		Name:      gatewayConfig.ExternalGateway.Name,
+		Namespace: gatewayConfig.ExternalGatewayNamespace(namespace),
+	}, true
+}
+
+// HTTPRouteAcceptedByExternalGateway returns true when the configured external
+// Gateway is ready and has accepted the managed HTTPRoute for its current generation.
+func HTTPRouteAcceptedByExternalGateway(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+) (bool, error) {
+	var route gatewayapiv1.HTTPRoute
+	key := types.NamespacedName{Namespace: namespace, Name: httpRouteName}
+	if err := client.Get(ctx, key, &route); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get HTTPRoute %q: %w", key.String(), err)
+	}
+
+	gatewayKey, ok := ExternalGatewayKey(cfg, namespace)
+	if !ok {
+		return false, nil
+	}
+
+	if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayKey) {
+		return false, nil
+	}
+
+	var gateway gatewayapiv1.Gateway
+	if err := client.Get(ctx, gatewayKey, &gateway); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get external Gateway %q: %w", gatewayKey.String(), err)
+	}
+
+	if gateway.DeletionTimestamp != nil {
+		return false, nil
+	}
+
+	return gatewayProgrammedForCurrentGeneration(&gateway), nil
+}
+
+func gatewayProgrammedForCurrentGeneration(gateway *gatewayapiv1.Gateway) bool {
+	programmed := meta.FindStatusCondition(gateway.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed))
+	return programmed != nil &&
+		programmed.Status == metav1.ConditionTrue &&
+		programmed.ObservedGeneration >= gateway.Generation
+}
+
+// HTTPRoutesReferencingManagedGateway returns all HTTPRoutes that still point at
+// the operator-managed default Gateway. This relies on a cluster-scoped cache:
+// migration blockers can live outside the operator namespace, for example Dex
+// and IAP HTTPRoutes. The operator-managed KKP HTTPRoute is excluded because
+// EnsureHTTPRoute rewrites its parentRefs in the same reconcile cycle and a
+// stale controller cache could otherwise count it as its own blocker.
+func HTTPRoutesReferencingManagedGateway(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespace string,
+) ([]types.NamespacedName, error) {
+	var routeList gatewayapiv1.HTTPRouteList
+	if err := client.List(ctx, &routeList); err != nil {
+		return nil, fmt.Errorf("failed to list HTTPRoutes: %w", err)
+	}
+
+	gatewayKey := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+	references := []types.NamespacedName{}
+	for i := range routeList.Items {
+		route := &routeList.Items[i]
+		if route.Namespace == namespace && route.Name == httpRouteName {
+			continue
+		}
+		if gatewayutil.HTTPRouteReferencesGateway(route, gatewayKey) {
+			references = append(references, types.NamespacedName{Namespace: route.Namespace, Name: route.Name})
+		}
+	}
+
+	return references, nil
+}
+
 // gatewayComparable holds the fields used to detect meaningful changes between
 // existing and desired Gateway state.
 type gatewayComparable struct {
@@ -340,9 +477,97 @@ func setControllerReference(owner metav1.Object, controlled ctrlruntimeclient.Ob
 	return nil
 }
 
-// EnsureGateway creates or updates the Gateway. Uses direct client operations instead of the standard reconciling
-// helpers to avoid cache-wait timeouts. Envoy Gateway continuously updates the Gateway Status, which would cause
-// the cache-wait logic to time out.
+// IsExternalGatewayNotOperatorOwned rejects externalGateway references that point at an operator-managed Gateway.
+// Unowned Gateways, including a Gateway named kubermatic/kubermatic, are left to the user and are valid BYO targets.
+// The returned bool reports whether the referenced external Gateway currently exists.
+func IsExternalGatewayNotOperatorOwned(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+) (bool, error) {
+	key, ok := ExternalGatewayKey(cfg, namespace)
+	if !ok {
+		return false, nil
+	}
+
+	var existing gatewayapiv1.Gateway
+	if err := client.Get(ctx, key, &existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			// The Gateway can be created independently/asynchronously by the platform team;
+			// the installer performs readiness checks when it needs the Gateway to exist.
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get external Gateway %q: %w", key.String(), err)
+	}
+
+	// A Gateway with a non-nil DeletionTimestamp will never serve new routes, so
+	// treat it as missing. The reconciler then records the "missing external
+	// Gateway" event and retries until the deletion finishes and the user (or
+	// platform team) recreates the Gateway.
+	if existing.DeletionTimestamp != nil {
+		return false, nil
+	}
+
+	// Reject any KubermaticConfiguration controller ownership, current or stale.
+	if common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
+		return true, fmt.Errorf("external Gateway %q is operator-managed and cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", key.String())
+	}
+
+	return true, nil
+}
+
+// ManagedGatewayExists returns true when the operator-managed default Gateway exists.
+func ManagedGatewayExists(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespace string,
+) (bool, error) {
+	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+
+	var existing gatewayapiv1.Gateway
+	if err := client.Get(ctx, key, &existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
+	}
+
+	return common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences), nil
+}
+
+// EnsureManagedGatewayAbsent deletes the operator-owned default Gateway when BYO Gateway is configured.
+// It intentionally leaves unowned or externally owned Gateways untouched.
+func EnsureManagedGatewayAbsent(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	namespace string,
+) error {
+	key := types.NamespacedName{Namespace: namespace, Name: gatewayName}
+
+	var existing gatewayapiv1.Gateway
+	if err := client.Get(ctx, key, &existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get Gateway %q: %w", key.String(), err)
+	}
+
+	if !common.HasAnyKubermaticConfigurationControllerOwnerReference(existing.OwnerReferences) {
+		log.Debugw("Leaving non-operator-owned Gateway untouched", "name", gatewayName, "namespace", namespace)
+		return nil
+	}
+
+	log.Debugw("Deleting operator-managed Gateway because externalGateway is configured", "name", gatewayName, "namespace", namespace)
+	return client.Delete(ctx, &existing)
+}
+
+// EnsureGateway creates or updates the Gateway. It still uses GatewayReconciler
+// to build desired state, but applies it with direct client operations instead
+// of the standard reconciling helpers to avoid cache-wait timeouts. Envoy
+// Gateway continuously updates the Gateway Status, which would cause the
+// cache-wait logic to time out.
 func EnsureGateway(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -416,9 +641,11 @@ func EnsureGateway(
 	return client.Update(ctx, updated)
 }
 
-// EnsureHTTPRoute creates or updates the HTTPRoute. Uses direct client operations instead of the standard reconciling
-// helpers to avoid cache-wait timeouts.Envoy Gateway continuously updates the HTTPRoute Status, which would cause
-// the cache-wait logic to time out.
+// EnsureHTTPRoute creates or updates the HTTPRoute. EnsureHTTPRouteWithAdditionalParentRefs
+// still uses HTTPRouteReconcilerWithParentRefs to build desired state, but
+// applies it with direct client operations instead of the standard reconciling
+// helpers to avoid cache-wait timeouts. Envoy Gateway continuously updates the
+// HTTPRoute Status, which would cause the cache-wait logic to time out.
 func EnsureHTTPRoute(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -427,7 +654,25 @@ func EnsureHTTPRoute(
 	namespace string,
 	scheme *runtime.Scheme,
 ) error {
-	factory := HTTPRouteReconciler(cfg, namespace)
+	return EnsureHTTPRouteWithAdditionalParentRefs(ctx, client, log, cfg, namespace, scheme, nil)
+}
+
+// EnsureHTTPRouteWithAdditionalParentRefs creates or updates the HTTPRoute while preserving additional parentRefs.
+func EnsureHTTPRouteWithAdditionalParentRefs(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	namespace string,
+	scheme *runtime.Scheme,
+	additionalParentRefs []gatewayapiv1.ParentReference,
+) error {
+	parentRefs := []gatewayapiv1.ParentReference{gatewayParentReference(cfg, namespace)}
+	for _, parentRef := range additionalParentRefs {
+		parentRefs = appendParentReferenceIfMissing(namespace, parentRefs, parentRef)
+	}
+
+	factory := HTTPRouteReconcilerWithParentRefs(cfg, namespace, parentRefs)
 	routeName, reconciler := factory()
 
 	desired := &gatewayapiv1.HTTPRoute{}

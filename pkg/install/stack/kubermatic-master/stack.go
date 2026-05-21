@@ -21,12 +21,14 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -47,14 +49,6 @@ import (
 )
 
 const (
-	NginxIngressControllerChartName   = "nginx-ingress-controller"
-	NginxIngressControllerReleaseName = NginxIngressControllerChartName
-	NginxIngressControllerNamespace   = NginxIngressControllerChartName
-
-	EnvoyGatewayControllerChartName   = "envoy-gateway-controller"
-	EnvoyGatewayControllerReleaseName = EnvoyGatewayControllerChartName
-	EnvoyGatewayControllerNamespace   = EnvoyGatewayControllerChartName
-
 	CertManagerChartName   = "cert-manager"
 	CertManagerReleaseName = CertManagerChartName
 	CertManagerNamespace   = CertManagerChartName
@@ -73,7 +67,40 @@ const (
 	TelemetryNamespace   = "telemetry-system"
 
 	NodePortProxyService = "nodeport-proxy"
+
+	ingressReadinessPollInterval           = 3 * time.Second
+	ingressReadinessTimeout                = 3 * time.Minute
+	defaultGatewayAPIReadinessPollInterval = 3 * time.Second
+	defaultGatewayAPIReadinessTimeout      = 10 * time.Minute
 )
+
+// errOperatorOwnedExternalGateway is returned when waitForGateway observes that
+// the configured external Gateway is operator-managed. It is a configuration
+// error rather than a readiness timeout and must not be wrapped with the
+// "failed to become ready within X" message that surrounds genuine timeouts.
+var errOperatorOwnedExternalGateway = errors.New("external Gateway is operator-managed")
+
+type gatewayAPIReadinessPollConfig struct {
+	interval time.Duration
+	timeout  time.Duration
+}
+
+func defaultGatewayAPIReadinessPollConfig() gatewayAPIReadinessPollConfig {
+	return gatewayAPIReadinessPollConfig{
+		interval: defaultGatewayAPIReadinessPollInterval,
+		timeout:  defaultGatewayAPIReadinessTimeout,
+	}
+}
+
+func (c gatewayAPIReadinessPollConfig) withDefaults() gatewayAPIReadinessPollConfig {
+	if c.interval <= 0 {
+		c.interval = defaultGatewayAPIReadinessPollInterval
+	}
+	if c.timeout <= 0 {
+		c.timeout = defaultGatewayAPIReadinessTimeout
+	}
+	return c
+}
 
 type MasterStack struct {
 	// showDNSHelp is used by the local command to skip a useless DNS probe.
@@ -93,17 +120,31 @@ func (*MasterStack) Name() string {
 }
 
 func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+	if opt.KubermaticConfiguration == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
 	if opt.MigrateToGatewayAPI {
-		err := deployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
-		if err != nil {
-			return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+		if opt.KubermaticConfiguration.Spec.Ingress.Gateway.UsesExternalGateway() {
+			if err := common.EnsureGatewayAPICRDs(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+				return fmt.Errorf("failed to ensure Gateway API CRDs: %w", err)
+			}
+			if err := validateExternalGatewayNotOperatorOwned(ctx, opt.KubeClient, opt.KubermaticConfiguration); err != nil {
+				return fmt.Errorf("invalid external Gateway configuration: %w", err)
+			}
+			opt.Logger.Info("⭕ Skipping envoy-gateway-controller deployment because spec.ingress.gateway.externalGateway is configured.")
+		} else {
+			err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+			if err != nil {
+				return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+			}
 		}
 	} else {
-		err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+		err := common.DeployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
 		if err != nil {
 			return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 		}
@@ -125,7 +166,7 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %w", err)
 	}
 
-	// once Kubermatic Operator is up and running, it will create the Gateway object if needed.
+	// once Kubermatic Operator is up and running, it will create the managed Gateway object if needed.
 	// so, cleanup old resources depending on the mode.
 	if err := l7IngressResourceCleanup(ctx, opt); err != nil {
 		return fmt.Errorf("L7 ingress resource cleanup failed: %w", err)
@@ -393,7 +434,7 @@ func showIngressDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 	logger.WithField("ingress", ingressName).Debug("Waiting for Ingress to be ready…")
 
 	var ingresses []networkingv1.IngressLoadBalancerIngress
-	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, ingressReadinessPollInterval, ingressReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		ingress := networkingv1.Ingress{}
 		if err := kubeClient.Get(ctx, ingressName, &ingress); err != nil {
 			return false, err
@@ -434,10 +475,7 @@ func showIngressDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 }
 
 func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) (hostname, ip string) {
-	gatewayName := types.NamespacedName{
-		Namespace: opt.KubermaticConfiguration.Namespace,
-		Name:      operatorcommon.GatewayName,
-	}
+	gatewayName := gatewayObjectKey(opt.KubermaticConfiguration)
 
 	logger.WithField("gateway", gatewayName).Debug("Waiting for Gateway to be ready")
 
@@ -474,6 +512,21 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 	return hostname, ip
 }
 
+func gatewayObjectKey(config *kubermaticv1.KubermaticConfiguration) types.NamespacedName {
+	key := types.NamespacedName{
+		Namespace: config.Namespace,
+		Name:      operatorcommon.GatewayName,
+	}
+
+	gatewayConfig := config.Spec.Ingress.Gateway
+	if gatewayConfig.UsesExternalGateway() {
+		key.Name = gatewayConfig.ExternalGateway.Name
+		key.Namespace = gatewayConfig.ExternalGatewayNamespace(config.Namespace)
+	}
+
+	return key
+}
+
 // cleanupGatewayAPIResources removes the Gateway and HTTPRoute when switching from Gateway API to Ingress.
 func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
 	l.Info("Removing existing Gateway API resources (if any) since Ingress is enabled for Kubermatic")
@@ -485,9 +538,13 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 
 	err := c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultGatewayName}, gtw)
 	if err == nil {
-		err = c.Delete(ctx, gtw)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete Gateway: %w", err)
+		if isGatewayOwnedByKubermaticConfiguration(gtw) {
+			err = c.Delete(ctx, gtw)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete Gateway: %w", err)
+			}
+		} else {
+			l.WithField("gateway", types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultGatewayName}.String()).Debug("Leaving non-operator-owned Gateway untouched during cleanup")
 		}
 	} else if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Gateway: %w", err)
@@ -495,11 +552,16 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 
 	hr := &gatewayapiv1.HTTPRoute{}
 
-	err = c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}, hr)
+	httpRouteKey := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}
+	err = c.Get(ctx, httpRouteKey, hr)
 	if err == nil {
-		err = c.Delete(ctx, hr)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete HTTPRoute: %w", err)
+		if isHTTPRouteOwnedByKubermaticConfiguration(hr) {
+			err = c.Delete(ctx, hr)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete HTTPRoute: %w", err)
+			}
+		} else {
+			l.WithField("httproute", httpRouteKey.String()).Debug("Leaving non-operator-owned HTTPRoute untouched during cleanup")
 		}
 	} else if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get HTTPRoute: %w", err)
@@ -508,81 +570,281 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 	return nil
 }
 
+// isGatewayOwnedByKubermaticConfiguration matches Gateways carrying a controller
+// owner reference from any KubermaticConfiguration, including stale references
+// left over after a KubermaticConfiguration was deleted and recreated. This
+// mirrors the operator runtime behavior so the installer does not leave behind
+// stale resources for the operator to clean up after the fact.
+// KubermaticConfiguration is a cluster-wide singleton, so the usual concern of
+// adopting unrelated controllers' children does not apply.
+func isGatewayOwnedByKubermaticConfiguration(gw *gatewayapiv1.Gateway) bool {
+	return operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(gw.OwnerReferences)
+}
+
+func isHTTPRouteOwnedByKubermaticConfiguration(route *gatewayapiv1.HTTPRoute) bool {
+	return operatorcommon.HasAnyKubermaticConfigurationControllerOwnerReference(route.OwnerReferences)
+}
+
+func validateExternalGatewayNotOperatorOwned(ctx context.Context, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
+	if config == nil || config.Spec.Ingress.Gateway == nil || !config.Spec.Ingress.Gateway.UsesExternalGateway() {
+		return nil
+	}
+
+	gatewayName := gatewayObjectKey(config)
+	gw := &gatewayapiv1.Gateway{}
+	if err := c.Get(ctx, gatewayName, gw); err != nil {
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get external Gateway %s: %w", gatewayName.String(), err)
+	}
+
+	if gw.DeletionTimestamp != nil {
+		return nil
+	}
+
+	return rejectOperatorOwnedExternalGatewayReference(gatewayName, gw)
+}
+
+func rejectOperatorOwnedExternalGatewayReference(gatewayName types.NamespacedName, gw *gatewayapiv1.Gateway) error {
+	if !isGatewayOwnedByKubermaticConfiguration(gw) {
+		return nil
+	}
+
+	return fmt.Errorf("%w: %s cannot be used as spec.ingress.gateway.externalGateway; remove KubermaticConfiguration controller ownerReferences before reusing it as an external Gateway", errOperatorOwnedExternalGateway, gatewayName.String())
+}
+
 // cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
-func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
+func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	return cleanupIngressWithPollConfig(ctx, l, c, opt, defaultGatewayAPIReadinessPollConfig())
+}
+
+func cleanupIngressWithPollConfig(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions, pollConfig gatewayAPIReadinessPollConfig) error {
+	pollConfig = pollConfig.withDefaults()
+
 	l.Info("Removing existing Ingress resources (if any) since Gateway API is enabled for Kubermatic")
+	config := opt.KubermaticConfiguration
 	if config == nil {
 		return errors.New("kubermatic configuration is nil")
 	}
 
-	l.Info("Waiting Gateway to be ready...")
-	_, err := waitForGateway(ctx, l, c, config)
+	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
+	dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+
+	kubermaticIngressExists, err := ingressExists(ctx, c, kubermaticIngressName)
 	if err != nil {
-		l.Errorf("failed to wait for Gateway to be ready, err: %v", err)
 		return err
 	}
 
-	ingress := &networkingv1.Ingress{}
-
-	err = c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}, ingress)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
+	gatewayName := gatewayObjectKey(config)
+	if kubermaticIngressExists {
+		l.Info("Waiting for Gateway to be ready...")
+		_, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig)
+		if err != nil {
+			l.Errorf("failed to wait for Gateway to be ready, err: %v", err)
+			return err
 		}
-
-		return fmt.Errorf("failed to get Ingress: %w", err)
+	} else {
+		l.Debug("No legacy Kubermatic Ingress found, skipping Gateway readiness wait")
 	}
 
-	err = c.Delete(ctx, ingress)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete Ingress: %w", err)
+	if err := deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, l, c,
+		kubermaticIngressName,
+		types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName},
+		gatewayName,
+		pollConfig,
+	); err != nil {
+		return err
 	}
 
-	const (
-		dexNs = "dex"
-		dex   = "dex"
-	)
+	if slices.Contains(opt.SkipCharts, DexChartName) {
+		l.Info("Skipping Dex Ingress cleanup because the Dex chart is skipped")
+		return nil
+	}
 
-	err = c.Get(ctx, types.NamespacedName{Namespace: dexNs, Name: dex}, ingress)
+	dexIngressExists, err := ingressExists(ctx, c, dexIngressName)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-
-		return fmt.Errorf("failed to get Ingress: %w", err)
+		return err
 	}
-	err = c.Delete(ctx, ingress)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete Ingress: %w", err)
+
+	// Dex is installed as a separate Helm chart, so its HTTPRoute Gateway target can
+	// be overridden via Helm values instead of following only the KubermaticConfiguration.
+	dexGatewayName := dexGatewayObjectKey(config, opt)
+	if dexIngressExists {
+		if dexGatewayName == gatewayName {
+			if !kubermaticIngressExists {
+				l.Info("Waiting for Dex Gateway to be ready...")
+				_, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig)
+				if err != nil {
+					l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
+					return err
+				}
+			}
+		} else {
+			l.Info("Waiting for Dex Gateway to be ready...")
+			if _, err := waitForGatewayObjectWithPollConfig(ctx, l, c, dexGatewayName, false, false, pollConfig); err != nil {
+				l.Errorf("failed to wait for Dex Gateway to be ready, err: %v", err)
+				return err
+			}
+		}
+	} else {
+		l.Debug("No legacy Dex Ingress found, skipping Dex Gateway readiness wait")
+	}
+
+	if err := deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, l, c,
+		dexIngressName,
+		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
+		dexGatewayName,
+		pollConfig,
+	); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// waitForGateway waits for the Gateway to have an address and be Programmed.
+func dexGatewayObjectKey(config *kubermaticv1.KubermaticConfiguration, opt stack.DeployOptions) types.NamespacedName {
+	return common.MasterHTTPRouteGatewayReference(config, opt.HelmValues)
+}
+
+func ingressExists(ctx context.Context, kubeClient ctrlruntimeclient.Client, ingressName types.NamespacedName) (bool, error) {
+	ingress := &networkingv1.Ingress{}
+	if err := kubeClient.Get(ctx, ingressName, ingress); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get Ingress %s: %w", ingressName.String(), err)
+	}
+
+	return true, nil
+}
+
+func deleteIngressAfterHTTPRouteReady(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	ingressName types.NamespacedName,
+	routeName types.NamespacedName,
+	gatewayName types.NamespacedName,
+) error {
+	return deleteIngressAfterHTTPRouteReadyWithPollConfig(ctx, logger, kubeClient, ingressName, routeName, gatewayName, defaultGatewayAPIReadinessPollConfig())
+}
+
+func deleteIngressAfterHTTPRouteReadyWithPollConfig(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	ingressName types.NamespacedName,
+	routeName types.NamespacedName,
+	gatewayName types.NamespacedName,
+	pollConfig gatewayAPIReadinessPollConfig,
+) error {
+	ingress := &networkingv1.Ingress{}
+	if err := kubeClient.Get(ctx, ingressName, ingress); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get Ingress %s: %w", ingressName.String(), err)
+	}
+
+	logger.WithField("httproute", routeName.String()).Info("Waiting HTTPRoute to be accepted by Gateway...")
+	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
+		return fmt.Errorf("failed to wait for HTTPRoute %s to be accepted by Gateway %s; verify the Gateway listener allowedRoutes accepts namespace %q: %w", routeName.String(), gatewayName.String(), routeName.Namespace, err)
+	}
+
+	if err := kubeClient.Delete(ctx, ingress); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete Ingress %s: %w", ingressName.String(), err)
+	}
+
+	return nil
+}
+
+// waitForHTTPRoute waits for an HTTPRoute to reference and be accepted by the active Gateway.
+func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) (*gatewayapiv1.HTTPRoute, error) {
+	pollConfig = pollConfig.withDefaults()
+	l := logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String())
+	route := gatewayapiv1.HTTPRoute{}
+
+	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
+		if err := kubeClient.Get(ctx, routeName, &route); err != nil {
+			l.Debugf("failed to get HTTPRoute, err: %v", err)
+			return false, nil
+		}
+
+		if !gatewayutil.HTTPRouteReferencesGateway(&route, gatewayName) {
+			l.Debug("HTTPRoute does not reference the active Gateway yet")
+			return false, nil
+		}
+
+		if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayName) {
+			l.Debug("HTTPRoute has not been accepted by the active Gateway yet")
+			return false, nil
+		}
+
+		l.Info("HTTPRoute is accepted by the active Gateway")
+		return true, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %w", routeName.String(), gatewayName.String(), pollConfig.timeout, err)
+	}
+
+	return &route, nil
+}
+
+// waitForGateway waits for the Gateway to be Programmed. Operator-managed
+// Gateways must also have an address; external Gateways may omit addresses, so
+// BYO mode relies on Programmed plus HTTPRoute acceptance before cleanup.
 // Per-listener conditions are not checked because HTTPS listeners depend on
 // TLS certificates that require DNS to be configured first, which only happens
 // after the installer finishes.
 func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) (*gatewayapiv1.Gateway, error) {
+	return waitForGatewayWithPollConfig(ctx, logger, kubeClient, config, defaultGatewayAPIReadinessPollConfig())
+}
+
+func waitForGatewayWithPollConfig(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration, pollConfig gatewayAPIReadinessPollConfig) (*gatewayapiv1.Gateway, error) {
 	if config == nil {
 		return nil, fmt.Errorf("Invalid KubermaticConfiguration provided")
 	}
 
-	gatewayName := types.NamespacedName{
-		Namespace: config.Namespace,
-		Name:      operatorcommon.GatewayName,
-	}
+	gatewayName := gatewayObjectKey(config)
+	requireAddress := !config.Spec.Ingress.Gateway.UsesExternalGateway()
+	rejectOperatorOwnedExternalGateway := config.Spec.Ingress.Gateway.UsesExternalGateway()
 
+	return waitForGatewayObjectWithPollConfig(ctx, logger, kubeClient, gatewayName, requireAddress, rejectOperatorOwnedExternalGateway, pollConfig)
+}
+
+func waitForGatewayObjectWithPollConfig(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	gatewayName types.NamespacedName,
+	requireAddress bool,
+	rejectOperatorOwnedExternalGateway bool,
+	pollConfig gatewayAPIReadinessPollConfig,
+) (*gatewayapiv1.Gateway, error) {
+	pollConfig = pollConfig.withDefaults()
 	l := logger.WithField("gateway", gatewayName.String())
 	gw := gatewayapiv1.Gateway{}
 
-	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 10*time.Minute, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
 			l.Debugf("failed to get Gateway, err: %v", err)
 			return false, nil
 		}
 
-		if len(gw.Status.Addresses) == 0 {
+		if gw.DeletionTimestamp != nil {
+			l.Debug("Gateway is being deleted")
+			return false, nil
+		}
+
+		if rejectOperatorOwnedExternalGateway {
+			if err := rejectOperatorOwnedExternalGatewayReference(gatewayName, &gw); err != nil {
+				return false, err
+			}
+		}
+
+		if requireAddress && len(gw.Status.Addresses) == 0 {
 			l.Debug("Gateway does not have addresses assigned yet")
 			return false, nil
 		}
@@ -612,7 +874,10 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 		return true, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Gateway %s failed to become ready within 10 minutes: %w", gatewayName.String(), err)
+		if errors.Is(err, errOperatorOwnedExternalGateway) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("Gateway %s failed to become ready within %s: %w", gatewayName.String(), pollConfig.timeout, err)
 	}
 
 	return &gw, nil
@@ -625,7 +890,7 @@ func l7IngressResourceCleanup(ctx context.Context, opt stack.DeployOptions) erro
 	}
 
 	if opt.MigrateToGatewayAPI {
-		err := cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
+		err := cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt)
 		if err != nil {
 			return fmt.Errorf("cleanup Ingress resources failed: %w", err)
 		}

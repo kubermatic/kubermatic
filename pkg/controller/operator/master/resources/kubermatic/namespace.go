@@ -34,7 +34,7 @@ func NamespaceReconciler(namespaceName string) reconciling.NamedNamespaceReconci
 			}
 
 			// Label namespaces that should have HTTPRoute access
-			ns.Labels[common.GatewayAccessLabelKey] = "true"
+			ns.Labels[common.GatewayAccessLabelKey] = common.GatewayAccessLabelValue
 			return ns, nil
 		}
 	}

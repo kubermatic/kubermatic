@@ -21,7 +21,7 @@ import (
 	"net"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	stackscommon "k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -328,7 +328,7 @@ func ApiserverInternalAllowReconciler() reconciling.NamedNetworkPolicyReconciler
 // OIDCIssuerAllowReconciler returns a func to create/update the apiserver oidc-issuer-allow egress policy.
 func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
-		ingressNamespace := kubermaticmaster.NginxIngressControllerNamespace
+		ingressNamespace := stackscommon.NginxIngressControllerNamespace
 		if namespaceOverride != "" {
 			ingressNamespace = namespaceOverride
 		}
@@ -336,7 +336,7 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) rec
 		return resources.NetworkPolicyOIDCIssuerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			// Allow egress to both nginx-ingress and envoy-gateway namespaces
 			// That helps for backward compatibility until we fully switch to envoy-gateway
-			ingressNamespaces := []string{ingressNamespace, kubermaticmaster.EnvoyGatewayControllerNamespace}
+			ingressNamespaces := []string{ingressNamespace, stackscommon.EnvoyGatewayControllerNamespace}
 
 			egressRules := []networkingv1.NetworkPolicyEgressRule{
 				{

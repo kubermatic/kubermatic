@@ -33,11 +33,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	configvalidation "k8c.io/kubermatic/v2/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -260,6 +262,10 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
 	}
 
+	for _, err := range configvalidation.ValidateExternalGatewayConfiguration(&config.Spec) {
+		failures = append(failures, err)
+	}
+
 	// only validate auth-related keys if we are not setting up a headless system
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
@@ -333,6 +339,8 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", domainPath.String())
 			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
+
+		common.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
 
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false

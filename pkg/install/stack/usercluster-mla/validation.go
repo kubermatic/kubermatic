@@ -29,6 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	stackcommon "k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/util/podexec"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
@@ -137,6 +138,10 @@ func ValidateMinioCompatibility(ctx context.Context, opt stack.DeployOptions) er
 }
 
 func (*UserClusterMLAStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
+	if opt.MLAIncludeIap && !opt.SeparateSeed {
+		stackcommon.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
+	}
+
 	helmFailures := validateHelmValues(helmValues, opt)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
