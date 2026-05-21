@@ -253,7 +253,9 @@ func isCurrentAndReady(applicationInstallation *appskubermaticv1.ApplicationInst
 		applicationInstallation.Status.Failures == 0
 }
 
-// IsDeployed returns true if the latest Helm release revision is deployed.
+// IsDeployed returns true if the latest Helm release revision is deployed. Unlike IsStuck, this
+// intentionally does not skip Helm lookup when the local Ready condition is current and true: callers
+// use it to verify Helm state while recovering stale failure counters.
 func (h HelmTemplate) IsDeployed(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	helmClient, cleanup, err := h.newHelmClient(applicationInstallation.Spec.Namespace.Name)
 	if err != nil {

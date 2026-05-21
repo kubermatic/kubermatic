@@ -546,10 +546,11 @@ func (h HelmClient) releaseHistorySummary(releaseName string) (string, int, int)
 			continue
 		}
 		latestRevision = rel.Version
-		latestStatus = "unknown"
-		if rel.Info != nil {
-			latestStatus = string(rel.Info.Status)
+		if rel.Info == nil {
+			latestStatus = "unknown"
+			continue
 		}
+		latestStatus = string(rel.Info.Status)
 	}
 
 	return latestStatus, revisionCount, latestRevision
