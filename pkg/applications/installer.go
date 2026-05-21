@@ -53,7 +53,7 @@ type ApplicationInstaller interface {
 	// IsDeployed determines if the release is currently deployed.
 	IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
 
-	// Rollback rolls an Application back to the previous release
+	// Rollback rolls an Application back to the latest successful release, or uninstalls it when no successful release exists.
 	Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
 
@@ -202,7 +202,7 @@ func namespaceExists(ctx context.Context, userClient ctrlruntimeclient.Client, n
 	return true, nil
 }
 
-// Rollback rolls an Application back to the previous release.
+// Rollback rolls an Application back to the latest successful release, or uninstalls it when no successful release exists.
 func (a *ApplicationManager) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {

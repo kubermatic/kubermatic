@@ -279,16 +279,18 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 	if stuck {
 		log.Infof("Release for ApplicationInstallation seems to be stuck, attempting recovery now")
-		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
-			return fmt.Errorf("failed to recover release: %w", err)
-		}
+		// Persist the retry reset before changing Helm state so a crash after recovery cannot
+		// leave the release repaired while the ApplicationInstallation remains retry-blocked.
 		if err := r.resetFailures(ctx, appInstallation); err != nil {
 			return err
+		}
+		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
+			return fmt.Errorf("failed to recover release: %w", err)
 		}
 		log.Infof("Release for ApplicationInstallation has been recovered successfully")
 	}
 
-	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) && hasCurrentReadyCondition(appInstallation) {
 		deployed, err := r.appInstaller.IsDeployed(ctx, log, r.seedClient, r.userClient, appInstallation)
 		if err != nil {
 			return fmt.Errorf("failed to check if the previous release is deployed: %w", err)
@@ -364,16 +366,22 @@ func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, ap
 func (r *reconciler) stopAfterMaxRetries(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	oldAppInstallation := appInstallation.DeepCopy()
 	message := maxRetriesExceededMessage(oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
-	if oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Reason != installationFailedRetriesExceededReason ||
-		oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message != message {
-		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, installationFailedRetriesExceededReason, message)
+	// Always refresh the condition to keep LastHeartbeatTime useful while the retry gate blocks reconciliation.
+	appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, installationFailedRetriesExceededReason, message)
 
-		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
-			return fmt.Errorf("failed to update status: %w", err)
-		}
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
 	}
+
 	log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
 	return nil
+}
+
+func hasCurrentReadyCondition(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
+	readyCondition, exists := appInstallation.Status.Conditions[appskubermaticv1.Ready]
+	return exists &&
+		readyCondition.Status == corev1.ConditionTrue &&
+		readyCondition.ObservedGeneration == appInstallation.Generation
 }
 
 func maxRetriesExceededMessage(previousMessage string) string {
@@ -388,14 +396,14 @@ func unwrapMaxRetriesExceededMessage(message string) string {
 }
 
 // resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
-func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
 		return r.resetFailures(ctx, appInstallation)
 	}
 	return nil
 }
 
-func (r reconciler) resetFailures(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) resetFailures(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if appInstallation.Status.Failures == 0 {
 		return nil
 	}
