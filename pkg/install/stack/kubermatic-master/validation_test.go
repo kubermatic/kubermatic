@@ -768,14 +768,7 @@ func TestCleanupIngressSkipsGatewayWaitWhenNoLegacyIngressExists(t *testing.T) {
 			Namespace: KubermaticOperatorNamespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			Ingress: kubermaticv1.KubermaticIngressConfiguration{
-				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
-					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
-						Name:      "platform-gateway",
-						Namespace: "networking",
-					},
-				},
-			},
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{},
 		},
 	}
 
@@ -784,6 +777,85 @@ func TestCleanupIngressSkipsGatewayWaitWhenNoLegacyIngressExists(t *testing.T) {
 		KubermaticConfiguration: cfg,
 	}); err != nil {
 		t.Fatalf("expected cleanup without legacy Ingress to skip Gateway wait, got %v", err)
+	}
+}
+
+func TestCleanupIngressWaitsForExternalGatewayRoutesWithoutLegacyIngress(t *testing.T) {
+	ctx := context.Background()
+	cfg := externalGatewayKubermaticConfiguration("networking", "platform-gateway")
+	gatewayName := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
+	doc, err := yamled.Load(strings.NewReader(`
+migrateGatewayAPI: true
+httpRoute:
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+`))
+	if err != nil {
+		t.Fatalf("failed to load Helm values: %v", err)
+	}
+
+	gateway := programmedGateway(gatewayName)
+	kubermaticRoute := acceptedHTTPRoute(
+		types.NamespacedName{Namespace: cfg.Namespace, Name: defaulting.DefaultHTTPRouteName},
+		gatewayName,
+	)
+	dexRoute := acceptedHTTPRoute(
+		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
+		gatewayName,
+	)
+
+	client := fake.NewClientBuilder().WithObjects(gateway, kubermaticRoute, dexRoute).Build()
+	if err := cleanupIngressWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		KubermaticConfiguration: cfg,
+		HelmValues:              doc,
+	}, gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: time.Second}); err != nil {
+		t.Fatalf("expected external Gateway route readiness without legacy Ingress to pass, got %v", err)
+	}
+}
+
+func TestCleanupIngressFailsWhenExternalGatewayIsMissingWithoutLegacyIngress(t *testing.T) {
+	ctx := context.Background()
+	cfg := externalGatewayKubermaticConfiguration("networking", "platform-gateway")
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: 10 * time.Millisecond}
+
+	client := fake.NewClientBuilder().Build()
+	err := cleanupIngressWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		KubermaticConfiguration: cfg,
+	}, pollConfig)
+	if err == nil {
+		t.Fatal("expected missing external Gateway to fail BYO readiness")
+	}
+	if !strings.Contains(err.Error(), "networking/platform-gateway") {
+		t.Fatalf("expected error to mention missing external Gateway, got %v", err)
+	}
+}
+
+func TestCleanupIngressFailsWhenExternalGatewayDoesNotAcceptHTTPRoute(t *testing.T) {
+	ctx := context.Background()
+	cfg := externalGatewayKubermaticConfiguration("networking", "platform-gateway")
+	gatewayName := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
+	pollConfig := gatewayAPIReadinessPollConfig{interval: time.Millisecond, timeout: 10 * time.Millisecond}
+
+	gateway := programmedGateway(gatewayName)
+	kubermaticRoute := rejectedHTTPRoute(
+		types.NamespacedName{Namespace: cfg.Namespace, Name: defaulting.DefaultHTTPRouteName},
+		gatewayName,
+		"NoMatchingListenerHostname",
+	)
+	dexRoute := acceptedHTTPRoute(
+		types.NamespacedName{Namespace: DexNamespace, Name: DexChartName},
+		gatewayName,
+	)
+
+	client := fake.NewClientBuilder().WithObjects(gateway, kubermaticRoute, dexRoute).Build()
+	err := cleanupIngressWithPollConfig(ctx, logrus.NewEntry(logrus.New()), client, stack.DeployOptions{
+		KubermaticConfiguration: cfg,
+	}, pollConfig)
+	if err == nil {
+		t.Fatal("expected rejected external Gateway HTTPRoute to fail BYO readiness")
+	}
+	if !strings.Contains(err.Error(), "NoMatchingListenerHostname") {
+		t.Fatalf("expected error to include route rejection reason, got %v", err)
 	}
 }
 
@@ -956,6 +1028,90 @@ func TestDeleteIngressWaitsForFreshHTTPRouteAcceptedGeneration(t *testing.T) {
 	var fetched networkingv1.Ingress
 	if err := client.Get(ctx, routeName, &fetched); !apierrors.IsNotFound(err) {
 		t.Fatalf("expected Ingress to be deleted, got %v", err)
+	}
+}
+
+func externalGatewayKubermaticConfiguration(namespace, name string) *kubermaticv1.KubermaticConfiguration {
+	return &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: KubermaticOperatorNamespace,
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      name,
+						Namespace: namespace,
+					},
+				},
+			},
+		},
+	}
+}
+
+func programmedGateway(name types.NamespacedName) *gatewayapiv1.Gateway {
+	return &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Status: gatewayapiv1.GatewayStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
+}
+
+func acceptedHTTPRoute(routeName, gatewayName types.NamespacedName) *gatewayapiv1.HTTPRoute {
+	return httpRouteWithAcceptedCondition(routeName, gatewayName, metav1.ConditionTrue, "")
+}
+
+func rejectedHTTPRoute(routeName, gatewayName types.NamespacedName, reason string) *gatewayapiv1.HTTPRoute {
+	return httpRouteWithAcceptedCondition(routeName, gatewayName, metav1.ConditionFalse, reason)
+}
+
+func httpRouteWithAcceptedCondition(routeName, gatewayName types.NamespacedName, status metav1.ConditionStatus, reason string) *gatewayapiv1.HTTPRoute {
+	gatewayNamespace := gatewayapiv1.Namespace(gatewayName.Namespace)
+	return &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       routeName.Name,
+			Namespace:  routeName.Namespace,
+			Generation: 1,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayapiv1.ObjectName(gatewayName.Name),
+						Namespace: &gatewayNamespace,
+					},
+				},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: gatewayapiv1.ParentReference{
+							Name:      gatewayapiv1.ObjectName(gatewayName.Name),
+							Namespace: &gatewayNamespace,
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             status,
+								Reason:             reason,
+								ObservedGeneration: 1,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

@@ -52,6 +52,16 @@ const (
 	// GatewayAccessLabelValue is the label value used with GatewayAccessLabelKey.
 	GatewayAccessLabelValue = "true"
 
+	// GatewayHTTPRouteLabelKey marks HTTPRoutes that participate in KKP Gateway
+	// migration readiness checks. It is intended for HTTPRoutes produced by
+	// KKP-shipped charts and the kubermatic-operator; applying it to other
+	// HTTPRoutes makes those routes block BYO Gateway migration cleanup until
+	// the configured external Gateway accepts them.
+	GatewayHTTPRouteLabelKey = "kubermatic.io/gateway-route"
+
+	// GatewayHTTPRouteLabelValue is the label value used with GatewayHTTPRouteLabelKey.
+	GatewayHTTPRouteLabelValue = "true"
+
 	DockercfgSecretName = "dockercfg"
 
 	WebhookServiceName        = "kubermatic-webhook"

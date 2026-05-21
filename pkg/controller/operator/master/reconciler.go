@@ -715,6 +715,15 @@ func (r *Reconciler) reconcileExternalGatewayMigration(ctx context.Context, conf
 			logger.Debugw("Keeping operator-managed Gateway because HTTPRoutes still reference it", "routes", routes, "requeueAfter", externalGatewayReadinessRequeueAfter)
 			return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
 		}
+
+		pendingRoutes, err := kubermatic.HTTPRoutesReferencingExternalGatewayNotAccepted(ctx, r.Client, config, config.Namespace)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if len(pendingRoutes) > 0 {
+			logger.Debugw("Keeping operator-managed Gateway because HTTPRoutes are not accepted by the external Gateway", "routes", pendingRoutes, "requeueAfter", externalGatewayReadinessRequeueAfter)
+			return reconcile.Result{RequeueAfter: externalGatewayReadinessRequeueAfter}, nil
+		}
 	}
 
 	if err := kubermatic.EnsureManagedGatewayAbsent(ctx, r.Client, logger, config.Namespace); err != nil {
