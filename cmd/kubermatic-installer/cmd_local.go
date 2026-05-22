@@ -482,18 +482,6 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 		if err != nil {
 			logger.Fatalf("Failed to create helm client: %v", err)
 		}
-		helmVersion, err := helmClient.Version()
-		if err != nil {
-			logger.Fatalf("Failed to check Helm version: %v", err)
-		}
-		if helmVersion.LessThan(MinHelmVersion) {
-			logger.Fatalf(
-				"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-				MinHelmVersion,
-				opt.HelmBinary,
-				helmVersion,
-			)
-		}
 		installKubevirt(logger, helmClient, opt)
 		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, opt)
 		logger.Infoln()
