@@ -36,6 +36,10 @@ import (
 var (
 	minHelmVersionMajor uint64 = 3
 	maxHelmVersionMajor uint64 = 4
+
+	// runCmd is the internal method used to execute Helm commands.
+	// It is overwritten by the unit test.
+	runCmd = runCmdImplementation
 )
 
 type cli struct {
@@ -99,7 +103,6 @@ func (c *cli) detectHelmVersion() (*semverlib.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	out := strings.TrimSpace(string(output))
 	if out == "<no value>" {
 		out = "v2.99.99"
@@ -314,6 +317,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 
+	return runCmd(cmd)
+}
+
+func runCmdImplementation(cmd *exec.Cmd) ([]byte, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
@@ -322,10 +329,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = errors.New(strings.TrimSpace(stderr.String()))
+		return nil, errors.New(strings.TrimSpace(stderr.String()))
 	}
 
-	return stdout.Bytes(), err
+	return stdout.Bytes(), nil
 }
 
 func valuesToFlags(values map[string]string) []string {
