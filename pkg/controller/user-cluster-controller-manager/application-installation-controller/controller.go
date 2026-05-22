@@ -287,7 +287,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		}
 		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
 			if restoreErr := r.setFailures(ctx, appInstallation, previousFailures); restoreErr != nil {
-				return fmt.Errorf("failed to recover release: %w; additionally failed to restore failure count: %v", err, restoreErr)
+				return fmt.Errorf("failed to recover release: %w; additionally failed to restore failure count: %w", err, restoreErr)
 			}
 			return fmt.Errorf("failed to recover release: %w", err)
 		}
