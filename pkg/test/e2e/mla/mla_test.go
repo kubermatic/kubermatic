@@ -195,6 +195,19 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatal("grafana org not cleaned up")
 	}
 
+	// The Grafana user is only deleted when the KKP User object is deleted (via the
+	// user-grafana-controller's handleDeletion). The roxy-admin KKP User is created
+	// by the CI harness (run-mla-e2e-tests.sh) before the test and is not part of
+	// the jig lifecycle, so we must delete it explicitly here to trigger that path.
+	logger.Info("Deleting roxy-admin KKP user to trigger Grafana user cleanup...")
+	roxyAdmin := &kubermaticv1.User{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: "roxy-admin"}, roxyAdmin); err != nil {
+		t.Fatalf("failed to get roxy-admin KKP user: %v", err)
+	}
+	if err := seedClient.Delete(ctx, roxyAdmin); err != nil {
+		t.Fatalf("failed to delete roxy-admin KKP user: %v", err)
+	}
+
 	logger.Info("Waiting for Grafana user to be gone...")
 	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
