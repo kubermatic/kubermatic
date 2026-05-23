@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	"sigs.k8s.io/yaml"
 )
@@ -150,4 +151,31 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.Applications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.Applications.PlainHTTP
 	}
+}
+
+// ValidateDefaultCatalogApplicationDefinitions loads all embedded default catalog
+// ApplicationDefinition files and validates each one using ValidateApplicationDefinitionSpec.
+func ValidateDefaultCatalogApplicationDefinitions() error {
+	files, err := GetAppDefFiles()
+	if err != nil {
+		return fmt.Errorf("failed to get application definition files: %w", err)
+	}
+
+	for _, file := range files {
+		b, err := io.ReadAll(file)
+		if err != nil {
+			return fmt.Errorf("failed to read ApplicationDefinition: %w", err)
+		}
+
+		appDef := &appskubermaticv1.ApplicationDefinition{}
+		if err := yaml.Unmarshal(b, appDef); err != nil {
+			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		if errs := validation.ValidateApplicationDefinitionSpec(*appDef); len(errs) > 0 {
+			return fmt.Errorf("invalid ApplicationDefinition %q: %w", appDef.Name, errs.ToAggregate())
+		}
+	}
+
+	return nil
 }

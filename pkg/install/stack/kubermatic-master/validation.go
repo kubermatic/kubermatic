@@ -255,7 +255,7 @@ func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfigu
 func validateApplicationDefinitions(config *kubermaticv1.KubermaticConfiguration) []error {
 	var errs []error
 
-	if _, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(zap.NewNop().Sugar(), config, false); err != nil {
+	if err := applicationdefinitions.ValidateSystemApplicationDefinitions(); err != nil {
 		errs = append(errs, prefixError("ApplicationDefinitions: ", err))
 	}
 

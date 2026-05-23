@@ -19,14 +19,16 @@ limitations under the License.
 package kubermaticmaster
 
 import (
-	"go.uber.org/zap"
-
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	applicationcatalog "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 )
 
 func validateDefaultApplicationCatalog(config *kubermaticv1.KubermaticConfiguration) []error {
-	if _, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(zap.NewNop().Sugar(), config, false); err != nil {
+	if !config.Spec.Applications.DefaultApplicationCatalog.Enable {
+		return nil
+	}
+
+	if err := applicationcatalog.ValidateDefaultCatalogApplicationDefinitions(); err != nil {
 		return []error{prefixError("ApplicationDefinitions: ", err)}
 	}
 
