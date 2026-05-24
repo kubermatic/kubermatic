@@ -48,6 +48,12 @@ import (
 
 const (
 	controllerName = "kkp-usersshkeys-controller"
+
+	// kkpManagedMarker is a comment prefix the agent writes before each KKP-managed key.
+	// This allows the agent to distinguish its own keys from external keys (e.g. from
+	// cloud-init/machine-deployment) so that removed KKP keys can be cleaned up without
+	// affecting externally-managed keys.
+	kkpManagedMarker = "# kkp-managed"
 )
 
 type Reconciler struct {
@@ -161,9 +167,14 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 }
 
 func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
-	expectedUserSSHKeys, err := createBuffer(sshKeys)
-	if err != nil {
-		return fmt.Errorf("failed creating user ssh keys buffer: %w", err)
+	kkpKeys := sortedKKPKeys(sshKeys)
+
+	// deduplicate keys by dropping external keys that match a KKP key so we don't
+	// end up with two copies (one marked, one unmarked) after an
+	// upgrade or when cloud-init injects the same key via MD
+	kkpSet := make(map[string]struct{}, len(kkpKeys))
+	for _, nk := range kkpKeys {
+		kkpSet[nk.Key] = struct{}{}
 	}
 
 	for _, path := range r.authorizedKeysPath {
@@ -171,15 +182,29 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 			return fmt.Errorf("failed updating permissions %s: %w", path, err)
 		}
 
-		actualUserSSHKeys, err := os.ReadFile(path)
+		actualContent, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed reading file in path %s: %w", path, err)
 		}
 
-		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
-			if err := os.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return fmt.Errorf("failed to overwrite file in path %s: %w", path, err)
+		// keep keys that are not marked as kkp-managed
+		externalKeys := extractExternalKeys(actualContent)
+
+		filtered := make([]string, 0, len(externalKeys))
+		for _, k := range externalKeys {
+			if _, dup := kkpSet[strings.TrimSpace(k)]; !dup {
+				filtered = append(filtered, k)
 			}
+		}
+
+		merged := mergeAuthorizedKeys(kkpKeys, filtered)
+
+		if !bytes.Equal(actualContent, merged) {
+			err = os.WriteFile(path, merged, 0600)
+			if err != nil {
+				return fmt.Errorf("failed to write file in path %q: %w", path, err)
+			}
+
 			r.log.Infow("File has been updated successfully", "file", path)
 		}
 	}
@@ -187,27 +212,96 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	return nil
 }
 
-func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
-	var (
-		keys   = make([]string, 0, len(data))
-		buffer = &bytes.Buffer{}
-	)
+// NamedKey pairs a KKP UserSSHKey name with its public key value.
+type NamedKey struct {
+	Name string
+	Key  string
+}
 
-	for key := range data {
-		keys = append(keys, key)
+// sortedKKPKeys returns the KKP SSH keys sorted alphabetically by key value,
+// preserving the Secret map key (UserSSHKey object name) for marker comments.
+func sortedKKPKeys(sshKeys map[string][]byte) []NamedKey {
+	keys := make([]NamedKey, 0, len(sshKeys))
+	for name, v := range sshKeys {
+		keys = append(keys, NamedKey{
+			Name: name,
+			Key:  strings.TrimSpace(string(v)),
+		})
 	}
 
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].Key < keys[j].Key
+	})
 
-	for k := range keys {
-		key := keys[k]
-		data[key] = append(data[key], []byte("\n")...)
-		if _, err := buffer.Write(data[key]); err != nil {
-			return nil, fmt.Errorf("failed writing user ssh keys to buffer: %w", err)
+	return keys
+}
+
+// AuthorizedKeysView is the parsed form of an authorized_keys file: KKP-managed
+// keys keyed by their UserSSHKey object name, plus external (unmarked) keys.
+type AuthorizedKeysView struct {
+	Managed  map[string]string // UserSSHKey name -> public key value
+	External []string          // public key lines without a kkp-managed marker
+}
+
+// ParseAuthorizedKeys parses an authorized_keys file and splits keys into
+// KKP-managed (preceded by a kkpManagedMarker comment) and external.
+func ParseAuthorizedKeys(content string) AuthorizedKeysView {
+	view := AuthorizedKeysView{Managed: map[string]string{}}
+
+	lines := strings.Split(content, "\n")
+	var pendingName string
+	skipNext := false
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" {
+			continue
 		}
+
+		if strings.HasPrefix(line, kkpManagedMarker) {
+			pendingName = ""
+			if rest := strings.TrimPrefix(line, kkpManagedMarker); strings.HasPrefix(rest, ":") {
+				pendingName = strings.TrimSpace(strings.TrimPrefix(rest, ":"))
+			}
+			skipNext = true
+			continue
+		}
+
+		if skipNext {
+			view.Managed[pendingName] = line
+			pendingName = ""
+			skipNext = false
+			continue
+		}
+
+		view.External = append(view.External, line)
 	}
 
-	return buffer, nil
+	return view
+}
+
+// extractExternalKeys parses an authorized_keys file and returns key lines
+// that are not preceded by the kkpManagedMarker comment.
+func extractExternalKeys(content []byte) []string {
+	return ParseAuthorizedKeys(string(content)).External
+}
+
+// mergeAuthorizedKeys builds the final authorized_keys content. Each KKP key
+// is preceded by a kkpManagedMarker comment (including the key name for
+// readability). External keys are appended without a marker.
+func mergeAuthorizedKeys(kkpKeys []NamedKey, externalKeys []string) []byte {
+	var buf bytes.Buffer
+
+	for _, nk := range kkpKeys {
+		fmt.Fprintf(&buf, "%s: %s\n%s\n", kkpManagedMarker, nk.Name, nk.Key)
+	}
+
+	for _, key := range externalKeys {
+		buf.WriteString(key)
+		buf.WriteByte('\n')
+	}
+
+	return buf.Bytes()
 }
 
 func updateOwnAndPermissions(path string) error {
