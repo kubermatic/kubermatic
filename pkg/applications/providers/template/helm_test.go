@@ -24,6 +24,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -229,4 +230,116 @@ func newDeployOpts(t *testing.T, wait bool, timeout time.Duration, atomic bool, 
 		t.Fatalf("failed to build deployOpts: %s", err)
 	}
 	return deployOps
+}
+
+func TestIsStuckSkipsHelmLookupWhenApplicationInstallationIsCurrentAndReady(t *testing.T) {
+	appInstallation := &appskubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Generation: 7,
+		},
+		Status: appskubermaticv1.ApplicationInstallationStatus{
+			Conditions: map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
+				appskubermaticv1.Ready: {
+					Status:             corev1.ConditionTrue,
+					ObservedGeneration: 7,
+				},
+			},
+		},
+	}
+
+	stuck, err := (HelmTemplate{
+		CacheDir:   "/does/not/exist",
+		Kubeconfig: "invalid-kubeconfig",
+	}).IsStuck(appInstallation)
+	if err != nil {
+		t.Fatalf("expected current ready ApplicationInstallation to skip Helm lookup, got error: %v", err)
+	}
+	if stuck {
+		t.Fatal("expected current ready ApplicationInstallation not to be stuck")
+	}
+}
+
+func TestIsCurrentAndReady(t *testing.T) {
+	tests := []struct {
+		name             string
+		generation       int64
+		readyCondition   *appskubermaticv1.ApplicationInstallationCondition
+		failures         int
+		wantCurrentReady bool
+	}{
+		{
+			name:       "current ready with no failures",
+			generation: 7,
+			readyCondition: &appskubermaticv1.ApplicationInstallationCondition{
+				Status:             corev1.ConditionTrue,
+				ObservedGeneration: 7,
+			},
+			wantCurrentReady: true,
+		},
+		{
+			name:             "missing ready condition",
+			generation:       7,
+			wantCurrentReady: false,
+		},
+		{
+			name:       "ready condition is false",
+			generation: 7,
+			readyCondition: &appskubermaticv1.ApplicationInstallationCondition{
+				Status:             corev1.ConditionFalse,
+				ObservedGeneration: 7,
+			},
+			wantCurrentReady: false,
+		},
+		{
+			name:       "ready condition is unknown",
+			generation: 7,
+			readyCondition: &appskubermaticv1.ApplicationInstallationCondition{
+				Status:             corev1.ConditionUnknown,
+				ObservedGeneration: 7,
+			},
+			wantCurrentReady: false,
+		},
+		{
+			name:       "observed generation is stale",
+			generation: 7,
+			readyCondition: &appskubermaticv1.ApplicationInstallationCondition{
+				Status:             corev1.ConditionTrue,
+				ObservedGeneration: 6,
+			},
+			wantCurrentReady: false,
+		},
+		{
+			name:       "failures are present",
+			generation: 7,
+			readyCondition: &appskubermaticv1.ApplicationInstallationCondition{
+				Status:             corev1.ConditionTrue,
+				ObservedGeneration: 7,
+			},
+			failures:         1,
+			wantCurrentReady: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{}
+			if tt.readyCondition != nil {
+				conditions[appskubermaticv1.Ready] = *tt.readyCondition
+			}
+
+			appInstallation := &appskubermaticv1.ApplicationInstallation{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: tt.generation,
+				},
+				Status: appskubermaticv1.ApplicationInstallationStatus{
+					Conditions: conditions,
+					Failures:   tt.failures,
+				},
+			}
+
+			if got := isCurrentAndReady(appInstallation); got != tt.wantCurrentReady {
+				t.Fatalf("isCurrentAndReady() = %v, want %v", got, tt.wantCurrentReady)
+			}
+		})
+	}
 }
