@@ -195,21 +195,12 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatal("grafana org not cleaned up")
 	}
 
-	// The Grafana user is only deleted when the KKP User object is deleted (via the
-	// user-grafana-controller's handleDeletion). The roxy-admin KKP User is created
-	// by the CI harness (run-mla-e2e-tests.sh) before the test and is not part of
-	// the jig lifecycle, so we must delete it explicitly here to trigger that path.
-	logger.Info("Deleting roxy-admin KKP user to trigger Grafana user cleanup...")
-	roxyAdmin := &kubermaticv1.User{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: "roxy-admin"}, roxyAdmin); err != nil {
-		t.Fatalf("failed to get roxy-admin KKP user: %v", err)
-	}
-	if err := seedClient.Delete(ctx, roxyAdmin); err != nil {
-		t.Fatalf("failed to delete roxy-admin KKP user: %v", err)
-	}
-
+	// User cleanup goes through: toggleMLAInSeed(false) → KKP operator redeploys
+	// seed-controller-manager without -enable-user-cluster-mla → cleanup controller
+	// runs once at startup → DeleteUser. With Grafana 13 the pod takes significantly
+	// longer to become ready than 10.2.2, pushing the chain past the default 5m timeout.
 	logger.Info("Waiting for Grafana user to be gone...")
-	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 15*time.Minute, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
