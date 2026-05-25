@@ -1061,6 +1061,11 @@ type KubeVirtInfraStorageClass struct {
 	// cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
 	// image creation.
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
+	// ReclaimPolicy controls the reclaimPolicy for dynamically provisioned PersistentVolumes of this storage class.
+	// Defaults to Delete.
+	ReclaimPolicy string `json:"reclaimPolicy,omitempty"`
+	// AllowVolumeExpansion shows whether the storage class allow volume expand.
+	AllowVolumeExpansion bool `json:"allowVolumeExpansion,omitempty"`
 }
 
 type KubeVirtInfraVolumeSnapshotClass struct {
