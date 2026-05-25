@@ -1393,7 +1393,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: manager
-          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.5.0" }}
+          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.5.1" }}
           imagePullPolicy: Always
           command:
             - /manager
@@ -1439,6 +1439,12 @@ spec:
      isDefaultClass: {{ .IsDefaultClass }}
 {{- if .VolumeBindingMode  }}
      volumeBindingMode: {{ .VolumeBindingMode }}
+{{- end }}
+{{- if .AllowVolumeExpansion  }}
+     allowVolumeExpansion: {{ default false .AllowVolumeExpansion }}
+{{- end }}
+{{- if .ReclaimPolicy  }}
+     reclaimPolicy: {{ .ReclaimPolicy }}
 {{- end }}
      bus: scsi
 {{- if .Regions }}
