@@ -56,6 +56,11 @@ import (
 // More information at https://helm.sh/docs/topics/advanced/#storage-backends
 const secretStorageDriver = "secret"
 
+const (
+	helmInitialInstallDescription   = "Initial install underway"
+	helmPreparingUpgradeDescription = "Preparing upgrade"
+)
+
 // HelmSettings holds the Helm configuration for caching repositories.
 type HelmSettings struct {
 	// RepositoryConfig is the path to the repositories file.
@@ -470,22 +475,173 @@ func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 	return res, nil
 }
 
-// Rollback wraps helms Rollback command to be used with our ActionConfig.
+// IsPending returns true when the latest release revision is in any Helm pending state.
+func (h HelmClient) IsPending(releaseName string) (bool, error) {
+	metadata, err := h.GetMetadata(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return release.Status(metadata.Status).IsPending(), nil
+}
+
+// IsDeployed returns true when the latest release revision is deployed. Superseded revisions
+// are considered successful rollback targets, but they do not mean the current release is deployed.
+func (h HelmClient) IsDeployed(releaseName string) (bool, error) {
+	metadata, err := h.GetMetadata(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return release.Status(metadata.Status) == release.StatusDeployed, nil
+}
+
+// Rollback wraps helms Rollback command to be used with our ActionConfig. It rolls back to the
+// latest successful revision, or uninstalls the release if no successful revision exists. A successful
+// uninstall fallback means callers can proceed with a fresh install of the desired release.
 func (h HelmClient) Rollback(releaseName string) error {
 	client := action.NewRollback(h.actionConfig)
-	// we need to set the last successful deployed revision explicit because otherwise it would be the current revision minus 1
-	// which could lead to errors due to missing revisions when the latest ones failed because we configure history limits
-	// on upgrade actions
-	latestDeployedRelease, err := h.actionConfig.Releases.Deployed(releaseName)
+	// Set the last successful revision explicitly because otherwise Helm uses the current revision minus 1,
+	// which can point at a failed/pending release when history is incomplete or was pruned.
+	lastSuccessfulRelease, err := h.lastSuccessfulRelease(releaseName)
 	if err != nil {
+		if errors.Is(err, driver.ErrNoDeployedReleases) {
+			status, revisionCount, latestRevision := h.releaseHistorySummary(releaseName)
+			h.logger.Warnw("No successful release found while recovering stuck Helm release, uninstalling release before reinstall", "release", releaseName, "latestStatus", status, "historyRevisions", revisionCount, "latestRevision", latestRevision)
+			if _, uninstallErr := h.Uninstall(releaseName); uninstallErr != nil {
+				return fmt.Errorf("could not uninstall release %q after failing to fetch last successful release: %w", releaseName, uninstallErr)
+			}
+			return nil
+		}
 		return fmt.Errorf("could not fetch last successful release %q: %w", releaseName, err)
 	}
-	client.Version = latestDeployedRelease.Version
+	client.Version = lastSuccessfulRelease.Version
+	h.logger.Infow("Rolling back stuck Helm release to latest successful revision", "release", releaseName, "revision", lastSuccessfulRelease.Version, "status", lastSuccessfulRelease.Info.Status)
 	err = client.Run(releaseName)
 	if err != nil {
 		return fmt.Errorf("could not rollback release %q: %w", releaseName, err)
 	}
 	return nil
+}
+
+func (h HelmClient) releaseHistorySummary(releaseName string) (string, int, int) {
+	history, err := h.actionConfig.Releases.History(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return "not-found", 0, 0
+		}
+		h.logger.Debugw("Failed to retrieve Helm release history", "release", releaseName, "error", err)
+		return "unknown", 0, 0
+	}
+
+	latestStatus := "unknown"
+	latestRevision := 0
+	revisionCount := 0
+	for _, rel := range history {
+		if rel == nil {
+			continue
+		}
+		revisionCount++
+		if rel.Version <= latestRevision {
+			continue
+		}
+		latestRevision = rel.Version
+		if rel.Info == nil {
+			latestStatus = "unknown"
+			continue
+		}
+		latestStatus = string(rel.Info.Status)
+	}
+
+	return latestStatus, revisionCount, latestRevision
+}
+
+func (h HelmClient) lastSuccessfulRelease(releaseName string) (*release.Release, error) {
+	history, err := h.actionConfig.Releases.History(releaseName)
+	if err != nil {
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			return nil, driver.NewErrNoDeployedReleases(releaseName)
+		}
+		return nil, err
+	}
+
+	revisionsSupersededByFailedRollback := revisionsSupersededByFailedRollback(releaseName, history)
+	var latestSuccessfulRelease *release.Release
+	for _, rel := range history {
+		if rel == nil || rel.Info == nil {
+			continue
+		}
+		if rel.Info.Status == release.StatusSuperseded {
+			if _, ok := revisionsSupersededByFailedRollback[rel.Version]; ok {
+				continue
+			}
+		} else if rel.Info.Status != release.StatusDeployed {
+			continue
+		}
+		if latestSuccessfulRelease == nil || rel.Version > latestSuccessfulRelease.Version {
+			latestSuccessfulRelease = rel
+		}
+	}
+
+	if latestSuccessfulRelease == nil {
+		return nil, driver.NewErrNoDeployedReleases(releaseName)
+	}
+
+	return latestSuccessfulRelease, nil
+}
+
+func revisionsSupersededByFailedRollback(releaseName string, history []*release.Release) map[int]struct{} {
+	revisions := map[int]struct{}{}
+	// Helm storage history is not treated as ordered here; use a revision map so failed rollback
+	// records can be matched to their previous current revision regardless of slice order.
+	releasesByRevision := map[int]*release.Release{}
+	for _, rel := range history {
+		if rel != nil {
+			releasesByRevision[rel.Version] = rel
+		}
+	}
+
+	failedRollbackDescriptionPrefix := fmt.Sprintf("Rollback %q failed:", releaseName)
+	for _, rel := range history {
+		if rel == nil || rel.Info == nil || rel.Info.Status != release.StatusFailed {
+			continue
+		}
+		if !strings.HasPrefix(rel.Info.Description, failedRollbackDescriptionPrefix) {
+			continue
+		}
+		if rel.Version <= 1 {
+			continue
+		}
+		previousRevision := releasesByRevision[rel.Version-1]
+		if !wasUnsuccessfulSupersededByFailedRollback(releaseName, previousRevision) {
+			continue
+		}
+		// Helm marks the previous current revision as superseded when rollback execution fails. If
+		// that current revision was pending or failed, the superseded status does not mean it succeeded.
+		revisions[previousRevision.Version] = struct{}{}
+	}
+	return revisions
+}
+
+func wasUnsuccessfulSupersededByFailedRollback(releaseName string, rel *release.Release) bool {
+	if rel == nil || rel.Info == nil {
+		return false
+	}
+	// These descriptions come from Helm's action package. If Helm changes them, the rollback
+	// history tests should be updated with the new emitted descriptions.
+	return rel.Info.Description == helmInitialInstallDescription ||
+		rel.Info.Description == helmPreparingUpgradeDescription ||
+		strings.HasPrefix(rel.Info.Description, helmFailedUpgradeDescriptionPrefix(releaseName))
+}
+
+func helmFailedUpgradeDescriptionPrefix(releaseName string) string {
+	return fmt.Sprintf("Upgrade %q failed:", releaseName)
 }
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies

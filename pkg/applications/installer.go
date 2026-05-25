@@ -28,6 +28,8 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,7 +50,11 @@ type ApplicationInstaller interface {
 	// IsStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries
 	IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
 
-	// Rollback rolls an Application back to the previous release
+	// IsDeployed determines if the release is currently deployed.
+	IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
+
+	// Rollback rolls an Application back to the latest successful release, or uninstalls it when no successful release exists.
+	// A successful uninstall fallback allows the next reconcile to install the desired release cleanly.
 	Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
 
@@ -150,6 +156,15 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 
 // IsStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries.
 func (a *ApplicationManager) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	targetNamespaceExists, err := namespaceExists(ctx, userClient, applicationInstallation.Spec.Namespace.Name)
+	if err != nil {
+		return false, err
+	}
+	if !targetNamespaceExists {
+		log.Debugw("skipping stuck release check because target namespace does not exist", "namespace", applicationInstallation.Spec.Namespace.Name)
+		return false, nil
+	}
+
 	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return false, fmt.Errorf("failed to initialize template provider: %w", err)
@@ -158,7 +173,38 @@ func (a *ApplicationManager) IsStuck(ctx context.Context, log *zap.SugaredLogger
 	return templateProvider.IsStuck(applicationInstallation)
 }
 
-// Rollback rolls an Application back to the previous release.
+// IsDeployed determines if the release is currently deployed.
+func (a *ApplicationManager) IsDeployed(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	targetNamespaceExists, err := namespaceExists(ctx, userClient, applicationInstallation.Spec.Namespace.Name)
+	if err != nil {
+		return false, err
+	}
+	if !targetNamespaceExists {
+		return false, nil
+	}
+
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	if err != nil {
+		return false, fmt.Errorf("failed to initialize template provider: %w", err)
+	}
+
+	return templateProvider.IsDeployed(applicationInstallation)
+}
+
+func namespaceExists(ctx context.Context, userClient ctrlruntimeclient.Client, namespace string) (bool, error) {
+	ns := &corev1.Namespace{}
+	if err := userClient.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get namespace %q: %w", namespace, err)
+	}
+
+	return true, nil
+}
+
+// Rollback rolls an Application back to the latest successful release, or uninstalls it when no successful release exists.
+// A successful uninstall fallback allows the next reconcile to install the desired release cleanly.
 func (a *ApplicationManager) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
