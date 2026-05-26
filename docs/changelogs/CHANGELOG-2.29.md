@@ -25,7 +25,7 @@
 - Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/Dashboard/pull/7927))
 - Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/Dashboard/pull/7956))
 
-### CleanUp
+### Cleanups
 
 - The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15855](https://github.com/kubermatic/kubermatic/pull/15855))
 
