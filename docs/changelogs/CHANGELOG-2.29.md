@@ -36,7 +36,7 @@
 - Add support of k8s patch releases v1.34.8/v1.33.12 ([#15871](https://github.com/kubermatic/kubermatic/pull/15871))
 - Update kubeone package to v1.12.3 ([#8047](https://github.com/kubermatic/Dashboard/pull/8047))
 - Update Operating System Manager to v1.8.1 ([#15921](https://github.com/kubermatic/kubermatic/pull/15921))
-- Update Machine Controller to v1.64.2 ([#15921](https://github.com/kubermatic/kubermatic/pull/15921))
+- Update Machine Controller to v1.64.2 ([#15928](https://github.com/kubermatic/kubermatic/pull/15928))
 
 ## v2.29.7
 
