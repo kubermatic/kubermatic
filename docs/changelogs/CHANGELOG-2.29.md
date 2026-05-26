@@ -8,6 +8,35 @@
 - [v2.29.5](#v2295)
 - [v2.29.6](#v2296)
 - [v2.29.7](#v2297)
+- [v2.29.8](#v2298)
+
+## v2.29.8
+
+**GitHub release: [v2.29.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.8)**
+
+### Bugfixes
+
+- Fix recovery for Helm-based ApplicationInstallations whose Helm release is stuck in a pending state or whose retry state no longer matches the deployed Helm release ([#15915](https://github.com/kubermatic/kubermatic/pull/15915))
+- SSH keys from machine deployment providerSpec are no longer removed from worker nodes by the user-ssh-key-agent ([#15863](https://github.com/kubermatic/kubermatic/pull/15863))
+- Cluster/machine metrics endpoints return an empty result for unavailable BYO CNI user clusters to avoid triggering KubermaticAPITooManyErrors alerts ([#8060](https://github.com/kubermatic/Dashboard/pull/8060))
+- Fix background-repeat for multi-line 'menu-item' icons on low zoom ([#8054](https://github.com/kubermatic/Dashboard/pull/8054))
+- Fix VSphere provider ignoring project-level allowed operating system restrictions during cluster creation ([#8010](https://github.com/kubermatic/Dashboard/pull/8010))
+- Fix the Azure availability zone selector data population within the MachineDeployment edit dialog ([#8028](https://github.com/kubermatic/Dashboard/pull/8028))
+- Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/Dashboard/pull/7927))
+- Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/Dashboard/pull/7956))
+
+### CleanUp
+
+- The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15855](https://github.com/kubermatic/kubermatic/pull/15855))
+
+
+### Updates
+
+- Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
+- Add support of k8s patch releases v1.34.8/v1.33.12 ([#15871](https://github.com/kubermatic/kubermatic/pull/15871))
+- Update kubeone package to v1.12.3 ([#8047](https://github.com/kubermatic/Dashboard/pull/8047))
+- Update Operating System Manager to v1.8.1 ([#15921](https://github.com/kubermatic/kubermatic/pull/15921))
+- Update Machine Controller to v1.64.2 ([#15921](https://github.com/kubermatic/kubermatic/pull/15921))
 
 ## v2.29.7
 
