@@ -11,6 +11,25 @@
 - [v2.28.8](#v2288)
 - [v2.28.9](#v2289)
 - [v2.28.10](#v22810)
+- [v2.28.11](#v22811)
+
+## v2.28.11
+
+**GitHub release: [v2.28.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.11)**
+
+### Bugfixes
+
+- SSH keys from machine deployment providerSpec are no longer removed from worker nodes by the user-ssh-key-agent ([#15863](https://github.com/kubermatic/kubermatic/pull/15863))
+- Cluster/machine metrics endpoints return an empty result for unavailable BYO CNI user clusters to avoid triggering KubermaticAPITooManyErrors alerts ([#8060](https://github.com/kubermatic/dashboard/pull/8060))
+- Fix background-repeat for multi-line 'menu-item' icons on low zoom ([#8054](https://github.com/kubermatic/dashboard/pull/8054))
+- Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/dashboard/pull/7927))
+- Fix VSphere provider ignoring project-level allowed operating system restrictions during cluster creation ([#8010](https://github.com/kubermatic/dashboard/pull/8010))
+- Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/dashboard/pull/7956))
+
+### Updates
+
+- Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
+- Add support for k8s patch release v1.33.12 ([#15872](https://github.com/kubermatic/kubermatic/pull/15872))
 
 ## v2.28.10
 
