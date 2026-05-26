@@ -15,7 +15,7 @@
 
 ## v2.28.11
 
-**GitHub release: [v2.28.11](https://github.com/kubermatic/dashboard/releases/tag/v2.28.11)**
+**GitHub release: [v2.28.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.11)**
 
 ### Bugfixes
 
