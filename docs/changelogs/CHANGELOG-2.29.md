@@ -8,6 +8,35 @@
 - [v2.29.5](#v2295)
 - [v2.29.6](#v2296)
 - [v2.29.7](#v2297)
+- [v2.29.8](#v2298)
+
+## v2.29.8
+
+**GitHub release: [v2.29.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.8)**
+
+### Bugfixes
+
+- Fix recovery for Helm-based ApplicationInstallations whose Helm release is stuck in a pending state or whose retry state no longer matches the deployed Helm release ([#15915](https://github.com/kubermatic/kubermatic/pull/15915))
+- SSH keys from machine deployment providerSpec are no longer removed from worker nodes by the user-ssh-key-agent ([#15863](https://github.com/kubermatic/kubermatic/pull/15863))
+- Cluster/machine metrics endpoints return an empty result for unavailable BYO CNI user clusters to avoid triggering KubermaticAPITooManyErrors alerts ([#8060](https://github.com/kubermatic/Dashboard/pull/8060))
+- Fix background-repeat for multi-line 'menu-item' icons on low zoom ([#8054](https://github.com/kubermatic/Dashboard/pull/8054))
+- Fix VSphere provider ignoring project-level allowed operating system restrictions during cluster creation ([#8010](https://github.com/kubermatic/Dashboard/pull/8010))
+- Fix the Azure availability zone selector data population within the MachineDeployment edit dialog ([#8028](https://github.com/kubermatic/Dashboard/pull/8028))
+- Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/Dashboard/pull/7927))
+- Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/Dashboard/pull/7956))
+
+### Cleanups
+
+- The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15855](https://github.com/kubermatic/kubermatic/pull/15855))
+
+
+### Updates
+
+- Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
+- Add support of k8s patch releases v1.34.8/v1.33.12 ([#15871](https://github.com/kubermatic/kubermatic/pull/15871))
+- Update kubeone package to v1.12.3 ([#8047](https://github.com/kubermatic/Dashboard/pull/8047))
+- Update Operating System Manager to v1.8.1 ([#15921](https://github.com/kubermatic/kubermatic/pull/15921))
+- Update Machine Controller to v1.64.2 ([#15928](https://github.com/kubermatic/kubermatic/pull/15928))
 
 ## v2.29.7
 
@@ -143,7 +172,6 @@
 - Fix Operating System Manager args, for flags like containerd-registry-mirrors ([#15154](https://github.com/kubermatic/kubermatic/pull/15154))
 - Add omitempty to component settings fields to allow partial configuration ([#15182](https://github.com/kubermatic/kubermatic/pull/15182))
 - Fix encryption at rest feature failing in environments with separate master and seed clusters ([#7718](https://github.com/kubermatic/dashboard/pull/7718))
-
 ### Updates
 
 - Update machine-controller to [v1.64.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.1) ([#15267](https://github.com/kubermatic/kubermatic/pull/15267))
@@ -187,7 +215,7 @@
 	- Cilium 1.18 will fail to start on Ubuntu 22.04 nodes using kernel 5.15.0-47-generic due to missing BPF verifier fixes. 
 Upgrading to a newer kernel (either enabling "Upgrade system on first boot" from KKP UI, or using a newer kernel like 5.15.0-160), or using Ubuntu 24.04 will resolve the issue.
 
-### Supported Kubernetes Version
+### Supported Kubernetes Versions
 
 - Add support for Kubernetes version 1.34 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
 - Remove support for Kubernetes version 1.30 ([#14828](https://github.com/kubermatic/kubermatic/pull/14828))
@@ -340,4 +368,3 @@ Upgrading to a newer kernel (either enabling "Upgrade system on first boot" from
 
 - Remove deprecated Azure Basic Load Balancer SKU option, defaulting to Standard SKU ([#7590](https://github.com/kubermatic/dashboard/pull/7590))
 - Remove Equinix (Packet) provider support from cluster creation, KubeOne, and presets ([#7533](https://github.com/kubermatic/dashboard/pull/7533))
-
