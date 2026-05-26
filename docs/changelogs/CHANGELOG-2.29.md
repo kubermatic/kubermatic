@@ -29,7 +29,6 @@
 
 - The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15855](https://github.com/kubermatic/kubermatic/pull/15855))
 
-
 ### Updates
 
 - Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
