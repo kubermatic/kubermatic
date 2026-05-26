@@ -210,7 +210,7 @@ func createSeedWatches(bldr *builder.Builder, seedName string, seedManager manag
 	}
 
 	for _, t := range namespacedTypesToWatch {
-		watch(t, predicateutil.ByNamespace(namespace), common.ManagedByOperatorPredicate)
+		watch(t, predicateutil.ByNamespace(namespace), common.ManagedByOperatorPredicate, predicateutil.SkipCreateEvents())
 	}
 
 	globalTypesToWatch := []ctrlruntimeclient.Object{
@@ -219,7 +219,7 @@ func createSeedWatches(bldr *builder.Builder, seedName string, seedManager manag
 	}
 
 	for _, t := range globalTypesToWatch {
-		watch(t, common.ManagedByOperatorPredicate)
+		watch(t, common.ManagedByOperatorPredicate, predicateutil.SkipCreateEvents())
 	}
 
 	// Seeds are not managed by the operator, but we still need to be notified when
@@ -242,7 +242,7 @@ func createSeedWatches(bldr *builder.Builder, seedName string, seedManager manag
 	}
 
 	for _, t := range namespacedVPATypes {
-		watch(t, predicateutil.ByNamespace(metav1.NamespaceSystem), common.ManagedByOperatorPredicate)
+		watch(t, predicateutil.ByNamespace(metav1.NamespaceSystem), common.ManagedByOperatorPredicate, predicateutil.SkipCreateEvents())
 	}
 
 	globalVPATypes := []ctrlruntimeclient.Object{

@@ -161,14 +161,14 @@ func Add(
 	}
 
 	for _, t := range namespacedResources {
-		bldr.Watches(t, childEventHandler, builder.WithPredicates(namespacePredicate, common.ManagedByOperatorPredicate))
+		bldr.Watches(t, childEventHandler, builder.WithPredicates(namespacePredicate, common.ManagedByOperatorPredicate, predicateutil.SkipCreateEvents()))
 	}
 
 	for _, t := range []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&rbacv1.ClusterRoleBinding{},
 	} {
-		bldr.Watches(t, childEventHandler, builder.WithPredicates(common.ManagedByOperatorPredicate))
+		bldr.Watches(t, childEventHandler, builder.WithPredicates(common.ManagedByOperatorPredicate, predicateutil.SkipCreateEvents()))
 	}
 
 	for _, t := range []ctrlruntimeclient.Object{
