@@ -314,10 +314,10 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	return verifyGatewayHTTPConnectivityThroughGateway(ctx, t, c, l, types.NamespacedName{
 		Name:      defaulting.DefaultGatewayName,
 		Namespace: jig.KubermaticNamespace(),
-	}, "30080")
+	}, 30080)
 }
 
-func verifyGatewayHTTPConnectivityThroughGateway(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger, gtwName types.NamespacedName, envoyNodePort string) error {
+func verifyGatewayHTTPConnectivityThroughGateway(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger, gtwName types.NamespacedName, envoyNodePort int64) error {
 	t.Helper()
 
 	l.Info("Testing HTTP connectivity through Gateway...")
@@ -369,7 +369,7 @@ func verifyGatewayHTTPConnectivityThroughGateway(ctx context.Context, t *testing
 		return fmt.Errorf("failed to get Gateway address: %w", err)
 	}
 
-	address := fmt.Sprintf("%s:%s", gatewayIP, envoyNodePort)
+	address := fmt.Sprintf("%s:%d", gatewayIP, envoyNodePort)
 
 	httpClient := &http.Client{}
 

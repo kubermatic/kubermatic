@@ -53,7 +53,7 @@ const (
 	externalGatewayName      = "platform-gateway"
 	externalGatewayClassName = "kubermatic-envoy-gateway-byo-e2e"
 	externalEnvoyProxyName   = "byo-gateway-e2e-proxy"
-	externalHTTPNodePort     = "30081"
+	externalHTTPNodePort     = int64(30081)
 	externalHTTPSNodePort    = int64(30444)
 )
 
@@ -160,6 +160,11 @@ func TestGatewayAPIManagedGatewayRestore(t *testing.T) {
 	kkpRouteKey := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultHTTPRouteName}
 	if err := waitForHTTPRouteOnlyAcceptedByGateway(ctx, logger, seedClient, kkpRouteKey, managedGatewayKey); err != nil {
 		t.Fatalf("KKP HTTPRoute was not restored to managed Gateway: %v", err)
+	}
+
+	dexRouteKey := types.NamespacedName{Namespace: "dex", Name: "dex"}
+	if err := waitForHTTPRouteOnlyAcceptedByGateway(ctx, logger, seedClient, dexRouteKey, managedGatewayKey); err != nil {
+		t.Fatalf("Dex HTTPRoute was not restored to managed Gateway: %v", err)
 	}
 
 	logger.Info("Verifying HTTP connectivity through the restored managed Gateway...")
@@ -335,7 +340,7 @@ func externalEnvoyProxyObject() *unstructured.Unstructured {
 											map[string]interface{}{
 												"name":       "http",
 												"port":       int64(80),
-												"nodePort":   int64(30081),
+												"nodePort":   externalHTTPNodePort,
 												"targetPort": int64(10080),
 											},
 											map[string]interface{}{
