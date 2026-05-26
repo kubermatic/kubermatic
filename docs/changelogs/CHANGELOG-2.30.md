@@ -6,7 +6,6 @@
 - [v2.30.3](#v2303)
 - [v2.30.4](#v2304)
 
-
 ## v2.30.4
 
 **GitHub release: [v2.30.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.4)**
