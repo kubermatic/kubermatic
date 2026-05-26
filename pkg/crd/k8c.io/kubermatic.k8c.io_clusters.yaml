@@ -1202,6 +1202,9 @@ spec:
                             It contains also some flag specifying which one is the default one.
                           items:
                             properties:
+                              allowVolumeExpansion:
+                                description: AllowVolumeExpansion shows whether the storage class allow volume expand.
+                                type: boolean
                               isDefaultClass:
                                 description: |-
                                   Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
@@ -1218,6 +1221,11 @@ spec:
                                   and services.
                                 type: object
                               name:
+                                type: string
+                              reclaimPolicy:
+                                description: |-
+                                  ReclaimPolicy controls the reclaimPolicy for dynamically provisioned PersistentVolumes of this storage class.
+                                  Defaults to Delete.
                                 type: string
                               regions:
                                 description: |-

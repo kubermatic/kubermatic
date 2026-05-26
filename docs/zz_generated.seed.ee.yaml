@@ -275,7 +275,9 @@ spec:
           # In the tenant cluster, the created StorageClass name will have as name:
           # kubevirt-<infra-storageClass-name>
           infraStorageClasses:
-            - # Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
+            - # AllowVolumeExpansion shows whether the storage class allow volume expand.
+              allowVolumeExpansion: false
+              # Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
               # storageclass.kubernetes.io/is-default-class : true
               # If missing or false, annotation will be:
               # storageclass.kubernetes.io/is-default-class : false
@@ -285,6 +287,9 @@ spec:
               # and services.
               labels: null
               name: rook-ceph-block
+              # ReclaimPolicy controls the reclaimPolicy for dynamically provisioned PersistentVolumes of this storage class.
+              # Defaults to Delete.
+              reclaimPolicy: ""
               # Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
               # to span multiple regions
               regions: null
