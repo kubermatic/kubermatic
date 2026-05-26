@@ -4,6 +4,37 @@
 - [v2.30.1](#v2301)
 - [v2.30.2](#v2302)
 - [v2.30.3](#v2303)
+- [v2.30.4](#v2304)
+
+## v2.30.4
+
+**GitHub release: [v2.30.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.4)**
+
+### New Features
+
+- Add allowVolumeExpansion and reclaimPolicy fields to the KubeVirtInfraStorageClass struct in the API, enabling explicit configuration of volume expansion and reclaim policy ([#15912](https://github.com/kubermatic/kubermatic/pull/15912))
+- Reduces the Deployment/StatefulSet/DaemonSet revisionHistoryLimit of user cluster components to 2 to save etcd resources ([#15823](https://github.com/kubermatic/kubermatic/pull/15823))
+
+### Bugfixes
+
+- Fix recovery for Helm-based ApplicationInstallations whose Helm release is stuck in a pending state or whose retry state no longer matches the deployed Helm release ([#15892](https://github.com/kubermatic/kubermatic/pull/15892))
+- BYO Gateway migrations now wait for the external Gateway and KKP-managed HTTPRoutes to be accepted before completing Gateway cleanup ([#15896](https://github.com/kubermatic/kubermatic/pull/15896))
+- SSH keys from machine deployment providerSpec are no longer removed from worker nodes by the user-ssh-key-agent ([#15863](https://github.com/kubermatic/kubermatic/pull/15863))
+- Add Bring Your Own Gateway support for Gateway API mode. Operators can configure `spec.ingress.gateway.externalGateway` in the KubermaticConfiguration to make KKP attach its managed HTTPRoutes to an externally managed Gateway instead of creating and managing the default Gateway itself ([#15899](https://github.com/kubermatic/kubermatic/pull/15899))
+- Fix Project Resource Quota dialog showing incorrect Memory and Storage values after save ([#8076](https://github.com/kubermatic/Dashboard/pull/8076))
+- Cluster/machine metrics endpoints return an empty result for unavailable BYO CNI user clusters to avoid triggering KubermaticAPITooManyErrors alerts ([#8060](https://github.com/kubermatic/Dashboard/pull/8060))
+- Fix background-repeat for multi-line 'menu-item' icons on low zoom ([#8054](https://github.com/kubermatic/Dashboard/pull/8054))
+
+### Cleanups
+
+- The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15853](https://github.com/kubermatic/kubermatic/pull/15853))
+
+### Updates
+
+- Update Operating System Manager to v1.10.6 ([#15920](https://github.com/kubermatic/kubermatic/pull/15920))
+- Update KubeLB to v1.4.1 ([#15849](https://github.com/kubermatic/kubermatic/pull/15849))
+- Add support of k8s patch releases v1.35.5/v1.34.8/v1.33.12 ([#15870](https://github.com/kubermatic/kubermatic/pull/15870))
+- Update Machine Controller to v1.65.2 ([#15927](https://github.com/kubermatic/kubermatic/pull/15927))
 
 ## v2.30.3
 
