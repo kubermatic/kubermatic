@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Gateway API migration: When true, creates HTTPRoute instead of using Ingress.
-# The HTTPRoute will attach to the configured Gateway (cross-namespace).
-# The kubermatic-installer automatically labels the dex namespace for Gateway access.
-migrateGatewayAPI: false
+# Gateway API is the default and only supported ingress path as of KKP 2.31.
+# This value is deprecated and retained as a no-op for backwards compatibility:
+# the chart always renders the Dex HTTPRoute regardless of this setting.
+migrateGatewayAPI: true
 
 # httpRoute configures HTTPRoute for Dex (only used when migrateGatewayAPI: true)
 httpRoute:
@@ -36,10 +36,9 @@ dex:
   replicaCount: 2
 
   ingress:
-    # When migrateGatewayAPI is true, ingress must be disabled (set to false)
-    # to avoid creating an invalid Ingress with empty host values.
-    # The HTTPRoute will be used instead for routing.
-    enabled: true
+    # Gateway API (HTTPRoute) is used for routing as of KKP 2.31, so the upstream
+    # Dex Ingress is disabled to avoid creating an invalid Ingress with empty hosts.
+    enabled: false
     className: "nginx"
     hosts:
       # Required: host must be set; usually this is the same

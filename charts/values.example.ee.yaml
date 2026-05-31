@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Gateway API is the default ingress path as of KKP 2.31. Dex is exposed via an HTTPRoute
+# attached to the platform Gateway managed by the kubermatic-operator; TLS for the external
+# domain is terminated at the Gateway listener (configured via the KubermaticConfiguration
+# spec.ingress and cert-manager), so no per-chart Ingress/cert-manager annotations are needed.
+migrateGatewayAPI: true
+httpRoute:
+  # Name and namespace of the platform Gateway to attach the Dex HTTPRoute to.
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+  # configure your base domain, under which the Kubermatic dashboard shall be available
+  domain: "kkp.example.com"
+
 dex:
   ingress:
+    # Gateway API (HTTPRoute) handles routing as of KKP 2.31, so the upstream Dex Ingress
+    # is disabled. The settings below are retained for reference / non-Gateway setups.
+    enabled: false
     # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
     # If you want to deploy your own certificate without relying on cert-manager
     # uncomment the next line and remove subsequent certIssuer configuration.
