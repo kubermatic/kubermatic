@@ -71,11 +71,11 @@ type DeployOptions struct {
 	DeployDefaultPolicyTemplateCatalog bool
 
 	// MigrateToGatewayAPI indicates whether to deploy Envoy Gateway or ingress-controller.
-	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	// As of KKP 2.31 this is always true: Gateway API is the enforced default and the
+	// nginx-ingress-controller path has been removed.
 	MigrateToGatewayAPI bool
-	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
-	// When false (default), old resources are cleaned up automatically during migration.
-	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	// SkipIngressCleanup is deprecated and ignored as of KKP 2.31: the installer no longer
+	// runs the legacy Ingress cleanup step. Retained for CLI/struct backwards compatibility.
 	SkipIngressCleanup bool
 }
 
