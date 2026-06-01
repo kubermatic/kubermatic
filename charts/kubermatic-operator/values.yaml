@@ -72,3 +72,16 @@ kubermaticOperator:
   # Example:
   # kubernetes.io/os: linux
   # node-role.kubernetes.io/control-plane: ""
+
+# Custom CA certificate configuration.
+# Additional PEM-encoded CA certificates to append to the built-in Mozilla CA bundle.
+# These are included in the ca-bundle ConfigMap used by the kubermatic-operator pod.
+# Use this to trust internal/corporate CAs at installation time without pre-creating
+# a ConfigMap or modifying files embedded in the chart.
+caBundle:
+  # additionalCerts: |
+  #   -----BEGIN CERTIFICATE-----
+  #   MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiIMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+  #   ... (your custom CA certificate) ...
+  #   -----END CERTIFICATE-----
+  additionalCerts: ""
