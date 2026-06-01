@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -202,6 +203,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		helmValues, err := loadHelmValues(opt.HelmValues)
 		if err != nil {
 			return fmt.Errorf("failed to load Helm values: %w", err)
+		}
+
+		if err := validateGatewayAPIMigrationFlags(opt, helmValues); err != nil {
+			return err
 		}
 
 		deployOptions := stack.DeployOptions{
@@ -375,6 +380,19 @@ func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (*helm.Client, e
 	}
 
 	return &helmClient, nil
+}
+
+func validateGatewayAPIMigrationFlags(opt *DeployOptions, helmValues *yamled.Document) error {
+	if !opt.MigrateGatewayAPI {
+		return nil
+	}
+
+	migrateGatewayAPIInValues, _ := helmValues.GetBool(yamled.Path{"migrateGatewayAPI"})
+	if migrateGatewayAPIInValues {
+		return nil
+	}
+
+	return errors.New("--migrate-gateway-api requires the migrateGatewayAPI Helm value to be set to true")
 }
 
 func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptions) (stack.Stack, error) {
