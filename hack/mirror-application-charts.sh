@@ -53,7 +53,7 @@ declare -A CHART_URLS=(
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.17.16"
+  ["cilium"]="1.18.10"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -72,6 +72,13 @@ declare -A CHART_VERSIONS=(
   ["kueue"]="0.13.4"
   ["mcp-server-kubernetes"]="2.9.9"
   ["velero"]="1.17.1"
+)
+
+# Optional supplemental versions to mirror in addition to the default versions
+# above. Values are comma-separated version lists. This is consumed by the
+# postsubmit wrapper; direct script callers can still pass explicit versions.
+declare -A CHART_ADDITIONAL_VERSIONS=(
+  ["cilium"]="1.17.16"
 )
 
 # Re-enable unset variable checking after array declarations

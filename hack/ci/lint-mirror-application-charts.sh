@@ -15,12 +15,13 @@
 # limitations under the License.
 
 ### Lints hack/mirror-application-charts.sh by sourcing it and asserting
-### CHART_URLS and CHART_VERSIONS have identical key sets.
+### CHART_URLS and CHART_VERSIONS have identical key sets. Also verifies that
+### optional CHART_ADDITIONAL_VERSIONS entries reference known charts.
 ###
 ### Catches the most common contributor mistake: adding a chart to one
-### array but forgetting the other. Also serves as a smoke test that
-### mirror-application-charts.sh remains sourceable (which the post-submit
-### detection wrapper relies on).
+### array but forgetting the other, or adding additional versions for an unknown
+### chart. Also serves as a smoke test that mirror-application-charts.sh remains
+### sourceable (which the post-submit detection wrapper relies on).
 
 set -euo pipefail
 
@@ -35,7 +36,7 @@ trap 'rm -f "$stripped"' EXIT
 sed '/^main "\$@"$/d' "$SCRIPT" > "$stripped"
 
 # source in a subshell to keep our env clean, then print sorted key lists
-# from both arrays. awk compares the two key sets and prints mismatches.
+# from all relevant arrays. awk compares the key sets and prints mismatches.
 mismatch=$(
   (
     # shellcheck disable=SC1090
@@ -45,15 +46,22 @@ mismatch=$(
       for k in "${!CHART_URLS[@]}"; do printf '%s\n' "$k"; done | sort
       printf 'versions\n'
       for k in "${!CHART_VERSIONS[@]}"; do printf '%s\n' "$k"; done | sort
+      printf 'additional_versions\n'
+      if [[ "$(declare -p CHART_ADDITIONAL_VERSIONS 2> /dev/null)" == "declare -A"* ]]; then
+        for k in "${!CHART_ADDITIONAL_VERSIONS[@]}"; do printf '%s\n' "$k"; done | sort
+      fi
     }
   ) | awk '
-    /^urls$/     { mode="urls"; next }
-    /^versions$/ { mode="versions"; next }
-    mode=="urls"     { urls[$0]=1 }
-    mode=="versions" { versions[$0]=1 }
+    /^urls$/                { mode="urls"; next }
+    /^versions$/            { mode="versions"; next }
+    /^additional_versions$/ { mode="additional_versions"; next }
+    mode=="urls"                { urls[$0]=1 }
+    mode=="versions"            { versions[$0]=1 }
+    mode=="additional_versions" { additional_versions[$0]=1 }
     END {
       for (k in urls)     if (!(k in versions)) print "missing in CHART_VERSIONS: " k
       for (k in versions) if (!(k in urls))     print "missing in CHART_URLS: "    k
+      for (k in additional_versions) if (!(k in urls)) print "unknown chart in CHART_ADDITIONAL_VERSIONS: " k
     }
   '
 )
@@ -62,15 +70,26 @@ if [[ -n "$mismatch" ]]; then
   echo "FAIL: ${SCRIPT} has inconsistent CHART_URLS / CHART_VERSIONS keys:"
   echo "$mismatch" | sed 's/^/  /'
   echo
-  echo "Both arrays must contain the same set of chart names."
+  echo "CHART_URLS and CHART_VERSIONS must contain the same chart names; CHART_ADDITIONAL_VERSIONS may only reference those charts."
   exit 1
 fi
 
-count=$(
+read -r chart_count additional_count < <(
   (
     # shellcheck disable=SC1090
     source "$stripped" > /dev/null 2>&1
-    echo "${#CHART_URLS[@]}"
+    additional_count=0
+    if [[ "$(declare -p CHART_ADDITIONAL_VERSIONS 2> /dev/null)" == "declare -A"* ]]; then
+      for k in "${!CHART_ADDITIONAL_VERSIONS[@]}"; do
+        IFS=',' read -r -a versions <<< "${CHART_ADDITIONAL_VERSIONS[$k]}"
+        for version in "${versions[@]}"; do
+          version="${version//[[:space:]]/}"
+          [[ -n "$version" ]] && additional_count=$((additional_count + 1))
+        done
+      done
+    fi
+
+    echo "${#CHART_URLS[@]} ${additional_count}"
   )
 )
-echo "OK: ${SCRIPT}: ${count} charts, CHART_URLS and CHART_VERSIONS keys match."
+echo "OK: ${SCRIPT}: ${chart_count} charts, ${additional_count} additional chart version(s), chart keys are valid."

@@ -20,12 +20,13 @@
 ### Runs as a Prow post-submit job when mirror-application-charts.sh changes.
 ### Detects two types of changes:
 ###   1. New chart entries added to CHART_URLS / CHART_VERSIONS
-###   2. Version bumps in CHART_VERSIONS for existing charts
-### Then calls mirror-application-charts.sh for each affected chart.
+###   2. Version bumps or additions in CHART_VERSIONS / CHART_ADDITIONAL_VERSIONS
+###      for existing charts
+### Then calls mirror-application-charts.sh for each affected chart/version pair.
 ###
 ### Detection works by sourcing the current and previous versions of
 ### mirror-application-charts.sh in a subshell. This relies only on the file
-### being valid bash with the two associative arrays - no formatting assumptions.
+### being valid bash with the expected associative arrays - no formatting assumptions.
 ###
 ### Environment variables:
 ### * `DRY_RUN=true` - skip actual mirroring, only print charts that would be mirrored
@@ -47,9 +48,11 @@ SCRIPT_PATH="hack/mirror-application-charts.sh"
 OLD_SCRIPT=$(mktemp)
 trap 'rm -f "$OLD_SCRIPT"' EXIT
 
-# sources the given script file in a subshell and prints sorted "name=version"
-# lines from its CHART_VERSIONS array. the subshell isolates the source from
-# our environment so set -u, traps, and any other side effects don't leak.
+# sources the given script file in a subshell and prints sorted
+# "source<TAB>name<TAB>version" lines from CHART_VERSIONS and optional
+# CHART_ADDITIONAL_VERSIONS. the source field lets us detect a version that
+# moved from default to supplemental, which is useful when a previous mirror
+# attempt failed and we still want to retry that version.
 # returns empty output (exit 0) if the file is missing, unreadable, or doesn't
 # define CHART_VERSIONS (e.g. truncated, totally unrelated file).
 read_chart_versions_from() {
@@ -64,9 +67,19 @@ read_chart_versions_from() {
     # and we'd silently lose pairs we should have read.
     [[ "$(declare -p CHART_VERSIONS 2> /dev/null)" == "declare -A"* ]] || exit 0
     for key in "${!CHART_VERSIONS[@]}"; do
-      printf '%s=%s\n' "$key" "${CHART_VERSIONS[$key]}"
+      printf 'default\t%s\t%s\n' "$key" "${CHART_VERSIONS[$key]}"
     done
-  ) | sort
+
+    if [[ "$(declare -p CHART_ADDITIONAL_VERSIONS 2> /dev/null)" == "declare -A"* ]]; then
+      for key in "${!CHART_ADDITIONAL_VERSIONS[@]}"; do
+        IFS=',' read -r -a versions <<< "${CHART_ADDITIONAL_VERSIONS[$key]}"
+        for version in "${versions[@]}"; do
+          version="${version//[[:space:]]/}"
+          [[ -n "$version" ]] && printf 'additional\t%s\t%s\n' "$key" "$version"
+        done
+      done
+    fi
+  ) | sort -u
 }
 
 # --- Main ----------------------------------------------------------------------
@@ -80,39 +93,41 @@ main() {
     echo "WARNING: No previous version of ${SCRIPT_PATH} found in the last ${MAX_HISTORY} commits. Treating all charts as new." >&2
   fi
 
-  local old_pairs new_pairs
-  old_pairs=$(read_chart_versions_from "$OLD_SCRIPT")
-  new_pairs=$(read_chart_versions_from "$SCRIPT_PATH")
+  local old_entries new_entries
+  old_entries=$(read_chart_versions_from "$OLD_SCRIPT")
+  new_entries=$(read_chart_versions_from "$SCRIPT_PATH")
 
-  # any "name=version" line in new but not old is either a newly added chart
-  # OR a version bump on an existing chart. both should trigger a mirror.
-  local changed_pairs
-  changed_pairs=$(comm -13 <(echo "$old_pairs") <(echo "$new_pairs"))
+  # any source/name/version entry in new but not old is either a newly added
+  # chart, a version bump on an existing chart, or an additional version added
+  # for a chart. all cases should trigger mirroring for that exact
+  # chart/version pair.
+  local changed_entries
+  changed_entries=$(comm -13 <(echo "$old_entries") <(echo "$new_entries"))
 
-  if [[ -z "$changed_pairs" ]]; then
+  if [[ -z "$changed_entries" ]]; then
     echodate "No new charts or version changes detected."
     return 0
   fi
 
-  # extract just the chart names for the loop. the inner script reads the
-  # version from CHART_VERSIONS itself when no version arg is passed, so we
-  # don't need to forward the version explicitly.
-  local charts_to_mirror
-  charts_to_mirror=$(echo "$changed_pairs" | cut -d= -f1 | sort -u)
-
   echodate "Charts to mirror:"
-  echo "$changed_pairs" | sed 's/^/  - /'
+  echo "$changed_entries" | awk -F '\t' '{ printf "  - %s=%s", $2, $3; if ($1 == "additional") printf " (additional)"; print "" }'
 
-  local chart version
-  while IFS= read -r chart; do
-    version=$(echo "$new_pairs" | grep "^${chart}=" | cut -d= -f2)
+  local source chart version pair
+  local -A mirrored_pairs=()
+  while IFS=$'\t' read -r source chart version; do
+    pair="${chart}=${version}"
+    if [[ -n "${mirrored_pairs[$pair]:-}" ]]; then
+      continue
+    fi
+    mirrored_pairs[$pair]=1
+
     if [[ "$DRY_RUN" == "true" ]]; then
       echodate "[DRY-RUN] Would mirror: ${chart} @ ${version}"
     else
       echodate "Mirroring: ${chart} @ ${version}"
-      ./"${SCRIPT_PATH}" "${chart}"
+      ./"${SCRIPT_PATH}" "${chart}" "${version}"
     fi
-  done <<< "$charts_to_mirror"
+  done <<< "$changed_entries"
 
   echodate "Done."
 }
