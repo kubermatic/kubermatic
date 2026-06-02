@@ -72,7 +72,9 @@ read_chart_versions_from() {
 
     if [[ "$(declare -p CHART_ADDITIONAL_VERSIONS 2> /dev/null)" == "declare -A"* ]]; then
       for key in "${!CHART_ADDITIONAL_VERSIONS[@]}"; do
-        for version in ${CHART_ADDITIONAL_VERSIONS[$key]}; do
+        IFS=',' read -r -a versions <<< "${CHART_ADDITIONAL_VERSIONS[$key]}"
+        for version in "${versions[@]}"; do
+          version="${version//[[:space:]]/}"
           [[ -n "$version" ]] && printf 'additional\t%s\t%s\n' "$key" "$version"
         done
       done

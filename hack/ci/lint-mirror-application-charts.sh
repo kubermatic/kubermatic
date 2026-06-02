@@ -81,7 +81,9 @@ read -r chart_count additional_count < <(
     additional_count=0
     if [[ "$(declare -p CHART_ADDITIONAL_VERSIONS 2> /dev/null)" == "declare -A"* ]]; then
       for k in "${!CHART_ADDITIONAL_VERSIONS[@]}"; do
-        for version in ${CHART_ADDITIONAL_VERSIONS[$k]}; do
+        IFS=',' read -r -a versions <<< "${CHART_ADDITIONAL_VERSIONS[$k]}"
+        for version in "${versions[@]}"; do
+          version="${version//[[:space:]]/}"
           [[ -n "$version" ]] && additional_count=$((additional_count + 1))
         done
       done

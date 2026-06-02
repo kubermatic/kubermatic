@@ -75,7 +75,7 @@ declare -A CHART_VERSIONS=(
 )
 
 # Optional supplemental versions to mirror in addition to the default versions
-# above. Values are whitespace-separated version lists. This is consumed by the
+# above. Values are comma-separated version lists. This is consumed by the
 # postsubmit wrapper; direct script callers can still pass explicit versions.
 declare -A CHART_ADDITIONAL_VERSIONS=(
   ["cilium"]="1.17.16"
