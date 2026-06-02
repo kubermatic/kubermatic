@@ -288,7 +288,7 @@ postsubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-docker-mirror: "true"
-      preset-docker-push-kubermatic: "true"
+      preset-docker-push-kubermatic-mirror: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
