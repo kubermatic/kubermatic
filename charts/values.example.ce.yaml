@@ -86,21 +86,10 @@ dex:
 
 
     staticClients:
-      # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
-      # needs to be configured.
-      - id: kubermatic
-        name: Kubermatic
-        # Generate a secure secret key
-        # Those can be generated on the shell using:
-        # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
-        secret: <a-random-key>
-        RedirectURIs:
-          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
-          - https://kkp.example.com
-          - https://kkp.example.com/projects
-
-      # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
-      # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
+      # The "kubermaticIssuer" client is used both for logging into the Kubermatic
+      # dashboard (via the OIDC authorization-code flow) and for providing OIDC
+      # access to User Clusters when the "enableOIDCKubeconfig: true" option is
+      # set in KubermaticSetting.
       # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
       - id: kubermaticIssuer
         name: Kubermatic OIDC Issuer
@@ -113,6 +102,7 @@ dex:
           - https://kkp.example.com/api/v1/kubeconfig
           - https://kkp.example.com/api/v2/kubeconfig/secret
           - https://kkp.example.com/api/v2/dashboard/login
+          - https://kkp.example.com/api/v2/auth/callback
 
 minio:
   storeSize: "500Gi"
