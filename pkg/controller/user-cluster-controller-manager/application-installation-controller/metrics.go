@@ -88,14 +88,13 @@ func init() {
 
 // updateApplicationMetrics updates the Prometheus metrics for an ApplicationInstallation.
 func updateApplicationMetrics(namespace, name, application string, failures int, isStuck bool, readyStatus int, lastSuccessTime float64) {
-	applicationInstallationFailures.WithLabelValues(namespace, name, application).Set(float64(failures))
-
 	stuckValue := 0.0
 	if isStuck {
 		stuckValue = 1.0
 	}
-	applicationInstallationStuck.WithLabelValues(namespace, name, application).Set(stuckValue)
 
+	applicationInstallationFailures.WithLabelValues(namespace, name, application).Set(float64(failures))
+	applicationInstallationStuck.WithLabelValues(namespace, name, application).Set(stuckValue)
 	applicationInstallationReady.WithLabelValues(namespace, name, application).Set(float64(readyStatus))
 
 	if lastSuccessTime > 0 {

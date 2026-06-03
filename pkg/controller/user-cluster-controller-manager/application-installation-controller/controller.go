@@ -314,6 +314,8 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 
 	// Install or upgrade application only if max number of retries is not exceeded.
 	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+		r.updateApplicationMetrics(appInstallation, appDefinition)
+
 		return r.stopAfterMaxRetries(ctx, log, appInstallation)
 	}
 
@@ -355,7 +357,6 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 
-	// Update Prometheus metrics
 	r.updateApplicationMetrics(appInstallation, appDefinition)
 
 	return installErr
