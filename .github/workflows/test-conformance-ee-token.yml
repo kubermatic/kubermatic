@@ -11,14 +11,14 @@ jobs:
     steps:
       - name: List open issues in conformance-ee
         env:
-          GH_TOKEN: ${{ secrets.KUBERMATIC_CONFORMANCE_EE_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
         run: |
           echo "=== Open Issues ==="
           gh issue list --repo "kubermatic/conformance-ee" --state open --limit 10
-
+      
       - name: List open PRs in conformance-ee
         env:
-          GH_TOKEN: ${{ secrets.KUBERMATIC_CONFORMANCE_EE_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
         run: |
           echo "=== Open Pull Requests ==="
           gh pr list --repo "kubermatic/conformance-ee" --state open --limit 10
