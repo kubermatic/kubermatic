@@ -188,7 +188,9 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 	// a) It's either enforced or enabled at the datacenter level.
 	// b) It's enabled for all datacenters at the seed level.
 	if spec.IsKubeLBEnabled() {
-		if (seed.Spec.KubeLB == nil || !seed.Spec.KubeLB.EnableForAllDatacenters) && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
+		dcKubeLBEnabled := dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enabled != nil && *dc.Spec.KubeLB.Enabled
+		dcKubeLBEnforced := dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enforced != nil && *dc.Spec.KubeLB.Enforced
+		if (seed.Spec.KubeLB == nil || !seed.Spec.KubeLB.EnableForAllDatacenters) && (dc.Spec.KubeLB == nil || (!dcKubeLBEnabled && !dcKubeLBEnforced)) {
 			allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled for this seed/datacenter"))
 		}
 	}
@@ -217,14 +219,16 @@ func validateKubeLBUpdate(oldCluster, newCluster *kubermaticv1.Cluster, dc *kube
 		// KubeLB can only be enabled on the cluster when
 		// a) It's either enforced or enabled at the datacenter level.
 		// b) It's enabled for all datacenters at the seed level.
-		if (seed.Spec.KubeLB == nil || !seed.Spec.KubeLB.EnableForAllDatacenters) && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
+		dcKubeLBEnabled := dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enabled != nil && *dc.Spec.KubeLB.Enabled
+		dcKubeLBEnforced := dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enforced != nil && *dc.Spec.KubeLB.Enforced
+		if (seed.Spec.KubeLB == nil || !seed.Spec.KubeLB.EnableForAllDatacenters) && (dc.Spec.KubeLB == nil || (!dcKubeLBEnabled && !dcKubeLBEnforced)) {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("kubeLB"), "KubeLB is not enabled for this seed/datacenter"))
 		}
 	}
 
 	if oldCluster.Spec.IsKubeLBEnabled() && !newCluster.Spec.IsKubeLBEnabled() {
 		// KubeLB can not be disabled if it's enforced on the datacenter.
-		if dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enforced {
+		if dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enforced != nil && *dc.Spec.KubeLB.Enforced {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("kubeLB"), "KubeLB can not be disabled if it's enforced on the datacenter"))
 		}
 	}

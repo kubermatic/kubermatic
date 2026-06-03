@@ -1234,9 +1234,9 @@ type KubeLBDatacenterSettings struct {
 	// Used to configure and override the default kubeLB settings.
 	KubeLBSettings `json:",inline"`
 	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
-	Enforced bool `json:"enforced,omitempty"`
+	Enforced *bool `json:"enforced,omitempty"`
 	// NodeAddressType is used to configure the address type from node, used for load balancing.
 	// Optional: Defaults to ExternalIP.
 	// +kubebuilder:validation:Enum=InternalIP;ExternalIP
