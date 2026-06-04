@@ -84,21 +84,21 @@ func DescribeInstanceType(ctx context.Context, kubeconfig string, it *kubevirtv1
 func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
 	switch it.Kind {
 	case "VirtualMachineInstancetype": // namespaced: kubermatic standard or user-deployed custom
-		if cap, err := describeNamespacedInstanceType(ctx, client, it.Name); cap != nil || err != nil {
-			return cap, err
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
 
 	case "VirtualMachineClusterInstancetype": // cluster-wide
-		if cap, err := describeClusterInstanceType(ctx, client, it.Name); cap != nil || err != nil {
-			return cap, err
+		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
 
 	case "": // kind absent — saved before kind was added to the API; search both types
-		if cap, err := describeClusterInstanceType(ctx, client, it.Name); cap != nil || err != nil {
-			return cap, err
+		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
-		if cap, err := describeNamespacedInstanceType(ctx, client, it.Name); cap != nil || err != nil {
-			return cap, err
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
 	}
 	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
