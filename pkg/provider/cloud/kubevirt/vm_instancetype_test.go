@@ -37,56 +37,103 @@ func newTestClient(t *testing.T, objs ...ctrlruntimeclient.Object) ctrlruntimecl
 		Build()
 }
 
-func TestInstanceTypeToNodeCapacity_GPUCount(t *testing.T) {
-	spec := kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-		CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-		Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
-		GPUs: []kubevirtv1.GPU{
-			{Name: "A100", DeviceName: "nv-a100-standard"},
-		},
-	}
-
-	got, err := instanceTypeToNodeCapacity(spec)
-	if err != nil {
-		t.Fatalf("instanceTypeToNodeCapacity returned error: %v", err)
-	}
-
-	if got.GPUs == nil {
-		t.Fatalf("expected GPUs to be set, got nil")
-	}
-	if got.GPUs.Value() != 1 {
-		t.Errorf("expected 1 GPU, got %d", got.GPUs.Value())
-	}
-}
-
-func TestDescribeInstanceType_NamespacedCustomFound(t *testing.T) {
-	// A user-deployed namespaced VirtualMachineInstancetype that is NOT one of the
-	// embedded Kubermatic standards — describeInstanceType must find it via the cluster.
-	custom := &kvinstancetypev1alpha1.VirtualMachineInstancetype{
-		ObjectMeta: metav1.ObjectMeta{Name: "standard-gpu-2", Namespace: "kkp-dev"},
-		Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-			CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-			Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
-			GPUs: []kubevirtv1.GPU{
-				{Name: "A100", DeviceName: "nv-a100-standard"},
+func TestDescribeInstanceType(t *testing.T) {
+	testCases := []struct {
+		name     string
+		objects  []ctrlruntimeclient.Object
+		matcher  *kubevirtv1.InstancetypeMatcher
+		wantCPU  int64
+		wantGPUs int64
+		wantErr  bool
+	}{
+		{
+			name: "namespaced user-deployed instancetype with GPU is found",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu-2", Namespace: "kkp-dev"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+						GPUs:   []kubevirtv1.GPU{{Name: "A100", DeviceName: "nv-a100-standard"}},
+					},
+				},
 			},
+			matcher:  &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu-2", Kind: "VirtualMachineInstancetype"},
+			wantCPU:  2,
+			wantGPUs: 1,
+		},
+		{
+			name: "cluster-scoped instancetype is found",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineClusterInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "standard-4"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 4},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("16Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "standard-4", Kind: "VirtualMachineClusterInstancetype"},
+			wantCPU: 4,
+		},
+		{
+			name: "empty kind resolves cluster-scoped instancetype",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineClusterInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "legacy-cluster"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "legacy-cluster", Kind: ""},
+			wantCPU: 2,
+		},
+		{
+			name: "empty kind falls back to namespaced when no cluster-scoped match",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "legacy-namespaced", Namespace: "kkp-dev"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 3},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("12Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "legacy-namespaced", Kind: ""},
+			wantCPU: 3,
+		},
+		{
+			name:    "instancetype not found returns error",
+			objects: nil,
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "nonexistent", Kind: "VirtualMachineInstancetype"},
+			wantErr: true,
 		},
 	}
 
-	client := newTestClient(t, custom)
-	matcher := &kubevirtv1.InstancetypeMatcher{Name: "standard-gpu-2", Kind: "VirtualMachineInstancetype"}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := newTestClient(t, tc.objects...)
+			got, err := describeInstanceType(context.Background(), client, tc.matcher)
 
-	got, err := describeInstanceType(context.Background(), client, matcher)
-	if err != nil {
-		t.Fatalf("describeInstanceType returned error for custom namespaced instancetype: %v", err)
-	}
-	if got == nil {
-		t.Fatal("expected non-nil NodeCapacity for found instancetype")
-	}
-	if got.CPUCores == nil || got.CPUCores.Value() != 2 {
-		t.Errorf("expected 2 CPU cores, got %v", got.CPUCores)
-	}
-	if got.GPUs == nil || got.GPUs.Value() != 1 {
-		t.Errorf("expected 1 GPU, got %v", got.GPUs)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("describeInstanceType() error = %v, wantErr = %v", err, tc.wantErr)
+			}
+			if tc.wantErr {
+				return
+			}
+			if got == nil {
+				t.Fatal("expected non-nil NodeCapacity, got nil")
+			}
+			if got.CPUCores == nil || got.CPUCores.Value() != tc.wantCPU {
+				t.Errorf("CPU: got %v, want %d", got.CPUCores, tc.wantCPU)
+			}
+
+			if got.GPUs != nil && got.GPUs.Value() != tc.wantGPUs ||
+				got.GPUs == nil && tc.wantGPUs != 0 {
+				t.Errorf("GPUs: got %v, want %d", got.GPUs, tc.wantGPUs)
+			}
+		})
 	}
 }
