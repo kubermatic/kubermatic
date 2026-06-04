@@ -81,7 +81,7 @@ var (
 func TestReconcile(t *testing.T) {
 	testCases := map[string]struct {
 		evacuationNodeName string
-		expecDeleted       bool
+		expectDeleted       bool
 		vmis               []ctrlruntimeclient.Object
 		vmisToEvict        map[string]bool
 		machines           []ctrlruntimeclient.Object

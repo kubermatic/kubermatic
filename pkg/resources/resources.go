@@ -788,7 +788,7 @@ const (
 	ExternalClusterKubeconfig         = "kubeconfig"
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
-	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	ExternalGKEClusterServiceAccount   = "serviceAccount"
 	GKEUnspecifiedReleaseChannel      = "UNSPECIFIED"
 	GKERapidReleaseChannel            = "RAPID"
 	GKERegularReleaseChannel          = "REGULAR"
