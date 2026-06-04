@@ -49,7 +49,7 @@ const (
 	CRIToolsBaseURL          = "https://github.com/kubernetes-sigs/cri-tools/releases/download"
 	KubeBaseURLFormat        = "https://dl.k8s.io"
 	KubeBinaryPath           = "release/%s/bin/linux/%s"
-	SHA256Exentsion          = ".sha256"
+	SHA256Extension          = ".sha256"
 	// Default output directory for binaries.
 	DefaultOutputDir = "/usr/share/nginx/html/"
 )
@@ -236,7 +236,7 @@ func downloadCRITools(ctx context.Context, logger *logrus.Logger, version semver
 	}
 
 	// Download and save checksum file
-	checksumFileName := criToolsFileName + SHA256Exentsion
+	checksumFileName := criToolsFileName + SHA256Extension
 	checksumURL := fmt.Sprintf("%s/%s/%s", CRIToolsBaseURL, criToolsRelease, checksumFileName)
 	checksumFilePath := filepath.Join(criToolsDir, checksumFileName)
 
@@ -283,8 +283,8 @@ func downloadAndVerifyBinary(ctx context.Context, binary, baseURL, targetDir str
 		return fmt.Errorf("failed to download %s: %w", binary, err)
 	}
 
-	checksumURL := binaryURL + SHA256Exentsion
-	checksumPath := binaryPath + SHA256Exentsion
+	checksumURL := binaryURL + SHA256Extension
+	checksumPath := binaryPath + SHA256Extension
 
 	// Doownload and verify checksum
 	if err := downloadAndVerifyChecksum(ctx, checksumURL, checksumPath, binaryPath); err != nil {
@@ -323,7 +323,7 @@ func downloadCNIPlugins(ctx context.Context, logger *logrus.Logger, binPath, hos
 	}
 
 	// Define checksum file paths
-	checksumFileName := cniPluginsFileName + SHA256Exentsion
+	checksumFileName := cniPluginsFileName + SHA256Extension
 	checksumURL := fmt.Sprintf("%s/%s/%s", CNIPluginsBaseURL, cniPluginsVersion, checksumFileName)
 	checksumFilePath := filepath.Join(cniPluginsDir, checksumFileName)
 
