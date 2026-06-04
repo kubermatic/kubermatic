@@ -1251,15 +1251,6 @@
           "metric": "container_cpu",
           "refId": "B",
           "step": 10
-        },
-        {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-          "metric": "container_cpu",
-          "refId": "C",
-          "step": 10
         }
       ],
       "thresholds": [],
@@ -1394,15 +1385,6 @@
           "legendFormat": "docker: {{ kubernetes_io_hostname }} | {{ image }} ({{ name }})",
           "metric": "container_memory_usage:sort_desc",
           "refId": "B",
-          "step": 10
-        },
-        {
-          "expr": "sum (container_memory_working_set_bytes{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}) by (kubernetes_io_hostname, rkt_container_name)",
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-          "metric": "container_memory_usage:sort_desc",
-          "refId": "C",
           "step": 10
         }
       ],
@@ -1560,26 +1542,6 @@
           "legendFormat": "<- docker: {{ kubernetes_io_hostname }} | {{ image }} ({{ name }})",
           "metric": "network",
           "refId": "C",
-          "step": 10
-        },
-        {
-          "expr": "sum (rate (container_network_transmit_bytes_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-          "hide": false,
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "-> rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-          "metric": "network",
-          "refId": "E",
-          "step": 10
-        },
-        {
-          "expr": "- sum (rate (container_network_transmit_bytes_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-          "hide": false,
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "<- rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-          "metric": "network",
-          "refId": "F",
           "step": 10
         }
       ],

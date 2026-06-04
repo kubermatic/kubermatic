@@ -2,13 +2,13 @@
 # Source: grafana/charts/grafana/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
+automountServiceAccountToken: false
 metadata:
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
   name: release-name-grafana
   namespace: default
 ---
@@ -19,11 +19,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
 data:
   
   grafana.ini: |
@@ -34,8 +33,6 @@ data:
     enabled = true
     header_name = X-Forwarded-Email
     header_property = username
-    [grafana_net]
-    url = https://grafana.net
     [log]
     mode = console
     [metrics]
@@ -47,6 +44,8 @@ data:
     provisioning = /etc/grafana/provisioning
     [server]
     domain = ''
+    [unified_storage]
+    index_path = /var/lib/grafana-search/bleve
   dashboardproviders.yaml: |
     apiVersion: 1
     providers:
@@ -85,11 +84,10 @@ metadata:
   name: release-name-grafana-dashboards-default
   namespace: default
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
     dashboard-provider: default
 ---
 # Source: grafana/templates/kkp-kubernetes.yaml
@@ -2438,7 +2436,7 @@ data:
               "refId": "B"
             },
             {
-              "expr": "sum (kube_pod_container_resource_limits_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\"})",
+              "expr": "sum (kube_pod_container_resource_limits{resource=\"memory\", job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "Limit",
@@ -2541,7 +2539,7 @@ data:
               "refId": "B"
             },
             {
-              "expr": "sum by(container) (kube_pod_container_resource_limits_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=~\"$container\"})",
+              "expr": "sum by(container) (kube_pod_container_resource_limits{resource=\"memory\", job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=~\"$container\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "Limit: {{ container }}",
@@ -4968,15 +4966,6 @@ data:
               "metric": "container_cpu",
               "refId": "B",
               "step": 10
-            },
-            {
-              "expr": "sum (rate (container_cpu_usage_seconds_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-              "metric": "container_cpu",
-              "refId": "C",
-              "step": 10
             }
           ],
           "thresholds": [],
@@ -5111,15 +5100,6 @@ data:
               "legendFormat": "docker: {{ kubernetes_io_hostname }} | {{ image }} ({{ name }})",
               "metric": "container_memory_usage:sort_desc",
               "refId": "B",
-              "step": 10
-            },
-            {
-              "expr": "sum (container_memory_working_set_bytes{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}) by (kubernetes_io_hostname, rkt_container_name)",
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-              "metric": "container_memory_usage:sort_desc",
-              "refId": "C",
               "step": 10
             }
           ],
@@ -5277,26 +5257,6 @@ data:
               "legendFormat": "<- docker: {{ kubernetes_io_hostname }} | {{ image }} ({{ name }})",
               "metric": "network",
               "refId": "C",
-              "step": 10
-            },
-            {
-              "expr": "sum (rate (container_network_transmit_bytes_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-              "hide": false,
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "-> rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-              "metric": "network",
-              "refId": "E",
-              "step": 10
-            },
-            {
-              "expr": "- sum (rate (container_network_transmit_bytes_total{rkt_container_name!=\"\",kubernetes_io_hostname=~\"^$Node$\",namespace=~\"^$namespace$\"}[1m])) by (kubernetes_io_hostname, rkt_container_name)",
-              "hide": false,
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "<- rkt: {{ kubernetes_io_hostname }} | {{ rkt_container_name }}",
-              "metric": "network",
-              "refId": "F",
               "step": 10
             }
           ],
@@ -5861,11 +5821,10 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
   name: release-name-grafana-clusterrole
 rules: []
 ---
@@ -5875,11 +5834,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: release-name-grafana-clusterrolebinding
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
 subjects:
   - kind: ServiceAccount
     name: release-name-grafana
@@ -5889,41 +5847,6 @@ roleRef:
   name: release-name-grafana-clusterrole
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: grafana/charts/grafana/templates/role.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: release-name-grafana
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-7.0.21
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
-rules: []
----
-# Source: grafana/charts/grafana/templates/rolebinding.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: release-name-grafana
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-7.0.21
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: release-name-grafana
-subjects:
-- kind: ServiceAccount
-  name: release-name-grafana
-  namespace: default
----
 # Source: grafana/charts/grafana/templates/headless-service.yaml
 apiVersion: v1
 kind: Service
@@ -5931,11 +5854,10 @@ metadata:
   name: release-name-grafana-headless
   namespace: default
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
 spec:
   clusterIP: None
   selector:
@@ -5945,6 +5867,7 @@ spec:
   ports:
   - name: gossip-tcp
     port: 9094
+    targetPort: gossip-tcp
 ---
 # Source: grafana/charts/grafana/templates/service.yaml
 apiVersion: v1
@@ -5953,18 +5876,17 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
 spec:
   type: ClusterIP
   ports:
     - name: service
       port: 80
       protocol: TCP
-      targetPort: 3000
+      targetPort: grafana
   selector:
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
@@ -5976,11 +5898,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-7.0.21
+    helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "13.0.1-security-01"
 spec:
   replicas: 1
   selector:
@@ -5991,17 +5912,20 @@ spec:
   template:
     metadata:
       labels:
+        helm.sh/chart: grafana-12.3.3
         app.kubernetes.io/name: grafana
         app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "13.0.1-security-01"
       annotations:
-        checksum/config: 911498eb26e4e6fbb4c3712a71f0848926acb1e28b6cfbfcb1f353a4f38c092d
-        checksum/dashboards-json-config: d5dd01108fc9173e77bb0988f2610b9d96b581a55ef53741e3a14a1178c825f5
+        checksum/config: 988fdd5555d69b7e3bae93988d9b28c58aee391ec152e44f4660d3ae87d00bca
+        checksum/dashboards-json-config: 3fe8b907d75ec97de1cadf9d62845e1cb0218f73ac8138acc1a0a5ddf0508d01
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         kubectl.kubernetes.io/default-container: grafana
     spec:
       
       serviceAccountName: release-name-grafana
       automountServiceAccountToken: true
+      shareProcessNamespace: false
       securityContext:
         fsGroup: 472
         runAsGroup: 472
@@ -6009,12 +5933,15 @@ spec:
         runAsUser: 472
       initContainers:
         - name: init-chown-data
-          image: "docker.io/library/busybox:1.31.1"
+          image: "docker.io/library/busybox:1.37.0"
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
               add:
               - CHOWN
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
             runAsNonRoot: false
             runAsUser: 0
             seccompProfile:
@@ -6028,7 +5955,7 @@ spec:
             - name: storage
               mountPath: "/var/lib/grafana"
         - name: download-dashboards
-          image: "docker.io/curlimages/curl:8.4.0"
+          image: "docker.io/curlimages/curl:8.20.0"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: [ "-c", "mkdir -p /var/lib/grafana/dashboards/default && /bin/sh -x /etc/grafana/download_dashboards.sh" ]
@@ -6049,13 +5976,14 @@ spec:
       enableServiceLinks: true
       containers:
         - name: grafana
-          image: "docker.io/grafana/grafana:10.2.2"
+          image: "docker.io/grafana/grafana:13.0.1-security-01"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
               - ALL
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -6064,6 +5992,8 @@ spec:
               subPath: grafana.ini
             - name: storage
               mountPath: "/var/lib/grafana"
+            - name: search
+              mountPath: "/var/lib/grafana-search"
             - name: dashboards-kubermatic
               mountPath: "/var/lib/grafana/dashboards/kubermatic"
             - name: dashboards-kubernetes
@@ -6081,6 +6011,9 @@ spec:
             - name: gossip-udp
               containerPort: 9094
               protocol: UDP
+            - name: profiling
+              containerPort: 6060
+              protocol: TCP
           env:
             - name: POD_IP
               valueFrom:
@@ -6104,17 +6037,19 @@ spec:
               value: /var/lib/grafana/plugins
             - name: GF_PATHS_PROVISIONING
               value: /etc/grafana/provisioning
+            - name: GF_UNIFIED_STORAGE_INDEX_PATH
+              value: /var/lib/grafana-search/bleve
           livenessProbe:
             failureThreshold: 10
             httpGet:
               path: /api/health
-              port: 3000
+              port: grafana
             initialDelaySeconds: 60
             timeoutSeconds: 30
           readinessProbe:
             httpGet:
               path: /api/health
-              port: 3000
+              port: grafana
       volumes:
         - name: config
           configMap:
@@ -6129,84 +6064,17 @@ spec:
           configMap:
             name: grafana-dashboards-mla-kubernetes-overview
         
+        - name: search
+          emptyDir: {}
   volumeClaimTemplates:
-  - metadata:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
       name: storage
     spec:
-      accessModes: [ReadWriteOnce]
+      accessModes:
+        - "ReadWriteOnce"
       storageClassName: kubermatic-fast
       resources:
         requests:
           storage: 10Gi
----
-# Source: grafana/charts/grafana/templates/tests/test-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    helm.sh/chart: grafana-7.0.21
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
-  name: release-name-grafana-test
-  namespace: default
-  annotations:
-    "helm.sh/hook": test-success
-    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
----
-# Source: grafana/charts/grafana/templates/tests/test-configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: release-name-grafana-test
-  namespace: default
-  annotations:
-    "helm.sh/hook": test-success
-    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
-  labels:
-    helm.sh/chart: grafana-7.0.21
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
-data:
-  run.sh: |-
-    @test "Test Health" {
-      url="http://release-name-grafana/api/health"
-
-      code=$(wget --server-response --spider --timeout 90 --tries 10 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
-      [ "$code" == "200" ]
-    }
----
-# Source: grafana/charts/grafana/templates/tests/test.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: release-name-grafana-test
-  labels:
-    helm.sh/chart: grafana-7.0.21
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "10.2.2"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    "helm.sh/hook": test-success
-    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
-  namespace: default
-spec:
-  serviceAccountName: release-name-grafana-test
-  containers:
-    - name: release-name-test
-      image: "docker.io/bats/bats:v1.4.1"
-      imagePullPolicy: "IfNotPresent"
-      command: ["/opt/bats/bin/bats", "-t", "/tests/run.sh"]
-      volumeMounts:
-        - mountPath: /tests
-          name: tests
-          readOnly: true
-  volumes:
-    - name: tests
-      configMap:
-        name: release-name-grafana-test
-  restartPolicy: Never
