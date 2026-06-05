@@ -380,12 +380,6 @@ func (r *reconciler) updateApplicationMetrics(appInstallation *appskubermaticv1.
 	// Determine if the application is stuck (failures > maxRetries and has limited retries)
 	isStuck := appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation)
 
-	// Get last success timestamp (when Ready condition became True)
-	var lastSuccessTime float64
-	if exists && readyCondition.Status == corev1.ConditionTrue && !readyCondition.LastTransitionTime.IsZero() {
-		lastSuccessTime = float64(readyCondition.LastTransitionTime.Unix())
-	}
-
 	updateApplicationMetrics(
 		appInstallation.Namespace,
 		appInstallation.Name,
@@ -393,7 +387,6 @@ func (r *reconciler) updateApplicationMetrics(appInstallation *appskubermaticv1.
 		appInstallation.Status.Failures,
 		isStuck,
 		readyStatus,
-		lastSuccessTime,
 	)
 }
 

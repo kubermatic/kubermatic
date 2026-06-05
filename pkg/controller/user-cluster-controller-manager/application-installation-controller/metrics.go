@@ -63,17 +63,6 @@ var (
 		},
 		[]string{"namespace", "name", "application"},
 	)
-
-	// applicationInstallationLastSuccessTimestamp records the timestamp of the last successful installation/upgrade.
-	applicationInstallationLastSuccessTimestamp = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metricsNamespace,
-			Subsystem: metricsSubsystem,
-			Name:      "last_success_timestamp_seconds",
-			Help:      "Unix timestamp of the last successful installation/upgrade",
-		},
-		[]string{"namespace", "name", "application"},
-	)
 )
 
 func init() {
@@ -82,12 +71,11 @@ func init() {
 		applicationInstallationFailures,
 		applicationInstallationStuck,
 		applicationInstallationReady,
-		applicationInstallationLastSuccessTimestamp,
 	)
 }
 
 // updateApplicationMetrics updates the Prometheus metrics for an ApplicationInstallation.
-func updateApplicationMetrics(namespace, name, application string, failures int, isStuck bool, readyStatus int, lastSuccessTime float64) {
+func updateApplicationMetrics(namespace, name, application string, failures int, isStuck bool, readyStatus int) {
 	stuckValue := 0.0
 	if isStuck {
 		stuckValue = 1.0
@@ -96,10 +84,6 @@ func updateApplicationMetrics(namespace, name, application string, failures int,
 	applicationInstallationFailures.WithLabelValues(namespace, name, application).Set(float64(failures))
 	applicationInstallationStuck.WithLabelValues(namespace, name, application).Set(stuckValue)
 	applicationInstallationReady.WithLabelValues(namespace, name, application).Set(float64(readyStatus))
-
-	if lastSuccessTime > 0 {
-		applicationInstallationLastSuccessTimestamp.WithLabelValues(namespace, name, application).Set(lastSuccessTime)
-	}
 }
 
 // deleteMetrics removes the Prometheus metrics for an ApplicationInstallation when it's deleted.
@@ -107,5 +91,4 @@ func deleteApplicationMetrics(namespace, name, application string) {
 	applicationInstallationFailures.DeleteLabelValues(namespace, name, application)
 	applicationInstallationStuck.DeleteLabelValues(namespace, name, application)
 	applicationInstallationReady.DeleteLabelValues(namespace, name, application)
-	applicationInstallationLastSuccessTimestamp.DeleteLabelValues(namespace, name, application)
 }
