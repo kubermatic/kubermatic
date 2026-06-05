@@ -127,6 +127,8 @@ func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
 	// from the infra cluster — these are custom instancetypes (e.g. GPU variants)
 	// that aren't part of the embedded Kubermatic standards.
+	// Note: this list is not namespace-scoped. Cross-tenant exposure is prevented at the
+	// dashboard/API layer, which restricts which instancetypes a user can reference.
 	namespacedInstancetypes := kvinstancetypev1alpha1.VirtualMachineInstancetypeList{}
 	if err := client.List(ctx, &namespacedInstancetypes); err != nil {
 		return nil, err
