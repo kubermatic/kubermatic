@@ -1,0 +1,98 @@
+name: Conformance Issue Trigger
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - 'pkg/provider/cloud/kubevirt/**'
+      - 'pkg/resources/csi/kubevirt/**'
+      - 'pkg/resources/cloudconfig/kubevirt/**'
+      - 'pkg/controller/user-cluster-controller-manager/kubevirt-vmi-eviction/**'
+      - 'pkg/ee/kubevirt-network-controller/**'
+      - 'addons/csi/kubevirt/**'
+      - 'sdk/apis/kubermatic/v1/cluster.go'
+
+jobs:
+  create-issues:
+    if: github.event.pull_request.merged == true && (github.event.pull_request.labels.*.name == 'kind/feature' || github.event.pull_request.labels.*.name == 'kind/bug')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    steps:
+      - name: Fetch PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
+          
+          {
+            echo "pr_title=${{ github.event.pull_request.title }}"
+            echo "pr_number=${PR_NUMBER}"
+            echo "pr_url=${{ github.event.pull_request.html_url }}"
+            echo "pr_body<<PR_BODY_EOF"
+            echo "${PR_BODY}"
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create issue in kubermatic
+        id: kkp-issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ steps.pr.outputs.pr_title }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          PR_BODY: ${{ steps.pr.outputs.pr_body }}
+        run: |
+          ISSUE_URL=$(gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "Conformance-${PR_TITLE}" \
+            --body "## Conformance Tracking
+
+          **Triggered by PR:** [#${PR_NUMBER} — ${PR_TITLE}](${PR_URL})
+
+          ### PR Description
+          ${PR_BODY}")
+
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "url=${ISSUE_URL}" >> "$GITHUB_OUTPUT"
+          echo "number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Created KKP issue #${ISSUE_NUMBER}: ${ISSUE_URL}"
+      
+      - name: Create issue in conformance-ee
+        env:
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+          PR_TITLE: ${{ steps.pr.outputs.pr_title }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          PR_BODY: ${{ steps.pr.outputs.pr_body }}
+          KKP_ISSUE_NUMBER: ${{ steps.kkp-issue.outputs.number }}
+          KKP_ISSUE_URL: ${{ steps.kkp-issue.outputs.url }}
+        run: |
+          DEST_ISSUE_URL=$(gh issue create \
+            --repo "kubermatic/conformance-ee" \
+            --title "Conformance-${PR_TITLE}" \
+            --assignee "kubermatic-bot" \
+            --assignee "@copilot" \
+            --body "## Conformance Tracking
+          
+          | Field | Value |
+          |-------|-------|
+          | **KKP PR** | [#${PR_NUMBER} — ${PR_TITLE}](${PR_URL}) |
+          | **KKP Issue** | [#${KKP_ISSUE_NUMBER}](${KKP_ISSUE_URL}) |
+          
+          ### PR Description
+          ${PR_BODY}
+          
+          > Closing this issue will automatically close the linked KKP issue.
+          
+          <!-- SOURCE-METADATA
+          source-repo: ${{ github.repository }}
+          source-issue: ${KKP_ISSUE_NUMBER}
+          source-pr: ${PR_NUMBER}
+          -->")
+          
+          echo "Created conformance-ee issue: ${DEST_ISSUE_URL}"
