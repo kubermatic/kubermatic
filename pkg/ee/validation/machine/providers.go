@@ -273,6 +273,9 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI instancetype: %w", err)
 		}
+		if capacity.CPUCores == nil || capacity.Memory == nil {
+			return nil, fmt.Errorf("KubeVirt instancetype %q has zero CPU or memory", rawConfig.VirtualMachine.Instancetype.Name)
+		}
 		cpuReq = *capacity.CPUCores
 		memReq = *capacity.Memory
 	} else {
