@@ -28,11 +28,13 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
-          
+          KIND_LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels --jq '[.labels[].name | select(startswith("kind/"))] | join(",")')
+
           {
             echo "pr_title=${{ github.event.pull_request.title }}"
             echo "pr_number=${PR_NUMBER}"
             echo "pr_url=${{ github.event.pull_request.html_url }}"
+            echo "kind_labels=${KIND_LABELS}"
             echo "pr_body<<PR_BODY_EOF"
             echo "${PR_BODY}"
             echo "PR_BODY_EOF"
@@ -71,12 +73,23 @@ jobs:
           PR_BODY: ${{ steps.pr.outputs.pr_body }}
           KKP_ISSUE_NUMBER: ${{ steps.kkp-issue.outputs.number }}
           KKP_ISSUE_URL: ${{ steps.kkp-issue.outputs.url }}
+          KIND_LABELS: ${{ steps.pr.outputs.kind_labels }}
         run: |
+          LABEL_ARGS=()
+          if [ -n "$KIND_LABELS" ]; then
+            IFS=',' read -ra LABELS <<< "$KIND_LABELS"
+            for label in "${LABELS[@]}"; do
+              gh label create "$label" --repo "kubermatic/conformance-ee" --force 2>/dev/null || true
+              LABEL_ARGS+=(--label "$label")
+            done
+          fi
+
           DEST_ISSUE_URL=$(gh issue create \
             --repo "kubermatic/conformance-ee" \
             --title "Conformance-${PR_TITLE}" \
             --assignee "kubermatic-bot" \
             --assignee "@copilot" \
+            "${LABEL_ARGS[@]}" \
             --body "## Conformance Tracking
           
           | Field | Value |
