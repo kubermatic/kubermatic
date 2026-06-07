@@ -27,7 +27,6 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -239,10 +238,6 @@ func ValidateAppDefinitionFiles(files []fs.File) error {
 		appDef := &appskubermaticv1.ApplicationDefinition{}
 		if err := yaml.Unmarshal(b, appDef); err != nil {
 			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
-		}
-
-		if err := defaulting.DefaultApplicationDefinition(appDef); err != nil {
-			return fmt.Errorf("failed to default ApplicationDefinition %q: %w", appDef.Name, err)
 		}
 
 		if errs := validation.ValidateApplicationDefinitionSpec(*appDef); len(errs) > 0 {
