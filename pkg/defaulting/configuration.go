@@ -42,7 +42,7 @@ import (
 const (
 	DefaultPProfEndpoint                          = ":6600"
 	DefaultEtcdVolumeSize                         = "5Gi"
-	DefaultAuthClientID                           = "kubermatic"
+	DefaultAuthClientID                           = "kubermaticIssuer"
 	DefaultIngressClass                           = "nginx"
 	DefaultIngressName                            = "kubermatic"
 	DefaultGatewayName                            = "kubermatic"
@@ -223,7 +223,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.34.7"),
+		Default: semver.NewSemverOrDie("v1.34.8"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -232,16 +232,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.32
-			newSemver("v1.32.1"),
-			newSemver("v1.32.3"),
-			newSemver("v1.32.4"),
-			newSemver("v1.32.6"),
-			newSemver("v1.32.7"),
-			newSemver("v1.32.9"),
-			newSemver("v1.32.10"),
-			newSemver("v1.32.12"),
-			newSemver("v1.32.13"),
 			// Kubernetes 1.33
 			newSemver("v1.33.0"),
 			newSemver("v1.33.2"),
@@ -253,6 +243,7 @@ var (
 			newSemver("v1.33.9"),
 			newSemver("v1.33.10"),
 			newSemver("v1.33.11"),
+			newSemver("v1.33.12"),
 			// Kubernetes 1.34
 			newSemver("v1.34.1"),
 			newSemver("v1.34.2"),
@@ -261,20 +252,17 @@ var (
 			newSemver("v1.34.5"),
 			newSemver("v1.34.6"),
 			newSemver("v1.34.7"),
+			newSemver("v1.34.8"),
 			// Kubernetes 1.35
 			newSemver("v1.35.0"),
 			newSemver("v1.35.1"),
 			newSemver("v1.35.2"),
 			newSemver("v1.35.3"),
 			newSemver("v1.35.4"),
+			newSemver("v1.35.5"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
-			{
-				// Allow to change to any patch version
-				From: "1.32.*",
-				To:   "1.32.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.32.*",
@@ -441,7 +429,17 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
-	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.ClassName == "" {
+	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.UsesExternalGateway() && configCopy.Spec.Ingress.Gateway.ClassName == DefaultGatewayClassName {
+		// Existing KubermaticConfiguration objects created while the CRD still
+		// defaulted ingress.gateway.className carry the legacy value even when
+		// the user transitions to spec.ingress.gateway.externalGateway. Clearing
+		// it here lets validation accept the migrated object without an explicit
+		// className cleanup.
+		configCopy.Spec.Ingress.Gateway.ClassName = ""
+		logger.Debugw("Clearing legacy default ClassName because externalGateway is configured")
+	}
+
+	if configCopy.Spec.Ingress.Gateway != nil && !configCopy.Spec.Ingress.Gateway.UsesExternalGateway() && configCopy.Spec.Ingress.Gateway.ClassName == "" {
 		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
 		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)
 	}
@@ -480,7 +478,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if auth.IssuerClientID == "" {
-		auth.IssuerClientID = fmt.Sprintf("%sIssuer", auth.ClientID)
+		auth.IssuerClientID = DefaultAuthClientID
 		logger.Debugw("Defaulting field", "field", "auth.issuerClientID", "value", auth.IssuerClientID)
 	}
 

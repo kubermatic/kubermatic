@@ -248,7 +248,8 @@ func createBaseExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kuberm
 							Templates: imageList,
 						},
 						KubeLB: &kubermaticv1.KubeLBDatacenterSettings{
-							Enabled:                  true,
+							Enabled:                  ptr.To(true),
+							Enforced:                 ptr.To(false),
 							NodeAddressType:          "ExternalIP",
 							UseLoadBalancerClass:     true,
 							EnableGatewayAPI:         false,

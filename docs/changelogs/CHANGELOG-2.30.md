@@ -3,10 +3,61 @@
 - [v2.30.0](#v2300)
 - [v2.30.1](#v2301)
 - [v2.30.2](#v2302)
+- [v2.30.3](#v2303)
+- [v2.30.4](#v2304)
+
+## v2.30.4
+
+**GitHub release: [v2.30.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.4)**
+
+### New Features
+
+- Add allowVolumeExpansion and reclaimPolicy fields to the KubeVirtInfraStorageClass struct in the API, enabling explicit configuration of volume expansion and reclaim policy ([#15912](https://github.com/kubermatic/kubermatic/pull/15912))
+- Reduces the Deployment/StatefulSet/DaemonSet revisionHistoryLimit of user cluster components to 2 to save etcd resources ([#15823](https://github.com/kubermatic/kubermatic/pull/15823))
+
+### Bugfixes
+
+- Fix recovery for Helm-based ApplicationInstallations whose Helm release is stuck in a pending state or whose retry state no longer matches the deployed Helm release ([#15892](https://github.com/kubermatic/kubermatic/pull/15892))
+- BYO Gateway migrations now wait for the external Gateway and KKP-managed HTTPRoutes to be accepted before completing Gateway cleanup ([#15896](https://github.com/kubermatic/kubermatic/pull/15896))
+- SSH keys from machine deployment providerSpec are no longer removed from worker nodes by the user-ssh-key-agent ([#15863](https://github.com/kubermatic/kubermatic/pull/15863))
+- Add Bring Your Own Gateway support for Gateway API mode. Operators can configure `spec.ingress.gateway.externalGateway` in the KubermaticConfiguration to make KKP attach its managed HTTPRoutes to an externally managed Gateway instead of creating and managing the default Gateway itself ([#15899](https://github.com/kubermatic/kubermatic/pull/15899))
+- Fix Project Resource Quota dialog showing incorrect Memory and Storage values after save ([#8076](https://github.com/kubermatic/Dashboard/pull/8076))
+- Cluster/machine metrics endpoints return an empty result for unavailable BYO CNI user clusters to avoid triggering KubermaticAPITooManyErrors alerts ([#8060](https://github.com/kubermatic/Dashboard/pull/8060))
+- Fix background-repeat for multi-line 'menu-item' icons on low zoom ([#8054](https://github.com/kubermatic/Dashboard/pull/8054))
+
+### Cleanups
+
+- The `Project.spec.defaultTenantSpec` field is now schemaless and preserves unknown fields. Existing values are forward-compatible. Refer to the KubeLB `TenantSpec` reference (https://docs.kubermatic.com/kubelb/latest/references/ee/#tenantspec) for details ([#15853](https://github.com/kubermatic/kubermatic/pull/15853))
+
+### Updates
+
+- Update Operating System Manager to v1.10.6 ([#15920](https://github.com/kubermatic/kubermatic/pull/15920))
+- Update KubeLB to v1.4.1 ([#15849](https://github.com/kubermatic/kubermatic/pull/15849))
+- Add support of k8s patch releases v1.35.5/v1.34.8/v1.33.12 ([#15870](https://github.com/kubermatic/kubermatic/pull/15870))
+- Update Machine Controller to v1.65.2 ([#15927](https://github.com/kubermatic/kubermatic/pull/15927))
+
+## v2.30.3
+
+**GitHub release: [v2.30.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.3)**
+
+### Bugfixes
+
+- Remove the creation of cluster scope resources from KubeVirt provider and offload that functionality to the platform admin. Needed permissions to be created in the cluster:PersistentVolumes: "get", "list", "watch" ([#15830](https://github.com/kubermatic/kubermatic/pull/15830))
+- Update vSphere CSI driver to v3.6.0 to pick up upstream session and ListView handling improvements that address vSphere volume attach failures after vCenter session expiry ([#15766](https://github.com/kubermatic/kubermatic/pull/15766))
+- Fix project creation dialog not applying admin-configured allowed operating systems to new projects ([#7956](https://github.com/kubermatic/dashboard/pull/7956))
+- Fix the Azure availability zone selector data population within the MachineDeployment edit dialog ([#8028](https://github.com/kubermatic/dashboard/pull/8028))
+- Fix the default OS image selection to correctly use the enabled OS when Ubuntu is disabled globally or per project ([#7927](https://github.com/kubermatic/dashboard/pull/7927))
+- Fix VSphere provider ignoring project-level allowed operating system restrictions during cluster creation ([#8010](https://github.com/kubermatic/dashboard/pull/8010))
+- Update kubeone package to v1.12.3 ([#8042](https://github.com/kubermatic/dashboard/pull/8042))
+
+### Updates
+
+- Set Cilium v1.18.6 as the default Cilium CNI versionSet Canal v3.31 as the default Canal CNI version ([#15784](https://github.com/kubermatic/kubermatic/pull/15784), [#8027](https://github.com/kubermatic/dashboard/pull/8027))
+- Update KubeLB CCM version to 1.3.10 ([#15806](https://github.com/kubermatic/kubermatic/pull/15806))
 
 ## v2.30.2
 
-**GitHub release: [2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/2.30.2)**
+**GitHub release: [v2.30.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.2)**
 
 ### Supported Kubernetes Versions
 

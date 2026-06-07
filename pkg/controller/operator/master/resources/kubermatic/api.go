@@ -281,6 +281,8 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				},
 			}
 
+			common.ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.API.PodSchedulingConfigurations)
+
 			return d, nil
 		}
 	}

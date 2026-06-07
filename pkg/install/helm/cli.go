@@ -33,11 +33,21 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
+var (
+	minHelmVersionMajor uint64 = 3
+	maxHelmVersionMajor uint64 = 4
+
+	// runCmd is the internal method used to execute Helm commands.
+	// It is overwritten by the unit test.
+	runCmd = runCmdImplementation
+)
+
 type cli struct {
 	binary      string
 	kubeconfig  string
 	kubeContext string
 	timeout     time.Duration
+	version     semverlib.Version
 	logger      logrus.FieldLogger
 }
 
@@ -48,13 +58,62 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 		return nil, errors.New("timeout must be >= 10 seconds")
 	}
 
-	return &cli{
+	c := &cli{
 		binary:      binary,
 		kubeconfig:  kubeconfig,
 		kubeContext: kubeContext,
 		timeout:     timeout,
 		logger:      logger,
-	}, nil
+	}
+
+	helmVersion, err := c.detectHelmVersion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Helm version: %w", err)
+	}
+
+	if helmVersion.Major() < minHelmVersionMajor {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %d and <= %d, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			minHelmVersionMajor,
+			maxHelmVersionMajor,
+			binary,
+			helmVersion,
+		)
+	}
+
+	if helmVersion.Major() > maxHelmVersionMajor {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %d and <= %d, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			minHelmVersionMajor,
+			maxHelmVersionMajor,
+			binary,
+			helmVersion,
+		)
+	}
+
+	c.version = *helmVersion
+
+	return c, nil
+}
+
+func (c *cli) detectHelmVersion() (*semverlib.Version, error) {
+	// Helm 2 will output "<no value>" for this template, whereas Helm 3 returns
+	// the version string via "{{ .Version }}".
+	output, err := c.run("", "version", "--template", "{{ .Version }}")
+	if err != nil {
+		return nil, err
+	}
+	out := strings.TrimSpace(string(output))
+	if out == "<no value>" {
+		out = "v2.99.99"
+	}
+
+	version, err := semverlib.NewVersion(out)
+	if err != nil {
+		return nil, err
+	}
+
+	return version, nil
 }
 
 func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
@@ -149,7 +208,12 @@ func (c *cli) GetRelease(namespace string, name string) (*Release, error) {
 }
 
 func (c *cli) ListReleases(namespace string) ([]Release, error) {
-	args := []string{"list", "--all", "-o", "json"}
+	args := []string{"list", "-o", "json"}
+	if c.version.Major() == 3 {
+		// Helm 3 requires the --all flag in order to also return releases that are not deployed successfully.
+		// Helm 4 returns all releases by default, and the --all flag is not supported anymore.
+		args = append(args, "--all")
+	}
 	if namespace == "" {
 		args = append(args, "--all-namespaces")
 	}
@@ -234,22 +298,6 @@ func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document,
 	return yamled.Load(bytes.NewReader(output))
 }
 
-func (c *cli) Version() (*semverlib.Version, error) {
-	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
-	// Helm-2-style templating string "{{ .Client.SemVer }}"
-	output, err := c.run("", "version", "--template", "{{ .Version }}")
-	if err != nil {
-		return nil, err
-	}
-
-	out := strings.TrimSpace(string(output))
-	if out == "<no value>" {
-		out = "v2.99.99"
-	}
-
-	return semverlib.NewVersion(out)
-}
-
 func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 	globalArgs := []string{}
 
@@ -269,6 +317,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 
+	return runCmd(cmd)
+}
+
+func runCmdImplementation(cmd *exec.Cmd) ([]byte, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
@@ -277,10 +329,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = errors.New(strings.TrimSpace(stderr.String()))
+		return nil, errors.New(strings.TrimSpace(stderr.String()))
 	}
 
-	return stdout.Bytes(), err
+	return stdout.Bytes(), nil
 }
 
 func valuesToFlags(values map[string]string) []string {

@@ -103,10 +103,64 @@ retry 10 kubectl get gatewayclass kubermatic-envoy-gateway
 echodate "Gateway API resources are present."
 echodate "Running Gateway API fresh install tests..."
 
-go_test gateway_api_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+go_test gateway_api_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
   -test.run "TestGatewayAPIFreshInstall"
 
 echodate "Gateway API fresh install tests completed successfully!"
+
+echodate "Creating external Gateway for Gateway API BYO Gateway migration tests..."
+
+go_test gateway_api_byo_gateway_setup_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIExternalGatewaySetup"
+
+external_gateway_config="$(mktemp)"
+cp "$KUBERMATIC_CONFIG" "$external_gateway_config"
+yq e '
+  del(.spec.ingress.certificateIssuer) |
+  .spec.ingress.gateway.externalGateway.name = "platform-gateway" |
+  .spec.ingress.gateway.externalGateway.namespace = "byo-gateway-e2e" |
+  del(.spec.ingress.gateway.className) |
+  del(.spec.ingress.gateway.infrastructureAnnotations) |
+  del(.spec.ingress.gateway.tls)
+' -i "$external_gateway_config"
+
+echodate "Re-running kubermatic-installer with external Gateway configured..."
+
+./_build/kubermatic-installer deploy kubermatic-master \
+  --storageclass copy-default \
+  --config "$external_gateway_config" \
+  --helm-values "$HELM_VALUES_FILE" \
+  --skip-seed-validation=kubermatic \
+  --migrate-gateway-api \
+  --verbose
+
+sleep 5
+retry 10 check_all_deployments_ready kubermatic
+
+echodate "Verifying Gateway API BYO Gateway migration..."
+
+go_test gateway_api_byo_gateway_migration_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIExternalGatewayMigration"
+
+echodate "Gateway API BYO Gateway migration tests completed successfully!"
+
+echodate "Restoring managed Gateway API mode after BYO Gateway migration test..."
+
+./_build/kubermatic-installer deploy kubermatic-master \
+  --storageclass copy-default \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$HELM_VALUES_FILE" \
+  --skip-seed-validation=kubermatic \
+  --migrate-gateway-api \
+  --verbose
+
+sleep 5
+retry 10 check_all_deployments_ready kubermatic
+
+go_test gateway_api_restore_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIManagedGatewayRestore"
+
+echodate "Managed Gateway API mode restored successfully."
 
 # Reproduce issue #15711: patch KubermaticConfiguration with a missing ConfigMap
 # reference, then redeploy from scratch. The fix ensures Gateway is created
@@ -160,7 +214,7 @@ fi
 
 echodate "Running Gateway API deployment failure tolerance tests..."
 
-if ! go_test gateway_api_deployment_failure_tolerance_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+if ! go_test gateway_api_deployment_failure_tolerance_e2e -count=1 -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
   -test.run "TestGatewayAPIDeploymentFailureTolerance"; then
   echodate "ERROR: Gateway API deployment failure tolerance test failed"
   exit 1

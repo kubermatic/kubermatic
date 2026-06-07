@@ -26,6 +26,7 @@ import (
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -155,14 +156,16 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 	depReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		resources.OperatorDeploymentReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r); err != nil {
+	revisionHistoryLimit := modifier.RevisionHistoryLimit(2)
+	err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r, revisionHistoryLimit)
+	if err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		resources.AgentDaemonSetReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r, revisionHistoryLimit); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 

@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -31,9 +32,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -487,6 +490,76 @@ func TestGatewayReconcilerClearsManagedAnnotationsWhenConfigEmpty(t *testing.T) 
 	}
 }
 
+func TestGatewayParentReferenceDefaultsWhenConfigurationNil(t *testing.T) {
+	parentRef := gatewayParentReference(nil, "kubermatic")
+
+	if parentRef.Name != gatewayName {
+		t.Fatalf("expected default Gateway parentRef name %q, got %q", gatewayName, parentRef.Name)
+	}
+	if parentRef.Namespace == nil || string(*parentRef.Namespace) != "kubermatic" {
+		t.Fatalf("expected default Gateway parentRef namespace kubermatic, got %v", parentRef.Namespace)
+	}
+}
+
+func TestExternalGatewayKeyReportsMissingConfiguration(t *testing.T) {
+	testCases := []struct {
+		name string
+		cfg  *kubermaticv1.KubermaticConfiguration
+	}{
+		{
+			name: "nil configuration",
+			cfg:  nil,
+		},
+		{
+			name: "nil gateway configuration",
+			cfg:  &kubermaticv1.KubermaticConfiguration{},
+		},
+		{
+			name: "external gateway without name",
+			cfg: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if key, ok := ExternalGatewayKey(tc.cfg, "kubermatic"); ok {
+				t.Fatalf("expected no external Gateway key, got %s", key.String())
+			}
+		})
+	}
+}
+
+func TestExternalGatewayKeyReturnsConfiguredGateway(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+						Name:      "platform-gateway",
+						Namespace: "networking",
+					},
+				},
+			},
+		},
+	}
+
+	key, ok := ExternalGatewayKey(cfg, "kubermatic")
+	if !ok {
+		t.Fatal("expected external Gateway key")
+	}
+	if key != (types.NamespacedName{Name: "platform-gateway", Namespace: "networking"}) {
+		t.Fatalf("expected networking/platform-gateway, got %s", key.String())
+	}
+}
+
 func TestGatewayReconcilerPreservesUnmanagedInfrastructureFields(t *testing.T) {
 	parametersRef := &gatewayapiv1.LocalParametersReference{
 		Group: "gateway.envoyproxy.io",
@@ -576,6 +649,7 @@ func TestGatewayReconcilerPreservesUnmanagedInfrastructureFields(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo
 func TestHTTPRouteReconciler(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -601,6 +675,61 @@ func TestHTTPRouteReconciler(t *testing.T) {
 				parentRef := route.Spec.ParentRefs[0]
 				if parentRef.Name != gatewayName {
 					t.Errorf("Expected parent ref name %q, got %q", gatewayName, parentRef.Name)
+				}
+				if parentRef.Namespace == nil || *parentRef.Namespace != "kubermatic" {
+					t.Errorf("Expected parent ref namespace 'kubermatic', got %v", parentRef.Namespace)
+				}
+			},
+		},
+		{
+			name: "HTTPRoute parent reference uses external Gateway",
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain: "example.com",
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+								Name:      "platform-gateway",
+								Namespace: "networking",
+							},
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, route *gatewayapiv1.HTTPRoute) {
+				if len(route.Spec.ParentRefs) != 1 {
+					t.Fatalf("Expected 1 parent reference, got %d", len(route.Spec.ParentRefs))
+				}
+				parentRef := route.Spec.ParentRefs[0]
+				if parentRef.Name != "platform-gateway" {
+					t.Errorf("Expected parent ref name %q, got %q", "platform-gateway", parentRef.Name)
+				}
+				if parentRef.Namespace == nil || *parentRef.Namespace != "networking" {
+					t.Errorf("Expected parent ref namespace 'networking', got %v", parentRef.Namespace)
+				}
+			},
+		},
+		{
+			name: "HTTPRoute parent reference defaults external Gateway namespace",
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain: "example.com",
+						Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+							ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+								Name: "platform-gateway",
+							},
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, route *gatewayapiv1.HTTPRoute) {
+				if len(route.Spec.ParentRefs) != 1 {
+					t.Fatalf("Expected 1 parent reference, got %d", len(route.Spec.ParentRefs))
+				}
+				parentRef := route.Spec.ParentRefs[0]
+				if parentRef.Name != "platform-gateway" {
+					t.Errorf("Expected parent ref name %q, got %q", "platform-gateway", parentRef.Name)
 				}
 				if parentRef.Namespace == nil || *parentRef.Namespace != "kubermatic" {
 					t.Errorf("Expected parent ref namespace 'kubermatic', got %v", parentRef.Namespace)
@@ -855,6 +984,686 @@ func TestEnsureGatewayUpdatesExisting(t *testing.T) {
 	}
 	if updated.Labels["old-label"] != "old-value" {
 		t.Errorf("expected user label 'old-label' to be preserved, got %q", updated.Labels["old-label"])
+	}
+}
+
+func TestManagedGatewayExistsTreatsAnyConfigurationControllerOwnerAsManaged(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+		},
+	})
+
+	testCases := []struct {
+		name   string
+		owner  []metav1.OwnerReference
+		create bool
+		want   bool
+	}{
+		{
+			name:   "missing Gateway is not managed",
+			create: false,
+			want:   false,
+		},
+		{
+			name:   "unowned Gateway is not managed",
+			create: true,
+			want:   false,
+		},
+		{
+			name: "current KubermaticConfiguration controller owner is managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        cfg.UID,
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   true,
+		},
+		{
+			name: "stale KubermaticConfiguration controller owner is managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   true,
+		},
+		{
+			name: "non-controller KubermaticConfiguration owner is not managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(false),
+				},
+			},
+			create: true,
+			want:   false,
+		},
+		{
+			name: "other controller owner is not managed",
+			owner: []metav1.OwnerReference{
+				{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+					Name:       "other-owner",
+					UID:        types.UID("other-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			create: true,
+			want:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{}
+			if tc.create {
+				objects = append(objects, &gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            gatewayName,
+						Namespace:       namespace,
+						OwnerReferences: tc.owner,
+					},
+				})
+			}
+
+			client := fake.NewClientBuilder().WithObjects(objects...).Build()
+			got, err := ManagedGatewayExists(ctx, client, namespace)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+
+			if got != tc.want {
+				t.Fatalf("ManagedGatewayExists() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEnsureManagedGatewayAbsentDeletesOnlyOperatorOwnedGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	testCases := []struct {
+		name            string
+		setOwner        bool
+		ownerReferences []metav1.OwnerReference
+		labels          map[string]string
+		wantExists      bool
+	}{
+		{
+			name:       "deletes operator-owned Gateway",
+			setOwner:   true,
+			wantExists: false,
+		},
+		{
+			name: "deletes Gateway with stale KubermaticConfiguration controller owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("stale-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			wantExists: false,
+		},
+		{
+			name: "leaves default-name Gateway with operator-like labels but no owner reference",
+			labels: map[string]string{
+				common.NameLabel:        defaulting.DefaultGatewayName,
+				modifier.ManagedByLabel: common.OperatorName,
+			},
+			wantExists: true,
+		},
+		{
+			name:       "leaves non-operator-owned Gateway",
+			setOwner:   false,
+			wantExists: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			scheme := fake.NewScheme()
+			cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+				Ingress: kubermaticv1.KubermaticIngressConfiguration{
+					Domain: "kubermatic.example.com",
+					Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+						ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+							Name:      "platform-gateway",
+							Namespace: "networking",
+						},
+					},
+				},
+			})
+
+			existing := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            gatewayName,
+					Namespace:       namespace,
+					OwnerReferences: tc.ownerReferences,
+					Labels:          tc.labels,
+				},
+			}
+			if tc.setOwner {
+				if err := controllerutil.SetControllerReference(cfg, existing, scheme); err != nil {
+					t.Fatalf("failed to set owner reference: %v", err)
+				}
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+			if err := EnsureManagedGatewayAbsent(ctx, client, zap.NewNop().Sugar(), namespace); err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+
+			var fetched gatewayapiv1.Gateway
+			err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &fetched)
+			if tc.wantExists {
+				if err != nil {
+					t.Fatalf("expected Gateway to remain, got: %v", err)
+				}
+				return
+			}
+
+			if !apierrors.IsNotFound(err) {
+				t.Fatalf("expected Gateway to be deleted, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestIsExternalGatewayNotOperatorOwnedRejectsAnyConfigurationControllerOwner(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	tests := []struct {
+		name            string
+		ownerReferences []metav1.OwnerReference
+		wantError       bool
+	}{
+		{
+			name: "rejects current KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        cfg.UID,
+					Controller: ptr.To(true),
+				},
+			},
+			wantError: true,
+		},
+		{
+			name: "rejects stale KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("other-config-uid"),
+					Controller: ptr.To(true),
+				},
+			},
+			wantError: true,
+		},
+		{
+			name: "allows non-controller KubermaticConfiguration owner",
+			ownerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       "KubermaticConfiguration",
+					Name:       "kubermatic",
+					UID:        types.UID("other-config-uid"),
+					Controller: ptr.To(false),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "platform-gateway",
+					Namespace:       "networking",
+					OwnerReferences: tt.ownerReferences,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithObjects(existing).Build()
+			exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+			if tt.wantError && err == nil {
+				t.Fatal("expected error")
+			}
+			if tt.wantError && err != nil && !strings.Contains(err.Error(), "remove KubermaticConfiguration controller ownerReferences") {
+				t.Fatalf("expected error to include ownerReference recovery hint, got: %v", err)
+			}
+			if !tt.wantError && err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if !exists {
+				t.Fatal("expected external Gateway to exist")
+			}
+		})
+	}
+}
+
+func TestIsExternalGatewayNotOperatorOwnedAllowsMissingExternalGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	client := fake.NewClientBuilder().Build()
+	exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if exists {
+		t.Fatal("expected missing external Gateway to be reported")
+	}
+}
+
+func TestIsExternalGatewayNotOperatorOwnedTreatsDeletingGatewayAsMissing(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	deletionTime := metav1.Now()
+	deletingGateway := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "platform-gateway",
+			Namespace:         "networking",
+			DeletionTimestamp: &deletionTime,
+			Finalizers:        []string{"test/finalizer"},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(deletingGateway).Build()
+	exists, err := IsExternalGatewayNotOperatorOwned(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if exists {
+		t.Fatal("expected deleting external Gateway to be reported as missing")
+	}
+}
+
+func TestHTTPRoutesReferencingManagedGatewayExcludesOperatorRoute(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	managedGatewayNamespace := gatewayapiv1.Namespace(namespace)
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	// Simulates a stale controller-runtime cache that still shows the KKP
+	// HTTPRoute referencing both the managed and external Gateways after
+	// EnsureHTTPRoute rewrote parentRefs to external-only.
+	kkpRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      httpRouteName,
+			Namespace: namespace,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "platform-gateway",
+						Namespace: &externalNamespace,
+					},
+					{
+						Name:      gatewayName,
+						Namespace: &managedGatewayNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	dexRoute := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dex",
+			Namespace: "dex",
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayName,
+						Namespace: &managedGatewayNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithObjects(kkpRoute, dexRoute).Build()
+	references, err := HTTPRoutesReferencingManagedGateway(ctx, client, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if len(references) != 1 {
+		t.Fatalf("expected only the Dex HTTPRoute to be reported, got %v", references)
+	}
+	if references[0] != (types.NamespacedName{Namespace: "dex", Name: "dex"}) {
+		t.Fatalf("expected Dex HTTPRoute reference, got %s", references[0].String())
+	}
+}
+
+func TestHTTPRoutesReferencingExternalGatewayNotAcceptedFiltersLabeledGatewayRoutes(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	externalNamespace := gatewayapiv1.Namespace("networking")
+	externalGateway := types.NamespacedName{Namespace: "networking", Name: "platform-gateway"}
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      externalGateway.Name,
+					Namespace: externalGateway.Namespace,
+				},
+			},
+		},
+	})
+
+	route := func(name, routeNamespace string, gatewayRoute bool, accepted metav1.ConditionStatus) *gatewayapiv1.HTTPRoute {
+		labels := map[string]string{}
+		if gatewayRoute {
+			labels[common.GatewayHTTPRouteLabelKey] = common.GatewayHTTPRouteLabelValue
+		}
+
+		return &gatewayapiv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       name,
+				Namespace:  routeNamespace,
+				Generation: 1,
+				Labels:     labels,
+			},
+			Spec: gatewayapiv1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+					ParentRefs: []gatewayapiv1.ParentReference{
+						{
+							Name:      gatewayapiv1.ObjectName(externalGateway.Name),
+							Namespace: &externalNamespace,
+						},
+					},
+				},
+			},
+			Status: gatewayapiv1.HTTPRouteStatus{
+				RouteStatus: gatewayapiv1.RouteStatus{
+					Parents: []gatewayapiv1.RouteParentStatus{
+						{
+							ParentRef: gatewayapiv1.ParentReference{
+								Name:      gatewayapiv1.ObjectName(externalGateway.Name),
+								Namespace: &externalNamespace,
+							},
+							Conditions: []metav1.Condition{
+								{
+									Type:               string(gatewayapiv1.RouteConditionAccepted),
+									Status:             accepted,
+									ObservedGeneration: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	iapRoute := route("grafana-iap", "monitoring", true, metav1.ConditionFalse)
+	grafanaRoute := route("grafana", "monitoring", false, metav1.ConditionFalse)
+	dexRoute := route("dex", "dex", true, metav1.ConditionTrue)
+	kkpRoute := route(httpRouteName, namespace, true, metav1.ConditionTrue)
+	kkpRoute.Generation = 2
+
+	client := fake.NewClientBuilder().WithObjects(iapRoute, grafanaRoute, dexRoute, kkpRoute).Build()
+	pending, err := HTTPRoutesReferencingExternalGatewayNotAccepted(ctx, client, cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if len(pending) != 2 {
+		t.Fatalf("expected rejected KKP and IAP routes to be pending, got %v", pending)
+	}
+	for _, expected := range []types.NamespacedName{
+		{Namespace: namespace, Name: httpRouteName},
+		{Namespace: "monitoring", Name: "grafana-iap"},
+	} {
+		found := false
+		for _, actual := range pending {
+			if actual == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected pending route %s, got %v", expected.String(), pending)
+		}
+	}
+}
+
+func TestHTTPRouteAcceptedByExternalGatewayRequiresProgrammedGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+	externalNamespace := gatewayapiv1.Namespace("networking")
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	route := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       httpRouteName,
+			Namespace:  namespace,
+			Generation: 2,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      "platform-gateway",
+						Namespace: &externalNamespace,
+					},
+				},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: gatewayapiv1.ParentReference{
+							Name:      "platform-gateway",
+							Namespace: &externalNamespace,
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             metav1.ConditionTrue,
+								ObservedGeneration: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		gateway *gatewayapiv1.Gateway
+		want    bool
+	}{
+		{
+			name: "missing Gateway is not ready",
+		},
+		{
+			name: "unprogrammed Gateway is not ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+		{
+			name: "deleting Gateway is not ready",
+			gateway: func() *gatewayapiv1.Gateway {
+				deletionTime := metav1.Now()
+				return &gatewayapiv1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "platform-gateway",
+						Namespace:         "networking",
+						Generation:        2,
+						DeletionTimestamp: &deletionTime,
+						Finalizers:        []string{"test/finalizer"},
+					},
+					Status: gatewayapiv1.GatewayStatus{
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+								Status:             metav1.ConditionTrue,
+								ObservedGeneration: 2,
+							},
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name: "Gateway with stale programmed status is not ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Gateway with missing observed generation is not ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "programmed Gateway is ready",
+			gateway: &gatewayapiv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "platform-gateway",
+					Namespace:  "networking",
+					Generation: 2,
+				},
+				Status: gatewayapiv1.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               string(gatewayapiv1.GatewayConditionProgrammed),
+							Status:             metav1.ConditionTrue,
+							ObservedGeneration: 2,
+						},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{route.DeepCopy()}
+			if tt.gateway != nil {
+				objects = append(objects, tt.gateway)
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
+			got, err := HTTPRouteAcceptedByExternalGateway(ctx, client, cfg, namespace)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("HTTPRouteAcceptedByExternalGateway() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -1224,9 +2033,10 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
 			},
 			wantLabels: map[string]string{
-				"team":                  "platform",
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				"team":                          "platform",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
@@ -1237,8 +2047,9 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 			existingLabels:      map[string]string{},
 			existingAnnotations: map[string]string{},
 			wantLabels: map[string]string{
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{},
 		},
@@ -1254,10 +2065,11 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 				"custom.io/owner":                           "team-alpha",
 			},
 			wantLabels: map[string]string{
-				"team":                  "platform",
-				"environment":           "staging",
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
+				"team":                          "platform",
+				"environment":                   "staging",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
 			},
 			wantAnnotations: map[string]string{
 				"external-dns.alpha.kubernetes.io/hostname": "example.kubermatic.com",
@@ -1273,9 +2085,10 @@ func TestEnsureHTTPRoutePreservesUserMetadata(t *testing.T) {
 			},
 			existingAnnotations: map[string]string{},
 			wantLabels: map[string]string{
-				common.NameLabel:        "kubermatic",
-				modifier.ManagedByLabel: common.OperatorName,
-				"team":                  "platform",
+				common.NameLabel:                "kubermatic",
+				common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
+				modifier.ManagedByLabel:         common.OperatorName,
+				"team":                          "platform",
 			},
 			wantAnnotations: map[string]string{},
 		},
@@ -1594,6 +2407,71 @@ func TestEnsureHTTPRouteCreatesNew(t *testing.T) {
 	if created.Labels[modifier.ManagedByLabel] != common.OperatorName {
 		t.Errorf("expected managed-by label %q, got %q", common.OperatorName, created.Labels[modifier.ManagedByLabel])
 	}
+	if created.Labels[common.GatewayHTTPRouteLabelKey] != common.GatewayHTTPRouteLabelValue {
+		t.Errorf("expected Gateway HTTPRoute label %q=%q, got %q", common.GatewayHTTPRouteLabelKey, common.GatewayHTTPRouteLabelValue, created.Labels[common.GatewayHTTPRouteLabelKey])
+	}
+}
+
+func TestEnsureHTTPRouteUpdatesParentRefToExternalGateway(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+	scheme := fake.NewScheme()
+
+	cfg := testKubermaticConfiguration(kubermaticv1.KubermaticConfigurationSpec{
+		Ingress: kubermaticv1.KubermaticIngressConfiguration{
+			Domain: "kubermatic.example.com",
+			Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+				ExternalGateway: &kubermaticv1.KubermaticExternalGatewayReference{
+					Name:      "platform-gateway",
+					Namespace: "networking",
+				},
+			},
+		},
+	})
+
+	parentNamespace := gatewayapiv1.Namespace(namespace)
+	existing := &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      httpRouteName,
+			Namespace: namespace,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayName,
+						Namespace: &parentNamespace,
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
+
+	if err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace, scheme); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var updated gatewayapiv1.HTTPRoute
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: httpRouteName}, &updated); err != nil {
+		t.Fatalf("HTTPRoute should exist: %v", err)
+	}
+
+	if len(updated.Spec.ParentRefs) != 1 {
+		t.Fatalf("expected 1 parent reference, got %d", len(updated.Spec.ParentRefs))
+	}
+
+	parentRef := updated.Spec.ParentRefs[0]
+	if parentRef.Name != "platform-gateway" {
+		t.Errorf("expected parent ref name platform-gateway, got %s", parentRef.Name)
+	}
+	if parentRef.Namespace == nil || *parentRef.Namespace != "networking" {
+		t.Errorf("expected parent ref namespace networking, got %v", parentRef.Namespace)
+	}
+	if updated.Labels[common.GatewayHTTPRouteLabelKey] != common.GatewayHTTPRouteLabelValue {
+		t.Errorf("expected Gateway HTTPRoute label %q=%q, got %q", common.GatewayHTTPRouteLabelKey, common.GatewayHTTPRouteLabelValue, updated.Labels[common.GatewayHTTPRouteLabelKey])
+	}
 }
 
 func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
@@ -1620,7 +2498,8 @@ func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
 		t.Fatalf("failed to set owner reference: %v", err)
 	}
 	kubernetes.EnsureLabels(desired, map[string]string{
-		modifier.ManagedByLabel: common.OperatorName,
+		modifier.ManagedByLabel:         common.OperatorName,
+		common.GatewayHTTPRouteLabelKey: common.GatewayHTTPRouteLabelValue,
 	})
 
 	existing := desired.DeepCopy()

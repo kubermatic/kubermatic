@@ -50,7 +50,7 @@ spec:
 
   # These secret keys configure the way components communicate with Dex.
   auth:
-    clientID: kubermatic
+    clientID: kubermaticIssuer
     issuerClientID: kubermaticIssuer
     # When using letsencrypt-prod replace with "false"
     skipTokenIssuerTLSVerify: true

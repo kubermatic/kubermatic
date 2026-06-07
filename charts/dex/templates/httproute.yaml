@@ -22,6 +22,7 @@ metadata:
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: helm
+    kubermatic.io/gateway-route: "true"
 spec:
   parentRefs:
     - name: {{ .Values.httpRoute.gatewayName }}

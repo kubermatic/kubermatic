@@ -24,7 +24,6 @@ import (
 	"os"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/zapr"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -40,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -50,7 +50,6 @@ import (
 )
 
 var (
-	MinHelmVersion            = semverlib.MustParse("v3.0.0")
 	UserClusterMinHelmTimeout = 15 * time.Minute
 )
 
@@ -152,7 +151,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))
 	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
 	cmd.PersistentFlags().BoolVar(&opt.AllowEditionChange, "allow-edition-change", false, "allow up- or downgrading between Community and Enterprise editions")
-	cmd.PersistentFlags().BoolVar(&opt.SeparateSeed, "separate-seed", false, "deploy ingress or gateway-api master components to the seed (only applies to kubermatic-seed stack)")
+	cmd.PersistentFlags().BoolVar(&opt.SeparateSeed, "separate-seed", false, "indicates a separate seed cluster; deploy ingress or Gateway API seed components for the kubermatic-seed stack and keep MLA/IAP HTTPRoute Gateway values seed-scoped")
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
@@ -208,8 +207,12 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
+		if err := validateGatewayAPIMigrationFlags(opt, helmValues); err != nil {
+			return err
+		}
+
 		deployOptions := stack.DeployOptions{
-			HelmClient:                         *helmClient,
+			HelmClient:                         helmClient,
 			HelmValues:                         helmValues,
 			KubermaticConfiguration:            kubermaticConfig,
 			RawKubermaticConfiguration:         rawKubermaticConfig,
@@ -358,28 +361,26 @@ func greeting() string {
 	return greetings[rand.Intn(len(greetings))]
 }
 
-func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (*helm.Client, error) {
-	// error out early if there is no useful Helm binary
+func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (helm.Client, error) {
 	helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Helm client: %w", err)
 	}
 
-	helmVersion, err := helmClient.Version()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check Helm version: %w", err)
+	return helmClient, nil
+}
+
+func validateGatewayAPIMigrationFlags(opt *DeployOptions, helmValues *yamled.Document) error {
+	if !opt.MigrateGatewayAPI {
+		return nil
 	}
 
-	if helmVersion.LessThan(MinHelmVersion) {
-		return nil, fmt.Errorf(
-			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-			MinHelmVersion,
-			opt.HelmBinary,
-			helmVersion,
-		)
+	migrateGatewayAPIInValues, _ := helmValues.GetBool(yamled.Path{"migrateGatewayAPI"})
+	if migrateGatewayAPIInValues {
+		return nil
 	}
 
-	return &helmClient, nil
+	return errors.New("--migrate-gateway-api requires the migrateGatewayAPI Helm value to be set to true")
 }
 
 func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptions) (stack.Stack, error) {

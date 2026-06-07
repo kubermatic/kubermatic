@@ -31,7 +31,7 @@ import (
 
 const (
 	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
-	hetznerCCMVersion        = "v1.29.2" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
+	hetznerCCMVersion        = "v1.30.1" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
 )
 
 var (

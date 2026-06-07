@@ -161,6 +161,12 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 			}
 		}
 
+		if dc.Spec.AuthenticationConfiguration != nil {
+			if dc.Spec.AuthenticationConfiguration.SecretName == "" || dc.Spec.AuthenticationConfiguration.SecretKey == "" {
+				return fmt.Errorf("datacenter %q: spec.authenticationConfiguration must contain a valid secret reference with secretName and secretKey", dcName)
+			}
+		}
+
 		if existingSeed == nil {
 			continue
 		}
@@ -196,6 +202,27 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 		return err
 	}
 
+	if err := validateAuthenticationConfiguration(subject); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateAuthenticationConfiguration(seed *kubermaticv1.Seed) error {
+	if seed.Spec.AuthenticationConfiguration != nil && seed.Spec.OIDCProviderConfiguration != nil {
+		return errors.New("only one of spec.authenticationConfiguration and spec.oidcProviderConfiguration can be set")
+	}
+	if secretRef := seed.Spec.AuthenticationConfiguration; secretRef != nil {
+		if secretRef.SecretName == "" || secretRef.SecretKey == "" {
+			return errors.New("spec.authenticationConfiguration must contain a valid secret reference with secretName and secretKey")
+		}
+	}
+	if oidcConfig := seed.Spec.OIDCProviderConfiguration; oidcConfig != nil {
+		if oidcConfig.IssuerURL == "" || oidcConfig.IssuerClientID == "" {
+			return errors.New("spec.oidcProviderConfiguration must specify issuerURL and issuerClientID")
+		}
+	}
 	return nil
 }
 

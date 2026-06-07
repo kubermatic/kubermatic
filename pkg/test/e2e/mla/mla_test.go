@@ -195,8 +195,12 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatal("grafana org not cleaned up")
 	}
 
+	// User cleanup goes through: toggleMLAInSeed(false) → KKP operator redeploys
+	// seed-controller-manager without -enable-user-cluster-mla → cleanup controller
+	// runs once at startup → DeleteUser. With Grafana 13 the pod takes significantly
+	// longer to become ready than 10.2.2, pushing the chain past the default 5m timeout.
 	logger.Info("Waiting for Grafana user to be gone...")
-	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 15*time.Minute, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {

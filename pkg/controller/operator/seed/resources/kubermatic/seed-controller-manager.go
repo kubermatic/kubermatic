@@ -177,18 +177,14 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				})
 			}
 
-			configureSeedLevelOIDCProvider := seed.Spec.OIDCProviderConfiguration != nil
-
-			if configureSeedLevelOIDCProvider {
+			if seed.Spec.OIDCProviderConfiguration != nil {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerURL),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientSecret),
 				)
-			}
-
-			// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
-			if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; !configureSeedLevelOIDCProvider && fgSet {
+			} else if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; fgSet {
+				// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
@@ -220,6 +216,8 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 					SecurityContext: &common.ContainerSecurityContext,
 				},
 			}
+
+			common.ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.SeedController.PodSchedulingConfigurations)
 
 			return d, nil
 		}

@@ -13,15 +13,22 @@
 # limitations under the License.
 
 # Gateway API migration: When true, creates HTTPRoute instead of using Ingress.
-# The HTTPRoutes will attach to the kubermatic Gateway (cross-namespace).
+# The HTTPRoutes will attach to the configured Gateway (cross-namespace).
 # The kubermatic-installer automatically labels the namespace for Gateway access.
+# In separate seed setups, configure these values for the seed Gateway explicitly;
+# they are not defaulted from spec.ingress.gateway.externalGateway. To use a BYO
+# seed Gateway backed by an externally managed controller, set httpRoute.externalGateway=true
+# so the installer skips the bundled Envoy Gateway controller.
 migrateGatewayAPI: false
 
 # httpRoute configures HTTPRoute for IAP deployments (only used when migrateGatewayAPI: true)
 httpRoute:
-  # Name of the Gateway to attach to (in kubermatic namespace)
+  # Set true in separate seed setups when the referenced Gateway is backed by an externally
+  # managed Gateway controller. The installer then skips deploying bundled Envoy Gateway.
+  externalGateway: false
+  # Name of the Gateway to attach to.
   gatewayName: kubermatic
-  # Namespace of the Gateway
+  # Namespace of the Gateway.
   gatewayNamespace: kubermatic
   # Timeout for requests (matching nginx proxy-read-timeout annotation)
   timeout: 3600s

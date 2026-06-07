@@ -322,6 +322,8 @@ type SeedSpec struct {
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 	// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
 	OIDCProviderConfiguration *OIDCProviderConfiguration `json:"oidcProviderConfiguration,omitempty"`
+	// AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
 	// KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
 	// Only available in Enterprise Edition.
 	//
@@ -485,6 +487,14 @@ type NodeportProxyComponent struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
+	// Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type Datacenter struct {
@@ -593,6 +603,9 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	// AuthenticationConfiguration allows to refer to a Secret that holds the AuthenticationConfiguration that should be applied to all user clusters in the seed by default.
+	AuthenticationConfiguration *AuthenticationConfiguration `json:"authenticationConfiguration,omitempty"`
 
 	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
 	// These settings override seed and global configuration and apply to all user clusters
@@ -1061,6 +1074,11 @@ type KubeVirtInfraStorageClass struct {
 	// cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
 	// image creation.
 	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
+	// ReclaimPolicy controls the reclaimPolicy for dynamically provisioned PersistentVolumes of this storage class.
+	// Defaults to Delete.
+	ReclaimPolicy string `json:"reclaimPolicy,omitempty"`
+	// AllowVolumeExpansion shows whether the storage class allow volume expand.
+	AllowVolumeExpansion bool `json:"allowVolumeExpansion,omitempty"`
 }
 
 type KubeVirtInfraVolumeSnapshotClass struct {
@@ -1345,9 +1363,9 @@ type KubeLBDatacenterSettings struct {
 	// Used to configure and override the default kubeLB settings.
 	KubeLBSettings `json:",inline"`
 	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
-	Enforced bool `json:"enforced,omitempty"`
+	Enforced *bool `json:"enforced,omitempty"`
 	// NodeAddressType is used to configure the address type from node, used for load balancing.
 	// Optional: Defaults to ExternalIP.
 	// +kubebuilder:validation:Enum=InternalIP;ExternalIP

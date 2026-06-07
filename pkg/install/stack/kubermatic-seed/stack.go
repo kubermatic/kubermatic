@@ -27,12 +27,14 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -71,8 +73,16 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 
 	if opt.SeparateSeed {
 		if opt.MigrateToGatewayAPI {
-			if err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-				return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+			seedGateway, externalGateway := seedHTTPRouteGateway(opt)
+			if externalGateway {
+				if err := common.EnsureGatewayAPICRDs(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+					return fmt.Errorf("failed to ensure Gateway API CRDs: %w", err)
+				}
+				opt.Logger.WithField("gateway", seedGateway.String()).Info("⭕ Skipping envoy-gateway-controller deployment because seed HTTPRoute Helm values explicitly mark the Gateway as external.")
+			} else {
+				if err := common.DeployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+					return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+				}
 			}
 		} else {
 			if err := common.DeployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -163,6 +173,43 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+// seedHTTPRouteGateway resolves the seed-scoped HTTPRoute Gateway reference.
+// The second return value is true only when Helm values explicitly mark the seed Gateway as
+// external/BYO; the Gateway name alone is not sufficient because bundled Envoy Gateway also
+// uses user-created, unowned Gateway objects.
+func seedHTTPRouteGateway(opt stack.DeployOptions) (types.NamespacedName, bool) {
+	gateway := types.NamespacedName{
+		Name:      defaulting.DefaultGatewayName,
+		Namespace: kubermaticmaster.KubermaticOperatorNamespace,
+	}
+
+	if !seedHTTPRouteGatewayAPIMigrationEnabled(opt.HelmValues) {
+		return gateway, false
+	}
+
+	gatewayName, _ := opt.HelmValues.GetString(yamled.Path{"httpRoute", "gatewayName"})
+	if gatewayName != "" {
+		gateway.Name = gatewayName
+	}
+
+	gatewayNamespace, _ := opt.HelmValues.GetString(yamled.Path{"httpRoute", "gatewayNamespace"})
+	if gatewayNamespace != "" {
+		gateway.Namespace = gatewayNamespace
+	}
+
+	externalGateway, _ := opt.HelmValues.GetBool(yamled.Path{"httpRoute", "externalGateway"})
+	return gateway, externalGateway
+}
+
+func seedHTTPRouteGatewayAPIMigrationEnabled(helmValues *yamled.Document) bool {
+	if helmValues == nil {
+		return false
+	}
+
+	migrateGatewayAPI, _ := helmValues.GetBool(yamled.Path{"migrateGatewayAPI"})
+	return migrateGatewayAPI
 }
 
 func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {

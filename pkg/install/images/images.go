@@ -472,7 +472,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false, 0)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
-	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, kubernetescontroller.Features{}, kubermaticVersions)
+	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, kubermaticVersions)
 	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.APIDeploymentReconciler(config, "", kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.MasterControllerManagerDeploymentReconciler(config, "", kubermaticVersions, nil))
@@ -498,7 +498,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(
 			templateData.Cluster().Spec.Version, templateData.Cluster(),
 			"dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime,
-			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil,
+			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil, false,
 		))
 	}
 

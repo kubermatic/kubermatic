@@ -150,6 +150,26 @@ type KubermaticAuthConfiguration struct {
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
 }
 
+// PodSchedulingConfigurations controls pod scheduling configurations.
+type PodSchedulingConfigurations struct {
+	// NodeSelector restricts the set of nodes the component pods can run on.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity describes pod scheduling affinity rules for the component.
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allow the component pods to schedule onto nodes with matching taints.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// TopologySpreadConstraints describes how the component pods should be spread
+	// across topology domains (e.g. zones, nodes).
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// PriorityClassName indicates the component pods' priority class.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+}
+
 // KubermaticAPIConfiguration configures the dashboard.
 type KubermaticAPIConfiguration struct {
 	// DockerRepository is the repository containing the Kubermatic REST API image.
@@ -176,6 +196,9 @@ type KubermaticAPIConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the API deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -203,6 +226,9 @@ type KubermaticUIConfiguration struct {
 	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 	// ExtraVolumes allows to mount additional volumes into the UI container.
 	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
@@ -238,6 +264,9 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
 	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
 	BackupCount *int `json:"backupCount,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.
@@ -253,6 +282,9 @@ type KubermaticWebhookConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the webhook.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -480,8 +512,17 @@ type KubermaticIngressConfiguration struct {
 
 // KubermaticGatewayConfiguration configures the Gateway API integration.
 type KubermaticGatewayConfiguration struct {
+	// ExternalGateway references a user-managed Gateway. When configured,
+	// kubermatic-operator does not create the default Gateway and only points
+	// managed HTTPRoutes at this Gateway. The reference must not resolve to an
+	// operator-managed Gateway. A Gateway with a KubermaticConfiguration controller
+	// ownerReference is considered operator-managed; remove stale ownerReferences
+	// before reusing a former managed Gateway as external. ClassName,
+	// InfrastructureAnnotations, TLS, and spec.ingress.certificateIssuer must
+	// not be set when this field is set.
+	ExternalGateway *KubermaticExternalGatewayReference `json:"externalGateway,omitempty"`
+
 	// ClassName is the GatewayClass to use.
-	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
 
 	// InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
@@ -491,6 +532,37 @@ type KubermaticGatewayConfiguration struct {
 
 	// TLS configures TLS for the operator-managed default Gateway.
 	TLS *KubermaticGatewayTLSConfiguration `json:"tls,omitempty"`
+}
+
+// UsesExternalGateway returns true when Gateway API resources should attach to
+// a user-managed Gateway instead of the operator-managed default Gateway.
+// Invalid partial references such as externalGateway without a name are rejected
+// by KubermaticConfiguration validation before this predicate is used.
+func (c *KubermaticGatewayConfiguration) UsesExternalGateway() bool {
+	return c != nil && c.ExternalGateway != nil && c.ExternalGateway.Name != ""
+}
+
+// ExternalGatewayNamespace returns the referenced external Gateway namespace,
+// defaulting to the KKP namespace when no namespace is configured.
+func (c *KubermaticGatewayConfiguration) ExternalGatewayNamespace(defaultNamespace string) string {
+	if c == nil || c.ExternalGateway == nil || c.ExternalGateway.Namespace == "" {
+		return defaultNamespace
+	}
+
+	return c.ExternalGateway.Namespace
+}
+
+// KubermaticExternalGatewayReference references a user-managed Gateway.
+type KubermaticExternalGatewayReference struct {
+	// Name is the name of the Gateway.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	Name string `json:"name"`
+	// Namespace is the namespace of the Gateway. If unset, the KKP namespace is used.
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern:=`^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // KubermaticGatewayTLSConfiguration configures TLS for the operator-managed default Gateway.
@@ -526,6 +598,9 @@ type KubermaticMasterControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the master-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Pod scheduling configuration for this component.
+	// +optional
+	PodSchedulingConfigurations `json:",inline"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.
@@ -668,66 +743,83 @@ type ApplicationDefinitionsConfiguration struct {
 }
 
 // ApplicationCatalogLimit defines filtering criteria for ApplicationDefinitions.
+//
 // Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
 type ApplicationCatalogLimit struct {
 	// MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	MetadataSelector ApplicationDefinitionMetadataSelector `json:"metadataSelector,omitempty"`
 	// NameSelector defines criteria for selecting ApplicationDefinitions by name.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	NameSelector []string `json:"nameSelector,omitempty"`
 }
 
 // RegistrySettings configures the OCI registry from which ApplicationDefinitions are retrieved.
+//
 // Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
 type RegistrySettings struct {
 	// RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	RegistryURL string `json:"registryURL,omitempty"`
 	// Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Tag string `json:"tag,omitempty"`
 	// Credentials optionally references a secret containing Helm registry authentication credentials.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
 
 // RegistryCredentials holds authentication credentials for Helm registry.
+//
 // Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
 type RegistryCredentials struct {
 	// Username references the secret containing the registry username credential.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 	// Password references the secret containing the registry password credential.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 	// RegistryConfigFile references the secret containing the Docker registry configuration file.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }
 
 // ApplicationDefinitionMetadataSelector defines metadata-based selection criteria for ApplicationDefinitions.
+//
 // Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
 type ApplicationDefinitionMetadataSelector struct {
 	// Tiers specifies the support tiers to filter ApplicationDefinitions.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Tiers []string `json:"tiers,omitempty"`
 }
 
 type CatalogManagerConfiguration struct {
 	// LogLevel specifies the logging verbosity level for the application-catalog manager.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	LogLevel string `json:"logLevel,omitempty"`
 
 	// RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
 
 	// Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+	//
 	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
 	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
 
 	// Resources describes the requested and maximum allowed CPU/memory usage.
+	//
 	// Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 

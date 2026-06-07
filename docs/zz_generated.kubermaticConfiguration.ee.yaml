@@ -12,6 +12,8 @@ spec:
       - kube-state-metrics
       - multus
       - metallb
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
@@ -20,9 +22,13 @@ spec:
     # If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
     # With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
     dockerTagSuffix: ""
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the API deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -47,6 +53,11 @@ spec:
       requests:
         cpu: 200m
         memory: 150Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # Applications contains configuration for Application settings.
   applications:
     # CatalogManager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
@@ -71,18 +82,23 @@ spec:
         # Tag is used to override the application-catalog manager image tag.
         tag: 4aa5a55d02734ff672a9f018d55430a55e90ef1a
       # Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
       limit:
         # MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+
         # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
         metadataSelector:
           # Tiers specifies the support tiers to filter ApplicationDefinitions.
+
           # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
           tiers: null
         # NameSelector defines criteria for selecting ApplicationDefinitions by name.
+
         # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
         nameSelector: null
       # LogLevel specifies the logging verbosity level for the application-catalog manager.
+
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
       logLevel: ""
       # ManagerSettings configures the application-catalog manager deployment settings.
@@ -112,18 +128,23 @@ spec:
       # Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
       reconciliationInterval: 0s
       # RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
       registrySettings:
         # Credentials optionally references a secret containing Helm registry authentication credentials.
+
         # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
         credentials: null
         # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+
         # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
         registryURL: ""
         # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+
         # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
         tag: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
+
       # Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
@@ -188,7 +209,7 @@ spec:
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
-    clientID: kubermatic
+    clientID: kubermaticIssuer
     issuerClientID: kubermaticIssuer
     issuerClientSecret: ""
     issuerCookieKey: ""
@@ -251,6 +272,15 @@ spec:
     gateway:
       # ClassName is the GatewayClass to use.
       className: kubermatic-envoy-gateway
+      # ExternalGateway references a user-managed Gateway. When configured,
+      # kubermatic-operator does not create the default Gateway and only points
+      # managed HTTPRoutes at this Gateway. The reference must not resolve to an
+      # operator-managed Gateway. A Gateway with a KubermaticConfiguration controller
+      # ownerReference is considered operator-managed; remove stale ownerReferences
+      # before reusing a former managed Gateway as external. ClassName,
+      # InfrastructureAnnotations, TLS, and spec.ingress.certificateIssuer must
+      # not be set when this field is set.
+      externalGateway: null
       # InfrastructureAnnotations configures Gateway.spec.infrastructure.annotations on the
       # operator-managed Gateway so the Gateway implementation can propagate them to the
       # generated infrastructure resources.
@@ -261,13 +291,19 @@ spec:
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.
   masterController:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
     dockerRepository: quay.io/kubermatic/kubermatic-ee
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # ProjectsMigrator configures the migrator for user projects.
     projectsMigrator:
       # DryRun makes the migrator only log the actions it would take.
@@ -296,6 +332,11 @@ spec:
       requests:
         cpu: 200m
         memory: 128Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer mirror-images` command.
   # Each entry should be in the format "repository:tag".
   mirrorImages: null
@@ -318,6 +359,8 @@ spec:
     noProxy: ""
   # SeedController configures the seed-controller-manager.
   seedController:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # Deprecated: BackupCleanupContainer is the container used for removing expired backups from the storage location.
     # This field is a no-op and is no longer used. The old backup controller it was used for has been
     # removed. Do not set this field.
@@ -396,9 +439,13 @@ spec:
     # MaximumParallelReconciles limits the number of cluster reconciliations
     # that are active at any given time.
     maximumParallelReconciles: 10
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the seed-controller-manager.
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -423,8 +470,15 @@ spec:
       requests:
         cpu: 200m
         memory: 100Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # UI configures the dashboard.
   ui:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # Config sets flags for various dashboard features.
     config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
@@ -437,6 +491,10 @@ spec:
     extraVolumeMounts: null
     # ExtraVolumes allows to mount additional volumes into the UI container.
     extraVolumes: null
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -461,6 +519,11 @@ spec:
       requests:
         cpu: 100m
         memory: 64Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
   # UserCluster configures various aspects of the user-created clusters.
   userCluster:
     # Addons controls the optional additions installed into each user cluster.
@@ -655,7 +718,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.34.7
+    default: v1.34.8
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -706,8 +769,6 @@ spec:
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.32.*
-      - from: 1.32.*
         to: 1.33.*
       - from: 1.33.*
         to: 1.33.*
@@ -721,15 +782,6 @@ spec:
         to: 1.35.*
     # Versions lists the available versions.
     versions:
-      - v1.32.1
-      - v1.32.3
-      - v1.32.4
-      - v1.32.6
-      - v1.32.7
-      - v1.32.9
-      - v1.32.10
-      - v1.32.12
-      - v1.32.13
       - v1.33.0
       - v1.33.2
       - v1.33.3
@@ -740,6 +792,7 @@ spec:
       - v1.33.9
       - v1.33.10
       - v1.33.11
+      - v1.33.12
       - v1.34.1
       - v1.34.2
       - v1.34.3
@@ -747,11 +800,13 @@ spec:
       - v1.34.5
       - v1.34.6
       - v1.34.7
+      - v1.34.8
       - v1.35.0
       - v1.35.1
       - v1.35.2
       - v1.35.3
       - v1.35.4
+      - v1.35.5
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
@@ -831,13 +886,19 @@ spec:
           memory: 128Mi
   # Webhook configures the webhook.
   webhook:
+    # Affinity describes pod scheduling affinity rules for the component.
+    affinity: null
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic webhook image.
     dockerRepository: quay.io/kubermatic/kubermatic-ee
+    # NodeSelector restricts the set of nodes the component pods can run on.
+    nodeSelector: null
     # PProfEndpoint controls the port the webhook should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # PriorityClassName indicates the component pods' priority class.
+    priorityClassName: ""
     # Replicas sets the number of pod replicas for the webhook.
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -862,6 +923,11 @@ spec:
       requests:
         cpu: 50m
         memory: 64Mi
+    # Tolerations allow the component pods to schedule onto nodes with matching taints.
+    tolerations: null
+    # TopologySpreadConstraints describes how the component pods should be spread
+    # across topology domains (e.g. zones, nodes).
+    topologySpreadConstraints: null
 status:
   # KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
   kubermaticEdition: ""

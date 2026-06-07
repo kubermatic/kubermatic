@@ -509,6 +509,15 @@ set_crds_version_annotation() {
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
 }
 
+# create_crds_for_fresh_cluster installs CRDs without client-side apply's
+# kubectl.kubernetes.io/last-applied-configuration annotation, which can exceed
+# Kubernetes' annotation size limit for large generated CRDs.
+create_crds_for_fresh_cluster() {
+  local directory="$1"
+
+  kubectl create --save-config=false --filename "$directory"
+}
+
 # go_test wraps running `go test` commands. The first argument needs to be file name
 # for a junit result file that will be generated if go-junit-report is present and
 # $ARTIFACTS is set. The remaining arguments are passed to `go test`.

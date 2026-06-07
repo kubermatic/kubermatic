@@ -109,6 +109,8 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, cfg.Spec.UI.ExtraVolumes...)
 			}
 
+			common.ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.UI.PodSchedulingConfigurations)
+
 			return d, nil
 		}
 	}

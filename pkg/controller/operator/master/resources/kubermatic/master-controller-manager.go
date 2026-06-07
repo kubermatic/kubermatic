@@ -103,6 +103,8 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				},
 			}
 
+			common.ApplyPodScheduling(&d.Spec.Template.Spec, cfg.Spec.MasterController.PodSchedulingConfigurations)
+
 			return d, nil
 		}
 	}

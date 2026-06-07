@@ -130,7 +130,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
-	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
+	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x or 4.x binary to use for rendering charts")
 
 	return cmd
 }
@@ -400,24 +400,9 @@ func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermat
 		return imageSet, nil
 	}
 
-	// error out early if there is no useful Helm binary
 	helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Helm client: %w", err)
-	}
-
-	helmVersion, err := helmClient.Version()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check Helm version: %w", err)
-	}
-
-	if helmVersion.LessThan(MinHelmVersion) {
-		return nil, fmt.Errorf(
-			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-			MinHelmVersion,
-			options.HelmBinary,
-			helmVersion,
-		)
 	}
 
 	chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)

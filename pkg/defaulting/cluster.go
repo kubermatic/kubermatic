@@ -145,7 +145,7 @@ func DefaultClusterSpec(
 	}
 
 	// Enable KubeLB if it is enforced by the datacenter.
-	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
+	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced != nil && *datacenter.Spec.KubeLB.Enforced {
 		if spec.KubeLB == nil {
 			spec.KubeLB = &kubermaticv1.KubeLB{
 				Enabled:              true,

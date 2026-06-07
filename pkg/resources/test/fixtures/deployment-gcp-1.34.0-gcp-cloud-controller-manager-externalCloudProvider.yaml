@@ -45,7 +45,7 @@ spec:
           value: /etc/kubermatic/certs/ca-bundle.pem
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/kubermatic/cloud-credentials/serviceAccount.json
-        image: registry.k8s.io/cloud-provider-gcp/cloud-controller-manager:v35.0.0
+        image: registry.k8s.io/cloud-provider-gcp/cloud-controller-manager:v35.0.8
         livenessProbe:
           failureThreshold: 3
           httpGet:

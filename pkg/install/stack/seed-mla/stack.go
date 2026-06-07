@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	stackcommon "k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 
@@ -476,6 +477,10 @@ func deployIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, IAPNamespace, IAPReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
+	}
+
+	if !opt.SeparateSeed {
+		stackcommon.DefaultMasterHTTPRouteGatewayValues(opt.KubermaticConfiguration, opt.HelmValues, sublogger)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, IAPNamespace, IAPReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {

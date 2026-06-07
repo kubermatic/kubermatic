@@ -53,7 +53,7 @@ declare -A CHART_URLS=(
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.18.8"
+  ["cilium"]="1.18.10"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -63,7 +63,7 @@ declare -A CHART_VERSIONS=(
   ["flux2"]="2.15.0"
   ["k8sgpt-operator"]="0.2.17"
   ["kube-vip"]="0.6.6"
-  ["metallb"]="0.14.9"
+  ["metallb"]="0.15.3"
   ["ingress-nginx"]="4.14.3"
   ["gpu-operator"]="v25.3.0"
   ["trivy"]="0.14.1"
@@ -72,6 +72,13 @@ declare -A CHART_VERSIONS=(
   ["kueue"]="0.13.4"
   ["mcp-server-kubernetes"]="2.9.9"
   ["velero"]="1.17.1"
+)
+
+# Optional supplemental versions to mirror in addition to the default versions
+# above. Values are comma-separated version lists. This is consumed by the
+# postsubmit wrapper; direct script callers can still pass explicit versions.
+declare -A CHART_ADDITIONAL_VERSIONS=(
+  ["cilium"]="1.17.16"
 )
 
 # Re-enable unset variable checking after array declarations
@@ -122,18 +129,44 @@ resolve_chart_config() {
   CHART_PACKAGE="${CHART_NAME}-${CHART_VERSION}.tgz"
 }
 
-# ─── Authenticate to OCI registry ─────────────────────────────────────────────
-login_registry() {
-  echo "🌐 Authenticating to registry..."
-
+# ─── Authenticate with Vault ──────────────────────────────────────────────────
+login_vault() {
   if [ -z "${VAULT_ADDR:-}" ]; then
     export VAULT_ADDR=https://vault.kubermatic.com/
   fi
 
-  REGISTRY_USER="${REGISTRY_USER:-$(vault kv get -field=username dev/kubermatic-mirror-quay.io)}"
-  REGISTRY_PASSWORD="${REGISTRY_PASSWORD:-$(vault kv get -field=password dev/kubermatic-mirror-quay.io)}"
+  if [ -n "${VAULT_TOKEN:-}" ] || vault token lookup &> /dev/null; then
+    return 0 # already logged in
+  fi
 
-  echo "${REGISTRY_PASSWORD}" | helm registry login "${REGISTRY_HOST}" --username "${REGISTRY_USER}" --password-stdin
+  if [ -z "${VAULT_ROLE_ID:-}" ] || [ -z "${VAULT_SECRET_ID:-}" ]; then
+    # Interactive user login outside the CI pipeline
+    echo "🌐 Logging into Vault interactively using OIDC"
+    vault login --method=oidc --path="${VAULT_OIDC_AUTH_PATH:-loodse}"
+    return 0
+  fi
+
+  # CI pipeline specific login (non-interactive)
+  echo "🌐 Logging into Vault using prow CI credentials"
+  local token
+  token=$(vault write --format=json auth/approle/login "role_id=$VAULT_ROLE_ID" "secret_id=$VAULT_SECRET_ID" | jq -r '.auth.client_token')
+
+  export VAULT_TOKEN="$token"
+}
+
+# ─── Authenticate to OCI registry ─────────────────────────────────────────────
+login_registry() {
+  if [ -z "${QUAY_IO_USERNAME:-}" ] || [ -z "${QUAY_IO_PASSWORD:-}" ]; then
+    # Use read-only registry credentials from Vault in case the script is run locally for testing purposes.
+    # Registry write access is only granted to the prow job which gets the QUAY_IO_* env vars injected by the preset.
+    echo "WARNING: Using read-only $REGISTRY_HOST registry credentials from Vault - for local testing purposes only!"
+    login_vault
+    : "${QUAY_IO_USERNAME:=$(vault kv get -field=username dev/kubermatic-mirror-quay.io)}"
+    : "${QUAY_IO_PASSWORD:=$(vault kv get -field=password dev/kubermatic-mirror-quay.io)}"
+  fi
+
+  echo "🌐 Authenticating to registry..."
+  echo "${QUAY_IO_PASSWORD}" | helm registry login "${REGISTRY_HOST}" --username "${QUAY_IO_USERNAME}" --password-stdin
 }
 
 # ─── Logout from the OCI registry ─────────────────────────────────────────────
@@ -193,4 +226,10 @@ main() {
 
 }
 
-main "$@"
+# only run main when this script is executed directly. when sourced
+# (e.g. by hack/ci/mirror-new-application-charts.sh to read CHART_URLS
+# and CHART_VERSIONS), skip main so the caller can inspect the arrays
+# without triggering registry login or mirroring.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
