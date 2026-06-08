@@ -144,7 +144,7 @@ docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c "crictl images | grep kub
 
 helm repo add cilium https://helm.cilium.io/
 helm install cilium cilium/cilium \
-  --version 1.14.4 \
+  --version 1.18.10 \
   --namespace kube-system \
   --set image.pullPolicy=IfNotPresent \
   --set ipam.mode=kubernetes \
