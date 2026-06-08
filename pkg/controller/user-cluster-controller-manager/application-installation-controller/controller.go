@@ -314,6 +314,8 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 
 	// Install or upgrade application only if max number of retries is not exceeded.
 	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
+		r.updateApplicationMetrics(appInstallation, appDefinition)
+
 		return r.stopAfterMaxRetries(ctx, log, appInstallation)
 	}
 
@@ -355,7 +357,37 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 
+	r.updateApplicationMetrics(appInstallation, appDefinition)
+
 	return installErr
+}
+
+// updateApplicationMetrics updates the Prometheus metrics for an ApplicationInstallation.
+func (r *reconciler) updateApplicationMetrics(appInstallation *appskubermaticv1.ApplicationInstallation, appDefinition *appskubermaticv1.ApplicationDefinition) {
+	readyCondition, exists := appInstallation.Status.Conditions[appskubermaticv1.Ready]
+
+	// Determine ready status: 1=ready, 0=not ready, -1=unknown
+	readyStatus := -1
+	if exists {
+		switch readyCondition.Status {
+		case corev1.ConditionTrue:
+			readyStatus = 1
+		case corev1.ConditionFalse:
+			readyStatus = 0
+		}
+	}
+
+	// Determine if the application is stuck (failures > maxRetries and has limited retries)
+	isStuck := appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation)
+
+	updateApplicationMetrics(
+		appInstallation.Namespace,
+		appInstallation.Name,
+		appInstallation.Spec.ApplicationRef.Name,
+		appInstallation.Status.Failures,
+		isStuck,
+		readyStatus,
+	)
 }
 
 func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) bool {
@@ -451,6 +483,10 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return fmt.Errorf("failed to remove application installation finalizer %s: %w", appInstallation.Name, err)
 		}
 	}
+
+	// Clean up Prometheus metrics when the application is uninstalled
+	deleteApplicationMetrics(appInstallation.Namespace, appInstallation.Name, appInstallation.Spec.ApplicationRef.Name)
+
 	return nil
 }
 
