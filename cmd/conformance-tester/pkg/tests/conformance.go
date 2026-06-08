@@ -226,12 +226,6 @@ func getGinkgoRuns(
 		"Services should have session affinity work for NodePort service",
 	}
 
-	// Cilium does not support Kubernetes 1.29 conformance tests yet,
-	// see https://github.com/cilium/cilium/issues/29913
-	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		ginkgoSkipParallel = append(ginkgoSkipParallel, "Services should serve endpoints on same port and different protocols")
-	}
-
 	runs := []struct {
 		name          string
 		ginkgoFocus   string
