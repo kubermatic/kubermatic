@@ -29,7 +29,7 @@ import (
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.31",
-		kubermaticv1.CNIPluginTypeCilium: "1.18.6",
+		kubermaticv1.CNIPluginTypeCilium: "1.18.10",
 	}
 )
 
@@ -51,8 +51,10 @@ var (
 			"1.16.9",
 			"1.17.7",
 			"1.17.12",
+			"1.17.16",
 			"1.18.2",
 			"1.18.6",
+			"1.18.10",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
