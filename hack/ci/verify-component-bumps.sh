@@ -21,31 +21,32 @@
 ### e2e suite finishes. It is intentional to bump a single component (the two projects
 ### release independently); in that case add the "release/single-component-bump" label
 ### and comment /retest to re-run this check, which then passes.
-###
-### Runs on PRs targeting main and release branches alike.
 
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 source hack/lib.sh
 
-TARGET_BRANCH="${PULL_BASE_REF:-}"
 SKIP_LABEL="release/single-component-bump"
 
 OSM_FILE="pkg/resources/operatingsystemmanager/deployment.go"
 MC_FILE="pkg/resources/machinecontroller/deployment.go"
 
-if [ -z "$TARGET_BRANCH" ]; then
-  echo "This check can only work in CI when \$PULL_BASE_REF is set."
+# Prow checks out the PR as a detached merge and does not leave an "origin/$branch"
+# ref behind, so diffing against that name silently produces nothing. Use the base
+# SHA Prow injects instead, falling back to the merge-base of FETCH_HEAD.
+BASE_REF="${PULL_BASE_SHA:-}"
+if [ -z "$BASE_REF" ]; then
+  BASE_REF="$(git merge-base HEAD FETCH_HEAD 2> /dev/null || true)"
+fi
+if [ -z "$BASE_REF" ]; then
+  echo "Could not determine the base revision (\$PULL_BASE_SHA empty and no FETCH_HEAD)."
   exit 1
 fi
 
-if ! [[ "$TARGET_BRANCH" =~ ^(main|release/) ]]; then
-  echo "This PR targets neither main nor a release branch, skipping component-bump check."
-  exit 0
-fi
+echo "Diffing against base ${BASE_REF}"
 
-# did the Tag const change vs the base branch? compare only the "Tag =" line so an
+# did the Tag const change vs the base? compare only the "Tag =" line so an
 # unrelated edit elsewhere in the file does not count as a component bump.
 tag_line() {
   grep -nE '^[[:space:]]*Tag[[:space:]]*=' "$1" || true
@@ -53,10 +54,14 @@ tag_line() {
 
 tag_changed() {
   local file="$1"
-  # diff the file against the merge-base; grep the hunk for a changed Tag line.
-  git diff "origin/${TARGET_BRANCH}...HEAD" -- "$file" 2> /dev/null |
-    grep -E '^[+-][[:space:]]*Tag[[:space:]]*=' |
-    grep -qvE '^[+-][+-]' # drop the +++/--- file headers
+  # diff the file against the base SHA and count changed "Tag =" lines. The +++/---
+  # file headers also start with +/- so they are excluded by requiring whitespace or
+  # a tab before "Tag". A non-zero count means the Tag const moved.
+  # no 2>/dev/null here: a broken diff must fail loudly, not read as "no bump".
+  local changed
+  changed="$(git diff "${BASE_REF}" HEAD -- "$file" |
+    grep -cE '^[+-][[:space:]]+Tag[[:space:]]*=' || true)"
+  [ "$changed" -gt 0 ]
 }
 
 osm_changed=false
@@ -64,7 +69,7 @@ mc_changed=false
 tag_changed "$OSM_FILE" && osm_changed=true
 tag_changed "$MC_FILE" && mc_changed=true
 
-echo "Component image Tag changes vs ${TARGET_BRANCH}:"
+echo "Component image Tag changes vs ${BASE_REF}:"
 printf "  %-18s : %s (%s)\n" "OSM" "$osm_changed" "$(tag_line "$OSM_FILE")"
 printf "  %-18s : %s (%s)\n" "machine-controller" "$mc_changed" "$(tag_line "$MC_FILE")"
 echo
