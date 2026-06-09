@@ -379,7 +379,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 }
 
 func createUserClusterMonitoringController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
+	if !userClusterMLAEnabled(ctrlCtx) {
 		return nil
 	}
 	return mla.AddUserClusterMonitoring(

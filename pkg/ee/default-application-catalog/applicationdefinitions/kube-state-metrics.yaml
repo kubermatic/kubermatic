@@ -32,7 +32,7 @@ spec:
         helm:
           chartName: kube-state-metrics
           chartVersion: 7.2.0
-          url: https://prometheus-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
   defaultValuesBlock: |
     resources:
       limits:

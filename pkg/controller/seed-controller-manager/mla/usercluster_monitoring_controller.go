@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/sdk/v2/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -126,10 +127,21 @@ func newUserClusterMonitoringReconciler(
 
 	// When a legacy monitoring Addon is deleted, enqueue the owning cluster — but only if
 	// monitoring is actually enabled on that cluster, to avoid spurious reconciles.
-	addonPredicate := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
-		name := o.GetName()
-		return name == nodeExporterAppName || name == kubeStateMetricsAppName
-	})
+	addonPredicate := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return false
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			name := e.Object.GetName()
+			return name == nodeExporterAppName || name == kubeStateMetricsAppName
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
 	enqueueClusterIfMonitoringEnabled := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		cluster, err := kubernetes.ClusterFromNamespace(ctx, mgr.GetClient(), o.GetNamespace())
 		if err != nil || cluster == nil {
@@ -329,9 +341,9 @@ func (r *userClusterMonitoringReconciler) ensureApplicationInstallationsRemoved(
 func monitoringAppInstallationReconciler(appName, namespace, version string, initialValues map[string]any) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		return appName, func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
-			app.Labels = map[string]string{
+			kuberneteshelper.EnsureLabels(app, map[string]string{
 				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
-			}
+			})
 			app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
 				Name:    appName,
 				Version: version,

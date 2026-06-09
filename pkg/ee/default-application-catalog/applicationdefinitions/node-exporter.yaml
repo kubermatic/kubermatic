@@ -26,13 +26,13 @@ spec:
   description: node exporter application
   method: helm
   versions:
-  - version: 4.51.0
+  - version: 1.10.2
     template:
       source:
         helm:
           chartName: prometheus-node-exporter
           chartVersion: 4.51.0
-          url: https://prometheus-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
   defaultValuesBlock: |
     # node-exporter must survive node drain/eviction to keep collecting until the node goes down
     tolerations:
