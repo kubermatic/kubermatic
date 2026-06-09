@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -73,32 +72,15 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 
 	// clean up the namespace on every exit (pass or fail) so a failed attempt does not
 	// leave an orphaned Service of type LoadBalancer behind, which keeps a cloud LB alive
-	// against the provider's per-region quota.
+	// against the provider's per-region quota. use a detached context so deletion still
+	// runs if ctx was cancelled by the failing test.
 	defer func() {
-		to := 10 * time.Minute
-
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), to)
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 
 		err := userClusterClient.Delete(cleanupCtx, ns)
 		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			log.Warnf("Failed to delete LoadBalancer test namespace %q: %v", ns.Name, err)
-			return
-		}
-
-		err = wait.Poll(cleanupCtx, 3*time.Second, to, func(ctx context.Context) (transient error, terminal error) {
-			if err := userClusterClient.Get(ctx, types.NamespacedName{Name: ns.Name}, &corev1.Namespace{}); err != nil {
-				if apierrors.IsNotFound(err) {
-					return nil, nil
-				}
-
-				return fmt.Errorf("failed to get namespace: %w", err), nil
-			}
-
-			return errors.New("namespace is still terminating"), nil
-		})
-		if err != nil {
-			log.Warnf("Failed to wait for LoadBalancer test namespace %q to be deleted: %v", ns.Name, err)
 		}
 	}()
 
