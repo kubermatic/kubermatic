@@ -52,12 +52,13 @@ job to (mostly) ensure that the changes will work.
 ## lint-mirror-application-charts.sh
 
 Lints hack/mirror-application-charts.sh by sourcing it and asserting
-CHART_URLS and CHART_VERSIONS have identical key sets.
+CHART_URLS and CHART_VERSIONS have identical key sets. Also verifies that
+optional CHART_ADDITIONAL_VERSIONS entries reference known charts.
 
 Catches the most common contributor mistake: adding a chart to one
-array but forgetting the other. Also serves as a smoke test that
-mirror-application-charts.sh remains sourceable (which the post-submit
-detection wrapper relies on).
+array but forgetting the other, or adding additional versions for an unknown
+chart. Also serves as a smoke test that mirror-application-charts.sh remains
+sourceable (which the post-submit detection wrapper relies on).
 
 ## mirror-new-application-charts.sh
 
@@ -67,15 +68,17 @@ and mirrors them to the OCI registry.
 Runs as a Prow post-submit job when mirror-application-charts.sh changes.
 Detects two types of changes:
   1. New chart entries added to CHART_URLS / CHART_VERSIONS
-  2. Version bumps in CHART_VERSIONS for existing charts
-Then calls mirror-application-charts.sh for each affected chart.
+  2. Version bumps or additions in CHART_VERSIONS / CHART_ADDITIONAL_VERSIONS
+     for existing charts
+Then calls mirror-application-charts.sh for each affected chart/version pair.
 
-Detection works by sourcing the current and previous (HEAD~1) versions of
+Detection works by sourcing the current and previous versions of
 mirror-application-charts.sh in a subshell. This relies only on the file
-being valid bash with the two associative arrays - no formatting assumptions.
+being valid bash with the expected associative arrays - no formatting assumptions.
 
 Environment variables:
 * `DRY_RUN=true` - skip actual mirroring, only print charts that would be mirrored
+* `MAX_HISTORY` - how many commits back to look for a valid previous version of the script (default: 5)
 
 ## release-images.sh
 
@@ -181,6 +184,10 @@ Operator. The presubmit job for this script is currently not used.
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the OPA e2e tests.
 
+## run-user-ssh-key-agent-e2e-tests.sh
+
+TBD
+
 ## run-user-ssh-key-agent-tests.sh
 
 This script tests whether we can successfully build the multiarch
@@ -257,6 +264,18 @@ files, like CRD examples and the Prometheus runbook.
 Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
+
+## verify-component-bumps.sh
+
+KKP releases bump the OSM and machine-controller images together in one PR so
+the conformance suite runs once for both instead of twice (and to avoid a Tide
+base-move retest of the second PR on release branches). This check fails if a PR
+moves only one of the two image Tags, to give fast feedback before the expensive
+e2e suite finishes. It is intentional to bump a single component (the two projects
+release independently); in that case add the "release/single-component-bump" label
+and comment /retest to re-run this check, which then passes.
+
+Runs on PRs targeting main and release branches alike.
 
 ## verify-go-version.sh
 

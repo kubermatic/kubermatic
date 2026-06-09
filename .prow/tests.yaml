@@ -82,6 +82,21 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
 
+  - name: pre-kubermatic-verify-component-bumps
+    run_if_changed: "pkg/resources/(operatingsystemmanager|machinecontroller)/deployment.go"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    path_alias: k8c.io/kubermatic
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-8
+          command:
+            - ./hack/ci/verify-component-bumps.sh
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 0.2
+
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true

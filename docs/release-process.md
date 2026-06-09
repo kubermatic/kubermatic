@@ -16,6 +16,25 @@ to creating a new release. All these tests must be executed with every supported
 
 This section covers the process to create a new Kubermatic release. Reflects the procedure as of 2020-09-16.
 
+### Patch release
+
+For a patch release on an existing `release/vX.Y` branch:
+
+1. Bump the OSM and machine-controller images in a **single PR**, not two.
+    - Update both image `Tag` values: `pkg/resources/operatingsystemmanager/deployment.go`
+      and `pkg/resources/machinecontroller/deployment.go`, plus the matching `go.mod`
+      lines and the re-vendored tree.
+    - One PR runs the conformance suite once for both components. Two separate PRs run
+      it twice and, on a release branch, force a Tide base-move retest of the second PR
+      after the first merges, costing an extra full conformance run.
+    - The `pre-kubermatic-verify-component-bumps` presubmit enforces this: a PR that
+      bumps only one of the two image Tags fails the check.
+    - If you genuinely need to bump only one component (OSM and machine-controller
+      release independently), add the `release/single-component-bump` label and comment
+      `/retest` to re-run the check, which then passes.
+1. Add the changelog in a separate cheap PR (`docs/changelogs/CHANGELOG-X.Y.md`).
+1. Tag the release (dashboard first, then kubermatic) as in the tagging step below.
+
 ### Major|Minor release
 
 1. Kubernetes lifecycle
