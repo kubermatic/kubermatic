@@ -275,8 +275,6 @@ e2e suite finishes. It is intentional to bump a single component (the two projec
 release independently); in that case add the "release/single-component-bump" label
 and comment /retest to re-run this check, which then passes.
 
-Runs on PRs targeting main and release branches alike.
-
 ## verify-go-version.sh
 
 This that when we're in a PR targeting a release branch, the minimum
