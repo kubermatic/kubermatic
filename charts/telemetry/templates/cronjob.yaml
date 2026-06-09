@@ -74,7 +74,7 @@ spec:
                 - name: CLIENT_UUID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Release.Name }}-client-uuid
+                      name: {{ .Values.telemetry.existingSecret | default (printf "%s-client-uuid" .Release.Name) }}
                       key: uuid
               volumeMounts:
                 - mountPath: "/records"

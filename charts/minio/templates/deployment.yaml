@@ -62,12 +62,12 @@ spec:
         - name: MINIO_ROOT_USER
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "minio.credentialsSecretName" . }}
               key: accessKey
         - name: MINIO_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "minio.credentialsSecretName" . }}
               key: secretKey
         # disable authentication for /metrics endpoints
         - name: MINIO_PROMETHEUS_AUTH_TYPE
@@ -99,12 +99,12 @@ spec:
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "minio.credentialsSecretName" . }}
               key: accessKey
         - name: MINIO_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "minio.credentialsSecretName" . }}
               key: secretKey
         volumeMounts:
         - mountPath: /backup
