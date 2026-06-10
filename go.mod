@@ -58,7 +58,7 @@ require (
 	github.com/gophercloud/gophercloud v1.14.1
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
 	github.com/jackpal/gateway v1.0.14
-	github.com/kubermatic/grafanasdk v0.9.13
+	github.com/kubermatic/grafanasdk v0.9.14-0.20260610064112-c7c2f01252f1
 	github.com/kyverno/kyverno v1.15.3
 	github.com/minio/minio-go/v7 v7.0.94
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
