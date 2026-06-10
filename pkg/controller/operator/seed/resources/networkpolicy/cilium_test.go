@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSeedApiserverAllowReconciler(t *testing.T) {
@@ -42,7 +42,7 @@ func TestSeedApiserverAllowReconciler(t *testing.T) {
 	scheme.AddKnownTypeWithName(gvk, &unstructured.Unstructured{})
 	scheme.AddKnownTypeWithName(gvk.GroupVersion().WithKind(gvk.Kind+"List"), &unstructured.UnstructuredList{})
 
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+	client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).Build()
 
 	creators := []reconciling.NamedUnstructuredReconcilerFactory{
 		SeedApiserverAllowReconciler(),
@@ -131,7 +131,7 @@ func TestSeedApiserverAllowReconcilerMigratesLegacyPolicy(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(legacy).Build()
+	client := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).WithObjects(legacy).Build()
 
 	creators := []reconciling.NamedUnstructuredReconcilerFactory{
 		SeedApiserverAllowReconciler(),
