@@ -513,21 +513,21 @@ func TestAppCatalogMigration(t *testing.T) {
 
 	namespace := "kubermatic"
 
-	// err = ensureCleanState(ctx, logger, seedClient)
-	// if err != nil {
-	// 	t.Fatalf("Failed to ensure clean state: %v", err)
-	// }
+	err = ensureCleanState(ctx, logger, seedClient)
+	if err != nil {
+		t.Fatalf("Failed to ensure clean state: %v", err)
+	}
 
-	// cfg, err := getKubermaticConfiguration(ctx, seedClient, namespace, getKubermaticConfigurationName())
-	// if err != nil {
-	// 	t.Fatalf("Failed to get KubermaticConfiguration: %v", err)
-	// }
+	cfg, err := getKubermaticConfiguration(ctx, seedClient, namespace, getKubermaticConfigurationName())
+	if err != nil {
+		t.Fatalf("Failed to get KubermaticConfiguration: %v", err)
+	}
 
-	// cfg.Spec.Applications.DefaultApplicationCatalog.Enable = true
-	// err = updateKubermaticConfiguration(ctx, logger, seedClient, cfg)
-	// if err != nil {
-	// 	t.Fatalf("Failed to update KubermaticConfiguration: %v", err)
-	// }
+	cfg.Spec.Applications.DefaultApplicationCatalog.Enable = true
+	err = updateKubermaticConfiguration(ctx, logger, seedClient, cfg)
+	if err != nil {
+		t.Fatalf("Failed to update KubermaticConfiguration: %v", err)
+	}
 
 	var oldApps []appskubermaticv1.ApplicationDefinition
 	err = wait.PollUntilContextTimeout(ctx, DefaultInterval, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
