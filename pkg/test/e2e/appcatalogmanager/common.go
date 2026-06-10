@@ -20,7 +20,6 @@ package appcatalogmanager
 
 import (
 	"context"
-	"crypto/md5"
 	"errors"
 	"flag"
 	"fmt"
@@ -779,77 +778,87 @@ func getApplicationDefinitionNames(apps []appskubermaticv1.ApplicationDefinition
 	return names
 }
 
-// compareApplicationDefinitionSpecs performs a deep comparison of the Spec field
-// between old and new ApplicationDefinitions. Returns a detailed error if Specs differ.
+// compareApplicationDefinitionSpecs verifies that the new-style ApplicationDefinitions
+// (created by application-catalog-manager) are a backward compatible superset of the
+// old-style ones (created from the embedded YAML files):
+//
+//   - every old application must exist among the new ones,
+//   - every old version must exist in the new application with an identical template,
+//   - behavior-relevant spec fields (method, default values, default flag, selector, ...)
+//     must match exactly.
+//
+// The manager is allowed to bring additional applications and versions, and cosmetic
+// metadata (display name, description, URLs, logo) may differ.
 func compareApplicationDefinitionSpecs(oldApps, newApps []appskubermaticv1.ApplicationDefinition) error {
-	sort.Slice(oldApps, func(i, j int) bool {
-		return oldApps[i].Name < oldApps[j].Name
-	})
-	sort.Slice(newApps, func(i, j int) bool {
-		return newApps[i].Name < newApps[j].Name
-	})
-
-	oldAppsMap := make(map[string]appskubermaticv1.ApplicationDefinition)
-	for _, app := range oldApps {
-		oldAppsMap[app.Name] = app
-	}
-
-	newAppsMap := make(map[string]appskubermaticv1.ApplicationDefinition)
+	newAppsMap := make(map[string]appskubermaticv1.ApplicationDefinition, len(newApps))
 	for _, app := range newApps {
 		newAppsMap[app.Name] = app
 	}
 
-	hashLogo := cmp.FilterPath(func(p cmp.Path) bool {
-		return p.Last().String() == ".Logo"
-	}, cmp.Transformer("HashLogo", func(s string) string {
-		if s == "" {
-			return "(empty)"
-		}
-		return fmt.Sprintf("MD5:%x (len=%d)", md5.Sum([]byte(s)), len(s))
-	}))
-	optTreatNilAsFalse := cmp.Comparer(func(x, y *bool) bool {
-		vx := x != nil && *x
-		vy := y != nil && *y
-		return vx == vy
-	})
-	opts := []cmp.Option{
-		cmpopts.EquateEmpty(),
-		hashLogo,
-		optTreatNilAsFalse,
-	}
-
-	for name, oldApp := range oldAppsMap {
-		newApp, exists := newAppsMap[name]
+	errs := []error{}
+	for _, oldApp := range oldApps {
+		newApp, exists := newAppsMap[oldApp.Name]
 		if !exists {
+			errs = append(errs, fmt.Errorf("application %q is missing from the new-style applications", oldApp.Name))
 			continue
 		}
 
-		oldSpec := normalizeSpec(oldApp.Spec)
-		newSpec := normalizeSpec(newApp.Spec)
-
-		if diff := cmp.Diff(oldSpec, newSpec, opts...); diff != "" {
-			fmt.Printf("===> [%s]:\n%s\n\n", name, diff)
-			return fmt.Errorf("spec mismatch for ApplicationDefinition %q:\n%s", name, diff)
+		if err := verifySpecCompatibility(oldApp.Spec, newApp.Spec); err != nil {
+			errs = append(errs, fmt.Errorf("application %q is not backward compatible: %w", oldApp.Name, err))
 		}
 	}
 
-	return nil
+	return kerrors.NewAggregate(errs)
 }
 
-// normalizeSpec creates a normalized copy of ApplicationDefinitionSpec
-// with all nested slices sorted for consistent comparison.
-func normalizeSpec(spec appskubermaticv1.ApplicationDefinitionSpec) appskubermaticv1.ApplicationDefinitionSpec {
-	normalized := spec.DeepCopy()
+func verifySpecCompatibility(oldSpec, newSpec appskubermaticv1.ApplicationDefinitionSpec) error {
+	errs := []error{}
 
-	if len(normalized.Versions) > 0 {
-		sort.Slice(normalized.Versions, func(i, j int) bool {
-			return normalized.Versions[i].Version < normalized.Versions[j].Version
-		})
+	newVersions := make(map[string]appskubermaticv1.ApplicationVersion, len(newSpec.Versions))
+	for _, version := range newSpec.Versions {
+		newVersions[version.Version] = version
 	}
 
-	if normalized.Selector.Datacenters != nil {
-		sort.Strings(normalized.Selector.Datacenters)
+	for _, oldVersion := range oldSpec.Versions {
+		newVersion, exists := newVersions[oldVersion.Version]
+		if !exists {
+			errs = append(errs, fmt.Errorf("version %q is missing", oldVersion.Version))
+			continue
+		}
+
+		if diff := cmp.Diff(oldVersion, newVersion, cmpopts.EquateEmpty()); diff != "" {
+			errs = append(errs, fmt.Errorf("version %q differs (-old +new):\n%s", oldVersion.Version, diff))
+		}
 	}
 
-	return *normalized
+	oldRest := stripIgnoredSpecFields(oldSpec)
+	newRest := stripIgnoredSpecFields(newSpec)
+	if diff := cmp.Diff(oldRest, newRest, cmpopts.EquateEmpty()); diff != "" {
+		errs = append(errs, fmt.Errorf("behavior-relevant spec fields differ (-old +new):\n%s", diff))
+	}
+
+	return kerrors.NewAggregate(errs)
+}
+
+// stripIgnoredSpecFields clears the cosmetic metadata fields that are allowed to
+// diverge between old and new applications, plus Versions, which are compared
+// separately with superset semantics. Everything left (method, default values,
+// default flag, selector, and any field added to the spec in the future) is
+// compared strictly.
+func stripIgnoredSpecFields(spec appskubermaticv1.ApplicationDefinitionSpec) appskubermaticv1.ApplicationDefinitionSpec {
+	stripped := *spec.DeepCopy()
+
+	stripped.DisplayName = ""
+	stripped.Description = ""
+	stripped.DocumentationURL = ""
+	stripped.SourceURL = ""
+	stripped.Logo = ""
+	stripped.LogoFormat = ""
+	stripped.Versions = nil
+
+	if stripped.Selector.Datacenters != nil {
+		sort.Strings(stripped.Selector.Datacenters)
+	}
+
+	return stripped
 }
