@@ -40,6 +40,7 @@ const (
 	v133 = "1.33"
 	v134 = "1.34"
 	v135 = "1.35"
+	v136 = "1.36"
 )
 
 var (
@@ -156,9 +157,11 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	case v134:
 		fallthrough
 	case v135:
+		return "v0.34.0"
+	case v136:
 		fallthrough
 	default:
-		return "v0.34.0"
+		return "v0.35.0"
 	}
 }
 
