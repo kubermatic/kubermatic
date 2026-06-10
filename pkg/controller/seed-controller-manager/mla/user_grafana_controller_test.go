@@ -91,12 +91,12 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create OAuth user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -128,34 +128,34 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create OAuth user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 
 				{
 					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -199,47 +199,47 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create OAuth user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": true, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -292,66 +292,66 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create OAuth user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": true, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				}, {
 					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/2", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2-project2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/2/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/2/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org 2 by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/2", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2-project2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/2/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/2/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -376,12 +376,12 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "lookup user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/admin/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/admin/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -426,47 +426,47 @@ func TestUserGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create OAuth user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": true, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
