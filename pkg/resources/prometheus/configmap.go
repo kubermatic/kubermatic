@@ -288,9 +288,6 @@ scrape_configs:
     regex: 'etcd_request_duration_.*'
     action: drop
   - source_labels: [__name__]
-    regex: 'etcd_requests_total'
-    action: drop
-  - source_labels: [__name__]
     regex: '(apiserver_request_total|scheduler_plugin_execution_duration_seconds_bucket|etcd_requests_total)'
     action: drop
   - source_labels: [__name__]
@@ -462,9 +459,9 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
   metric_relabel_configs:
-    # Currently we need ONLY up metric and nothing else
+    # Keep only what is needed: up for health checks, and container metrics for metering
     - source_labels: [__name__]
-      regex: 'up'
+      regex: '^(up|container_cpu_usage_seconds_total|container_memory_working_set_bytes)$'
       action: keep
 
 # scrape pods inside the user cluster with a special annotation
@@ -523,18 +520,10 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics
   metric_relabel_configs:
+  # Keep only kubelet_volume_stats_* needed for metering (PVC storage usage)
   - source_labels: [__name__]
-    regex: '(storage_operation|volume_operation|kubelet_runtime_operations)_.*'
-    action: drop
-  - source_labels: [__name__]
-    regex: 'kubernetes_feature_enabled'
-    action: drop
-  - source_labels: [__name__]
-    regex: 'csi_operations_.*'
-    action: drop
-  - source_labels: [__name__]
-    regex: 'kubelet_.*'
-    action: drop
+    regex: 'kubelet_volume_stats_(capacity_bytes|used_bytes)'
+    action: keep
 
 - job_name: resources
   scheme: https
