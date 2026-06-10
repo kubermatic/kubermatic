@@ -41,7 +41,8 @@ func getVPAReconcilerForPodTemplate(name string, pod corev1.PodSpec, controllerR
 		})
 	}
 
-	updateMode := vpav1.UpdateModeAuto
+	// UpdateModeAuto is deprecated in vertical-pod-autoscaler, ref: https://github.com/kubernetes/autoscaler/issues/8424
+	updateMode := vpav1.UpdateModeRecreate
 	if !enabled {
 		updateMode = vpav1.UpdateModeOff
 	}
