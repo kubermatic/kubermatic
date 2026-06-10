@@ -22,6 +22,7 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
+ADD https://dl.k8s.io/v1.36.1/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.36
 ADD https://dl.k8s.io/v1.35.4/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
 ADD https://dl.k8s.io/v1.34.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
 ADD https://dl.k8s.io/v1.33.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.33
