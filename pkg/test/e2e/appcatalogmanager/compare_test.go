@@ -160,6 +160,29 @@ func TestCompareApplicationDefinitionSpecs(t *testing.T) {
 			errContains: "behavior-relevant spec fields differ",
 		},
 		{
+			name: "explicit false bool pointers equal nil pointers",
+			oldApps: []appskubermaticv1.ApplicationDefinition{
+				makeAppDef("aikit", func(app *appskubermaticv1.ApplicationDefinition) {
+					falseVal := false
+					app.Spec.Versions[0].Template.Source.Helm.Insecure = &falseVal
+					app.Spec.Versions[0].Template.Source.Helm.PlainHTTP = &falseVal
+				}),
+			},
+			newApps: []appskubermaticv1.ApplicationDefinition{makeAppDef("aikit")},
+		},
+		{
+			name: "explicit true bool pointer differing from nil is rejected",
+			oldApps: []appskubermaticv1.ApplicationDefinition{
+				makeAppDef("aikit", func(app *appskubermaticv1.ApplicationDefinition) {
+					trueVal := true
+					app.Spec.Versions[0].Template.Source.Helm.Insecure = &trueVal
+				}),
+			},
+			newApps:     []appskubermaticv1.ApplicationDefinition{makeAppDef("aikit")},
+			wantErr:     true,
+			errContains: `version "1.0.0" differs`,
+		},
+		{
 			name: "selector datacenter order is ignored",
 			oldApps: []appskubermaticv1.ApplicationDefinition{
 				makeAppDef("aikit", func(app *appskubermaticv1.ApplicationDefinition) {

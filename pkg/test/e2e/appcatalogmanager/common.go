@@ -814,6 +814,15 @@ func compareApplicationDefinitionSpecs(oldApps, newApps []appskubermaticv1.Appli
 func verifySpecCompatibility(oldSpec, newSpec appskubermaticv1.ApplicationDefinitionSpec) error {
 	errs := []error{}
 
+	// the old-style catalog always sets *bool flags like Helm.Insecure and
+	// Helm.PlainHTTP explicitly from the KubermaticConfiguration, while the
+	// catalog manager leaves them nil, so a nil pointer and a pointer to
+	// false must be considered equal
+	treatNilBoolAsFalse := cmp.Comparer(func(x, y *bool) bool {
+		return (x != nil && *x) == (y != nil && *y)
+	})
+	opts := []cmp.Option{cmpopts.EquateEmpty(), treatNilBoolAsFalse}
+
 	newVersions := make(map[string]appskubermaticv1.ApplicationVersion, len(newSpec.Versions))
 	for _, version := range newSpec.Versions {
 		newVersions[version.Version] = version
@@ -826,14 +835,14 @@ func verifySpecCompatibility(oldSpec, newSpec appskubermaticv1.ApplicationDefini
 			continue
 		}
 
-		if diff := cmp.Diff(oldVersion, newVersion, cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(oldVersion, newVersion, opts...); diff != "" {
 			errs = append(errs, fmt.Errorf("version %q differs (-old +new):\n%s", oldVersion.Version, diff))
 		}
 	}
 
 	oldRest := stripIgnoredSpecFields(oldSpec)
 	newRest := stripIgnoredSpecFields(newSpec)
-	if diff := cmp.Diff(oldRest, newRest, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(oldRest, newRest, opts...); diff != "" {
 		errs = append(errs, fmt.Errorf("behavior-relevant spec fields differ (-old +new):\n%s", diff))
 	}
 
