@@ -78,11 +78,6 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	versions   kubermaticversion.Versions
-	// gatewayAPIEnabled indicates whether Gateway API resources should be created or not
-	// by kubermatic-operator controllers.
-	// It will create Gateway and HTTPRoute resources when enabled for Kubermatic API and Dashboard.
-	// It will be by default true in the future releases as Gateway API becomes the default.
-	gatewayAPIEnabled bool
 	// httprouteWatchNamespaces is a list of namespaces to watch HTTPRoutes for Gateway listener sync.
 	httprouteWatchNamespaces []string
 }
@@ -187,10 +182,6 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	if err := r.reconcileServices(ctx, defaulted, logger); err != nil {
-		return result, err
-	}
-
-	if err := r.reconcileIngresses(ctx, defaulted, logger); err != nil {
 		return result, err
 	}
 
@@ -592,41 +583,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 	return nil
 }
 
-func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	if config.Spec.Ingress.Disable {
-		logger.Debug("Skipping Ingress creation because it was explicitly disabled")
-		return nil
-	}
-
-	if r.gatewayAPIEnabled {
-		logger.Debug("Skipping Ingress creation because Gateway API is enabled via --enable-gateway-api flag")
-		return nil
-	}
-
-	if config.Spec.FeatureGates[features.HeadlessInstallation] {
-		logger.Debug("Headless installation requested, skipping.")
-		return nil
-	}
-
-	logger.Debug("Reconciling Ingresses")
-
-	reconcilers := []reconciling.NamedIngressReconcilerFactory{
-		kubermatic.IngressReconciler(config),
-	}
-
-	if err := reconciling.ReconcileIngresses(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
-	}
-
-	return nil
-}
-
 func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (reconcile.Result, error) {
-	if !r.gatewayAPIEnabled {
-		logger.Debug("Skipping Gateway API resources creation because Gateway API is not enabled via --enable-gateway-api flag")
-		return reconcile.Result{}, nil
-	}
-
 	if config.Spec.FeatureGates[features.HeadlessInstallation] {
 		logger.Debug("Headless installation requested, skipping.")
 		return reconcile.Result{}, nil

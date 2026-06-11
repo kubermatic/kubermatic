@@ -16,6 +16,20 @@ limitations under the License.
 
 package common
 
+// The nginx-ingress-controller deployment logic below is retained (commented out)
+// for reference only. As of KKP 2.31 Gateway API is the enforced default and the
+// nginx-ingress path has been removed; the installer no longer deploys nginx.
+// The chart-name/namespace constants are kept live because they are still
+// referenced (e.g. the apiserver OIDC-issuer egress NetworkPolicy) for
+// backwards-compatibility with clusters that still have nginx-ingress installed.
+
+const (
+	NginxIngressControllerChartName   = "nginx-ingress-controller"
+	NginxIngressControllerReleaseName = NginxIngressControllerChartName
+	NginxIngressControllerNamespace   = NginxIngressControllerChartName
+)
+
+/*
 import (
 	"context"
 	"fmt"
@@ -40,12 +54,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	NginxIngressControllerChartName   = "nginx-ingress-controller"
-	NginxIngressControllerReleaseName = NginxIngressControllerChartName
-	NginxIngressControllerNamespace   = NginxIngressControllerChartName
 )
 
 func DeployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
@@ -249,3 +257,4 @@ func deleteIngress(ctx context.Context, kubeClient ctrlruntimeclient.Client, nam
 
 	return nil
 }
+*/
