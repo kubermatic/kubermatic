@@ -118,12 +118,12 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "set dashboard",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -202,12 +202,12 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete dashboard",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/api/dashboards/uid/"+"unique", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/api/dashboards/uid/"+"unique", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "Dashboard dashboard deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},

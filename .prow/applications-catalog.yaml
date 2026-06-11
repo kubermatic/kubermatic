@@ -437,7 +437,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:

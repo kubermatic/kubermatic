@@ -122,7 +122,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
@@ -222,7 +222,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
@@ -293,7 +293,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
@@ -413,7 +413,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
@@ -488,7 +488,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
@@ -582,7 +582,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
