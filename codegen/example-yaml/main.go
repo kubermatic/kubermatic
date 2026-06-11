@@ -480,7 +480,7 @@ func validateReflect(value reflect.Value, path []string) error {
 	valueType := value.Type()
 
 	// resolve pointer types to their underlying value
-	if valueType.Kind() == reflect.Ptr {
+	if valueType.Kind() == reflect.Pointer {
 		if value.IsNil() {
 			// nil-pointers are not allowed for complex types
 			if isComplexType(valueType) {
@@ -553,7 +553,7 @@ func validateReflect(value reflect.Value, path []string) error {
 }
 
 func isComplexType(t reflect.Type) bool {
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 

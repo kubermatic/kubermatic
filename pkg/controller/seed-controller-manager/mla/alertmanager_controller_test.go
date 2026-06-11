@@ -119,12 +119,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get",
-					request:  httptest.NewRequest(http.MethodGet, AlertmanagerConfigEndpoint, nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, AlertmanagerConfigEndpoint, nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 						AlertmanagerConfigEndpoint,
 						bytes.NewBuffer([]byte(resources.DefaultAlertmanagerConfig))),
 					response: &http.Response{StatusCode: http.StatusCreated},
@@ -163,12 +163,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get",
-					request:  httptest.NewRequest(http.MethodGet, AlertmanagerConfigEndpoint, nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, AlertmanagerConfigEndpoint, nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 						AlertmanagerConfigEndpoint,
 						bytes.NewBuffer([]byte(generateAlertmanagerConfig("test-user")))),
 					response: &http.Response{
@@ -210,7 +210,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "delete",
-					request: httptest.NewRequest(http.MethodDelete,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
 						AlertmanagerConfigEndpoint,
 						nil),
 					response: &http.Response{StatusCode: http.StatusOK},
@@ -248,7 +248,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "delete",
-					request: httptest.NewRequest(http.MethodDelete,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
 						AlertmanagerConfigEndpoint,
 						nil),
 					response: &http.Response{
@@ -270,7 +270,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "delete",
-					request: httptest.NewRequest(http.MethodDelete,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
 						AlertmanagerConfigEndpoint,
 						nil),
 					response: &http.Response{StatusCode: http.StatusOK},
