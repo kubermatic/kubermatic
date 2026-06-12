@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -54,7 +53,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -609,11 +607,11 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling CiliumNetworkPolicies")
 
-	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow}}
-	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
-		netpol.Spec = networkpolicy.SeedApiserverRule()
-		return nil
-	}); err != nil {
+	creators := []reconciling.NamedUnstructuredReconcilerFactory{
+		networkpolicy.SeedApiserverAllowReconciler(),
+	}
+
+	if err := reconciling.ReconcileUnstructureds(ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile CiliumClusterwideNetworkPolicies: %w", err)
 	}
 
