@@ -42,7 +42,7 @@ spec:
             name: ca-bundle
       serviceAccountName: kubermatic-operator
       imagePullSecrets:
-      - name: dockercfg
+      - name: {{ .Values.kubermaticOperator.imagePullSecretExistingSecret | default "dockercfg" }}
       containers:
       - name: operator
         image: '{{ .Values.kubermaticOperator.image.repository }}:{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
