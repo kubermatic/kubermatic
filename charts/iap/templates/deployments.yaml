@@ -70,7 +70,7 @@ spec:
         {{- end }}
         envFrom:
         - secretRef:
-            name: iap-{{ .name }}-secret
+            name: {{ .existingSecret | default (printf "iap-%s-secret" .name) }}
         ports:
         - name: http
           containerPort: {{ $.Values.iap.port }}

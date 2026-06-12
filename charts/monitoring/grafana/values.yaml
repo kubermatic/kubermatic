@@ -13,6 +13,12 @@
 # limitations under the License.
 
 grafana:
+  # existingSecret optionally points the Grafana config volume at a pre-created Secret
+  # instead of generating the "grafana-config" Secret from config/grafana.ini. When set,
+  # the chart skips creating that Secret; the referenced Secret must live in the release
+  # namespace and contain the key "grafana.ini" with the full Grafana configuration.
+  existingSecret: ""
+
   # Admin login credentials, only relevant if the `disable_login_form` option
   # further down is set to false. Using an identity aware proxy like
   # Keycloak-Gatekeeper (see iap chart) is strongly recommended though.
