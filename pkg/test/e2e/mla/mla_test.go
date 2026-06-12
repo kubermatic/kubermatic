@@ -187,6 +187,15 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("cluster did not get healthy: %v", err)
 	}
 
+	// recreate the client without the X-Grafana-Org-Id header set above: the
+	// org is deleted during cleanup and once Grafana 13's org cache expires,
+	// requests whose org header points to a missing org are rejected with 403,
+	// so LookupUser would never return the 404 these checks wait for
+	grafanaClient, err = getGrafanaClient(ctx, seedClient)
+	if err != nil {
+		t.Fatalf("unable to recreate Grafana client: %v", err)
+	}
+
 	logger.Info("Waiting for Grafana org to be gone...")
 	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		// require a real 404; a plain err != nil check would also pass on
@@ -194,7 +203,7 @@ func TestMLAIntegration(t *testing.T) {
 		_, err = grafanaClient.GetOrgById(ctx, org.ID)
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
-		t.Fatal("grafana org not cleaned up")
+		t.Fatalf("grafana org not cleaned up, last error: %v", err)
 	}
 
 	// user cleanup is asynchronous: disabling MLA in the Seed makes the KKP
@@ -207,7 +216,7 @@ func TestMLAIntegration(t *testing.T) {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
-		t.Fatal("grafana user not cleaned up")
+		t.Fatalf("grafana user not cleaned up, last error: %v", err)
 	}
 
 	logger.Info("Waiting for project to get rid of grafana org annotation")
