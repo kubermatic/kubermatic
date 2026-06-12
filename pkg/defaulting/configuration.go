@@ -260,6 +260,9 @@ var (
 			newSemver("v1.35.3"),
 			newSemver("v1.35.4"),
 			newSemver("v1.35.5"),
+			// Kubernetes 1.36
+			newSemver("v1.36.0"),
+			newSemver("v1.36.1"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
@@ -295,6 +298,17 @@ var (
 				// Allow to change to any patch version
 				From: "1.35.*",
 				To:   "1.35.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.35.*",
+				To:   "1.36.*",
+			},
+			// ======= 1.36 =======
+			{
+				// Allow to change to any patch version
+				From: "1.36.*",
+				To:   "1.36.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
