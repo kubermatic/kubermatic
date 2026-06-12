@@ -78,32 +78,70 @@ func DescribeInstanceType(ctx context.Context, kubeconfig string, it *kubevirtv1
 	if err != nil {
 		return nil, err
 	}
+	return describeInstanceType(ctx, client, it)
+}
 
+func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
 	switch it.Kind {
-	case "VirtualMachineInstancetype": // "standard" instancetype
-		standardInstancetypes := GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})
-		for _, instancetype := range standardInstancetypes {
-			if strings.EqualFold(instancetype.Name, it.Name) {
-				return instanceTypeToNodeCapacity(instancetype.Spec)
-			}
+	case "VirtualMachineInstancetype": // namespaced: kubermatic standard or user-deployed custom
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
 
-	case "VirtualMachineClusterInstancetype": // "custom" instancetype (cluster-wide).
-		customInstancetypes := kvinstancetypev1alpha1.VirtualMachineClusterInstancetypeList{}
-		err := client.List(ctx, &customInstancetypes)
-		if err != nil {
-			return nil, err
+	case "VirtualMachineClusterInstancetype": // cluster-wide
+		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
-		for _, instancetype := range customInstancetypes.Items {
-			if strings.EqualFold(instancetype.Name, it.Name) {
-				return instanceTypeToNodeCapacity(instancetype.Spec)
-			}
+
+	case "": // kind absent — saved before kind was added to the API; search both types
+		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
+		}
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+			return nodeCap, err
 		}
 	}
 	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
 }
 
-// instanceTypeToNodeCapacity extracts cpu and mem resource requests from the kubevirt instancetype.
+func describeClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*provider.NodeCapacity, error) {
+	clusterInstancetypes := kvinstancetypev1alpha1.VirtualMachineClusterInstancetypeList{}
+	if err := client.List(ctx, &clusterInstancetypes); err != nil {
+		return nil, err
+	}
+	for _, instancetype := range clusterInstancetypes.Items {
+		if strings.EqualFold(instancetype.Name, name) {
+			return instanceTypeToNodeCapacity(instancetype.Spec)
+		}
+	}
+	return nil, nil
+}
+
+func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*provider.NodeCapacity, error) {
+	standardInstancetypes := GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})
+	for _, instancetype := range standardInstancetypes {
+		if strings.EqualFold(instancetype.Name, name) {
+			return instanceTypeToNodeCapacity(instancetype.Spec)
+		}
+	}
+	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
+	// from the infra cluster — these are custom instancetypes (e.g. GPU variants)
+	// that aren't part of the embedded Kubermatic standards.
+	// Note: this list is not namespace-scoped. Cross-tenant exposure is prevented at the
+	// dashboard/API layer, which restricts which instancetypes a user can reference.
+	namespacedInstancetypes := kvinstancetypev1alpha1.VirtualMachineInstancetypeList{}
+	if err := client.List(ctx, &namespacedInstancetypes); err != nil {
+		return nil, err
+	}
+	for _, instancetype := range namespacedInstancetypes.Items {
+		if strings.EqualFold(instancetype.Name, name) {
+			return instanceTypeToNodeCapacity(instancetype.Spec)
+		}
+	}
+	return nil, nil
+}
+
+// instanceTypeToNodeCapacity extracts cpu, mem and gpu resource requests from the kubevirt instancetype.
 func instanceTypeToNodeCapacity(it kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec) (*provider.NodeCapacity, error) {
 	capacity := provider.NewNodeCapacity()
 
@@ -118,6 +156,9 @@ func instanceTypeToNodeCapacity(it kvinstancetypev1alpha1.VirtualMachineInstance
 	}
 	if !cpu.IsZero() {
 		capacity.WithCPUCount(int(cpu.Value()))
+	}
+	if len(it.GPUs) > 0 {
+		capacity.WithGPUCount(len(it.GPUs))
 	}
 	return capacity, nil
 }
