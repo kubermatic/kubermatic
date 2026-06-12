@@ -350,7 +350,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 					err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 			}
 		}
-	} else if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
+	} else if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 	}
@@ -424,15 +424,17 @@ func (r *datasourceGrafanaController) cleanUpMLAGatewayHealthStatus(ctx context.
 func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, grafanaClient *grafanasdk.Client) error {
 	if grafanaClient != nil {
 		// that's mostly means that Grafana organization doesn't exists anymore
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(alertmanagerType, cluster)); err != nil {
+		// ErrNotFound is tolerated below because the datasource may already be
+		// gone, e.g. removed together with its org or by an earlier attempt
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(alertmanagerType, cluster)); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
