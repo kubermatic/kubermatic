@@ -27,7 +27,19 @@ download_kube_test() {
 
   echodate "Kubernetes release: $RELEASES_TO_TEST"
 
-  KUBE_VERSION="$(download_archive https://dl.k8s.io/release/stable-$RELEASES_TO_TEST.txt -Ls)"
+  local KUBE_VERSION
+  local kubeVersionURL="https://dl.k8s.io/release/stable-$RELEASES_TO_TEST.txt"
+  if ! KUBE_VERSION="$(download_archive "$kubeVersionURL" --fail --show-error --silent --location)"; then
+    echodate "Failed to determine Kubernetes version for release $RELEASES_TO_TEST from $kubeVersionURL."
+    return 1
+  fi
+
+  KUBE_VERSION="$(echo "$KUBE_VERSION" | tr -d '[:space:]')"
+  if [[ ! "$KUBE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+    echodate "Invalid Kubernetes version returned for release $RELEASES_TO_TEST from $kubeVersionURL: ${KUBE_VERSION:0:120}"
+    return 1
+  fi
+
   echodate "Kubernetes version: $KUBE_VERSION"
 
   TMP_DIR="/tmp/k8s"
@@ -40,14 +52,14 @@ download_kube_test() {
 
   TEST_BINARIES=kubernetes-test-$(go env GOOS)-$(go env GOARCH).tar.gz
   mkdir -p "$TMP_DIR"
-  download_archive "https://dl.k8s.io/$KUBE_VERSION/$TEST_BINARIES" -Lo "$TMP_DIR/$TEST_BINARIES"
+  download_archive "https://dl.k8s.io/$KUBE_VERSION/$TEST_BINARIES" --fail --show-error --location --output "$TMP_DIR/$TEST_BINARIES"
   tar -zxf "$TMP_DIR/$TEST_BINARIES" -C "$TMP_DIR"
   mv $TMP_DIR/kubernetes/test/bin/* "$directory/"
   rm -rf -- "$TMP_DIR"
 
   CLIENT_BINARIES=kubernetes-client-$(go env GOOS)-$(go env GOARCH).tar.gz
   mkdir -p "$TMP_DIR"
-  download_archive "https://dl.k8s.io/$KUBE_VERSION/$CLIENT_BINARIES" -Lo "$TMP_DIR/$CLIENT_BINARIES"
+  download_archive "https://dl.k8s.io/$KUBE_VERSION/$CLIENT_BINARIES" --fail --show-error --location --output "$TMP_DIR/$CLIENT_BINARIES"
   tar -zxf "$TMP_DIR/$CLIENT_BINARIES" -C "$TMP_DIR"
   mv $TMP_DIR/kubernetes/client/bin/* "$directory/"
   rm -rf -- "$TMP_DIR"
