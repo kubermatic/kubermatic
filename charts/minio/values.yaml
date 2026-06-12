@@ -40,6 +40,12 @@ minio:
     accessKey: "" # 32 byte long
     secretKey: "" # 64 byte long
 
+    # existingSecret optionally points the MinIO deployment at a pre-created Secret
+    # instead of generating one from accessKey/secretKey above. When set, the chart
+    # skips creating the "minio" Secret. The referenced Secret must live in the
+    # release namespace and contain the keys "accessKey" and "secretKey".
+    existingSecret: ""
+
     # When set to true, a Secret will be created in the given namespace.
     # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
     # namespace to perform usercluster etcd snapshots, _if_ the default
@@ -49,6 +55,11 @@ minio:
     secret:
       name: kubermatic-s3-credentials
       namespace: kube-system
+      # existingSecret optionally points the etcd-backup integration at a pre-created
+      # Secret instead of generating the kube-system one above. When set, the chart
+      # skips creating the kube-system Secret; the operator must manage a Secret named
+      # `name` in `namespace` containing the keys "ACCESS_KEY_ID" and "SECRET_ACCESS_KEY".
+      existingSecret: ""
 
   flags:
     # Set to true to enable Minio's strict S3 compatibility mode.

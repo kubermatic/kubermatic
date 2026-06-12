@@ -20,6 +20,12 @@ telemetry:
   # This field is optional.
   uuid: ""
 
+  # existingSecret optionally points the agent at a pre-created Secret instead of
+  # generating the "<release>-client-uuid" Secret. When set, the chart skips creating
+  # that Secret; the referenced Secret must live in the release namespace and contain
+  # the key "uuid".
+  existingSecret: ""
+
   kubermaticAgent:
     image:
       repository: quay.io/kubermatic/telemetry-agent

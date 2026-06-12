@@ -68,6 +68,12 @@ iap:
     #   client_id: alertmanager
     #   client_secret: xxx
     #   encryption_key: xxx
+    #   ## (optional) existingSecret references a pre-created Secret instead of generating
+    #   ## iap-<name>-secret from client_id/client_secret/encryption_key above. When set,
+    #   ## the chart skips creating the Secret for this deployment; the referenced Secret
+    #   ## must contain the keys OAUTH2_PROXY_CLIENT_ID, OAUTH2_PROXY_CLIENT_SECRET and
+    #   ## OAUTH2_PROXY_COOKIE_SECRET.
+    #   existingSecret: ""
     #   config: ## see https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview
     #     scope: "groups openid email"
     #     email_domains:
