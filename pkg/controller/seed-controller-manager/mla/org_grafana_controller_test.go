@@ -287,7 +287,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 				},
 				{
 					name:     "verify org is gone",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "organization not found"}`)), StatusCode: http.StatusNotFound},
 				},
 			},
