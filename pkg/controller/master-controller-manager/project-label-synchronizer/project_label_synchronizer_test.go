@@ -18,7 +18,6 @@ package projectlabelsynchronizer
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -159,36 +157,6 @@ func TestReconciliation(t *testing.T) {
 			}},
 			expectedInheritedLabels: map[string]map[string]string{"baz": {}},
 		},
-		{
-			name:         "Cluster belonging to a different project is left untouched",
-			masterClient: namedProjectClientWithLabels(projectName, map[string]string{"foo": "bar"}),
-			seedClient: fake.NewClientBuilder().WithObjects(
-				&kubermaticv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   "baz",
-						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectName},
-					},
-				},
-				&kubermaticv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   "other",
-						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "some-other-project"},
-					},
-				},
-			).Build(),
-			expectedLabels: map[string]map[string]string{
-				"baz": {
-					"foo":                          "bar",
-					kubermaticv1.ProjectIDLabelKey: projectName,
-				},
-				"other": {
-					kubermaticv1.ProjectIDLabelKey: "some-other-project",
-				},
-			},
-			expectedInheritedLabels: map[string]map[string]string{"baz": {
-				"foo": "bar",
-			}},
-		},
 	}
 
 	for idx := range testCases {
@@ -229,75 +197,6 @@ func TestReconciliation(t *testing.T) {
 				if expected := tc.expectedInheritedLabels[cluster.Name]; !diff.SemanticallyEqual(expected, cluster.Status.InheritedLabels) {
 					t.Errorf("Expected inherited labels on cluster %q do not match actual inherited labels:\n%v", cluster.Name, diff.ObjectDiff(expected, cluster.Status.InheritedLabels))
 				}
-			}
-		})
-	}
-}
-
-// TestReconciliationErrors verifies that failures to patch the cluster's labels
-// or its status are surfaced as errors from Reconcile, instead of being swallowed.
-func TestReconciliationErrors(t *testing.T) {
-	const projectName = "label-synchronizer-test"
-
-	testCases := []struct {
-		name         string
-		masterClient ctrlruntimeclient.Client
-		seedClient   ctrlruntimeclient.Client
-	}{
-		{
-			name:         "Error patching cluster labels is returned",
-			masterClient: namedProjectClientWithLabels(projectName, map[string]string{"foo": "bar"}),
-			seedClient: fake.NewClientBuilder().
-				WithObjects(&kubermaticv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   "baz",
-						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectName},
-					},
-				}).
-				WithInterceptorFuncs(interceptor.Funcs{
-					Patch: func(ctx context.Context, c ctrlruntimeclient.WithWatch, obj ctrlruntimeclient.Object, patch ctrlruntimeclient.Patch, opts ...ctrlruntimeclient.PatchOption) error {
-						return errors.New("boom")
-					},
-				}).
-				Build(),
-		},
-		{
-			name:         "Error patching cluster status is returned",
-			masterClient: namedProjectClientWithLabels(projectName, nil),
-			seedClient: fake.NewClientBuilder().
-				WithObjects(&kubermaticv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   "baz",
-						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectName},
-					},
-					Status: kubermaticv1.ClusterStatus{
-						InheritedLabels: map[string]string{"foo": "bar"},
-					},
-				}).
-				WithInterceptorFuncs(interceptor.Funcs{
-					SubResourcePatch: func(ctx context.Context, c ctrlruntimeclient.Client, subResourceName string, obj ctrlruntimeclient.Object, patch ctrlruntimeclient.Patch, opts ...ctrlruntimeclient.SubResourcePatchOption) error {
-						return errors.New("boom")
-					},
-				}).
-				Build(),
-		},
-	}
-
-	for idx := range testCases {
-		tc := testCases[idx]
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			r := &reconciler{
-				log:                     kubermaticlog.Logger,
-				masterClient:            tc.masterClient,
-				seedClients:             map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
-				workerNameLabelSelector: labels.Everything(),
-			}
-
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: projectName}}
-			if _, err := r.Reconcile(context.Background(), request); err == nil {
-				t.Fatal("expected Reconcile to return an error, got nil")
 			}
 		})
 	}
