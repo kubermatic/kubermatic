@@ -35,7 +35,7 @@ groups:
         labels:
           severity: warning
           service: kubermatic-master
-      - alert: KubermaticAPITooManyInitNodeDeloymentFailures
+      - alert: KubermaticAPITooManyInitNodeDeploymentFailures
         annotations:
           message: Kubermatic API is failing to create too many initial node deployments.
         expr: sum(rate(kubermatic_api_failed_init_node_deployment_total[5m])) > 0.01
