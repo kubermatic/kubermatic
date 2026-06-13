@@ -21,22 +21,26 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating GroupProjectBinding CRD.
 type validator struct {
+	client ctrlruntimeclient.Client
 }
 
 // NewValidator returns a new GroupProjectBinding validator.
-func NewValidator() *validator {
-	return &validator{}
+func NewValidator(client ctrlruntimeclient.Client) *validator {
+	return &validator{
+		client: client,
+	}
 }
 
 var _ admission.Validator[*kubermaticv1.GroupProjectBinding] = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
-	return nil, validateCreate(ctx, obj)
+	return nil, validateCreate(ctx, obj, v.client)
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
