@@ -278,9 +278,9 @@ data:
         target_label: __metrics_path__
         replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
       metric_relabel_configs:
-        # Keep only what is needed: up for health checks, and container metrics for metering
+        # Keep only what is needed: up for health checks, machine_cpu_cores and machine_memory_bytes for metering
         - source_labels: [__name__]
-          regex: '^(up|container_cpu_usage_seconds_total|container_memory_working_set_bytes)$'
+          regex: '^(up|machine_cpu_cores|machine_memory_bytes)$'
           action: keep
 
     # scrape pods inside the user cluster with a special annotation

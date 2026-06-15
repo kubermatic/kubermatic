@@ -414,28 +414,9 @@ scrape_configs:
 #######################################################################
 # These rules will scrape pods running inside the user cluster itself.
 
-# Note: Node scraping is commented since its already scraped by "kubelet" job
-# scrape node metrics
+# Note: Node scraping is removed since its already scraped by "kubelet" job
+# I have only kept the header for future searches and context.
 # - job_name: nodes
-#   scheme: https
-#   tls_config:
-# { {  .ApiserverTLSConfig | indent 4 } }
-#
-#   kubernetes_sd_configs:
-#   - role: node
-#     api_server: 'https: / / {  { .APIServerHost  } }'
-#     tls_config:
-# { {  .ApiserverTLSConfig | indent 6 } }
-#
-#   relabel_configs:
-#   - action: labelmap
-#     regex: __meta_kubernetes_node_label_(.+)
-#   - target_label: __address__
-#     replacement: ' { { .APIServerHost } } '
-#   - source_labels: [__meta_kubernetes_node_name]
-#     regex: (.+)
-#     target_label: __metrics_path__
-#     replacement: /api/v1/nodes/${1}/proxy/metrics
 
 # scrape node cadvisor
 - job_name: cadvisor
@@ -459,9 +440,9 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
   metric_relabel_configs:
-    # Keep only what is needed: up for health checks, and container metrics for metering
+    # Keep only what is needed: up for health checks, machine_cpu_cores and machine_memory_bytes for metering
     - source_labels: [__name__]
-      regex: '^(up|container_cpu_usage_seconds_total|container_memory_working_set_bytes)$'
+      regex: '^(up|machine_cpu_cores|machine_memory_bytes)$'
       action: keep
 
 # scrape pods inside the user cluster with a special annotation
