@@ -51,6 +51,7 @@ import (
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -73,6 +74,11 @@ const (
 	projectName  = "cilium-test-project"
 	ciliumTestNs = "cilium-test"
 	nginxAppName = "nginx-cilium-test"
+
+	seedApiserverAllowPolicyName       = "cilium-seed-apiserver-allow"
+	ciliumClusterwideNetworkPolicyKind = "CiliumClusterwideNetworkPolicy"
+	ciliumClusterwideNetworkPolicyAPI  = "cilium.io/v2"
+	ciliumClusterwideNetworkPolicyCRD  = "ciliumclusterwidenetworkpolicies.cilium.io"
 )
 
 func init() {
@@ -143,6 +149,10 @@ func TestCiliumClusters(t *testing.T) {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
+	if err := verifySeedApiserverAllowPolicy(ctx, t, logger, seedClient); err != nil {
+		t.Fatalf("Seed CiliumClusterwideNetworkPolicy validation failed: %v", err)
+	}
+
 	tests := []struct {
 		name      string
 		proxyMode string
@@ -181,6 +191,93 @@ func TestCiliumClusters(t *testing.T) {
 			testUserCluster(ctx, t, tLogger, client)
 		})
 	}
+}
+
+func verifySeedApiserverAllowPolicy(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	t.Helper()
+
+	ciliumCRDExists, err := seedCiliumClusterwideNetworkPolicyCRDExists(ctx, client)
+	if err != nil {
+		return err
+	}
+	if !ciliumCRDExists {
+		log.Info("Skipping seed CiliumClusterwideNetworkPolicy validation because the Cilium CRD is not installed on the seed")
+		return nil
+	}
+
+	log.Info("Checking seed CiliumClusterwideNetworkPolicy for apiserver egress...")
+	return wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		policy := &unstructured.Unstructured{}
+		policy.SetAPIVersion(ciliumClusterwideNetworkPolicyAPI)
+		policy.SetKind(ciliumClusterwideNetworkPolicyKind)
+
+		if err := client.Get(ctx, types.NamespacedName{Name: seedApiserverAllowPolicyName}, policy); err != nil {
+			return fmt.Errorf("failed to get seed CiliumClusterwideNetworkPolicy %q: %w", seedApiserverAllowPolicyName, err), nil
+		}
+
+		if err := validateSeedApiserverAllowPolicy(policy); err != nil {
+			return err, nil
+		}
+
+		return nil, nil
+	})
+}
+
+func seedCiliumClusterwideNetworkPolicyCRDExists(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
+	crd := &unstructured.Unstructured{}
+	crd.SetAPIVersion("apiextensions.k8s.io/v1")
+	crd.SetKind("CustomResourceDefinition")
+
+	if err := client.Get(ctx, types.NamespacedName{Name: ciliumClusterwideNetworkPolicyCRD}, crd); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to probe for CiliumClusterwideNetworkPolicy CRD: %w", err)
+	}
+
+	return true, nil
+}
+
+func validateSeedApiserverAllowPolicy(policy *unstructured.Unstructured) error {
+	matchLabels, found, err := unstructured.NestedStringMap(policy.Object, "spec", "endpointSelector", "matchLabels")
+	if err != nil {
+		return fmt.Errorf("failed to read endpointSelector.matchLabels: %w", err)
+	}
+	if !found {
+		return errors.New("policy has no endpointSelector.matchLabels")
+	}
+	if matchLabels["app"] != "apiserver" {
+		return fmt.Errorf("expected endpointSelector.matchLabels app=apiserver, got %v", matchLabels)
+	}
+
+	egress, found, err := unstructured.NestedSlice(policy.Object, "spec", "egress")
+	if err != nil {
+		return fmt.Errorf("failed to read egress rules: %w", err)
+	}
+	if !found {
+		return errors.New("policy has no egress rules")
+	}
+	if len(egress) != 1 {
+		return fmt.Errorf("expected exactly one egress rule, got %d", len(egress))
+	}
+
+	egressRule, ok := egress[0].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("expected egress rule to be an object, got %T", egress[0])
+	}
+
+	entities, found, err := unstructured.NestedStringSlice(egressRule, "toEntities")
+	if err != nil {
+		return fmt.Errorf("failed to read egress.toEntities: %w", err)
+	}
+	if !found {
+		return errors.New("policy has no egress.toEntities")
+	}
+	if len(entities) != 1 || entities[0] != "kube-apiserver" {
+		return fmt.Errorf("expected egress.toEntities [kube-apiserver], got %v", entities)
+	}
+
+	return nil
 }
 
 //gocyclo:ignore
