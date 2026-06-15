@@ -43,6 +43,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
@@ -75,7 +76,6 @@ const (
 	ciliumTestNs = "cilium-test"
 	nginxAppName = "nginx-cilium-test"
 
-	seedApiserverAllowPolicyName       = "cilium-seed-apiserver-allow"
 	ciliumClusterwideNetworkPolicyKind = "CiliumClusterwideNetworkPolicy"
 	ciliumClusterwideNetworkPolicyAPI  = "cilium.io/v2"
 	ciliumClusterwideNetworkPolicyCRD  = "ciliumclusterwidenetworkpolicies.cilium.io"
@@ -211,8 +211,8 @@ func verifySeedApiserverAllowPolicy(ctx context.Context, t *testing.T, log *zap.
 		policy.SetAPIVersion(ciliumClusterwideNetworkPolicyAPI)
 		policy.SetKind(ciliumClusterwideNetworkPolicyKind)
 
-		if err := client.Get(ctx, types.NamespacedName{Name: seedApiserverAllowPolicyName}, policy); err != nil {
-			return fmt.Errorf("failed to get seed CiliumClusterwideNetworkPolicy %q: %w", seedApiserverAllowPolicyName, err), nil
+		if err := client.Get(ctx, types.NamespacedName{Name: networkpolicy.CiliumSeedApiserverAllow}, policy); err != nil {
+			return fmt.Errorf("failed to get seed CiliumClusterwideNetworkPolicy %q: %w", networkpolicy.CiliumSeedApiserverAllow, err), nil
 		}
 
 		if err := validateSeedApiserverAllowPolicy(policy); err != nil {
