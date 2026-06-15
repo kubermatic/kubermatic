@@ -385,6 +385,45 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 	})
 }
 
+// WaitForGatekeeperHealthy waits until the Gatekeeper controller and audit deployments
+// in the user cluster are reported as healthy. These statuses are excluded from
+// ExtendedClusterHealth.AllHealthy() because OPA integration is optional, so
+// WaitForHealthyControlPlane does not cover them.
+func (j *ClusterJig) WaitForGatekeeperHealthy(ctx context.Context, timeout time.Duration) error {
+	if j.clusterName == "" {
+		return errors.New("cluster jig has not created a cluster yet")
+	}
+
+	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
+		curCluster := kubermaticv1.Cluster{}
+		if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, &curCluster); err != nil {
+			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
+		}
+
+		health := curCluster.Status.ExtendedHealth
+
+		// the statuses are nil until the usercluster-controller-manager has picked up
+		// the enabled OPA integration and reconciled the Gatekeeper deployments
+		if health.GatekeeperController == nil || *health.GatekeeperController != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("gatekeeperController is %v", formatOptionalHealth(health.GatekeeperController)), nil
+		}
+
+		if health.GatekeeperAudit == nil || *health.GatekeeperAudit != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("gatekeeperAudit is %v", formatOptionalHealth(health.GatekeeperAudit)), nil
+		}
+
+		return nil, nil
+	})
+}
+
+func formatOptionalHealth(s *kubermaticv1.HealthStatus) string {
+	if s == nil {
+		return "not reported yet"
+	}
+
+	return string(*s)
+}
+
 func getUnhealthyComponents(health kubermaticv1.ExtendedClusterHealth) []string {
 	unhealthy := sets.New[string]()
 	handle := func(key string, s kubermaticv1.HealthStatus) {
