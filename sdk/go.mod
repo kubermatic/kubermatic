@@ -8,9 +8,9 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/vmware-tanzu/velero v1.17.1
 	k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
-	k8s.io/api v0.36.1
-	k8s.io/apimachinery v0.36.1
-	k8s.io/client-go v0.36.1
+	k8s.io/api v0.36.2
+	k8s.io/apimachinery v0.36.2
+	k8s.io/client-go v0.36.2
 	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2
 	kubevirt.io/api v1.3.1
 	sigs.k8s.io/yaml v1.6.0
