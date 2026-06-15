@@ -18,6 +18,7 @@ package mla
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -177,8 +178,17 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 		delete(project.Annotations, GrafanaOrgAnnotationKey)
 
 		if grafanaClient != nil {
-			if _, err := grafanaClient.DeleteOrg(ctx, orgID); err != nil {
+			if _, err := grafanaClient.DeleteOrg(ctx, orgID); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 				return err
+			}
+
+			// verify the org is really gone before dropping the annotation and
+			// finalizer; otherwise the cleanup would never be retried
+			if _, err := grafanaClient.GetOrgById(ctx, orgID); !errors.As(err, &grafanasdk.ErrNotFound{}) {
+				if err == nil {
+					return fmt.Errorf("grafana org %d still exists after deletion", orgID)
+				}
+				return fmt.Errorf("failed to verify deletion of grafana org %d: %w", orgID, err)
 			}
 		}
 	}

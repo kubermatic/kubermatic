@@ -113,7 +113,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -150,12 +150,12 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "set dashboard",
-					request:  httptest.NewRequest(http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -186,22 +186,22 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "create",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
-					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -221,17 +221,17 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name:     "create",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "name already taken"}`)), StatusCode: http.StatusConflict},
 				},
 				{
 					name:     "get org by name",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/name/projectName-create", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/name/projectName-create", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -252,12 +252,12 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/2", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"oldName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update",
-					request:  httptest.NewRequest(http.MethodPut, "/api/orgs/2", strings.NewReader(`{"id":2,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/api/orgs/2", strings.NewReader(`{"id":2,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "name already taken"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -282,8 +282,13 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "delete org by id",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1", nil),
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/api/orgs/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "verify org is gone",
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "organization not found"}`)), StatusCode: http.StatusNotFound},
 				},
 			},
 		},

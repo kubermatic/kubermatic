@@ -187,24 +187,36 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("cluster did not get healthy: %v", err)
 	}
 
-	logger.Info("Waiting for Grafana org to be gone...")
-	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
-		_, err = grafanaClient.GetOrgById(ctx, org.ID)
-		return err != nil
-	}) {
-		t.Fatal("grafana org not cleaned up")
+	// recreate the client without the X-Grafana-Org-Id header set above: the
+	// org is deleted during cleanup and once Grafana 13's org cache expires,
+	// requests whose org header points to a missing org are rejected with 403,
+	// so LookupUser would never return the 404 these checks wait for
+	grafanaClient, err = getGrafanaClient(ctx, seedClient)
+	if err != nil {
+		t.Fatalf("unable to recreate Grafana client: %v", err)
 	}
 
-	// User cleanup goes through: toggleMLAInSeed(false) → KKP operator redeploys
-	// seed-controller-manager without -enable-user-cluster-mla → cleanup controller
-	// runs once at startup → DeleteUser. With Grafana 13 the pod takes significantly
-	// longer to become ready than 10.2.2, pushing the chain past the default 5m timeout.
+	logger.Info("Waiting for Grafana org to be gone...")
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
+		// require a real 404; a plain err != nil check would also pass on
+		// transport errors, hiding a broken connection or a failed deletion
+		_, err = grafanaClient.GetOrgById(ctx, org.ID)
+		return errors.As(err, &grafanasdk.ErrNotFound{})
+	}) {
+		t.Fatalf("grafana org not cleaned up, last error: %v", err)
+	}
+
+	// user cleanup is asynchronous: disabling MLA in the Seed makes the KKP
+	// operator redeploy the seed-controller-manager without the
+	// -enable-user-cluster-mla flag, and only then the one-shot cleanup
+	// controller deletes the Grafana user; the timeout covers the redeploy,
+	// leader election, and cleanup retries
 	logger.Info("Waiting for Grafana user to be gone...")
 	if !utils.WaitFor(ctx, 1*time.Second, 15*time.Minute, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
-		t.Fatal("grafana user not cleaned up")
+		t.Fatalf("grafana user not cleaned up, last error: %v", err)
 	}
 
 	logger.Info("Waiting for project to get rid of grafana org annotation")

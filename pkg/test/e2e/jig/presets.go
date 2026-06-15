@@ -101,6 +101,14 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 	return errors.New("no cluster created yet")
 }
 
+func (j *TestJig) WaitForGatekeeperHealthy(ctx context.Context, timeout time.Duration) error {
+	if j.ClusterJig != nil {
+		return j.ClusterJig.WaitForGatekeeperHealthy(ctx, timeout)
+	}
+
+	return errors.New("no cluster created yet")
+}
+
 func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 

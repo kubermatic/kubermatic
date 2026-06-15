@@ -20,38 +20,49 @@ import (
 	"context"
 	"fmt"
 
-	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
-	"github.com/cilium/cilium/pkg/policy/api"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var apiServerLabels = map[string]string{"app": "apiserver"}
-
 const (
 	CiliumSeedApiserverAllow = "cilium-seed-apiserver-allow"
+
+	ciliumClusterwideNetworkPolicyKind       = "CiliumClusterwideNetworkPolicy"
+	ciliumClusterwideNetworkPolicyAPIVersion = "cilium.io/v2"
 )
 
-func SeedApiserverRule() *api.Rule {
-	egressRule := []api.EgressRule{
-		{
-			EgressCommonRule: api.EgressCommonRule{
-				ToEntities: api.EntitySlice{
-					api.EntityKubeAPIServer,
+// SeedApiserverAllowReconciler returns the reconciler for the CiliumClusterwideNetworkPolicy
+// that allows egress from the seed's apiserver Pods to the seed cluster's own kube-apiserver.
+//
+// The policy is managed as an unstructured object on purpose: Cilium's policy Go types
+// contain unexported fields and asymmetric custom JSON (un)marshalling, which make
+// apimachinery's semantic DeepEqual (used by all client-side create-or-update helpers)
+// either panic or never converge.
+func SeedApiserverAllowReconciler() reconciling.NamedUnstructuredReconcilerFactory {
+	return func() (string, string, string, reconciling.UnstructuredReconciler) {
+		return CiliumSeedApiserverAllow, ciliumClusterwideNetworkPolicyKind, ciliumClusterwideNetworkPolicyAPIVersion, func(policy *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+			policy.Object["spec"] = map[string]interface{}{
+				"endpointSelector": map[string]interface{}{
+					"matchLabels": map[string]interface{}{
+						"app": "apiserver",
+					},
 				},
-			},
-		},
-	}
-	return &api.Rule{
-		EndpointSelector: api.EndpointSelector{
-			LabelSelector: &slim_metav1.LabelSelector{
-				MatchLabels: apiServerLabels,
-			},
-		},
-		Egress: egressRule,
+				"egress": []interface{}{
+					map[string]interface{}{
+						"toEntities": []interface{}{
+							"kube-apiserver",
+						},
+					},
+				},
+			}
+
+			return policy, nil
+		}
 	}
 }
 

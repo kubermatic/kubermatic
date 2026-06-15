@@ -172,7 +172,7 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient
 			log.Debugw("dashboard doesn't have UID set, skipping", "title", board.Title)
 			continue
 		}
-		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
+		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 			log.Errorw("unable to delete dashboard",
 				zap.Error(err),
 				"status", ptr.Deref(status.Status, "no status"),

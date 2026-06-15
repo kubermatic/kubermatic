@@ -129,7 +129,7 @@ spec:
         name: grafana-datasources
       - name: grafana-config
         secret:
-          secretName: grafana-config
+          secretName: {{ .Values.grafana.existingSecret | default "grafana-config" }}
       - name: grafana-default-datasources
         configMap:
           name: grafana-datasources
