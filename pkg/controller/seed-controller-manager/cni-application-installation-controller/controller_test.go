@@ -254,8 +254,8 @@ func TestReconcile(t *testing.T) {
 				if !ok {
 					return fmt.Errorf("CNI value extraConfig is not present")
 				}
-				if extraConfig[ciliumExcludeLocalAddressConfigKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
-					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExcludeLocalAddressConfigKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExcludeLocalAddressConfigKey])
+				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
+					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
 				}
 				return nil
 			},
@@ -266,8 +266,8 @@ func TestReconcile(t *testing.T) {
 			appDefinitionDefaultValues: nil,
 			existingAppInstallationValues: map[string]any{
 				"extraConfig": map[string]any{
-					"custom-key":                       "custom-value",
-					ciliumExcludeLocalAddressConfigKey: "192.0.2.1/32",
+					"custom-key":                            "custom-value",
+					ciliumExtraConfigExcludeLocalAddressKey: "192.0.2.1/32",
 				},
 			},
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
@@ -285,8 +285,8 @@ func TestReconcile(t *testing.T) {
 				if extraConfig["custom-key"] != "custom-value" {
 					return fmt.Errorf("CNI value extraConfig.custom-key should be preserved, got %q", extraConfig["custom-key"])
 				}
-				if extraConfig[ciliumExcludeLocalAddressConfigKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
-					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExcludeLocalAddressConfigKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExcludeLocalAddressConfigKey])
+				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
+					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
 				}
 				return nil
 			},
@@ -309,8 +309,8 @@ func TestReconcile(t *testing.T) {
 					return err
 				}
 				if extraConfig, ok := values["extraConfig"].(map[string]any); ok {
-					if _, ok := extraConfig[ciliumExcludeLocalAddressConfigKey]; ok {
-						return fmt.Errorf("CNI value extraConfig.%s should not be present when NodeLocalDNS is disabled", ciliumExcludeLocalAddressConfigKey)
+					if _, ok := extraConfig[ciliumExtraConfigExcludeLocalAddressKey]; ok {
+						return fmt.Errorf("CNI value extraConfig.%s should not be present when NodeLocalDNS is disabled", ciliumExtraConfigExcludeLocalAddressKey)
 					}
 				}
 				return nil

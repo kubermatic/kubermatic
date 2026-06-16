@@ -63,9 +63,11 @@ const (
 
 // Cilium specific constants.
 const (
-	ciliumHelmChartName                = "cilium"
-	ciliumImageRegistry                = "quay.io/cilium/"
-	ciliumExcludeLocalAddressConfigKey = "exclude-local-address"
+	ciliumHelmChartName = "cilium"
+	ciliumImageRegistry = "quay.io/cilium/"
+
+	// ciliumExtraConfigExcludeLocalAddressKey configures Cilium to not treat matching local addresses as host addresses.
+	ciliumExtraConfigExcludeLocalAddressKey = "exclude-local-address"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -464,8 +466,11 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	}
 
 	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
+		// Exclude KKP's NodeLocalDNS address from Cilium's local address detection.
+		// Otherwise Cilium can classify 169.254.20.10 as host identity, so Kubernetes NetworkPolicies
+		// that allow egress to CIDRs like 0.0.0.0/0 do not allow DNS traffic to NodeLocalDNS.
 		values["extraConfig"] = map[string]any{
-			ciliumExcludeLocalAddressConfigKey: fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress),
+			ciliumExtraConfigExcludeLocalAddressKey: fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress),
 		}
 	}
 
