@@ -267,7 +267,7 @@ func TestReconcile(t *testing.T) {
 			existingAppInstallationValues: map[string]any{
 				"extraConfig": map[string]any{
 					"custom-key":                            "custom-value",
-					ciliumExtraConfigExcludeLocalAddressKey: "192.0.2.1/32",
+					ciliumExtraConfigExcludeLocalAddressKey: "192.0.2.1/32 198.51.100.0/24",
 				},
 			},
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
@@ -285,8 +285,9 @@ func TestReconcile(t *testing.T) {
 				if extraConfig["custom-key"] != "custom-value" {
 					return fmt.Errorf("CNI value extraConfig.custom-key should be preserved, got %q", extraConfig["custom-key"])
 				}
-				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
-					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
+				expectedExcludeLocalAddress := fmt.Sprintf("192.0.2.1/32 198.51.100.0/24 %s/32", resources.NodeLocalDNSCacheAddress)
+				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != expectedExcludeLocalAddress {
+					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, expectedExcludeLocalAddress, extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
 				}
 				return nil
 			},

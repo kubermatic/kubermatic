@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -368,6 +369,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
 			}
+			ensureCiliumNodeLocalDNSExcludeLocalAddress(cluster, values)
 
 			// Set new values
 			rawValues, err := yaml.Marshal(values)
@@ -465,15 +467,6 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 	}
 
-	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
-		// Exclude KKP's NodeLocalDNS address from Cilium's local address detection.
-		// Otherwise Cilium can classify 169.254.20.10 as host identity, so Kubernetes NetworkPolicies
-		// that allow egress to CIDRs like 0.0.0.0/0 do not allow DNS traffic to NodeLocalDNS.
-		values["extraConfig"] = map[string]any{
-			ciliumExtraConfigExcludeLocalAddressKey: fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress),
-		}
-	}
-
 	values["ipam"] = map[string]any{"operator": ipamOperator}
 
 	// Override images if registry override is configured
@@ -525,4 +518,33 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	}
 
 	return values
+}
+
+func ensureCiliumNodeLocalDNSExcludeLocalAddress(cluster *kubermaticv1.Cluster, values map[string]any) {
+	if cluster.Spec.CNIPlugin.Type != kubermaticv1.CNIPluginTypeCilium {
+		return
+	}
+	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled != nil && !*cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
+		return
+	}
+
+	extraConfig, ok := values["extraConfig"].(map[string]any)
+	if !ok {
+		extraConfig = map[string]any{}
+		values["extraConfig"] = extraConfig
+	}
+
+	// Exclude KKP's NodeLocalDNS address from Cilium's local address detection.
+	// Otherwise Cilium can classify 169.254.20.10 as host identity, so Kubernetes NetworkPolicies
+	// that allow egress to CIDRs like 0.0.0.0/0 do not allow DNS traffic to NodeLocalDNS.
+	excludedCIDRs := []string{}
+	if existingValue, ok := extraConfig[ciliumExtraConfigExcludeLocalAddressKey].(string); ok {
+		excludedCIDRs = strings.Fields(strings.ReplaceAll(existingValue, ",", " "))
+	}
+
+	nodeLocalDNSCIDR := fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress)
+	if !slices.Contains(excludedCIDRs, nodeLocalDNSCIDR) {
+		excludedCIDRs = append(excludedCIDRs, nodeLocalDNSCIDR)
+	}
+	extraConfig[ciliumExtraConfigExcludeLocalAddressKey] = strings.Join(excludedCIDRs, " ")
 }
