@@ -63,8 +63,9 @@ const (
 
 // Cilium specific constants.
 const (
-	ciliumHelmChartName = "cilium"
-	ciliumImageRegistry = "quay.io/cilium/"
+	ciliumHelmChartName                = "cilium"
+	ciliumImageRegistry                = "quay.io/cilium/"
+	ciliumExcludeLocalAddressConfigKey = "exclude-local-address"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -459,6 +460,12 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
 		if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
 			ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		}
+	}
+
+	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
+		values["extraConfig"] = map[string]any{
+			ciliumExcludeLocalAddressConfigKey: fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress),
 		}
 	}
 
