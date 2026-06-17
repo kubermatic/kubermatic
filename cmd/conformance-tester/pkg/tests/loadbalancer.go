@@ -70,6 +70,20 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
+	// clean up the namespace on every exit (pass or fail) so a failed attempt does not
+	// leave an orphaned Service of type LoadBalancer behind, which keeps a cloud LB alive
+	// against the provider's per-region quota. use a detached context so deletion still
+	// runs if ctx was cancelled by the failing test.
+	defer func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+
+		err := userClusterClient.Delete(cleanupCtx, ns)
+		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			log.Warnf("Failed to delete LoadBalancer test namespace %q: %v", ns.Name, err)
+		}
+	}()
+
 	log.Info("Creating a Service of type LoadBalancer...")
 	labels := map[string]string{"app": "hello"}
 	service := &corev1.Service{
