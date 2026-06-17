@@ -58,6 +58,7 @@ spec:
   defaultDeployOptions:
     helm:
       wait: true
+      timeout: 5m
   defaultValuesBlock: |
     node-feature-discovery:
       fullnameOverride: gpu-operator-node-feature-discovery
