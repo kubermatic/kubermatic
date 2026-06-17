@@ -238,6 +238,86 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
+			name:                          "NodeLocalDNS enabled by default sets Cilium exclude-local-address",
+			cluster:                       genCluster(""),
+			appDefinitionDefaultValues:    nil,
+			existingAppInstallationValues: nil,
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
+				}
+				values, err := getApplicationInstallationValues(userClusterClient)
+				if err != nil {
+					return err
+				}
+				extraConfig, ok := values["extraConfig"].(map[string]any)
+				if !ok {
+					return fmt.Errorf("CNI value extraConfig is not present")
+				}
+				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress) {
+					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, fmt.Sprintf("%s/32", resources.NodeLocalDNSCacheAddress), extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
+				}
+				return nil
+			},
+		},
+		{
+			name:                       "existing Cilium extraConfig values are preserved while enforcing exclude-local-address",
+			cluster:                    genCluster(""),
+			appDefinitionDefaultValues: nil,
+			existingAppInstallationValues: map[string]any{
+				"extraConfig": map[string]any{
+					"custom-key":                            "custom-value",
+					ciliumExtraConfigExcludeLocalAddressKey: "192.0.2.1/32 198.51.100.0/24",
+				},
+			},
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
+				}
+				values, err := getApplicationInstallationValues(userClusterClient)
+				if err != nil {
+					return err
+				}
+				extraConfig, ok := values["extraConfig"].(map[string]any)
+				if !ok {
+					return fmt.Errorf("CNI value extraConfig is not present")
+				}
+				if extraConfig["custom-key"] != "custom-value" {
+					return fmt.Errorf("CNI value extraConfig.custom-key should be preserved, got %q", extraConfig["custom-key"])
+				}
+				expectedExcludeLocalAddress := fmt.Sprintf("192.0.2.1/32 198.51.100.0/24 %s/32", resources.NodeLocalDNSCacheAddress)
+				if extraConfig[ciliumExtraConfigExcludeLocalAddressKey] != expectedExcludeLocalAddress {
+					return fmt.Errorf("CNI value extraConfig.%s should be %q, got %q", ciliumExtraConfigExcludeLocalAddressKey, expectedExcludeLocalAddress, extraConfig[ciliumExtraConfigExcludeLocalAddressKey])
+				}
+				return nil
+			},
+		},
+		{
+			name: "NodeLocalDNS disabled does not set Cilium exclude-local-address",
+			cluster: func() *kubermaticv1.Cluster {
+				cluster := genCluster("")
+				cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = ptr.To(false)
+				return cluster
+			}(),
+			appDefinitionDefaultValues:    nil,
+			existingAppInstallationValues: nil,
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
+				}
+				values, err := getApplicationInstallationValues(userClusterClient)
+				if err != nil {
+					return err
+				}
+				if extraConfig, ok := values["extraConfig"].(map[string]any); ok {
+					if _, ok := extraConfig[ciliumExtraConfigExcludeLocalAddressKey]; ok {
+						return fmt.Errorf("CNI value extraConfig.%s should not be present when NodeLocalDNS is disabled", ciliumExtraConfigExcludeLocalAddressKey)
+					}
+				}
+				return nil
+			},
+		},
+		{
 			name:                          "invalid annotation",
 			cluster:                       genCluster("INVALID"),
 			appDefinitionDefaultValues:    map[string]any{appDefDefaultCNIValue: "true"},
