@@ -43,6 +43,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -261,9 +262,9 @@ func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 			}
 
 			return oldSvc.Spec.Type != newSvc.Spec.Type ||
-				!reflect.DeepEqual(oldSvc.Spec.Selector, newSvc.Spec.Selector) ||
-				!reflect.DeepEqual(oldSvc.Spec.Ports, newSvc.Spec.Ports) ||
-				!reflect.DeepEqual(oldSvc.Status.LoadBalancer.Ingress, newSvc.Status.LoadBalancer.Ingress)
+				!apiequality.Semantic.DeepEqual(oldSvc.Spec.Selector, newSvc.Spec.Selector) ||
+				!apiequality.Semantic.DeepEqual(oldSvc.Spec.Ports, newSvc.Spec.Ports) ||
+				!apiequality.Semantic.DeepEqual(oldSvc.Status.LoadBalancer.Ingress, newSvc.Status.LoadBalancer.Ingress)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(e.Object)
