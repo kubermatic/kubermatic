@@ -17,7 +17,7 @@
 # the chart always renders the Dex HTTPRoute regardless of this setting.
 migrateGatewayAPI: true
 
-# httpRoute configures HTTPRoute for Dex (only used when migrateGatewayAPI: true)
+# httpRoute configures HTTPRoute for Dex
 httpRoute:
   # Name of the Gateway to attach to.
   gatewayName: kubermatic

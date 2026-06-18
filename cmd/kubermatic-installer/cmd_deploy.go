@@ -74,17 +74,26 @@ type DeployOptions struct {
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
-	// MigrateNginx is bound to the deprecated --migrate-upstream-nginx-ingress flag and is
-	// no longer read: nginx-ingress-controller has been removed in favour of Gateway API as
-	// of KKP 2.31. The field is kept only so the deprecated flag still parses.
+	// MigrateNginx binds the --migrate-upstream-nginx-ingress flag.
+	//
+	// Deprecated: As of KKP 2.31 nginx-ingress-controller has been removed in favour of
+	// Gateway API; this field is no longer read and is retained only so the flag still
+	// parses for backwards compatibility.
 	MigrateNginx bool
-	// MigrateGatewayAPI is bound to the deprecated --migrate-gateway-api flag and is no
-	// longer read: Gateway API is the enforced default as of KKP 2.31. The field is kept
-	// only so the deprecated flag still parses for backwards compatibility.
+	// MigrateGatewayAPI binds the --migrate-gateway-api flag.
+	//
+	// Deprecated: As of KKP 2.31 Gateway API is the enforced default; this field is no
+	// longer read and is retained only so the flag still parses for backwards compatibility.
 	MigrateGatewayAPI bool
-	// SkipIngressCleanup is bound to the deprecated --skip-ingress-cleanup flag and is no
-	// longer read: the installer no longer runs legacy Ingress cleanup as of KKP 2.31.
+	// SkipIngressCleanup binds the --skip-ingress-cleanup flag.
+	//
+	// Deprecated: As of KKP 2.31 the installer always runs the legacy Ingress cleanup
+	// after Gateway/HTTPRoute readiness; this field is no longer read and is retained
+	// only so the flag still parses for backwards compatibility.
 	SkipIngressCleanup bool
+	// CleanNginxLB controls cleanup of the legacy nginx-ingress-controller Helm release
+	// after Gateway API has taken over.
+	CleanNginxLB bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -156,6 +165,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "DEPRECATED: This flag is no-op. nginx-ingress-controller has been removed in favour of Gateway API.")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "DEPRECATED: This flag is no-op. Gateway API is now the default and always enabled.")
 	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "DEPRECATED: This flag is no-op. The installer no longer runs legacy Ingress cleanup.")
+	cmd.PersistentFlags().BoolVar(&opt.CleanNginxLB, "clean-nginx-lb", false, "uninstall the legacy nginx-ingress-controller Helm release after Gateway API is healthy. When not set, nginx is left in place and a warning is logged.")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
@@ -232,6 +242,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			SkipSeedValidation:                 opt.SkipSeedValidation,
 			MigrateToGatewayAPI:                true,
 			SkipIngressCleanup:                 opt.SkipIngressCleanup,
+			CleanNginxLB:                       opt.CleanNginxLB,
 		}
 
 		// prepare Kubernetes and Helm clients

@@ -23,7 +23,7 @@
 # httpRoute.externalGateway=true so the installer skips the bundled Envoy Gateway controller.
 migrateGatewayAPI: true
 
-# httpRoute configures HTTPRoute for IAP deployments (only used when migrateGatewayAPI: true)
+# httpRoute configures HTTPRoute for IAP deployments
 httpRoute:
   # Set true in separate seed setups when the referenced Gateway is backed by an externally
   # managed Gateway controller. The installer then skips deploying bundled Envoy Gateway.
