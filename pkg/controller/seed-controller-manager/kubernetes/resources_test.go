@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,6 +33,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -638,12 +640,286 @@ jwt:
 	}
 }
 
-func TestURLsToIPList(t *testing.T) {
+func TestOIDCIssuerLoadBalancerBackendPeers(t *testing.T) {
+	ctx := context.Background()
+
+	objects := []ctrlruntimeclient.Object{
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "issuer-gateway",
+				Namespace: "tenant-a",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-a",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 443},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "issuer-gateway-duplicate",
+				Namespace: "tenant-a",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-a",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 443},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "issuer-hostname",
+				Namespace: "tenant-b",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-b",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 443},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{Hostname: "oidc.example.com"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cluster-ip",
+				Namespace: "tenant-c",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeClusterIP,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-c",
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "shared-ip-unrelated-port",
+				Namespace: "tenant-c",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-c",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 80},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "shared-ip-udp-issuer-port",
+				Namespace: "tenant-c",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-c-udp",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 443, Protocol: corev1.ProtocolUDP},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "shared-ip-sctp-issuer-port",
+				Namespace: "tenant-c",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-c-sctp",
+				},
+				Ports: []corev1.ServicePort{
+					{Port: 443, Protocol: corev1.ProtocolSCTP},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "missing-selector",
+				Namespace: "tenant-d",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Ports: []corev1.ServicePort{
+					{Port: 443},
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "10.10.45.0"},
+					},
+				},
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "unrelated",
+				Namespace: "tenant-e",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app.kubernetes.io/name": "tenant-e",
+				},
+			},
+			Status: corev1.ServiceStatus{
+				LoadBalancer: corev1.LoadBalancerStatus{
+					Ingress: []corev1.LoadBalancerIngress{
+						{IP: "192.0.2.1"},
+					},
+				},
+			},
+		},
+	}
+
+	r := &Reconciler{
+		Client: fake.NewClientBuilder().WithObjects(objects...).Build(),
+	}
+
+	peers, err := r.oidcIssuerLoadBalancerBackendPeers(ctx, []oidcIssuerDestination{
+		{
+			hostname: "issuer.example.com",
+			port:     443,
+			ips: []net.IP{
+				net.ParseIP("10.10.45.0"),
+			},
+		},
+		{
+			hostname: "oidc.example.com",
+			port:     443,
+			ips: []net.IP{
+				net.ParseIP("203.0.113.10"),
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, []networkingv1.NetworkPolicyPeer{
+		{
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					corev1.LabelMetadataName: "tenant-a",
+				},
+			},
+			PodSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "tenant-a",
+				},
+			},
+		},
+		{
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					corev1.LabelMetadataName: "tenant-b",
+				},
+			},
+			PodSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "tenant-b",
+				},
+			},
+		},
+	}, peers)
+}
+
+func TestURLsToOIDCIssuerDestinationsPreservesAbsoluteHostnameLookup(t *testing.T) {
+	ctx := context.Background()
+	resolvedHostnames := []string{}
+
+	destinations, err := urlsToOIDCIssuerDestinationsWithResolver(
+		ctx,
+		[]string{
+			"https://issuer.example.com/path-a",
+			"https://Issuer.Example.com./path-b",
+		},
+		func(ctx context.Context, hostname string) ([]net.IP, error) {
+			resolvedHostnames = append(resolvedHostnames, hostname)
+			return []net.IP{net.ParseIP("198.51.100.25")}, nil
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"Issuer.Example.com."}, resolvedHostnames)
+	require.Equal(t, []oidcIssuerDestination{
+		{
+			hostname: "issuer.example.com",
+			port:     443,
+			ips: []net.IP{
+				net.ParseIP("198.51.100.25"),
+			},
+		},
+	}, destinations)
+}
+
+func TestURLsToOIDCIssuerDestinations(t *testing.T) {
 	tests := []struct {
-		name        string
-		urls        []string
-		expectedIPs []string
-		expectError string
+		name                 string
+		urls                 []string
+		expectedDestinations []oidcIssuerDestination
+		expectError          string
 	}{
 		{
 			name: "deduplicates repeated hosts",
@@ -652,7 +928,22 @@ func TestURLsToIPList(t *testing.T) {
 				"https://10.10.10.10/path-b",
 				"https://20.20.20.20",
 			},
-			expectedIPs: []string{"10.10.10.10", "20.20.20.20"},
+			expectedDestinations: []oidcIssuerDestination{
+				{
+					hostname: "10.10.10.10",
+					port:     443,
+					ips: []net.IP{
+						net.ParseIP("10.10.10.10"),
+					},
+				},
+				{
+					hostname: "20.20.20.20",
+					port:     443,
+					ips: []net.IP{
+						net.ParseIP("20.20.20.20"),
+					},
+				},
+			},
 		},
 		{
 			name: "supports ipv6 hosts",
@@ -660,7 +951,45 @@ func TestURLsToIPList(t *testing.T) {
 				"https://[2001:db8::1]",
 				"https://[2001:db8::2]",
 			},
-			expectedIPs: []string{"2001:db8::1", "2001:db8::2"},
+			expectedDestinations: []oidcIssuerDestination{
+				{
+					hostname: "2001:db8::1",
+					port:     443,
+					ips: []net.IP{
+						net.ParseIP("2001:db8::1"),
+					},
+				},
+				{
+					hostname: "2001:db8::2",
+					port:     443,
+					ips: []net.IP{
+						net.ParseIP("2001:db8::2"),
+					},
+				},
+			},
+		},
+		{
+			name: "keeps explicit ports distinct",
+			urls: []string{
+				"https://10.10.10.10",
+				"https://10.10.10.10:8443",
+			},
+			expectedDestinations: []oidcIssuerDestination{
+				{
+					hostname: "10.10.10.10",
+					port:     443,
+					ips: []net.IP{
+						net.ParseIP("10.10.10.10"),
+					},
+				},
+				{
+					hostname: "10.10.10.10",
+					port:     8443,
+					ips: []net.IP{
+						net.ParseIP("10.10.10.10"),
+					},
+				},
+			},
 		},
 		{
 			name:        "invalid URL returns error",
@@ -671,20 +1000,14 @@ func TestURLsToIPList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ips, err := urlsToIPList(context.Background(), tt.urls)
+			destinations, err := urlsToOIDCIssuerDestinations(context.Background(), tt.urls)
 			if tt.expectError != "" {
 				require.ErrorContains(t, err, tt.expectError)
 				return
 			}
 
 			require.NoError(t, err)
-
-			actual := make([]string, 0, len(ips))
-			for _, ip := range ips {
-				actual = append(actual, ip.String())
-			}
-
-			require.Equal(t, tt.expectedIPs, actual)
+			require.Equal(t, tt.expectedDestinations, destinations)
 		})
 	}
 }
