@@ -522,6 +522,77 @@ func TestIsGatewayOwnedByKubermaticConfiguration(t *testing.T) {
 	}
 }
 
+func programmedGateway(name types.NamespacedName) *gatewayapiv1.Gateway {
+	addressType := gatewayapiv1.IPAddressType
+	return &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Status: gatewayapiv1.GatewayStatus{
+			Addresses: []gatewayapiv1.GatewayStatusAddress{{
+				Type:  &addressType,
+				Value: "192.0.2.10",
+			}},
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapiv1.GatewayConditionProgrammed),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
+}
+
+func acceptedHTTPRoute(routeName, gatewayName types.NamespacedName) *gatewayapiv1.HTTPRoute {
+	return httpRouteWithAcceptedCondition(routeName, gatewayName, metav1.ConditionTrue, "")
+}
+
+func rejectedHTTPRoute(routeName, gatewayName types.NamespacedName, reason string) *gatewayapiv1.HTTPRoute {
+	return httpRouteWithAcceptedCondition(routeName, gatewayName, metav1.ConditionFalse, reason)
+}
+
+func httpRouteWithAcceptedCondition(routeName, gatewayName types.NamespacedName, status metav1.ConditionStatus, reason string) *gatewayapiv1.HTTPRoute {
+	gatewayNamespace := gatewayapiv1.Namespace(gatewayName.Namespace)
+	return &gatewayapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       routeName.Name,
+			Namespace:  routeName.Namespace,
+			Generation: 1,
+		},
+		Spec: gatewayapiv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+				ParentRefs: []gatewayapiv1.ParentReference{
+					{
+						Name:      gatewayapiv1.ObjectName(gatewayName.Name),
+						Namespace: &gatewayNamespace,
+					},
+				},
+			},
+		},
+		Status: gatewayapiv1.HTTPRouteStatus{
+			RouteStatus: gatewayapiv1.RouteStatus{
+				Parents: []gatewayapiv1.RouteParentStatus{
+					{
+						ParentRef: gatewayapiv1.ParentReference{
+							Name:      gatewayapiv1.ObjectName(gatewayName.Name),
+							Namespace: &gatewayNamespace,
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:               string(gatewayapiv1.RouteConditionAccepted),
+								Status:             status,
+								Reason:             reason,
+								ObservedGeneration: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestClusterVersionIsConfigured(t *testing.T) {
 	testcases := []struct {
 		name       string

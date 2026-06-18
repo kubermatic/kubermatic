@@ -50,11 +50,16 @@ import (
 )
 
 type controllerRunOptions struct {
-	namespace                string
-	internalAddr             string
-	workerCount              int
-	workerName               string
-	enableLeaderElection     bool
+	namespace            string
+	internalAddr         string
+	workerCount          int
+	workerName           string
+	enableLeaderElection bool
+	// enableGatewayAPI binds the --enable-gateway-api flag.
+	//
+	// Deprecated: As of KKP 2.31 Gateway API is the enforced default; this field is no
+	// longer read and is retained only so the flag still parses for backwards compatibility
+	// with older charts that still pass it.
 	enableGatewayAPI         bool
 	httprouteWatchNamespaces string
 }

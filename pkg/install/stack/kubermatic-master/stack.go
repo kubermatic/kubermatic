@@ -21,12 +21,15 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	gatewayutil "k8c.io/kubermatic/v2/pkg/controller/util/gateway"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -35,6 +38,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -52,6 +57,8 @@ const (
 	DexChartName   = "dex"
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
+
+	IAPNamespace = "iap"
 
 	KubermaticOperatorChartName      = "kubermatic-operator"
 	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
@@ -153,6 +160,24 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 
 	if err := applyKubermaticConfiguration(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %w", err)
+	}
+
+	// once Kubermatic Operator is up and running, it will create the managed Gateway object if needed.
+	// so, verify Gateway/HTTPRoute readiness and then optionally clean up the legacy nginx-ingress release.
+	if err := waitForGatewayAndHTTPRoutesReady(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to verify Gateway API readiness: %w", err)
+	}
+
+	// Legacy Ingress objects are always removed once the matching HTTPRoutes are accepted.
+	if err := cleanupLegacyIngresses(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to clean up legacy Ingress resources: %w", err)
+	}
+
+	// The nginx-ingress-controller release (Deployment + LoadBalancer Service) is removed
+	// only when --clean-nginx-lb is set; otherwise a warning is logged so the operator can
+	// remove it manually.
+	if err := cleanupLegacyNginxIngress(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to handle legacy nginx-ingress-controller: %w", err)
 	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -400,20 +425,16 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 
 func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) (hostname, ip string) {
 	gatewayName := gatewayObjectKey(opt.KubermaticConfiguration)
+	gatewayLogger := logger.WithField("gateway", gatewayName.String())
 
-	if opt.KubermaticConfiguration.Spec.Ingress.Gateway.UsesExternalGateway() {
-		logger.WithField("gateway", gatewayName.String()).Info("Waiting for external Gateway to become ready...")
-	} else {
-		logger.WithField("gateway", gatewayName.String()).Info("Waiting for Gateway to become ready...")
-	}
-
-	gtw, err := waitForGateway(ctx, logger, kubeClient, opt.KubermaticConfiguration)
-	if err != nil {
-		logger.Warn("Timed out waiting for the Gateway to become ready.")
-		logger.Warn("Please check the Gateway and EnvoyProxy Service, and if necessary,")
-		logger.Warn("reconfigure the envoy-gateway-controller Helm chart. Re-run the installer")
-		logger.Warn("to apply updated configuration afterwards.")
-		logger.Warn(err.Error())
+	// Readiness is already verified by waitForGatewayAndHTTPRoutesReady earlier in Deploy;
+	// this just reads the Gateway to extract its address for the DNS hint.
+	gtw := &gatewayapiv1.Gateway{}
+	if err := kubeClient.Get(ctx, gatewayName, gtw); err != nil {
+		gatewayLogger.Warn("Failed to read the Gateway after the readiness check.")
+		gatewayLogger.Warnf("Please run `kubectl -n %s get gateway %s` to inspect the Gateway and confirm its address;", gatewayName.Namespace, gatewayName.Name)
+		gatewayLogger.Warn("then configure the DNS records below manually.")
+		gatewayLogger.Warn(err.Error())
 		return "", ""
 	}
 
@@ -539,7 +560,7 @@ func waitForGatewayObjectWithPollConfig(
 	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
 			if apierrors.IsNotFound(err) && !reportedMissingGateway {
-				l.Info("Gateway does not exist yet, waiting...")
+				l.Debug("Gateway does not exist yet, waiting...")
 				reportedMissingGateway = true
 			} else {
 				l.Debugf("failed to get Gateway, err: %v", err)
@@ -595,4 +616,293 @@ func waitForGatewayObjectWithPollConfig(
 	}
 
 	return &gw, nil
+}
+
+// waitForGatewayAndHTTPRoutesReady waits unconditionally for the active Gateway to be
+// Programmed and for the kubermatic, Dex, and IAP HTTPRoutes to be Accepted by their
+// respective Gateways. The wait is skipped entirely under HeadlessInstallation. The
+// Dex stage is skipped when the Dex chart is in opt.SkipCharts. The IAP stage is
+// skipped when the iap namespace is not present on the cluster.
+func waitForGatewayAndHTTPRoutesReady(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	return waitForGatewayAndHTTPRoutesReadyWithPollConfig(ctx, l, c, opt, defaultGatewayAPIReadinessPollConfig())
+}
+
+func waitForGatewayAndHTTPRoutesReadyWithPollConfig(ctx context.Context, logger *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions, pollConfig gatewayAPIReadinessPollConfig) error {
+	pollConfig = pollConfig.withDefaults()
+
+	config := opt.KubermaticConfiguration
+	if config == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+	if config.Spec.FeatureGates[features.HeadlessInstallation] {
+		logger.Debug("Headless installation requested, skipping Gateway/HTTPRoute readiness checks")
+		return nil
+	}
+
+	logger.Info("🔁 Verifying Gateway API readiness…")
+	l := log.Prefix(logger, "   ")
+
+	gatewayName := gatewayObjectKey(config)
+	gatewayLogger := l.WithField("gateway", gatewayName.String())
+	isExternalGateway := config.Spec.Ingress.Gateway.UsesExternalGateway()
+	if isExternalGateway {
+		gatewayLogger.Info("Waiting for external Gateway to become ready...")
+	} else {
+		gatewayLogger.Info("Waiting for Gateway to become ready...")
+	}
+	if _, err := waitForGatewayWithPollConfig(ctx, l, c, config, pollConfig); err != nil {
+		gatewayLogger.Warn("Timed out waiting for the Gateway to become ready.")
+		if isExternalGateway {
+			gatewayLogger.Warn("Please check the external Gateway and its controller, and ensure")
+			gatewayLogger.Warn("the Gateway listener accepts HTTPRoutes from the kubermatic namespace.")
+			gatewayLogger.Warn("Re-run the installer to retry after fixing the configuration.")
+		} else {
+			gatewayLogger.Warn("Please check the Gateway and EnvoyProxy Service, and if necessary,")
+			gatewayLogger.Warn("reconfigure the envoy-gateway-controller Helm chart. Re-run the installer")
+			gatewayLogger.Warn("to apply updated configuration afterwards.")
+		}
+		return fmt.Errorf("failed to wait for Gateway %s to become ready: %w", gatewayName.String(), err)
+	}
+
+	kubermaticRouteName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}
+	if err := waitForHTTPRouteAcceptedByGateway(ctx, l, c, kubermaticRouteName, gatewayName, pollConfig); err != nil {
+		l.WithField("httproute", kubermaticRouteName.String()).WithField("gateway", gatewayName.String()).Warn("Kubermatic HTTPRoute did not become accepted by the Gateway.")
+		return err
+	}
+
+	if !slices.Contains(opt.SkipCharts, DexChartName) {
+		dexGatewayName := dexGatewayObjectKey(config, opt)
+		if dexGatewayName != gatewayName {
+			dexGatewayLogger := l.WithField("gateway", dexGatewayName.String())
+			dexGatewayLogger.Info("Waiting for Dex Gateway to become ready...")
+			if _, err := waitForGatewayObjectWithPollConfig(ctx, l, c, dexGatewayName, false, false, pollConfig); err != nil {
+				dexGatewayLogger.Warn("Timed out waiting for the Dex Gateway to become ready.")
+				return fmt.Errorf("failed to wait for Dex Gateway %s to become ready: %w", dexGatewayName.String(), err)
+			}
+		}
+		dexRouteName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+		if err := waitForHTTPRouteAcceptedByGateway(ctx, l, c, dexRouteName, dexGatewayName, pollConfig); err != nil {
+			l.WithField("httproute", dexRouteName.String()).WithField("gateway", dexGatewayName.String()).Warn("Dex HTTPRoute did not become accepted by the Gateway.")
+			return err
+		}
+	} else {
+		l.Info("Skipping Dex HTTPRoute readiness check because the Dex chart is skipped")
+	}
+
+	if err := waitForIAPHTTPRoutesReady(ctx, l, c, pollConfig); err != nil {
+		return err
+	}
+
+	logger.Info("✅ Gateway and HTTPRoutes ready.")
+	return nil
+}
+
+func waitForIAPHTTPRoutesReady(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, pollConfig gatewayAPIReadinessPollConfig) error {
+	exists, err := namespaceExists(ctx, c, IAPNamespace)
+	if err != nil {
+		l.Warnf("Failed to probe for %s namespace; cannot verify IAP HTTPRoute readiness.", IAPNamespace)
+		return err
+	}
+	if !exists {
+		l.Debug("IAP namespace not present, skipping IAP HTTPRoute readiness checks")
+		return nil
+	}
+
+	routes := &gatewayapiv1.HTTPRouteList{}
+	if err := c.List(ctx, routes, ctrlruntimeclient.InNamespace(IAPNamespace)); err != nil {
+		l.Warnf("Failed to list HTTPRoutes in %s namespace; cannot verify IAP HTTPRoute readiness.", IAPNamespace)
+		return fmt.Errorf("failed to list HTTPRoutes in %s namespace: %w", IAPNamespace, err)
+	}
+	if len(routes.Items) == 0 {
+		l.Debug("No IAP HTTPRoutes found, skipping IAP HTTPRoute readiness checks")
+		return nil
+	}
+
+	for i := range routes.Items {
+		route := &routes.Items[i]
+		routeKey := types.NamespacedName{Namespace: route.Namespace, Name: route.Name}
+		if len(route.Spec.ParentRefs) == 0 {
+			l.WithField("httproute", routeKey.String()).Warn("IAP HTTPRoute has no parentRefs; cannot determine target Gateway.")
+			return fmt.Errorf("IAP HTTPRoute %s has no parentRefs", routeKey.String())
+		}
+		for _, parent := range route.Spec.ParentRefs {
+			gw := types.NamespacedName{Namespace: route.Namespace, Name: string(parent.Name)}
+			if parent.Namespace != nil && *parent.Namespace != "" {
+				gw.Namespace = string(*parent.Namespace)
+			}
+			if err := waitForHTTPRouteAcceptedByGateway(ctx, l, c, routeKey, gw, pollConfig); err != nil {
+				l.WithField("httproute", routeKey.String()).WithField("gateway", gw.String()).Warn("IAP HTTPRoute did not become accepted by the Gateway.")
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// cleanupLegacyIngresses removes Ingress objects left over from the 2.30 nginx-ingress
+// installation path. Best-effort: missing objects are ignored. Assumes Gateway/HTTPRoute
+// readiness has already been verified by waitForGatewayAndHTTPRoutesReady.
+func cleanupLegacyIngresses(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	config := opt.KubermaticConfiguration
+	if config == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+	if config.Spec.FeatureGates[features.HeadlessInstallation] {
+		l.Debug("Headless installation requested, skipping legacy Ingress cleanup")
+		return nil
+	}
+	l.Info("🧹 Removing legacy Ingress resources left over from the nginx-ingress installation path")
+
+	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
+	if err := deleteIngressByName(ctx, l, c, kubermaticIngressName); err != nil {
+		return err
+	}
+
+	if !slices.Contains(opt.SkipCharts, DexChartName) {
+		dexIngressName := types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}
+		if err := deleteIngressByName(ctx, l, c, dexIngressName); err != nil {
+			return err
+		}
+	}
+
+	iapExists, err := namespaceExists(ctx, c, IAPNamespace)
+	if err != nil {
+		return err
+	}
+	if !iapExists {
+		return nil
+	}
+
+	list := &networkingv1.IngressList{}
+	if err := c.List(ctx, list, ctrlruntimeclient.InNamespace(IAPNamespace)); err != nil {
+		return fmt.Errorf("failed to list Ingresses in %s namespace: %w", IAPNamespace, err)
+	}
+	for i := range list.Items {
+		ing := &list.Items[i]
+		if err := c.Delete(ctx, ing); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete Ingress %s/%s: %w", ing.Namespace, ing.Name, err)
+		}
+		l.WithField("ingress", fmt.Sprintf("%s/%s", ing.Namespace, ing.Name)).Info("Deleted legacy IAP Ingress")
+	}
+	return nil
+}
+
+func deleteIngressByName(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, name types.NamespacedName) error {
+	ing := &networkingv1.Ingress{}
+	if err := c.Get(ctx, name, ing); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get Ingress %s: %w", name.String(), err)
+	}
+	if err := c.Delete(ctx, ing); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete Ingress %s: %w", name.String(), err)
+	}
+	l.WithField("ingress", name.String()).Info("Deleted legacy Ingress")
+	return nil
+}
+
+func namespaceExists(ctx context.Context, c ctrlruntimeclient.Client, name string) (bool, error) {
+	ns := &corev1.Namespace{}
+	if err := c.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to probe for namespace %s: %w", name, err)
+	}
+	return true, nil
+}
+
+func waitForHTTPRouteAcceptedByGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) error {
+	logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String()).Info("Waiting for HTTPRoute to be accepted by Gateway...")
+	if _, err := waitForHTTPRoute(ctx, logger, kubeClient, routeName, gatewayName, pollConfig); err != nil {
+		return fmt.Errorf("failed to wait for HTTPRoute %s to be accepted by Gateway %s; verify the Gateway listener hostname and allowedRoutes accept namespace %q: %w", routeName.String(), gatewayName.String(), routeName.Namespace, err)
+	}
+	return nil
+}
+
+func waitForHTTPRoute(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) (*gatewayapiv1.HTTPRoute, error) {
+	pollConfig = pollConfig.withDefaults()
+	l := logger.WithField("httproute", routeName.String()).WithField("gateway", gatewayName.String())
+	route := gatewayapiv1.HTTPRoute{}
+	routeFound := false
+
+	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
+		if err := kubeClient.Get(ctx, routeName, &route); err != nil {
+			routeFound = false
+			l.Debugf("failed to get HTTPRoute, err: %v", err)
+			return false, nil
+		}
+		routeFound = true
+
+		if !gatewayutil.HTTPRouteReferencesGateway(&route, gatewayName) {
+			l.Debug("HTTPRoute does not reference the active Gateway yet")
+			return false, nil
+		}
+
+		if !gatewayutil.HTTPRouteAcceptedByGateway(&route, gatewayName) {
+			l.Debug("HTTPRoute has not been accepted by the active Gateway yet")
+			return false, nil
+		}
+
+		l.Info("HTTPRoute is accepted by the active Gateway")
+		return true, nil
+	})
+	if err != nil {
+		status := "HTTPRoute does not exist"
+		if routeFound {
+			status = httpRouteGatewayAcceptanceStatus(&route, gatewayName)
+		}
+		return nil, fmt.Errorf("HTTPRoute %s failed to be accepted by Gateway %s within %s: %s: %w", routeName.String(), gatewayName.String(), pollConfig.timeout, status, err)
+	}
+
+	return &route, nil
+}
+
+func httpRouteGatewayAcceptanceStatus(route *gatewayapiv1.HTTPRoute, gatewayName types.NamespacedName) string {
+	if !gatewayutil.HTTPRouteReferencesGateway(route, gatewayName) {
+		return "HTTPRoute does not reference Gateway"
+	}
+
+	for _, parentStatus := range route.Status.Parents {
+		if !gatewayutil.ParentReferenceMatchesGateway(route.Namespace, parentStatus.ParentRef, gatewayName) {
+			continue
+		}
+
+		accepted := meta.FindStatusCondition(parentStatus.Conditions, string(gatewayapiv1.RouteConditionAccepted))
+		if accepted == nil {
+			return "Accepted condition is missing for Gateway parent"
+		}
+
+		return fmt.Sprintf("Accepted=%s reason=%q message=%q observedGeneration=%d routeGeneration=%d", accepted.Status, accepted.Reason, accepted.Message, accepted.ObservedGeneration, route.Generation)
+	}
+
+	return "HTTPRoute status has no parent entry for Gateway"
+}
+
+// cleanupLegacyNginxIngress uninstalls the legacy nginx-ingress-controller Helm release
+// and deletes its namespace when --clean-nginx-lb is set. Otherwise, when the namespace
+// still exists, it logs a warning so the operator knows to remove it manually.
+func cleanupLegacyNginxIngress(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	exists, err := common.NginxIngressNamespaceExists(ctx, kubeClient)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		logger.Debugf("%s namespace not present, nothing to clean up.", common.NginxIngressControllerNamespace)
+		return nil
+	}
+
+	if !opt.CleanNginxLB {
+		logger.Warnf("⚠️  Legacy %s release is still installed. Re-run the installer with --clean-nginx-lb to remove it, or uninstall manually.", common.NginxIngressControllerChartName)
+		return nil
+	}
+
+	logger.Info("🧹 Cleaning up legacy nginx-ingress controller…")
+	sublogger := log.Prefix(logger, "   ")
+	if err := common.UninstallNginxIngressController(ctx, sublogger, kubeClient, helmClient); err != nil {
+		return err
+	}
+	logger.Info("✅ Legacy nginx-ingress controller cleanup complete.")
+	return nil
 }
