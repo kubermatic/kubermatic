@@ -247,7 +247,7 @@ func Add(
 func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(e.Object)
+			return isOIDCIssuerLoadBalancerServiceCandidate(e.Object)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldSvc, oldOK := e.ObjectOld.(*corev1.Service)
@@ -256,8 +256,8 @@ func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 				return false
 			}
 
-			if !serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(oldSvc) &&
-				!serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(newSvc) {
+			if !isOIDCIssuerLoadBalancerServiceCandidate(oldSvc) &&
+				!isOIDCIssuerLoadBalancerServiceCandidate(newSvc) {
 				return false
 			}
 
@@ -267,7 +267,7 @@ func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 				!apiequality.Semantic.DeepEqual(oldSvc.Status.LoadBalancer.Ingress, newSvc.Status.LoadBalancer.Ingress)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(e.Object)
+			return isOIDCIssuerLoadBalancerServiceCandidate(e.Object)
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
 			return false
@@ -275,7 +275,9 @@ func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 	}
 }
 
-func serviceMayProvideOIDCIssuerLoadBalancerBackendPeers(obj ctrlruntimeclient.Object) bool {
+// isOIDCIssuerLoadBalancerServiceCandidate only checks cheap Service fields.
+// Reconciliation performs the exact issuer IP/hostname and port match.
+func isOIDCIssuerLoadBalancerServiceCandidate(obj ctrlruntimeclient.Object) bool {
 	svc, ok := obj.(*corev1.Service)
 	if !ok {
 		return false
@@ -321,7 +323,7 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 			continue
 		}
 
-		if seedUnavailable || r.clusterMayUseOIDCIssuer(cluster, seed) {
+		if seedUnavailable || r.isOIDCIssuerClusterCandidate(cluster, seed) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
 		}
 	}
@@ -333,9 +335,9 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 	return requests
 }
 
-// clusterMayUseOIDCIssuer is a cheap enqueue heuristic. Keep it aligned with
+// isOIDCIssuerClusterCandidate is a cheap enqueue heuristic. Keep it aligned with
 // oidcIssuerDestinations; false negatives only delay updates until the next reconcile.
-func (r *Reconciler) clusterMayUseOIDCIssuer(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) bool {
+func (r *Reconciler) isOIDCIssuerClusterCandidate(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) bool {
 	oidcSettings := cluster.Spec.OIDC //nolint:staticcheck
 	if oidcSettings.IssuerURL != "" ||
 		cluster.Spec.IsAuthenticationConfigurationEnabled() ||
