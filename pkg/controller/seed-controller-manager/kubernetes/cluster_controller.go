@@ -247,7 +247,7 @@ func Add(
 func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return isOIDCIssuerLoadBalancerServiceCandidate(e.Object)
+			return false
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldSvc, oldOK := e.ObjectOld.(*corev1.Service)
