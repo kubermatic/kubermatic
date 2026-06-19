@@ -155,4 +155,26 @@ echodate "Running post-migration tests (Gateway API mode)..."
 
 go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestGatewayAPIPostMigration"
 
+echodate ""
+echodate "Re-running kubermatic-installer with --clean-nginx-lb to tear down legacy nginx-ingress-controller..."
+
+./_build/kubermatic-installer deploy kubermatic-master \
+  --storageclass copy-default \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$merged_helm_values_file" \
+  --skip-seed-validation=kubermatic \
+  --clean-nginx-lb \
+  --verbose
+
+echodate "Verifying nginx-ingress-controller Helm release has been removed..."
+
+if helm status -n nginx-ingress-controller nginx-ingress-controller > /dev/null 2>&1; then
+  echodate "FAIL: nginx-ingress-controller Helm release still exists after --clean-nginx-lb"
+  exit 1
+fi
+
+echodate "Running post-cleanup test (--clean-nginx-lb)..."
+
+go_test gateway_api_clean_nginx_lb_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestNginxIngressControllerCleanedUp"
+
 echodate "Gateway API migration tests completed successfully!"
