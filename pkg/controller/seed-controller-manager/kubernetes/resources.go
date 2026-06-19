@@ -67,6 +67,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
@@ -843,6 +844,11 @@ type oidcIssuerDestinationKey struct {
 
 type oidcIssuerDestinationPortLookup map[string]sets.Set[int32]
 
+type serviceNetworkPolicyPeerKey struct {
+	namespace string
+	selector  string
+}
+
 type hostnameResolver func(context.Context, string) ([]net.IP, error)
 
 const networkPolicyHostnameResolutionTimeout = 10 * time.Second
@@ -943,7 +949,7 @@ func (r *Reconciler) oidcIssuerLoadBalancerBackendPeers(ctx context.Context, des
 	})
 
 	peers := []networkingv1.NetworkPolicyPeer{}
-	seenPeers := map[string]struct{}{}
+	seenPeers := map[serviceNetworkPolicyPeerKey]struct{}{}
 
 	for i := range services.Items {
 		svc := &services.Items[i]
@@ -959,7 +965,7 @@ func (r *Reconciler) oidcIssuerLoadBalancerBackendPeers(ctx context.Context, des
 
 		// Shared external VIPs can match more than one Service on the same port.
 		// Keep all matching backend selectors; each peer remains namespace/pod-scoped.
-		peerKey := serviceNetworkPolicyPeerKey(svc.Namespace, svc.Spec.Selector)
+		peerKey := newServiceNetworkPolicyPeerKey(svc.Namespace, svc.Spec.Selector)
 		if _, exists := seenPeers[peerKey]; exists {
 			continue
 		}
@@ -1092,13 +1098,11 @@ func servicePortsMatch(servicePorts, destinationPorts sets.Set[int32]) bool {
 	return false
 }
 
-func serviceNetworkPolicyPeerKey(namespace string, selector map[string]string) string {
-	parts := []string{namespace}
-	for _, key := range slices.Sorted(maps.Keys(selector)) {
-		parts = append(parts, key+"="+selector[key])
+func newServiceNetworkPolicyPeerKey(namespace string, selector map[string]string) serviceNetworkPolicyPeerKey {
+	return serviceNetworkPolicyPeerKey{
+		namespace: namespace,
+		selector:  labels.FormatLabels(selector),
 	}
-
-	return strings.Join(parts, "\x00")
 }
 
 // issuerURLsFromAuthenticationConfigurationYAML parses the given apiserver AuthenticationConfiguration and returns the contained issuer URLs.
