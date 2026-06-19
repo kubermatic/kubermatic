@@ -74,6 +74,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apiserverconfig "k8s.io/apiserver/pkg/apis/apiserver"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
@@ -1553,8 +1554,8 @@ func urlsToOIDCIssuerDestinationsWithResolver(ctx context.Context, urls []string
 
 func oidcIssuerURLPort(u *url.URL) (int32, error) {
 	if port := u.Port(); port != "" {
-		parsedPort, err := strconv.ParseInt(port, 10, 32)
-		if err != nil || parsedPort < 1 || parsedPort > 65535 {
+		parsedPort, err := strconv.Atoi(port)
+		if err != nil || len(validation.IsValidPortNum(parsedPort)) > 0 {
 			return 0, fmt.Errorf("invalid port %q", port)
 		}
 		return int32(parsedPort), nil
