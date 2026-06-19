@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"maps"
@@ -1470,19 +1471,10 @@ func urlsToOIDCIssuerDestinationsWithResolver(ctx context.Context, urls []string
 
 	destinations := make([]oidcIssuerDestination, 0, len(destinationKeys))
 	for _, key := range slices.SortedFunc(maps.Keys(destinationKeys), func(a, b oidcIssuerDestinationKey) int {
-		if a.hostname < b.hostname {
-			return -1
+		if result := cmp.Compare(a.hostname, b.hostname); result != 0 {
+			return result
 		}
-		if a.hostname > b.hostname {
-			return 1
-		}
-		if a.port < b.port {
-			return -1
-		}
-		if a.port > b.port {
-			return 1
-		}
-		return 0
+		return cmp.Compare(a.port, b.port)
 	}) {
 		destinations = append(destinations, oidcIssuerDestination{
 			hostname: key.hostname,
