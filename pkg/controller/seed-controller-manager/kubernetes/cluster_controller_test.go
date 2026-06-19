@@ -37,160 +37,198 @@ import (
 func TestOIDCIssuerLoadBalancerServicePredicate(t *testing.T) {
 	predicate := oidcIssuerLoadBalancerServicePredicate()
 
-	t.Run("ignore create event", func(t *testing.T) {
-		require.False(t, predicate.Create(event.CreateEvent{Object: oidcIssuerLoadBalancerService()}))
-	})
+	eventTests := []struct {
+		name     string
+		matches  func() bool
+		expected bool
+	}{
+		{
+			name: "ignore create event",
+			matches: func() bool {
+				return predicate.Create(event.CreateEvent{Object: oidcIssuerLoadBalancerService()})
+			},
+			expected: false,
+		},
+		{
+			name: "delete matching service",
+			matches: func() bool {
+				return predicate.Delete(event.DeleteEvent{Object: oidcIssuerLoadBalancerService()})
+			},
+			expected: true,
+		},
+		{
+			name: "ignore generic event",
+			matches: func() bool {
+				return predicate.Generic(event.GenericEvent{Object: oidcIssuerLoadBalancerService()})
+			},
+			expected: false,
+		},
+	}
 
-	t.Run("update when load balancer ingress is assigned", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		newSvc := oldSvc.DeepCopy()
-		oldSvc.Status.LoadBalancer.Ingress = nil
+	for _, tt := range eventTests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.expected, tt.matches())
+		})
+	}
 
-		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
+	updateTests := []struct {
+		name     string
+		mutate   func(oldSvc, newSvc *corev1.Service)
+		expected bool
+	}{
+		{
+			name: "update when load balancer ingress is assigned",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				oldSvc.Status.LoadBalancer.Ingress = nil
+			},
+			expected: true,
+		},
+		{
+			name: "update when ingress changes",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				newSvc.Status.LoadBalancer.Ingress = []corev1.LoadBalancerIngress{{IP: "10.10.45.1"}}
+			},
+			expected: true,
+		},
+		{
+			name: "update when ports change",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				newSvc.Spec.Ports = []corev1.ServicePort{{Port: 443}}
+			},
+			expected: true,
+		},
+		{
+			name: "update when service stops matching",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				newSvc.Spec.Type = corev1.ServiceTypeClusterIP
+			},
+			expected: true,
+		},
+		{
+			name: "ignore update when neither service is a candidate",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				oldSvc.Status.LoadBalancer.Ingress = nil
+				newSvc.Status.LoadBalancer.Ingress = nil
+				newSvc.Labels = map[string]string{"changed": "true"}
+			},
+			expected: false,
+		},
+		{
+			name: "ignore unrelated update",
+			mutate: func(oldSvc, newSvc *corev1.Service) {
+				newSvc.Labels = map[string]string{"changed": "true"}
+			},
+			expected: false,
+		},
+	}
 
-	t.Run("update when ingress changes", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		newSvc := oldSvc.DeepCopy()
-		newSvc.Status.LoadBalancer.Ingress = []corev1.LoadBalancerIngress{{IP: "10.10.45.1"}}
+	for _, tt := range updateTests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldSvc := oidcIssuerLoadBalancerService()
+			newSvc := oldSvc.DeepCopy()
+			tt.mutate(oldSvc, newSvc)
 
-		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
-
-	t.Run("update when ports change", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		newSvc := oldSvc.DeepCopy()
-		newSvc.Spec.Ports = []corev1.ServicePort{{Port: 443}}
-
-		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
-
-	t.Run("update when service stops matching", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		newSvc := oldSvc.DeepCopy()
-		newSvc.Spec.Type = corev1.ServiceTypeClusterIP
-
-		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
-
-	t.Run("ignore update when neither service is a candidate", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		oldSvc.Status.LoadBalancer.Ingress = nil
-		newSvc := oldSvc.DeepCopy()
-		newSvc.Labels = map[string]string{"changed": "true"}
-
-		require.False(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
-
-	t.Run("ignore unrelated update", func(t *testing.T) {
-		oldSvc := oidcIssuerLoadBalancerService()
-		newSvc := oldSvc.DeepCopy()
-		newSvc.Labels = map[string]string{"changed": "true"}
-
-		require.False(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
-	})
-
-	t.Run("delete matching service", func(t *testing.T) {
-		require.True(t, predicate.Delete(event.DeleteEvent{Object: oidcIssuerLoadBalancerService()}))
-	})
-
-	t.Run("ignore generic event", func(t *testing.T) {
-		require.False(t, predicate.Generic(event.GenericEvent{Object: oidcIssuerLoadBalancerService()}))
-	})
+			require.Equal(t, tt.expected, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
+		})
+	}
 }
 
 func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 	ctx := context.Background()
 
-	objects := []ctrlruntimeclient.Object{
-		clusterWithNetworkPolicy("legacy-oidc", "cluster-legacy-oidc", "dc-a", func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.OIDC.IssuerURL = "https://issuer.example.com" //nolint:staticcheck
-		}),
-		clusterWithNetworkPolicy("cluster-auth", "cluster-auth", "dc-a", func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.AuthenticationConfiguration = &kubermaticv1.AuthenticationConfiguration{
-				SecretName: "auth-config",
-				SecretKey:  "config.yaml",
-			}
-		}),
-		clusterWithNetworkPolicy("dc-auth", "cluster-dc-auth", "dc-auth", nil),
-		clusterWithNetworkPolicy("no-oidc", "cluster-no-oidc", "dc-a", nil),
-		&kubermaticv1.Cluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-network-policy",
+	tests := []struct {
+		name          string
+		objects       []ctrlruntimeclient.Object
+		seedGetter    func() (*kubermaticv1.Seed, error)
+		oidcIssuerURL string
+		features      Features
+		expected      []reconcile.Request
+	}{
+		{
+			name: "enqueue OIDC candidates",
+			objects: []ctrlruntimeclient.Object{
+				clusterWithNetworkPolicy("legacy-oidc", "cluster-legacy-oidc", "dc-a", func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.OIDC.IssuerURL = "https://issuer.example.com" //nolint:staticcheck
+				}),
+				clusterWithNetworkPolicy("cluster-auth", "cluster-auth", "dc-a", func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.AuthenticationConfiguration = &kubermaticv1.AuthenticationConfiguration{
+						SecretName: "auth-config",
+						SecretKey:  "config.yaml",
+					}
+				}),
+				clusterWithNetworkPolicy("dc-auth", "cluster-dc-auth", "dc-auth", nil),
+				clusterWithNetworkPolicy("no-oidc", "cluster-no-oidc", "dc-a", nil),
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "no-network-policy",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Features: map[string]bool{},
+					},
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-no-network-policy",
+					},
+				},
 			},
-			Spec: kubermaticv1.ClusterSpec{
-				Features: map[string]bool{},
-			},
-			Status: kubermaticv1.ClusterStatus{
-				NamespaceName: "cluster-no-network-policy",
-			},
-		},
-	}
-
-	r := &Reconciler{
-		Client: fake.NewClientBuilder().WithObjects(objects...).Build(),
-		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return &kubermaticv1.Seed{
-				Spec: kubermaticv1.SeedSpec{
-					Datacenters: map[string]kubermaticv1.Datacenter{
-						"dc-auth": {
-							Spec: kubermaticv1.DatacenterSpec{
-								AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
-									SecretName: "dc-auth-config",
-									SecretKey:  "config.yaml",
+			seedGetter: func() (*kubermaticv1.Seed, error) {
+				return &kubermaticv1.Seed{
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"dc-auth": {
+								Spec: kubermaticv1.DatacenterSpec{
+									AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
+										SecretName: "dc-auth-config",
+										SecretKey:  "config.yaml",
+									},
 								},
 							},
 						},
 					},
-				},
-			}, nil
+				}, nil
+			},
+			expected: []reconcile.Request{
+				{NamespacedName: types.NamespacedName{Name: "cluster-auth"}},
+				{NamespacedName: types.NamespacedName{Name: "dc-auth"}},
+				{NamespacedName: types.NamespacedName{Name: "legacy-oidc"}},
+			},
+		},
+		{
+			name:          "enqueue cluster using default issuer",
+			objects:       []ctrlruntimeclient.Object{clusterWithNetworkPolicy("default-issuer", "cluster-default-issuer", "dc-a", nil)},
+			oidcIssuerURL: "https://issuer.example.com",
+			features: Features{
+				KubernetesOIDCAuthentication: true,
+			},
+			expected: []reconcile.Request{
+				{NamespacedName: types.NamespacedName{Name: "default-issuer"}},
+			},
+		},
+		{
+			name:    "enqueue network policy clusters when seed is unavailable",
+			objects: []ctrlruntimeclient.Object{clusterWithNetworkPolicy("candidate", "cluster-candidate", "dc-a", nil)},
+			seedGetter: func() (*kubermaticv1.Seed, error) {
+				return nil, errors.New("seed unavailable")
+			},
+			expected: []reconcile.Request{
+				{NamespacedName: types.NamespacedName{Name: "candidate"}},
+			},
 		},
 	}
 
-	requests := r.enqueueClustersForOIDCIssuerLoadBalancerService(ctx, oidcIssuerLoadBalancerService())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Reconciler{
+				Client:        fake.NewClientBuilder().WithObjects(tt.objects...).Build(),
+				seedGetter:    tt.seedGetter,
+				oidcIssuerURL: tt.oidcIssuerURL,
+				features:      tt.features,
+			}
 
-	require.Equal(t, []reconcile.Request{
-		{NamespacedName: types.NamespacedName{Name: "cluster-auth"}},
-		{NamespacedName: types.NamespacedName{Name: "dc-auth"}},
-		{NamespacedName: types.NamespacedName{Name: "legacy-oidc"}},
-	}, requests)
-}
+			requests := r.enqueueClustersForOIDCIssuerLoadBalancerService(ctx, oidcIssuerLoadBalancerService())
 
-func TestEnqueueClustersForOIDCIssuerLoadBalancerServiceWithDefaultIssuer(t *testing.T) {
-	ctx := context.Background()
-
-	cluster := clusterWithNetworkPolicy("default-issuer", "cluster-default-issuer", "dc-a", nil)
-	r := &Reconciler{
-		Client:        fake.NewClientBuilder().WithObjects(cluster).Build(),
-		oidcIssuerURL: "https://issuer.example.com",
-		features: Features{
-			KubernetesOIDCAuthentication: true,
-		},
+			require.Equal(t, tt.expected, requests)
+		})
 	}
-
-	requests := r.enqueueClustersForOIDCIssuerLoadBalancerService(ctx, oidcIssuerLoadBalancerService())
-
-	require.Equal(t, []reconcile.Request{
-		{NamespacedName: types.NamespacedName{Name: "default-issuer"}},
-	}, requests)
-}
-
-func TestEnqueueClustersForOIDCIssuerLoadBalancerServiceWithUnavailableSeed(t *testing.T) {
-	ctx := context.Background()
-
-	cluster := clusterWithNetworkPolicy("candidate", "cluster-candidate", "dc-a", nil)
-	r := &Reconciler{
-		Client: fake.NewClientBuilder().WithObjects(cluster).Build(),
-		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return nil, errors.New("seed unavailable")
-		},
-	}
-
-	requests := r.enqueueClustersForOIDCIssuerLoadBalancerService(ctx, oidcIssuerLoadBalancerService())
-
-	require.Equal(t, []reconcile.Request{
-		{NamespacedName: types.NamespacedName{Name: "candidate"}},
-	}, requests)
 }
 
 func clusterWithNetworkPolicy(name, namespace, datacenter string, mutate func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
