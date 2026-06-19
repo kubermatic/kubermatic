@@ -14,167 +14,79 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script tests the migration from nginx-ingress-controller to Gateway API.
+### Upgrade-path E2E that exercises --clean-nginx-lb after a real 2.29 -> 2.30 -> 2.31
+### upgrade sequence. Two cases run sequentially against fresh kind clusters:
+###
+###   Case 1 (2.30 already on Gateway API):
+###     1. Install KKP v2.29.x (nginx-ingress era).
+###     2. Upgrade to KKP v2.30.x with --migrate-gateway-api.
+###     3. Re-run the installer without --migrate-gateway-api (no-op flag).
+###     4. Re-run the installer with --clean-nginx-lb to tear down nginx.
+###
+###   Case 2 (2.30 stays on nginx, late migrator):
+###     1. Install KKP v2.29.x.
+###     2. Upgrade to KKP v2.30.x WITHOUT --migrate-gateway-api (stay on nginx).
+###     3. Run the installer without --migrate-gateway-api.
+###     4. Run the installer without --migrate-gateway-api again (idempotency).
+###     5. Run the installer with --clean-nginx-lb.
+###
+### After each case the script verifies the nginx-ingress-controller release, namespace,
+### and legacy Ingress objects are gone, and that Gateway API resources are healthy.
 
 set -euo pipefail
 
 cd $(dirname $0)/../..
 source hack/lib.sh
+source hack/ci/lib-gateway-api-migration.sh
 
-TEST_NAME="Pre-warm Go build cache"
-echodate "Attempting to pre-warm Go build cache"
+run_case_1() {
+  echodate "================================================================"
+  echodate " Case 1: 2.29 -> 2.30 (Gateway API enabled) -> 2.31 cleanup"
+  echodate "================================================================"
 
-beforeGocache=$(nowms)
-make download-gocache
-pushElapsed gocache_download_duration_milliseconds $beforeGocache
+  setup_kkp_migration_environment
 
-export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_nginx.yaml
+  deploy_kkp_v229
+  run_pre_migration_tests "case1-v229"
 
-echodate "Deploying KKP with nginx-ingress"
+  deploy_kkp_v230_with_gateway_api_flag
 
-source hack/ci/setup-kind-cluster.sh
+  echodate "Case 1 / Step 3: re-running PR installer without --migrate-gateway-api (flag is a no-op)..."
+  deploy_kkp_under_test
 
-# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/nginx-ingress" --namespace nginx-ingress-controller > /dev/null 2>&1 &
+  echodate "Case 1 / Step 4: re-running PR installer with --clean-nginx-lb..."
+  deploy_kkp_under_test --clean-nginx-lb
 
-KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
+  verify_cleanup_state
+}
 
-DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
+run_case_2() {
+  echodate "================================================================"
+  echodate " Case 2: 2.29 -> 2.30 (still on nginx) -> 2.31 cleanup"
+  echodate "================================================================"
 
-export HELM_VALUES_EXTRA="
-dex:
-  replicaCount: 1
-  ingress:
-    enabled: true
-    className: "nginx"
-    hosts:
-      - host: worker.ci.k8c.io
-        paths:
-          - path: /dex
-            pathType: ImplementationSpecific
-    tls: []
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-staging
+  setup_kkp_migration_environment
 
-  config:
-    issuer: https://worker.ci.k8c.io/dex
-    enablePasswordDB: true
-    staticPasswords:
-      - email: kubermatic@example.com
-        hash: ${DEX_PASSWORD_HASH}
-        username: admin
-"
+  deploy_kkp_v229
+  run_pre_migration_tests "case2-v229"
 
-export KUBERMATIC_DOMAIN="worker.ci.k8c.io"
-source hack/ci/setup-kubermatic-in-kind.sh
+  deploy_kkp_v230_without_gateway_api_flag
+  run_pre_migration_tests "case2-v230-nginx"
 
-retry 10 check_all_deployments_ready nginx-ingress-controller
-echodate "nginx-ingress controller deployed"
+  echodate "Case 2 / Step 3: running installer without --migrate-gateway-api (first PR-installer run)..."
+  deploy_kkp_under_test
 
-echodate "Running pre-migration tests (Ingress mode)..."
-go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestGatewayAPIPreMigration"
+  echodate "Case 2 / Step 4: running installer without --migrate-gateway-api again (idempotency)..."
+  deploy_kkp_under_test
 
-echodate "Pre-migration tests passed"
-echodate ""
-echodate "Upgrading to Gateway API mode"
+  echodate "Case 2 / Step 5: running installer with --clean-nginx-lb..."
+  deploy_kkp_under_test --clean-nginx-lb
 
-export HELM_VALUES_EXTRA="
-migrateGatewayAPI: true
-dex:
-  replicaCount: 1
-  ingress:
-    enabled: false
-    hosts: []
-    tls: []
-  config:
-    issuer: https://worker.ci.k8c.io/dex
-    enablePasswordDB: true
-    staticPasswords:
-      - email: kubermatic@example.com
-        hash: ${DEX_PASSWORD_HASH}
-        username: admin
-httpRoute:
-  gatewayName: kubermatic
-  gatewayNamespace: kubermatic
-  domain: worker.ci.k8c.io
-  timeout: 3600s
-# if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
-# which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
-# we use fixed NodePorts within kind's exposed range (30000:33000) for deterministic testing.
-# envoy proxy containers listen on ports 10080 (HTTP) and 10443 (HTTPS)
-envoyProxy:
-  service:
-    type: NodePort
-    externalTrafficPolicy: Cluster
-    patch:
-      type: JSONMerge
-      value:
-        spec:
-          type: NodePort
-          ports:
-          - name: http
-            port: 80
-            nodePort: 30080
-            targetPort: 10080
-          - name: https
-            port: 443
-            nodePort: 30443
-            targetPort: 10443
-"
+  verify_cleanup_state
+}
 
-merged_helm_values_file="$(mktemp)"
-echo "$HELM_VALUES_STR" >> $merged_helm_values_file
-yq e 'del(.dex)' -i $merged_helm_values_file
-echo "$HELM_VALUES_EXTRA" >> $merged_helm_values_file
+run_case_1
+reset_kind_cluster
+run_case_2
 
-echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
-
-./_build/kubermatic-installer deploy kubermatic-master \
-  --storageclass copy-default \
-  --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$merged_helm_values_file" \
-  --skip-seed-validation=kubermatic \
-  --migrate-gateway-api \
-  --verbose
-
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
-
-echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled..."
-sleep 5
-retry 10 check_all_deployments_ready kubermatic
-echodate "Operator restarted with Gateway API mode"
-
-echodate "Verifying Gateway API resources deployed..."
-retry 10 check_all_deployments_ready envoy-gateway-controller
-retry 10 check_all_deployments_ready kubermatic
-
-echodate "Running post-migration tests (Gateway API mode)..."
-
-go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestGatewayAPIPostMigration"
-
-echodate ""
-echodate "Re-running kubermatic-installer with --clean-nginx-lb to tear down legacy nginx-ingress-controller..."
-
-./_build/kubermatic-installer deploy kubermatic-master \
-  --storageclass copy-default \
-  --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$merged_helm_values_file" \
-  --skip-seed-validation=kubermatic \
-  --clean-nginx-lb \
-  --verbose
-
-echodate "Verifying nginx-ingress-controller Helm release has been removed..."
-
-if helm status -n nginx-ingress-controller nginx-ingress-controller > /dev/null 2>&1; then
-  echodate "FAIL: nginx-ingress-controller Helm release still exists after --clean-nginx-lb"
-  exit 1
-fi
-
-echodate "Running post-cleanup test (--clean-nginx-lb)..."
-
-go_test gateway_api_clean_nginx_lb_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestNginxIngressControllerCleanedUp"
-
-echodate "Gateway API migration tests completed successfully!"
+echodate "Both upgrade-path cases completed successfully!"
