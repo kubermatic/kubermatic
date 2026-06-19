@@ -71,6 +71,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apiserverconfig "k8s.io/apiserver/pkg/apis/apiserver"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
@@ -772,10 +773,11 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			)
 		}
 
-		// allow egress traffic to OIDC issuer's external IPs
+		// Resolve OIDC issuer destinations for the legacy IPBlock rule and
+		// optional selector-backed LoadBalancer backend peers.
 		oidcDestinations, err := oidcIssuerDestinations(resolverCtx, c, data, r.features.KubernetesOIDCAuthentication)
 		if err != nil {
-			return fmt.Errorf("failed to fetch OIDC issuer IPs: %w", err)
+			return fmt.Errorf("failed to fetch OIDC issuer destinations: %w", err)
 		}
 		oidcIPs := oidcIssuerDestinationIPs(oidcDestinations)
 
@@ -839,6 +841,8 @@ type oidcIssuerDestinationKey struct {
 	port     int32
 }
 
+type oidcIssuerDestinationPortLookup map[string]sets.Set[int32]
+
 type hostnameResolver func(context.Context, string) ([]net.IP, error)
 
 const networkPolicyHostnameResolutionTimeout = 10 * time.Second
@@ -855,7 +859,7 @@ func oidcIssuerDestinations(ctx context.Context, c *kubermaticv1.Cluster, data *
 		}
 		destinations, err := urlsToOIDCIssuerDestinations(ctx, issuerURLs)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert issuer URLs to IP list: %w", err)
+			return nil, fmt.Errorf("failed to convert issuer URLs to OIDC issuer destinations: %w", err)
 		}
 
 		return destinations, nil
@@ -943,7 +947,7 @@ func (r *Reconciler) oidcIssuerLoadBalancerBackendPeers(ctx context.Context, des
 
 	for i := range services.Items {
 		svc := &services.Items[i]
-		if !oidcIssuerLoadBalancerServiceMatchesDestination(svc, destinationIPs, destinationHostnames) {
+		if !oidcIssuerLoadBalancerServiceMatchesIssuerDestination(svc, destinationIPs, destinationHostnames) {
 			continue
 		}
 		if len(svc.Spec.Selector) == 0 {
@@ -976,9 +980,9 @@ func (r *Reconciler) oidcIssuerLoadBalancerBackendPeers(ctx context.Context, des
 	return peers, nil
 }
 
-func oidcIssuerDestinationLookups(destinations []oidcIssuerDestination) (map[string]map[int32]struct{}, map[string]map[int32]struct{}) {
-	ips := make(map[string]map[int32]struct{}, len(destinations))
-	hostnames := make(map[string]map[int32]struct{}, len(destinations))
+func oidcIssuerDestinationLookups(destinations []oidcIssuerDestination) (oidcIssuerDestinationPortLookup, oidcIssuerDestinationPortLookup) {
+	ips := make(oidcIssuerDestinationPortLookup, len(destinations))
+	hostnames := make(oidcIssuerDestinationPortLookup, len(destinations))
 
 	for _, destination := range destinations {
 		if destination.hostname != "" {
@@ -999,26 +1003,20 @@ func oidcIssuerDestinationLookups(destinations []oidcIssuerDestination) (map[str
 	return ips, hostnames
 }
 
-func addOIDCIssuerDestinationLookup(lookups map[string]map[int32]struct{}, key string, port int32) {
+func addOIDCIssuerDestinationLookup(lookups oidcIssuerDestinationPortLookup, key string, port int32) {
 	if key == "" || port <= 0 {
 		return
 	}
 
 	ports, exists := lookups[key]
 	if !exists {
-		ports = map[int32]struct{}{}
+		ports = sets.New[int32]()
 		lookups[key] = ports
 	}
-	ports[port] = struct{}{}
+	ports.Insert(port)
 }
 
-func oidcIssuerLoadBalancerServiceMatches(svc *corev1.Service, destinationIPs, destinationHostnames map[string]map[int32]struct{}) bool {
-	// Only selector-backed LoadBalancer Services can be represented as
-	// NetworkPolicy pod peers.
-	return len(svc.Spec.Selector) > 0 && oidcIssuerLoadBalancerServiceMatchesDestination(svc, destinationIPs, destinationHostnames)
-}
-
-func oidcIssuerLoadBalancerServiceMatchesDestination(svc *corev1.Service, destinationIPs, destinationHostnames map[string]map[int32]struct{}) bool {
+func oidcIssuerLoadBalancerServiceMatchesIssuerDestination(svc *corev1.Service, destinationIPs, destinationHostnames oidcIssuerDestinationPortLookup) bool {
 	if svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return false
 	}
@@ -1061,18 +1059,18 @@ func oidcIssuerLoadBalancerServiceMatchesDestination(svc *corev1.Service, destin
 	return false
 }
 
-func loadBalancerServicePorts(svc *corev1.Service) map[int32]struct{} {
-	ports := make(map[int32]struct{}, len(svc.Spec.Ports))
+func loadBalancerServicePorts(svc *corev1.Service) sets.Set[int32] {
+	ports := sets.New[int32]()
 	for _, port := range svc.Spec.Ports {
 		if port.Port > 0 && (port.Protocol == "" || port.Protocol == corev1.ProtocolTCP) {
-			ports[port.Port] = struct{}{}
+			ports.Insert(port.Port)
 		}
 	}
 
 	return ports
 }
 
-func servicePortsMatchAnyDestination(servicePorts map[int32]struct{}, destinationLookups ...map[string]map[int32]struct{}) bool {
+func servicePortsMatchAnyDestination(servicePorts sets.Set[int32], destinationLookups ...oidcIssuerDestinationPortLookup) bool {
 	for _, lookups := range destinationLookups {
 		for _, destinationPorts := range lookups {
 			if servicePortsMatch(servicePorts, destinationPorts) {
@@ -1084,9 +1082,9 @@ func servicePortsMatchAnyDestination(servicePorts map[int32]struct{}, destinatio
 	return false
 }
 
-func servicePortsMatch(servicePorts, destinationPorts map[int32]struct{}) bool {
+func servicePortsMatch(servicePorts, destinationPorts sets.Set[int32]) bool {
 	for port := range destinationPorts {
-		if _, exists := servicePorts[port]; exists {
+		if servicePorts.Has(port) {
 			return true
 		}
 	}
