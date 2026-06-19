@@ -37,29 +37,16 @@ import (
 func TestOIDCIssuerLoadBalancerServicePredicate(t *testing.T) {
 	predicate := oidcIssuerLoadBalancerServicePredicate()
 
-	t.Run("create matching service", func(t *testing.T) {
-		require.True(t, predicate.Create(event.CreateEvent{Object: oidcIssuerLoadBalancerService()}))
+	t.Run("ignore create event", func(t *testing.T) {
+		require.False(t, predicate.Create(event.CreateEvent{Object: oidcIssuerLoadBalancerService()}))
 	})
 
-	t.Run("create service without ingress", func(t *testing.T) {
-		svc := oidcIssuerLoadBalancerService()
-		svc.Status.LoadBalancer.Ingress = nil
+	t.Run("update when load balancer ingress is assigned", func(t *testing.T) {
+		oldSvc := oidcIssuerLoadBalancerService()
+		newSvc := oldSvc.DeepCopy()
+		oldSvc.Status.LoadBalancer.Ingress = nil
 
-		require.False(t, predicate.Create(event.CreateEvent{Object: svc}))
-	})
-
-	t.Run("create service without selector", func(t *testing.T) {
-		svc := oidcIssuerLoadBalancerService()
-		svc.Spec.Selector = nil
-
-		require.False(t, predicate.Create(event.CreateEvent{Object: svc}))
-	})
-
-	t.Run("create non LoadBalancer service", func(t *testing.T) {
-		svc := oidcIssuerLoadBalancerService()
-		svc.Spec.Type = corev1.ServiceTypeClusterIP
-
-		require.False(t, predicate.Create(event.CreateEvent{Object: svc}))
+		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
 	})
 
 	t.Run("update when ingress changes", func(t *testing.T) {
@@ -84,6 +71,15 @@ func TestOIDCIssuerLoadBalancerServicePredicate(t *testing.T) {
 		newSvc.Spec.Type = corev1.ServiceTypeClusterIP
 
 		require.True(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
+	})
+
+	t.Run("ignore update when neither service is a candidate", func(t *testing.T) {
+		oldSvc := oidcIssuerLoadBalancerService()
+		oldSvc.Status.LoadBalancer.Ingress = nil
+		newSvc := oldSvc.DeepCopy()
+		newSvc.Labels = map[string]string{"changed": "true"}
+
+		require.False(t, predicate.Update(event.UpdateEvent{ObjectOld: oldSvc, ObjectNew: newSvc}))
 	})
 
 	t.Run("ignore unrelated update", func(t *testing.T) {
