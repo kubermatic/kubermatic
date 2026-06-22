@@ -326,7 +326,7 @@ func ApiserverInternalAllowReconciler() reconciling.NamedNetworkPolicyReconciler
 }
 
 // OIDCIssuerAllowReconciler returns a func to create/update the apiserver oidc-issuer-allow egress policy.
-func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) reconciling.NamedNetworkPolicyReconcilerFactory {
+func OIDCIssuerAllowReconciler(egressIPs []net.IP, loadBalancerBackendPeers []networkingv1.NetworkPolicyPeer, namespaceOverride string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		ingressNamespace := stackscommon.NginxIngressControllerNamespace
 		if namespaceOverride != "" {
@@ -342,6 +342,12 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) rec
 				{
 					To: ipListToPeers(egressIPs),
 				},
+			}
+
+			if len(loadBalancerBackendPeers) > 0 {
+				egressRules = append(egressRules, networkingv1.NetworkPolicyEgressRule{
+					To: loadBalancerBackendPeers,
+				})
 			}
 
 			for _, ns := range ingressNamespaces {
