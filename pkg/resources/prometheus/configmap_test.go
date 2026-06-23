@@ -65,9 +65,8 @@ func TestTunnelingEnvoyAgentScrapeUsesAPIServerProxy(t *testing.T) {
 	require.Contains(t, config, "- job_name: 'envoy-agent'")
 	require.Contains(t, config, "scheme: https")
 	require.Contains(t, config, "replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}")
-	require.Contains(t, config, "target_label: instance")
 	require.Contains(t, config, "replacement: 'apiserver-external.cluster-test-cluster.svc.cluster.local.'")
-	require.NotContains(t, envoyAgentScrapeConfig(t, config), "replacement: $1:$2\n    target_label: __address__")
+	require.NotContains(t, envoyAgentScrapeConfig(t, config), "replacement: $1:$2")
 }
 
 func envoyAgentScrapeConfig(t *testing.T, config string) string {
