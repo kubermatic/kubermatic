@@ -491,10 +491,12 @@ func mapPolicyToRequest(namespace string) func(ctx context.Context, p *kyvernov1
 
 // handlePolicyBindingCleanup handles the cleanup of a PolicyBinding and its resources.
 func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
-	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil && binding.DeletionTimestamp.IsZero() {
+	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil {
 		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, err.Error())
 		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, "Failed to cleanup Kyverno resources")
-		binding.SetStatusFields(nil, false)
+		if binding.DeletionTimestamp.IsZero() {
+			binding.SetStatusFields(nil, false)
+		}
 		return err
 	}
 
@@ -533,7 +535,7 @@ func (r *reconciler) deleteKyvernoResourcesForBinding(ctx context.Context, bindi
 		}
 	}
 
-	return nil
+	return r.deleteKyvernoResourcesByBindingLabel(ctx, binding.Name)
 }
 
 func (r *reconciler) deleteKyvernoResourcesByBindingLabel(ctx context.Context, bindingName string) error {
