@@ -35,6 +35,9 @@ func (d *Deletion) cleanupPolicyBindings(ctx context.Context, log *zap.SugaredLo
 		return nil
 	}
 
+	// PolicyBindings live in the cluster namespace and their cleanup finalizer can
+	// otherwise keep that namespace terminating. If the namespace is already gone,
+	// the seed-side cleanup has nothing left to unblock.
 	if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.PolicyBinding{}, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
 		return nil
 	} else if err != nil {

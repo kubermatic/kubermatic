@@ -102,6 +102,9 @@ func (r *policyTemplateCleanupReconciler) Reconcile(ctx context.Context, request
 }
 
 func (r *policyTemplateCleanupReconciler) cleanupPolicyBindingsForDeletedTemplate(ctx context.Context, policyTemplateName string) error {
+	// This runs only after the template is terminating or gone. Keeping the cleanup
+	// in Reconcile gives transient seed API failures normal controller-runtime retry
+	// behavior before the template finalizer is removed.
 	bindings := &kubermaticv1.PolicyBindingList{}
 	if err := r.List(ctx, bindings); err != nil {
 		return fmt.Errorf("failed to list PolicyBindings during template deletion: %w", err)
