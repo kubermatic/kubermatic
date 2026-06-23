@@ -301,19 +301,6 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 		return nil
 	}
 
-	var seed *kubermaticv1.Seed
-	seedUnavailable := false
-	if r.seedGetter != nil {
-		var err error
-		seed, err = r.seedGetter()
-		if err != nil {
-			// Fail open for enqueueing so transient Seed read errors do not leave
-			// stale policies behind; reconciliation still applies normal guards.
-			seedUnavailable = true
-			utilruntime.HandleError(fmt.Errorf("failed to get Seed for OIDC issuer LoadBalancer Service change: %w", err))
-		}
-	}
-
 	requests := make([]reconcile.Request, 0, len(clusters.Items))
 	for i := range clusters.Items {
 		cluster := &clusters.Items[i]
@@ -323,7 +310,7 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 			continue
 		}
 
-		if seedUnavailable || r.isOIDCIssuerClusterCandidate(cluster, seed) {
+		if r.isOIDCIssuerClusterCandidate(cluster) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
 		}
 	}
@@ -338,28 +325,10 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 // isOIDCIssuerClusterCandidate is a cheap prefilter for Service watch events.
 // It must cover every OIDC source handled by oidcIssuerDestinations; missing
 // one only delays policy updates until the next normal cluster reconcile.
-func (r *Reconciler) isOIDCIssuerClusterCandidate(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) bool {
+func (r *Reconciler) isOIDCIssuerClusterCandidate(cluster *kubermaticv1.Cluster) bool {
 	oidcSettings := cluster.Spec.OIDC //nolint:staticcheck
-	if oidcSettings.IssuerURL != "" ||
-		cluster.Spec.IsAuthenticationConfigurationEnabled() ||
-		(r.features.KubernetesOIDCAuthentication && r.oidcIssuerURL != "") {
-		return true
-	}
-
-	if seed == nil {
-		return false
-	}
-
-	if dc, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]; found &&
-		authenticationConfigurationRefConfigured(dc.Spec.AuthenticationConfiguration) {
-		return true
-	}
-
-	return authenticationConfigurationRefConfigured(seed.Spec.AuthenticationConfiguration)
-}
-
-func authenticationConfigurationRefConfigured(ref *kubermaticv1.AuthenticationConfiguration) bool {
-	return ref != nil && ref.SecretName != "" && ref.SecretKey != ""
+	return oidcSettings.IssuerURL != "" ||
+		(r.features.KubernetesOIDCAuthentication && r.oidcIssuerURL != "")
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

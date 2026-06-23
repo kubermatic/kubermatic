@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -139,7 +138,6 @@ func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 	tests := []struct {
 		name          string
 		objects       []ctrlruntimeclient.Object
-		seedGetter    func() (*kubermaticv1.Seed, error)
 		oidcIssuerURL string
 		features      Features
 		expected      []reconcile.Request
@@ -150,13 +148,6 @@ func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 				clusterWithNetworkPolicy("legacy-oidc", "cluster-legacy-oidc", "dc-a", func(cluster *kubermaticv1.Cluster) {
 					cluster.Spec.OIDC.IssuerURL = "https://issuer.example.com" //nolint:staticcheck
 				}),
-				clusterWithNetworkPolicy("cluster-auth", "cluster-auth", "dc-a", func(cluster *kubermaticv1.Cluster) {
-					cluster.Spec.AuthenticationConfiguration = &kubermaticv1.AuthenticationConfiguration{
-						SecretName: "auth-config",
-						SecretKey:  "config.yaml",
-					}
-				}),
-				clusterWithNetworkPolicy("dc-auth", "cluster-dc-auth", "dc-auth", nil),
 				clusterWithNetworkPolicy("no-oidc", "cluster-no-oidc", "dc-a", nil),
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
@@ -170,25 +161,7 @@ func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 					},
 				},
 			},
-			seedGetter: func() (*kubermaticv1.Seed, error) {
-				return &kubermaticv1.Seed{
-					Spec: kubermaticv1.SeedSpec{
-						Datacenters: map[string]kubermaticv1.Datacenter{
-							"dc-auth": {
-								Spec: kubermaticv1.DatacenterSpec{
-									AuthenticationConfiguration: &kubermaticv1.AuthenticationConfiguration{
-										SecretName: "dc-auth-config",
-										SecretKey:  "config.yaml",
-									},
-								},
-							},
-						},
-					},
-				}, nil
-			},
 			expected: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "cluster-auth"}},
-				{NamespacedName: types.NamespacedName{Name: "dc-auth"}},
 				{NamespacedName: types.NamespacedName{Name: "legacy-oidc"}},
 			},
 		},
@@ -203,23 +176,12 @@ func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 				{NamespacedName: types.NamespacedName{Name: "default-issuer"}},
 			},
 		},
-		{
-			name:    "enqueue network policy clusters when seed is unavailable",
-			objects: []ctrlruntimeclient.Object{clusterWithNetworkPolicy("candidate", "cluster-candidate", "dc-a", nil)},
-			seedGetter: func() (*kubermaticv1.Seed, error) {
-				return nil, errors.New("seed unavailable")
-			},
-			expected: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "candidate"}},
-			},
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Reconciler{
 				Client:        fake.NewClientBuilder().WithObjects(tt.objects...).Build(),
-				seedGetter:    tt.seedGetter,
 				oidcIssuerURL: tt.oidcIssuerURL,
 				features:      tt.features,
 			}
