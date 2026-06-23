@@ -29,15 +29,12 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
@@ -108,32 +105,43 @@ func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	}
 }
 
-func TestRemovePolicyBindingCleanupFinalizersIgnoresMissingNamespace(t *testing.T) {
+func TestRemovePolicyBindingCleanupFinalizersUsesFallbackNamespace(t *testing.T) {
 	ctx := context.Background()
-	const clusterNamespace = "cluster-test"
 
 	cluster := &kubermaticv1.Cluster{
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: clusterNamespace,
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+	}
+	clusterNamespace := kubernetesprovider.NamespaceName(cluster.Name)
+	binding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "with-finalizer",
+			Namespace:  clusterNamespace,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{Name: "policy-template"},
 		},
 	}
 
 	seedClient := fake.NewClientBuilder().
 		WithScheme(fake.NewScheme()).
-		WithInterceptorFuncs(interceptor.Funcs{
-			List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
-				listOptions := (&ctrlruntimeclient.ListOptions{}).ApplyOptions(opts)
-				if listOptions.Namespace == clusterNamespace {
-					return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, clusterNamespace)
-				}
-
-				return client.List(ctx, list, opts...)
-			},
-		}).
+		WithObjects(binding).
 		Build()
 
 	r := &reconciler{Client: seedClient}
 	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
-		t.Fatalf("expected missing namespace to be treated as completed cleanup, got: %v", err)
+		t.Fatalf("removePolicyBindingCleanupFinalizers failed: %v", err)
+	}
+
+	updatedBinding := &kubermaticv1.PolicyBinding{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding); err != nil {
+		t.Fatalf("failed to get updated binding: %v", err)
+	}
+	for _, finalizer := range updatedBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected cleanup finalizer to be removed from fallback namespace, got %v", updatedBinding.Finalizers)
+		}
 	}
 }

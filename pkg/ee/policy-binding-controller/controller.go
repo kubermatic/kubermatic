@@ -136,6 +136,9 @@ func policyBindingDeletionTimestampChangedPredicate() predicate.TypedPredicate[*
 
 func policyBindingRelevantClusterChangedPredicate(clusterName string) predicate.TypedPredicate[*kubermaticv1.Cluster] {
 	return predicate.TypedFuncs[*kubermaticv1.Cluster]{
+		CreateFunc: func(e ctrlruntimeevent.TypedCreateEvent[*kubermaticv1.Cluster]) bool {
+			return false
+		},
 		UpdateFunc: func(e ctrlruntimeevent.TypedUpdateEvent[*kubermaticv1.Cluster]) bool {
 			if e.ObjectOld == nil || e.ObjectNew == nil || e.ObjectNew.Name != clusterName {
 				return false
@@ -146,6 +149,12 @@ func policyBindingRelevantClusterChangedPredicate(clusterName string) predicate.
 			}
 
 			return e.ObjectOld.GetDeletionTimestamp() == nil && e.ObjectNew.GetDeletionTimestamp() != nil
+		},
+		DeleteFunc: func(e ctrlruntimeevent.TypedDeleteEvent[*kubermaticv1.Cluster]) bool {
+			return false
+		},
+		GenericFunc: func(e ctrlruntimeevent.TypedGenericEvent[*kubermaticv1.Cluster]) bool {
+			return false
 		},
 	}
 }
@@ -231,14 +240,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	var reconcileErr error
 	if template.Spec.NamespacedPolicy {
 		if binding.Spec.KyvernoPolicyNamespace == nil || binding.Spec.KyvernoPolicyNamespace.Name == "" {
-			binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "No Kyverno Policy namespace is configured")
-			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "PolicyBinding is not active because no Kyverno Policy namespace is configured")
-			binding.SetStatusFields(template, false)
 			// The binding is inactive without a target namespace, but previously
 			// reconciled Kyverno resources may still exist and continue enforcing.
 			if err := r.deleteKyvernoResourcesByBindingLabel(ctx, binding.Name); err != nil {
+				binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, err.Error())
+				binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, "Failed to cleanup stale Kyverno resources")
 				return err
 			}
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "No Kyverno Policy namespace is configured")
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "PolicyBinding is not active because no Kyverno Policy namespace is configured")
+			binding.SetStatusFields(template, false)
 			return nil
 		}
 
@@ -591,7 +602,9 @@ func (r *reconciler) updateStatus(ctx context.Context, oldBinding, binding *kube
 		return nil
 	}
 
-	if err := r.seedClient.Status().Patch(ctx, binding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
+	if err := r.seedClient.Status().Patch(ctx, binding, ctrlruntimeclient.MergeFrom(oldBinding)); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("failed to update PolicyBinding status: %w", err)
 	}
 

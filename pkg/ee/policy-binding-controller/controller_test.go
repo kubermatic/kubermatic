@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	ctrlruntimeevent "sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -371,6 +372,69 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+func TestNamespacedPolicyWithoutNamespaceReportsStaleCleanupFailure(t *testing.T) {
+	ctx := context.Background()
+	log := zap.NewNop().Sugar()
+
+	active := true
+	binding := genPolicyBinding(testPolicyName, testClusterNamespace, testPolicyName)
+	binding.Status.Active = &active
+
+	template := genPolicyTemplate(testPolicyName, true)
+	cluster := genCluster(testClusterName, true)
+
+	scheme := fake.NewScheme()
+	if err := kyvernov1.Install(scheme); err != nil {
+		t.Fatalf("failed to add kyverno to scheme: %v", err)
+	}
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cluster, template, binding).
+		WithStatusSubresource(binding).
+		Build()
+	userClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
+				if _, ok := list.(*kyvernov1.ClusterPolicyList); ok {
+					return fmt.Errorf("stale cleanup failed")
+				}
+
+				return client.List(ctx, list, opts...)
+			},
+		}).
+		Build()
+
+	r := &reconciler{
+		seedClient: seedClient,
+		userClient: userClient,
+	}
+
+	if err := r.reconcile(ctx, log, binding, cluster); err == nil {
+		t.Fatal("expected stale cleanup error")
+	}
+
+	updatedBinding := &kubermaticv1.PolicyBinding{}
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding); err != nil {
+		t.Fatalf("failed to get updated binding: %v", err)
+	}
+
+	readyCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionReady)
+	if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != kubermaticv1.PolicyBindingReasonApplyFailed {
+		t.Fatalf("expected Ready=False/%s, got %#v", kubermaticv1.PolicyBindingReasonApplyFailed, readyCondition)
+	}
+
+	appliedCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
+	if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != kubermaticv1.PolicyBindingReasonApplyFailed {
+		t.Fatalf("expected KyvernoPolicyApplied=False/%s, got %#v", kubermaticv1.PolicyBindingReasonApplyFailed, appliedCondition)
+	}
+
+	if updatedBinding.Status.Active == nil || !*updatedBinding.Status.Active {
+		t.Fatal("expected Active to remain true while stale cleanup failed")
+	}
+}
+
 func TestPolicyBindingDeletionTimestampChangedPredicate(t *testing.T) {
 	predicate := policyBindingDeletionTimestampChangedPredicate()
 
@@ -391,6 +455,23 @@ func TestPolicyBindingDeletionTimestampChangedPredicate(t *testing.T) {
 		ObjectNew: oldBinding.DeepCopy(),
 	}) {
 		t.Fatal("expected unchanged deletion timestamp to be filtered")
+	}
+}
+
+func TestUpdateStatusIgnoresDeletedPolicyBinding(t *testing.T) {
+	ctx := context.Background()
+
+	oldBinding := genPolicyBinding(testPolicyName, testClusterNamespace, testPolicyName)
+	binding := oldBinding.DeepCopy()
+	binding.SetStatusFields(nil, false)
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(fake.NewScheme()).
+		Build()
+
+	r := &reconciler{seedClient: seedClient}
+	if err := r.updateStatus(ctx, oldBinding, binding); err != nil {
+		t.Fatalf("expected NotFound status patch to be ignored, got: %v", err)
 	}
 }
 
@@ -430,6 +511,24 @@ func TestPolicyBindingRelevantClusterChangedPredicate(t *testing.T) {
 		ObjectNew: otherCluster,
 	}) {
 		t.Fatal("expected other cluster to be filtered")
+	}
+
+	if predicate.Create(ctrlruntimeevent.TypedCreateEvent[*kubermaticv1.Cluster]{
+		Object: newCluster,
+	}) {
+		t.Fatal("expected create events to be filtered")
+	}
+
+	if predicate.Delete(ctrlruntimeevent.TypedDeleteEvent[*kubermaticv1.Cluster]{
+		Object: newCluster,
+	}) {
+		t.Fatal("expected delete events to be filtered")
+	}
+
+	if predicate.Generic(ctrlruntimeevent.TypedGenericEvent[*kubermaticv1.Cluster]{
+		Object: newCluster,
+	}) {
+		t.Fatal("expected generic events to be filtered")
 	}
 }
 
