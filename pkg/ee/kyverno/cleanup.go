@@ -35,6 +35,8 @@ import (
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
@@ -46,6 +48,10 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 
 	// Remove all Kyverno resources from the user cluster
 	if err := r.ensureKyvernoUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
 		return err
 	}
 
@@ -82,6 +88,30 @@ func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx co
 
 	if err := reportscontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
 		return fmt.Errorf("failed to clean up reports controller resources: %w", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	ns := cluster.Status.NamespaceName
+	if ns == "" {
+		return nil
+	}
+
+	bindings := &kubermaticv1.PolicyBindingList{}
+	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); err != nil {
+		return fmt.Errorf("failed to list PolicyBindings: %w", err)
+	}
+
+	for _, binding := range bindings.Items {
+		if !kuberneteshelper.HasFinalizer(&binding, kubermaticv1.PolicyBindingCleanupFinalizer) {
+			continue
+		}
+
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, &binding, kubermaticv1.PolicyBindingCleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to remove PolicyBinding cleanup finalizer: %w", err)
+		}
 	}
 
 	return nil

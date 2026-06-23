@@ -91,12 +91,15 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		// Watch for clusters
 		For(&kubermaticv1.Cluster{}).
 		// Watch changes for PolicyTemplates that have been enforced.
-		Watches(&kubermaticv1.PolicyTemplate{}, reconciler.enqueueClusters(), builder.WithPredicates(withEventFilter())).
+		Watches(&kubermaticv1.PolicyTemplate{}, reconciler.enqueueClusters(), builder.WithPredicates(withPolicyTemplateEventFilter())).
 		// Watch changes for PolicyBinding resources.
 		Watches(&kubermaticv1.PolicyBinding{}, reconciler.enqueueClustersOnPolicyBindingDeletion(), builder.WithPredicates(withPolicyBindingEventFilter())).
 		Build(reconciler)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return addPolicyTemplateCleanupController(mgr, numWorkers, log)
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -357,16 +360,6 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 		policyTemplate := obj.(*kubermaticv1.PolicyTemplate)
 		log := r.log.With("policyTemplate", policyTemplate.Name)
 
-		if policyTemplate.DeletionTimestamp != nil {
-			return r.handlePolicyTemplateDeletion(ctx, policyTemplate, log)
-		}
-
-		// Check if the policy template is enforced
-		if !policyTemplate.Spec.Enforced {
-			return requests
-		}
-
-		// List all clusters
 		clusters := &kubermaticv1.ClusterList{}
 		if err := r.List(ctx, clusters); err != nil {
 			log.Error("Failed to list clusters", "error", err)
@@ -382,70 +375,9 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 				})
 			}
 		}
+
 		return requests
 	})
-}
-
-// handlePolicyTemplateDeletion handles cleanup when a PolicyTemplate is deleted.
-func (r *Reconciler) handlePolicyTemplateDeletion(ctx context.Context, policyTemplate *kubermaticv1.PolicyTemplate, log *zap.SugaredLogger) []reconcile.Request {
-	var requests []reconcile.Request
-
-	bindings := &kubermaticv1.PolicyBindingList{}
-	if err := r.List(ctx, bindings); err != nil {
-		log.Error("Failed to list PolicyBindings during template deletion", "error", err)
-		return requests
-	}
-
-	for _, binding := range bindings.Items {
-		if binding.Spec.PolicyTemplateRef.Name == policyTemplate.Name {
-			if err := r.Delete(ctx, &binding); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-				log.Error("Failed to delete PolicyBinding for deleted template", "binding", binding.Name, "namespace", binding.Namespace, "error", err)
-			}
-		}
-	}
-
-	return requests
-}
-
-func withEventFilter() predicate.Predicate {
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			obj := e.Object.(*kubermaticv1.PolicyTemplate)
-
-			return obj.Spec.Enforced
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObj := e.ObjectOld.(*kubermaticv1.PolicyTemplate)
-			newObj := e.ObjectNew.(*kubermaticv1.PolicyTemplate)
-
-			if newObj.GetDeletionTimestamp() != nil {
-				return false
-			}
-
-			// If the template became enforced
-			if !oldObj.Spec.Enforced && newObj.Spec.Enforced {
-				return true
-			}
-
-			// If the template is enforced and changed
-			if newObj.Spec.Enforced && newObj.GetGeneration() != oldObj.GetGeneration() {
-				return true
-			}
-
-			return false
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return true
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			obj := e.Object.(*kubermaticv1.PolicyTemplate)
-			if obj.GetDeletionTimestamp() != nil {
-				return false
-			}
-
-			return obj.Spec.Enforced
-		},
-	}
 }
 
 func (r *Reconciler) enqueueClustersOnPolicyBindingDeletion() handler.EventHandler {
@@ -496,6 +428,38 @@ func withPolicyBindingEventFilter() predicate.Predicate {
 			obj := e.Object.(*kubermaticv1.PolicyBinding)
 
 			return obj.Spec.PolicyTemplateRef.Name != ""
+		},
+	}
+}
+
+func withPolicyTemplateEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			obj := e.Object.(*kubermaticv1.PolicyTemplate)
+
+			return obj.Spec.Enforced && obj.GetDeletionTimestamp() == nil
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObj := e.ObjectOld.(*kubermaticv1.PolicyTemplate)
+			newObj := e.ObjectNew.(*kubermaticv1.PolicyTemplate)
+
+			if newObj.GetDeletionTimestamp() != nil {
+				return false
+			}
+
+			if !oldObj.Spec.Enforced && newObj.Spec.Enforced {
+				return true
+			}
+
+			return newObj.Spec.Enforced && newObj.GetGeneration() != oldObj.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			obj := e.Object.(*kubermaticv1.PolicyTemplate)
+
+			return obj.Spec.Enforced && obj.GetDeletionTimestamp() == nil
 		},
 	}
 }
