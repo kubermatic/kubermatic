@@ -7779,6 +7779,11 @@ func (in *SettingSpec) DeepCopyInto(out *SettingSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.DisabledAuditWebhookBackendDCs != nil {
+		in, out := &in.DisabledAuditWebhookBackendDCs, &out.DisabledAuditWebhookBackendDCs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	out.CleanupOptions = in.CleanupOptions
 	out.OpaOptions = in.OpaOptions
 	out.MlaOptions = in.MlaOptions

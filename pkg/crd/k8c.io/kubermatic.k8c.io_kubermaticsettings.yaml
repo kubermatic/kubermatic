@@ -179,6 +179,13 @@ spec:
                 disableChangelogPopup:
                   description: DisableChangelogPopup disables the changelog popup in KKP dashboard.
                   type: boolean
+                disabledAuditWebhookBackendDCs:
+                  description: |-
+                    DisabledAuditWebhookBackendDCs is the list of datacenters for which the Audit Webhook Backend
+                    option is disabled in the dashboard.
+                  items:
+                    type: string
+                  type: array
                 displayAPIDocs:
                   description: DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
                   type: boolean
