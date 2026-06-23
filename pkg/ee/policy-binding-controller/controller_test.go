@@ -251,6 +251,28 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
+			name:     "binding deletion cleans stale labeled namespaced policy without namespace in spec",
+			binding:  genPolicyBindingWithDeletionTimestamp(testPolicyName, testClusterNamespace, testPolicyName),
+			template: genPolicyTemplate(testPolicyName, true),
+			cluster:  genCluster(testClusterName, true),
+			userObjects: []ctrlruntimeclient.Object{
+				genPolicy(testPolicyName, "old-namespace", testPolicyName),
+			},
+			validate: func(t *testing.T, seedClient, userClient ctrlruntimeclient.Client, binding *kubermaticv1.PolicyBinding) error {
+				ctx := context.Background()
+
+				policyList := &kyvernov1.PolicyList{}
+				if err := userClient.List(ctx, policyList, ctrlruntimeclient.MatchingLabels{LabelPolicyBinding: testPolicyName}); err != nil {
+					return fmt.Errorf("failed to list stale Policies: %w", err)
+				}
+				if len(policyList.Items) != 0 {
+					return fmt.Errorf("expected stale Policies to be deleted, got %d", len(policyList.Items))
+				}
+
+				return nil
+			},
+		},
+		{
 			name:     "template not found sets status conditions and triggers cleanup",
 			binding:  genPolicyBindingWithFinalizer(testPolicyName, testClusterNamespace, "non-existent-template"),
 			template: nil, // No template exists
@@ -369,6 +391,60 @@ func TestReconcile(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDeletingPolicyBindingPreservesFinalizerWhenCleanupFails(t *testing.T) {
+	ctx := context.Background()
+	log := zap.NewNop().Sugar()
+
+	binding := genPolicyBindingWithDeletionTimestamp(testPolicyName, testClusterNamespace, testPolicyName)
+	template := genPolicyTemplate(testPolicyName, false)
+	cluster := genCluster(testClusterName, true)
+
+	scheme := fake.NewScheme()
+	if err := kyvernov1.Install(scheme); err != nil {
+		t.Fatalf("failed to add kyverno to scheme: %v", err)
+	}
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cluster, template, binding).
+		WithStatusSubresource(binding).
+		Build()
+	userClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Delete: func(ctx context.Context, client ctrlruntimeclient.WithWatch, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteOption) error {
+				if _, ok := obj.(*kyvernov1.ClusterPolicy); ok {
+					return fmt.Errorf("delete failed")
+				}
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}).
+		Build()
+
+	r := &reconciler{
+		seedClient: seedClient,
+		userClient: userClient,
+	}
+
+	if err := r.reconcile(ctx, log, binding, cluster); err == nil {
+		t.Fatal("expected cleanup error")
+	}
+
+	updatedBinding := &kubermaticv1.PolicyBinding{}
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding); err != nil {
+		t.Fatalf("expected deleting binding to keep finalizer after cleanup failure: %v", err)
+	}
+	if len(updatedBinding.Finalizers) != 1 || updatedBinding.Finalizers[0] != cleanupFinalizer {
+		t.Fatalf("expected cleanup finalizer to be preserved, got %v", updatedBinding.Finalizers)
+	}
+
+	readyCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionReady)
+	if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != kubermaticv1.PolicyBindingReasonApplyFailed {
+		t.Fatalf("expected Ready=False/%s, got %#v", kubermaticv1.PolicyBindingReasonApplyFailed, readyCondition)
 	}
 }
 
