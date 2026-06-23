@@ -36,6 +36,7 @@ import (
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -100,7 +101,9 @@ func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, c
 	}
 
 	bindings := &kubermaticv1.PolicyBindingList{}
-	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); err != nil {
+	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("failed to list PolicyBindings: %w", err)
 	}
 

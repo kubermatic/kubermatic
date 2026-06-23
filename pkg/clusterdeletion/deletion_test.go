@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
@@ -243,6 +244,58 @@ func TestCleanupPolicyBindingsRemovesCleanupFinalizer(t *testing.T) {
 	for _, finalizer := range updatedPolicyBinding.Finalizers {
 		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
 			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed, got %v", updatedPolicyBinding.Finalizers)
+		}
+	}
+}
+
+func TestCleanupPolicyBindingsUsesFallbackNamespace(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+	}
+	clusterNamespace := kubernetesprovider.NamespaceName(cluster.Name)
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  clusterNamespace,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+	}
+
+	if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
+		t.Fatalf("cleanupPolicyBindings failed: %v", err)
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed from fallback namespace, got %v", updatedPolicyBinding.Finalizers)
 		}
 	}
 }
