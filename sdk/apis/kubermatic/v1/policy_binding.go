@@ -29,6 +29,11 @@ const (
 	PolicyBindingKindName = "PolicyBinding"
 )
 
+const (
+	// PolicyBindingCleanupFinalizer indicates that generated Kyverno resources need cleanup.
+	PolicyBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-policy-binding"
+)
+
 // PolicyBindingConditionType defines the type of condition in PolicyBindingStatus.
 //
 // +kubebuilder:validation:Enum=Ready;TemplateValid;KyvernoPolicyApplied
@@ -63,6 +68,9 @@ const (
 
 	// PolicyBindingReasonDeleting indicates the PolicyBinding or its resources are being deleted.
 	PolicyBindingReasonDeleting = "Deleting"
+
+	// PolicyBindingReasonPolicyNamespaceMissing indicates that a namespaced policy has no target namespace configured.
+	PolicyBindingReasonPolicyNamespaceMissing = "PolicyNamespaceMissing"
 )
 
 // Annotation keys for PolicyBinding.

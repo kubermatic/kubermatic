@@ -32,9 +32,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var testScheme = fake.NewScheme()
@@ -188,6 +190,184 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 				t.Errorf("machines got deleted before in-cluster cleanup was done")
 			}
 		})
+	}
+}
+
+func TestCleanupPolicyBindingsRemovesCleanupFinalizer(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: testNS,
+		},
+	}
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  testNS,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+	}
+
+	if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
+		t.Fatalf("cleanupPolicyBindings failed: %v", err)
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed, got %v", updatedPolicyBinding.Finalizers)
+		}
+	}
+}
+
+func TestCleanupPolicyBindingsIgnoresMissingNamespace(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: testNS,
+		},
+	}
+
+	testCases := []struct {
+		name              string
+		deleteAllOfFailed bool
+		listFailed        bool
+	}{
+		{
+			name:              "DeleteAllOf returns NotFound",
+			deleteAllOfFailed: true,
+		},
+		{
+			name:       "List returns NotFound",
+			listFailed: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			seedClient := fake.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithInterceptorFuncs(interceptor.Funcs{
+					DeleteAllOf: func(ctx context.Context, client ctrlruntimeclient.WithWatch, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteAllOfOption) error {
+						deleteOptions := (&ctrlruntimeclient.DeleteAllOfOptions{}).ApplyOptions(opts)
+						if tc.deleteAllOfFailed && deleteOptions.Namespace == testNS {
+							return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, testNS)
+						}
+
+						return client.DeleteAllOf(ctx, obj, opts...)
+					},
+					List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
+						listOptions := (&ctrlruntimeclient.ListOptions{}).ApplyOptions(opts)
+						if tc.listFailed && listOptions.Namespace == testNS {
+							return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, testNS)
+						}
+
+						return client.List(ctx, list, opts...)
+					},
+				}).
+				Build()
+
+			deletion := &Deletion{
+				seedClient: seedClient,
+				recorder:   &events.FakeRecorder{},
+			}
+
+			if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
+				t.Fatalf("expected missing namespace to be treated as completed cleanup, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestCleanupClusterRemovesPolicyBindingFinalizersBeforeFinalizerGate(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+			Finalizers: []string{
+				kubermaticv1.NodeDeletionFinalizer,
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: testNS,
+		},
+	}
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  testNS,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(cluster, policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+		userClusterClientGetter: func() (ctrlruntimeclient.Client, error) {
+			return nil, fmt.Errorf("node cleanup blocked")
+		},
+	}
+
+	if err := deletion.CleanupCluster(ctx, zap.NewNop().Sugar(), cluster); err == nil {
+		t.Fatal("expected CleanupCluster to return node cleanup error")
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed before finalizer gate, got %v", updatedPolicyBinding.Finalizers)
+		}
 	}
 }
 
