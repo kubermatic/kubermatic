@@ -437,7 +437,7 @@ scrape_configs:
 {{ if eq .TemplateData.Cluster.Spec.ExposeStrategy "Tunneling" -}}
 # scrape envoy-agent
 - job_name: 'envoy-agent'
-  scheme: http
+  scheme: https
   tls_config:
 {{ .ApiserverTLSConfig | indent 4 }}
 
@@ -458,11 +458,14 @@ scrape_configs:
     action: replace
     target_label: __metrics_path__
     regex: (.+)
-  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+  - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_prometheus_io_port, __metrics_path__]
     action: replace
-    regex: ([^:]+)(?::\d+)?;(\d+)
-    replacement: $1:$2
-    target_label: __address__
+    regex: (.*);(.*);(.*);(.*)
+    replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
+    target_label: __metrics_path__
+  - target_label: __address__
+    replacement: '{{ .APIServerHost }}'
+    action: replace
   - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
     action: replace
     target_label: job
