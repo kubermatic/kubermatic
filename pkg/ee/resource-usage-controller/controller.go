@@ -52,27 +52,29 @@ import (
 const controllerName = "resource_usage_controller"
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	seedClient      ctrlruntimeclient.Client
-	userClient      ctrlruntimeclient.Client
-	clusterName     string
-	caBundle        *certificates.CABundle
-	recorder        events.EventRecorder
-	clusterIsPaused userclustercontrollermanager.IsPausedChecker
+	log                    *zap.SugaredLogger
+	seedClient             ctrlruntimeclient.Client
+	userClient             ctrlruntimeclient.Client
+	clusterName            string
+	kubeVirtInfraNamespace string
+	caBundle               *certificates.CABundle
+	recorder               events.EventRecorder
+	clusterIsPaused        userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName string, caBundle *certificates.CABundle,
+func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName, kubeVirtInfraNamespace string, caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:             log,
-		seedClient:      seedMgr.GetClient(),
-		userClient:      userMgr.GetClient(),
-		clusterName:     clusterName,
-		caBundle:        caBundle,
-		recorder:        userMgr.GetEventRecorder(controllerName),
-		clusterIsPaused: clusterIsPaused,
+		log:                    log,
+		seedClient:             seedMgr.GetClient(),
+		userClient:             userMgr.GetClient(),
+		clusterName:            clusterName,
+		kubeVirtInfraNamespace: kubeVirtInfraNamespace,
+		caBundle:               caBundle,
+		recorder:               userMgr.GetEventRecorder(controllerName),
+		clusterIsPaused:        clusterIsPaused,
 	}
 
 	_, err := builder.ControllerManagedBy(userMgr).
@@ -118,7 +120,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *clusterv1alpha1.MachineList) error {
 	resourceUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 	for _, machine := range machines.Items {
-		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, &machine, r.caBundle)
+		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, r.kubeVirtInfraNamespace, &machine, r.caBundle)
 		if err != nil {
 			return fmt.Errorf("error getting machine resource usage for machine %q: %w", machine.Name, err)
 		}
