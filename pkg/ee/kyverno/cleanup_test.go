@@ -32,8 +32,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
@@ -101,5 +105,35 @@ func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	}
 	if len(otherBinding.Finalizers) != 1 || otherBinding.Finalizers[0] != kubermaticv1.PolicyBindingCleanupFinalizer {
 		t.Fatalf("expected other namespace binding to keep cleanup finalizer, got %v", otherBinding.Finalizers)
+	}
+}
+
+func TestRemovePolicyBindingCleanupFinalizersIgnoresMissingNamespace(t *testing.T) {
+	ctx := context.Background()
+	const clusterNamespace = "cluster-test"
+
+	cluster := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: clusterNamespace,
+		},
+	}
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(fake.NewScheme()).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
+				listOptions := (&ctrlruntimeclient.ListOptions{}).ApplyOptions(opts)
+				if listOptions.Namespace == clusterNamespace {
+					return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, clusterNamespace)
+				}
+
+				return client.List(ctx, list, opts...)
+			},
+		}).
+		Build()
+
+	r := &reconciler{Client: seedClient}
+	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
+		t.Fatalf("expected missing namespace to be treated as completed cleanup, got: %v", err)
 	}
 }
