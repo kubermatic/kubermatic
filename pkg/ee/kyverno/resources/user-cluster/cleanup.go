@@ -38,6 +38,8 @@ import (
 
 // ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno.
 func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Object {
+	// Admission webhooks must go first; once their backing service or namespace is
+	// gone, fail-closed webhooks can block deletion of the remaining resources.
 	resources := WebhooksForDeletion()
 	resources = append(resources,
 		&corev1.ConfigMap{

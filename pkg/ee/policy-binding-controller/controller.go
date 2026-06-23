@@ -234,6 +234,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 			binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "No Kyverno Policy namespace is configured")
 			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, "PolicyBinding is not active because no Kyverno Policy namespace is configured")
 			binding.SetStatusFields(template, false)
+			// The binding is inactive without a target namespace, but previously
+			// reconciled Kyverno resources may still exist and continue enforcing.
 			if err := r.deleteKyvernoResourcesByBindingLabel(ctx, binding.Name); err != nil {
 				return err
 			}
