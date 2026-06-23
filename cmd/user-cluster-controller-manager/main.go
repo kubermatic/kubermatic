@@ -434,7 +434,14 @@ func main() {
 	}
 	log.Info("Registered Application Installation controller")
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, runOp.kyvernoEnabled); err != nil {
+	// Resolve the KubeVirt infra namespace: the cluster's dedicated namespace by default, or the
+	// datacenter's single-namespace ("namespaced mode") namespace when the kv-infra-namespace flag is set.
+	kvInfraNamespace := runOp.namespace
+	if runOp.kubeVirtInfraNamespace != "" {
+		kvInfraNamespace = runOp.kubeVirtInfraNamespace
+	}
+
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kyvernoEnabled); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 

@@ -73,18 +73,22 @@ func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter 
 }
 
 // DescribeInstanceType returns the NodeCapacity from the VirtualMachine instancetype.
-func DescribeInstanceType(ctx context.Context, kubeconfig string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+// namespace is the KubeVirt infra-cluster namespace that holds the cluster's namespaced
+// instancetypes. Resolving a custom (non-standard) namespaced instancetype without it fails,
+// to avoid an unscoped cross-tenant lookup. The embedded Kubermatic standard instancetypes are
+// namespace-independent and still resolve when it is empty.
+func DescribeInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
 	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return describeInstanceType(ctx, client, it)
+	return describeInstanceType(ctx, client, namespace, it)
 }
 
-func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
 	switch it.Kind {
 	case "VirtualMachineInstancetype": // namespaced: kubermatic standard or user-deployed custom
-		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, namespace, it.Name); nodeCap != nil || err != nil {
 			return nodeCap, err
 		}
 
@@ -97,7 +101,7 @@ func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, 
 		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
 			return nodeCap, err
 		}
-		if nodeCap, err := describeNamespacedInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
+		if nodeCap, err := describeNamespacedInstanceType(ctx, client, namespace, it.Name); nodeCap != nil || err != nil {
 			return nodeCap, err
 		}
 	}
@@ -117,7 +121,7 @@ func describeClusterInstanceType(ctx context.Context, client ctrlruntimeclient.C
 	return nil, nil
 }
 
-func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*provider.NodeCapacity, error) {
+func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*provider.NodeCapacity, error) {
 	standardInstancetypes := GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})
 	for _, instancetype := range standardInstancetypes {
 		if strings.EqualFold(instancetype.Name, name) {
@@ -127,15 +131,21 @@ func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
 	// from the infra cluster — these are custom instancetypes (e.g. GPU variants)
 	// that aren't part of the embedded Kubermatic standards.
-	// Note: this list is not namespace-scoped. Cross-tenant exposure is prevented at the
-	// dashboard/API layer, which restricts which instancetypes a user can reference.
+	//
+	// This requires the cluster's infra namespace: a custom instancetype must be resolved
+	// against the tenant that owns it, because two tenants may define instancetypes with the
+	// same name but different specs. Without a namespace we cannot do that safely, so we fail
+	// rather than risk feeding another tenant's spec into resource-quota validation.
+	if namespace == "" {
+		return nil, fmt.Errorf("cannot resolve namespaced instancetype %q: no KubeVirt infra namespace configured", name)
+	}
 	namespacedInstancetypes := kvinstancetypev1alpha1.VirtualMachineInstancetypeList{}
-	if err := client.List(ctx, &namespacedInstancetypes); err != nil {
+	if err := client.List(ctx, &namespacedInstancetypes, ctrlruntimeclient.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
-	for _, instancetype := range namespacedInstancetypes.Items {
-		if strings.EqualFold(instancetype.Name, name) {
-			return instanceTypeToNodeCapacity(instancetype.Spec)
+	for i := range namespacedInstancetypes.Items {
+		if strings.EqualFold(namespacedInstancetypes.Items[i].Name, name) {
+			return instanceTypeToNodeCapacity(namespacedInstancetypes.Items[i].Spec)
 		}
 	}
 	return nil, nil

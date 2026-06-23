@@ -39,15 +39,17 @@ func newTestClient(t *testing.T, objs ...ctrlruntimeclient.Object) ctrlruntimecl
 
 func TestDescribeInstanceType(t *testing.T) {
 	testCases := []struct {
-		name     string
-		objects  []ctrlruntimeclient.Object
-		matcher  *kubevirtv1.InstancetypeMatcher
-		wantCPU  int64
-		wantGPUs int64
-		wantErr  bool
+		name      string
+		namespace string
+		objects   []ctrlruntimeclient.Object
+		matcher   *kubevirtv1.InstancetypeMatcher
+		wantCPU   int64
+		wantGPUs  int64
+		wantErr   bool
 	}{
 		{
-			name: "namespaced user-deployed instancetype with GPU is found",
+			name:      "namespaced user-deployed instancetype with GPU is found",
+			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
 				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu-2", Namespace: "kkp-dev"},
@@ -61,6 +63,58 @@ func TestDescribeInstanceType(t *testing.T) {
 			matcher:  &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu-2", Kind: "VirtualMachineInstancetype"},
 			wantCPU:  2,
 			wantGPUs: 1,
+		},
+		{
+			name:      "non-namespaced mode resolves instancetype in the cluster's dedicated namespace",
+			namespace: "cluster-apqx2l7v72",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "custom-cpu-2", Namespace: "cluster-apqx2l7v72"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "custom-cpu-2", Kind: "VirtualMachineInstancetype"},
+			wantCPU: 2,
+		},
+		{
+			name:      "namespaced lookup ignores a same-named instancetype in another tenant namespace",
+			namespace: "tenant-a",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-a"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+					},
+				},
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-b"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 8},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("32Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu", Kind: "VirtualMachineInstancetype"},
+			wantCPU: 2,
+		},
+		{
+			name:      "custom namespaced lookup fails when no infra namespace is configured",
+			namespace: "",
+			objects: []ctrlruntimeclient.Object{
+				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-a"},
+					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+					},
+				},
+			},
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu", Kind: "VirtualMachineInstancetype"},
+			wantErr: true,
 		},
 		{
 			name: "cluster-scoped instancetype is found",
@@ -91,7 +145,8 @@ func TestDescribeInstanceType(t *testing.T) {
 			wantCPU: 2,
 		},
 		{
-			name: "empty kind falls back to namespaced when no cluster-scoped match",
+			name:      "empty kind falls back to namespaced when no cluster-scoped match",
+			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
 				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "legacy-namespaced", Namespace: "kkp-dev"},
@@ -115,7 +170,7 @@ func TestDescribeInstanceType(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := newTestClient(t, tc.objects...)
-			got, err := describeInstanceType(context.Background(), client, tc.matcher)
+			got, err := describeInstanceType(context.Background(), client, tc.namespace, tc.matcher)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("describeInstanceType() error = %v, wantErr = %v", err, tc.wantErr)
