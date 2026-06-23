@@ -500,11 +500,6 @@ scrape_configs:
     regex: (.*);(.*);(.*);(.*)
     replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
     target_label: __metrics_path__
-  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-    action: replace
-    regex: ([^:]+)(?::\d+)?;(\d+)
-    replacement: $1:$2
-    target_label: instance
   - target_label: __address__
     replacement: '{{ .APIServerHost }}'
     action: replace
