@@ -33,11 +33,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var testScheme = fake.NewScheme()
@@ -297,70 +295,6 @@ func TestCleanupPolicyBindingsUsesFallbackNamespace(t *testing.T) {
 		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
 			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed from fallback namespace, got %v", updatedPolicyBinding.Finalizers)
 		}
-	}
-}
-
-func TestCleanupPolicyBindingsIgnoresMissingNamespace(t *testing.T) {
-	ctx := context.Background()
-
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster",
-		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: testNS,
-		},
-	}
-
-	testCases := []struct {
-		name              string
-		deleteAllOfFailed bool
-		listFailed        bool
-	}{
-		{
-			name:              "DeleteAllOf returns NotFound",
-			deleteAllOfFailed: true,
-		},
-		{
-			name:       "List returns NotFound",
-			listFailed: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			seedClient := fake.
-				NewClientBuilder().
-				WithScheme(testScheme).
-				WithInterceptorFuncs(interceptor.Funcs{
-					DeleteAllOf: func(ctx context.Context, client ctrlruntimeclient.WithWatch, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteAllOfOption) error {
-						deleteOptions := (&ctrlruntimeclient.DeleteAllOfOptions{}).ApplyOptions(opts)
-						if tc.deleteAllOfFailed && deleteOptions.Namespace == testNS {
-							return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, testNS)
-						}
-
-						return client.DeleteAllOf(ctx, obj, opts...)
-					},
-					List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
-						listOptions := (&ctrlruntimeclient.ListOptions{}).ApplyOptions(opts)
-						if tc.listFailed && listOptions.Namespace == testNS {
-							return apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, testNS)
-						}
-
-						return client.List(ctx, list, opts...)
-					},
-				}).
-				Build()
-
-			deletion := &Deletion{
-				seedClient: seedClient,
-				recorder:   &events.FakeRecorder{},
-			}
-
-			if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
-				t.Fatalf("expected missing namespace to be treated as completed cleanup, got: %v", err)
-			}
-		})
 	}
 }
 

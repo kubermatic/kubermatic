@@ -35,6 +35,7 @@ import (
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -97,9 +98,11 @@ func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx co
 func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	ns := cluster.Status.NamespaceName
 	if ns == "" {
-		return nil
+		ns = kubernetesprovider.NamespaceName(cluster.Name)
 	}
 
+	// The PolicyBinding controller owns precise generated-resource cleanup. This
+	// safety net runs only after Kyverno resources are gone to unblock seed objects.
 	bindings := &kubermaticv1.PolicyBindingList{}
 	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
 		return nil
