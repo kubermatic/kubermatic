@@ -44,11 +44,10 @@ func TestDescribeInstanceType(t *testing.T) {
 		objects   []ctrlruntimeclient.Object
 		matcher   *kubevirtv1.InstancetypeMatcher
 		wantCPU   int64
-		wantGPUs  int64
 		wantErr   bool
 	}{
 		{
-			name:      "namespaced user-deployed instancetype with GPU is found",
+			name:      "namespaced user-deployed instancetype with GPU is found (GPUs not counted in capacity)",
 			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
 				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
@@ -60,9 +59,8 @@ func TestDescribeInstanceType(t *testing.T) {
 					},
 				},
 			},
-			matcher:  &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu-2", Kind: "VirtualMachineInstancetype"},
-			wantCPU:  2,
-			wantGPUs: 1,
+			matcher: &kubevirtv1.InstancetypeMatcher{Name: "custom-gpu-2", Kind: "VirtualMachineInstancetype"},
+			wantCPU: 2,
 		},
 		{
 			name:      "non-namespaced mode resolves instancetype in the cluster's dedicated namespace",
@@ -185,9 +183,10 @@ func TestDescribeInstanceType(t *testing.T) {
 				t.Errorf("CPU: got %v, want %d", got.CPUCores, tc.wantCPU)
 			}
 
-			if got.GPUs != nil && got.GPUs.Value() != tc.wantGPUs ||
-				got.GPUs == nil && tc.wantGPUs != 0 {
-				t.Errorf("GPUs: got %v, want %d", got.GPUs, tc.wantGPUs)
+			// GPUs are intentionally not counted into node capacity for the
+			// KubeVirt provider, so they must never be set.
+			if got.GPUs != nil {
+				t.Errorf("GPUs: got %v, want nil (GPUs are not counted in capacity)", got.GPUs)
 			}
 		})
 	}
