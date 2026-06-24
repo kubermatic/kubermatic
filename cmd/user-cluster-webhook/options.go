@@ -29,10 +29,10 @@ import (
 )
 
 type appOptions struct {
-	seedWebhook webhook.Options
-	userWebhook webhook.Options
-	pprof       flagopts.PProf
-	log         kubermaticlog.Options
+	seedWebhook            webhook.Options
+	userWebhook            webhook.Options
+	pprof                  flagopts.PProf
+	log                    kubermaticlog.Options
 	caBundle               *certificates.CABundle
 	projectID              string
 	clusterName            string
