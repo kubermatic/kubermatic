@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	kubevirtImageHTTPServerSvc      = "http://image-repo.kube-system.svc/images"
+	kubevirtUbuntuImage             = "docker://quay.io/kubermatic-virt-disks/ubuntu:24.04-amd64"
 	kubevirtVCPUs                   = 2
 	kubevirtMemory                  = "4Gi"
 	kubevirtDiskSize                = "25Gi"
@@ -110,7 +110,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 func (s *kubevirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
 	case providerconfig.OperatingSystemUbuntu:
-		return kubevirtImageHTTPServerSvc + "/ubuntu-22.04.img", nil
+		return kubevirtUbuntuImage, nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}
