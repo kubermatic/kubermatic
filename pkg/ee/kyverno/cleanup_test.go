@@ -29,13 +29,23 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type userClusterClientProviderFunc func(context.Context, *kubermaticv1.Cluster, ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+
+func (f userClusterClientProviderFunc) GetClient(ctx context.Context, cluster *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+	return f(ctx, cluster, options...)
+}
 
 func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	ctx := context.Background()
@@ -102,6 +112,67 @@ func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	}
 	if len(otherBinding.Finalizers) != 1 || otherBinding.Finalizers[0] != kubermaticv1.PolicyBindingCleanupFinalizer {
 		t.Fatalf("expected other namespace binding to keep cleanup finalizer, got %v", otherBinding.Finalizers)
+	}
+}
+
+func TestHandleKyvernoCleanupPreservesPolicyBindingFinalizersOnLiveDisable(t *testing.T) {
+	ctx := context.Background()
+	const clusterNamespace = "cluster-test"
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "test",
+			Finalizers: []string{CleanupFinalizer},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: clusterNamespace,
+		},
+	}
+	binding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "with-finalizer",
+			Namespace:  clusterNamespace,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{Name: "policy-template"},
+		},
+	}
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(fake.NewScheme()).
+		WithObjects(cluster, binding).
+		Build()
+
+	userClusterScheme := fake.NewScheme()
+	if err := apiextensionsv1.AddToScheme(userClusterScheme); err != nil {
+		t.Fatalf("failed to add apiextensions to scheme: %v", err)
+	}
+	if err := admissionregistrationv1.AddToScheme(userClusterScheme); err != nil {
+		t.Fatalf("failed to add admissionregistration to scheme: %v", err)
+	}
+
+	userClusterClient := fake.NewClientBuilder().
+		WithScheme(userClusterScheme).
+		Build()
+
+	r := &reconciler{
+		Client: seedClient,
+		userClusterConnectionProvider: userClusterClientProviderFunc(func(context.Context, *kubermaticv1.Cluster, ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+			return userClusterClient, nil
+		}),
+	}
+
+	if err := r.handleKyvernoCleanup(ctx, cluster); err != nil {
+		t.Fatalf("handleKyvernoCleanup failed: %v", err)
+	}
+
+	updatedBinding := &kubermaticv1.PolicyBinding{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding); err != nil {
+		t.Fatalf("failed to get updated binding: %v", err)
+	}
+	if len(updatedBinding.Finalizers) != 1 || updatedBinding.Finalizers[0] != kubermaticv1.PolicyBindingCleanupFinalizer {
+		t.Fatalf("expected live-disable cleanup to preserve PolicyBinding finalizer, got %v", updatedBinding.Finalizers)
 	}
 }
 
