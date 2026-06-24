@@ -36,8 +36,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -448,6 +451,73 @@ func TestDeletingPolicyBindingPreservesFinalizerWhenCleanupFails(t *testing.T) {
 	}
 }
 
+func TestDeletingPolicyBindingRemovesFinalizerWhenKyvernoAPIsAreMissing(t *testing.T) {
+	ctx := context.Background()
+	log := zap.NewNop().Sugar()
+
+	binding := genPolicyBindingWithDeletionTimestamp(testPolicyName, testClusterNamespace, testPolicyName)
+	binding.Spec.KyvernoPolicyNamespace = &kubermaticv1.KyvernoPolicyNamespace{Name: "old-namespace"}
+	template := genPolicyTemplate(testPolicyName, true)
+	cluster := genCluster(testClusterName, true)
+
+	scheme := fake.NewScheme()
+	if err := kyvernov1.Install(scheme); err != nil {
+		t.Fatalf("failed to add kyverno to scheme: %v", err)
+	}
+
+	seedClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cluster, template, binding).
+		WithStatusSubresource(binding).
+		Build()
+	userClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Delete: func(ctx context.Context, client ctrlruntimeclient.WithWatch, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteOption) error {
+				switch obj.(type) {
+				case *kyvernov1.ClusterPolicy:
+					return noKindMatchError("ClusterPolicy")
+				case *kyvernov1.Policy:
+					return noKindMatchError("Policy")
+				default:
+					return client.Delete(ctx, obj, opts...)
+				}
+			},
+			List: func(ctx context.Context, client ctrlruntimeclient.WithWatch, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
+				switch list.(type) {
+				case *kyvernov1.ClusterPolicyList:
+					return noKindMatchError("ClusterPolicy")
+				case *kyvernov1.PolicyList:
+					return noKindMatchError("Policy")
+				default:
+					return client.List(ctx, list, opts...)
+				}
+			},
+		}).
+		Build()
+
+	r := &reconciler{
+		seedClient: seedClient,
+		userClient: userClient,
+	}
+
+	if err := r.reconcile(ctx, log, binding, cluster); err != nil {
+		t.Fatalf("expected missing Kyverno APIs to be treated as completed cleanup, got: %v", err)
+	}
+
+	updatedBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get updated binding: %v", err)
+	}
+	if len(updatedBinding.Finalizers) > 0 {
+		t.Fatalf("expected cleanup finalizer to be removed, got %v", updatedBinding.Finalizers)
+	}
+}
+
 func TestNamespacedPolicyWithoutNamespaceReportsStaleCleanupFailure(t *testing.T) {
 	ctx := context.Background()
 	log := zap.NewNop().Sugar()
@@ -737,4 +807,11 @@ func getCondition(binding *kubermaticv1.PolicyBinding, conditionType kubermaticv
 		}
 	}
 	return nil
+}
+
+func noKindMatchError(kind string) error {
+	return &meta.NoKindMatchError{
+		GroupKind:        schema.GroupKind{Group: "kyverno.io", Kind: kind},
+		SearchedVersions: []string{"v1"},
+	}
 }
