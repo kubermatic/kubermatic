@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
-	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	kvinstancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,11 +50,11 @@ func TestDescribeInstanceType(t *testing.T) {
 			name:      "namespaced user-deployed instancetype with GPU is found (GPUs not counted in capacity)",
 			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu-2", Namespace: "kkp-dev"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
 						GPUs:   []kubevirtv1.GPU{{Name: "A100", DeviceName: "nv-a100-standard"}},
 					},
 				},
@@ -66,11 +66,11 @@ func TestDescribeInstanceType(t *testing.T) {
 			name:      "non-namespaced mode resolves instancetype in the cluster's dedicated namespace",
 			namespace: "cluster-apqx2l7v72",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-cpu-2", Namespace: "cluster-apqx2l7v72"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
 					},
 				},
 			},
@@ -81,18 +81,18 @@ func TestDescribeInstanceType(t *testing.T) {
 			name:      "namespaced lookup ignores a same-named instancetype in another tenant namespace",
 			namespace: "tenant-a",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-a"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
 					},
 				},
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-b"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 8},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("32Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 8},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("32Gi")},
 					},
 				},
 			},
@@ -103,11 +103,11 @@ func TestDescribeInstanceType(t *testing.T) {
 			name:      "custom namespaced lookup fails when no infra namespace is configured",
 			namespace: "",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "custom-gpu", Namespace: "tenant-a"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
 					},
 				},
 			},
@@ -117,11 +117,11 @@ func TestDescribeInstanceType(t *testing.T) {
 		{
 			name: "cluster-scoped instancetype is found",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineClusterInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "standard-4"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 4},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("16Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("16Gi")},
 					},
 				},
 			},
@@ -131,11 +131,11 @@ func TestDescribeInstanceType(t *testing.T) {
 		{
 			name: "empty kind resolves cluster-scoped instancetype",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineClusterInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "legacy-cluster"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 2},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("4Gi")},
 					},
 				},
 			},
@@ -146,11 +146,11 @@ func TestDescribeInstanceType(t *testing.T) {
 			name:      "empty kind falls back to namespaced when no cluster-scoped match",
 			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
-				&kvinstancetypev1alpha1.VirtualMachineInstancetype{
+				&kvinstancetypev1beta1.VirtualMachineInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "legacy-namespaced", Namespace: "kkp-dev"},
-					Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1alpha1.CPUInstancetype{Guest: 3},
-						Memory: kvinstancetypev1alpha1.MemoryInstancetype{Guest: resource.MustParse("12Gi")},
+					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 3},
+						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("12Gi")},
 					},
 				},
 			},

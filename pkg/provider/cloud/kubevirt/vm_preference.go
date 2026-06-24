@@ -19,7 +19,7 @@ package kubevirt
 import (
 	"context"
 
-	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	kvinstancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 
 	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -27,9 +27,9 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func preferenceReconciler(preference *kvinstancetypev1alpha1.VirtualMachinePreference) reconciling.NamedVirtualMachinePreferenceReconcilerFactory {
+func preferenceReconciler(preference *kvinstancetypev1beta1.VirtualMachinePreference) reconciling.NamedVirtualMachinePreferenceReconcilerFactory {
 	return func() (string, reconciling.VirtualMachinePreferenceReconciler) {
-		return preference.Name, func(p *kvinstancetypev1alpha1.VirtualMachinePreference) (*kvinstancetypev1alpha1.VirtualMachinePreference, error) {
+		return preference.Name, func(p *kvinstancetypev1beta1.VirtualMachinePreference) (*kvinstancetypev1beta1.VirtualMachinePreference, error) {
 			p.Labels = preference.Labels
 			p.Spec = preference.Spec
 			return p, nil
@@ -39,7 +39,7 @@ func preferenceReconciler(preference *kvinstancetypev1alpha1.VirtualMachinePrefe
 
 // reconcilePreferences reconciles the Kubermatic standard VirtualMachinePreference into the dedicated namespace.
 func reconcilePreferences(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
-	prefs := &kvinstancetypev1alpha1.VirtualMachinePreferenceList{}
+	prefs := &kvinstancetypev1beta1.VirtualMachinePreferenceList{}
 
 	// add Kubermatic standards
 	prefs.Items = append(prefs.Items, GetKubermaticStandardPreferences(client, &kvmanifests.StandardPreferenceGetter{})...)
@@ -57,11 +57,11 @@ func reconcilePreferences(ctx context.Context, namespace string, client ctrlrunt
 }
 
 // GetKubermaticStandardPreferences returns the Kubermatic standard VirtualMachinePreferences.
-func GetKubermaticStandardPreferences(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1alpha1.VirtualMachinePreference {
+func GetKubermaticStandardPreferences(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1beta1.VirtualMachinePreference {
 	objs := kvmanifests.RuntimeFromYaml(client, getter)
-	preferences := make([]kvinstancetypev1alpha1.VirtualMachinePreference, 0, len(objs))
+	preferences := make([]kvinstancetypev1beta1.VirtualMachinePreference, 0, len(objs))
 	for _, obj := range objs {
-		preferences = append(preferences, *obj.(*kvinstancetypev1alpha1.VirtualMachinePreference))
+		preferences = append(preferences, *obj.(*kvinstancetypev1beta1.VirtualMachinePreference))
 	}
 	return preferences
 }

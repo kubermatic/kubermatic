@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
-	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	kvinstancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
@@ -33,9 +33,9 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func instancetypeReconciler(instancetype *kvinstancetypev1alpha1.VirtualMachineInstancetype) reconciling.NamedVirtualMachineInstancetypeReconcilerFactory {
+func instancetypeReconciler(instancetype *kvinstancetypev1beta1.VirtualMachineInstancetype) reconciling.NamedVirtualMachineInstancetypeReconcilerFactory {
 	return func() (string, reconciling.VirtualMachineInstancetypeReconciler) {
-		return instancetype.Name, func(it *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error) {
+		return instancetype.Name, func(it *kvinstancetypev1beta1.VirtualMachineInstancetype) (*kvinstancetypev1beta1.VirtualMachineInstancetype, error) {
 			it.Labels = instancetype.Labels
 			it.Spec = instancetype.Spec
 			return it, nil
@@ -45,7 +45,7 @@ func instancetypeReconciler(instancetype *kvinstancetypev1alpha1.VirtualMachineI
 
 // reconcileInstancetypes reconciles the Kubermatic standard VirtualMachineInstancetype into the dedicated namespace.
 func reconcileInstancetypes(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
-	instancetypes := &kvinstancetypev1alpha1.VirtualMachineInstancetypeList{}
+	instancetypes := &kvinstancetypev1beta1.VirtualMachineInstancetypeList{}
 
 	// add Kubermatic standards
 	instancetypes.Items = append(instancetypes.Items, GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})...)
@@ -63,11 +63,11 @@ func reconcileInstancetypes(ctx context.Context, namespace string, client ctrlru
 }
 
 // GetKubermaticStandardInstancetypes returns the Kubermatic standard VirtualMachineInstancetypes.
-func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1alpha1.VirtualMachineInstancetype {
+func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1beta1.VirtualMachineInstancetype {
 	objs := kvmanifests.RuntimeFromYaml(client, getter)
-	instancetypes := make([]kvinstancetypev1alpha1.VirtualMachineInstancetype, 0, len(objs))
+	instancetypes := make([]kvinstancetypev1beta1.VirtualMachineInstancetype, 0, len(objs))
 	for _, obj := range objs {
-		instancetypes = append(instancetypes, *obj.(*kvinstancetypev1alpha1.VirtualMachineInstancetype))
+		instancetypes = append(instancetypes, *obj.(*kvinstancetypev1beta1.VirtualMachineInstancetype))
 	}
 	return instancetypes
 }
@@ -109,7 +109,7 @@ func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, 
 }
 
 func describeClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*provider.NodeCapacity, error) {
-	clusterInstancetypes := kvinstancetypev1alpha1.VirtualMachineClusterInstancetypeList{}
+	clusterInstancetypes := kvinstancetypev1beta1.VirtualMachineClusterInstancetypeList{}
 	if err := client.List(ctx, &clusterInstancetypes); err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 	if namespace == "" {
 		return nil, fmt.Errorf("cannot resolve namespaced instancetype %q: no KubeVirt infra namespace configured", name)
 	}
-	namespacedInstancetypes := kvinstancetypev1alpha1.VirtualMachineInstancetypeList{}
+	namespacedInstancetypes := kvinstancetypev1beta1.VirtualMachineInstancetypeList{}
 	if err := client.List(ctx, &namespacedInstancetypes, ctrlruntimeclient.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 }
 
 // instanceTypeToNodeCapacity extracts cpu, mem and gpu resource requests from the kubevirt instancetype.
-func instanceTypeToNodeCapacity(it kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec) (*provider.NodeCapacity, error) {
+func instanceTypeToNodeCapacity(it kvinstancetypev1beta1.VirtualMachineInstancetypeSpec) (*provider.NodeCapacity, error) {
 	capacity := provider.NewNodeCapacity()
 
 	// CPU and Memory are mandatory fields in instancetype

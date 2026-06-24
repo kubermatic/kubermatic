@@ -33,7 +33,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingk8siov1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	instancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	instancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -1112,7 +1112,7 @@ func ReconcileOperatingSystemConfigs(ctx context.Context, namedFactories []Named
 }
 
 // VirtualMachineInstancetypeReconciler defines an interface to create/update VirtualMachineInstancetypes.
-type VirtualMachineInstancetypeReconciler = func(existing *instancetypev1alpha1.VirtualMachineInstancetype) (*instancetypev1alpha1.VirtualMachineInstancetype, error)
+type VirtualMachineInstancetypeReconciler = func(existing *instancetypev1beta1.VirtualMachineInstancetype) (*instancetypev1beta1.VirtualMachineInstancetype, error)
 
 // NamedVirtualMachineInstancetypeReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
 type NamedVirtualMachineInstancetypeReconcilerFactory = func() (name string, reconciler VirtualMachineInstancetypeReconciler)
@@ -1122,9 +1122,9 @@ type NamedVirtualMachineInstancetypeReconcilerFactory = func() (name string, rec
 func VirtualMachineInstancetypeObjectWrapper(reconciler VirtualMachineInstancetypeReconciler) reconciling.ObjectReconciler {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return reconciler(existing.(*instancetypev1alpha1.VirtualMachineInstancetype))
+			return reconciler(existing.(*instancetypev1beta1.VirtualMachineInstancetype))
 		}
-		return reconciler(&instancetypev1alpha1.VirtualMachineInstancetype{})
+		return reconciler(&instancetypev1beta1.VirtualMachineInstancetype{})
 	}
 }
 
@@ -1140,7 +1140,7 @@ func ReconcileVirtualMachineInstancetypes(ctx context.Context, namedFactories []
 			reconcileObject = objectModifier(reconcileObject)
 		}
 
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &instancetypev1alpha1.VirtualMachineInstancetype{}, false); err != nil {
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &instancetypev1beta1.VirtualMachineInstancetype{}, false); err != nil {
 			return fmt.Errorf("failed to ensure VirtualMachineInstancetype %s/%s: %w", namespace, name, err)
 		}
 	}
@@ -1149,7 +1149,7 @@ func ReconcileVirtualMachineInstancetypes(ctx context.Context, namedFactories []
 }
 
 // VirtualMachinePreferenceReconciler defines an interface to create/update VirtualMachinePreferences.
-type VirtualMachinePreferenceReconciler = func(existing *instancetypev1alpha1.VirtualMachinePreference) (*instancetypev1alpha1.VirtualMachinePreference, error)
+type VirtualMachinePreferenceReconciler = func(existing *instancetypev1beta1.VirtualMachinePreference) (*instancetypev1beta1.VirtualMachinePreference, error)
 
 // NamedVirtualMachinePreferenceReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
 type NamedVirtualMachinePreferenceReconcilerFactory = func() (name string, reconciler VirtualMachinePreferenceReconciler)
@@ -1159,9 +1159,9 @@ type NamedVirtualMachinePreferenceReconcilerFactory = func() (name string, recon
 func VirtualMachinePreferenceObjectWrapper(reconciler VirtualMachinePreferenceReconciler) reconciling.ObjectReconciler {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return reconciler(existing.(*instancetypev1alpha1.VirtualMachinePreference))
+			return reconciler(existing.(*instancetypev1beta1.VirtualMachinePreference))
 		}
-		return reconciler(&instancetypev1alpha1.VirtualMachinePreference{})
+		return reconciler(&instancetypev1beta1.VirtualMachinePreference{})
 	}
 }
 
@@ -1177,7 +1177,7 @@ func ReconcileVirtualMachinePreferences(ctx context.Context, namedFactories []Na
 			reconcileObject = objectModifier(reconcileObject)
 		}
 
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &instancetypev1alpha1.VirtualMachinePreference{}, false); err != nil {
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &instancetypev1beta1.VirtualMachinePreference{}, false); err != nil {
 			return fmt.Errorf("failed to ensure VirtualMachinePreference %s/%s: %w", namespace, name, err)
 		}
 	}
