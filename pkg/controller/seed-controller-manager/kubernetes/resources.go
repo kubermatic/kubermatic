@@ -829,7 +829,7 @@ const networkPolicyHostnameResolutionTimeout = 10 * time.Second
 
 // oidcIssuerDestinations returns the resolved OIDC issuer destination configured for the cluster.
 func oidcIssuerDestinations(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, enableOIDCAuthentication bool) ([]oidcIssuerDestination, error) {
-	issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
+	issuerURL := c.Spec.OIDC.IssuerURL
 	if issuerURL == "" && enableOIDCAuthentication {
 		issuerURL = data.OIDCIssuerURL()
 	}

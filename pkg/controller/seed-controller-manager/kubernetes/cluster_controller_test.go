@@ -146,7 +146,7 @@ func TestEnqueueClustersForOIDCIssuerLoadBalancerService(t *testing.T) {
 			name: "enqueue OIDC candidates",
 			objects: []ctrlruntimeclient.Object{
 				clusterWithNetworkPolicy("legacy-oidc", "cluster-legacy-oidc", "dc-a", func(cluster *kubermaticv1.Cluster) {
-					cluster.Spec.OIDC.IssuerURL = "https://issuer.example.com" //nolint:staticcheck
+					cluster.Spec.OIDC.IssuerURL = "https://issuer.example.com"
 				}),
 				clusterWithNetworkPolicy("no-oidc", "cluster-no-oidc", "dc-a", nil),
 				&kubermaticv1.Cluster{

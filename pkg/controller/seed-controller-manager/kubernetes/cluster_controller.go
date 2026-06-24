@@ -326,7 +326,7 @@ func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context
 // It must cover every OIDC source handled by oidcIssuerDestinations; missing
 // one only delays policy updates until the next normal cluster reconcile.
 func (r *Reconciler) isOIDCIssuerClusterCandidate(cluster *kubermaticv1.Cluster) bool {
-	oidcSettings := cluster.Spec.OIDC //nolint:staticcheck
+	oidcSettings := cluster.Spec.OIDC
 	return oidcSettings.IssuerURL != "" ||
 		(r.features.KubernetesOIDCAuthentication && r.oidcIssuerURL != "")
 }
