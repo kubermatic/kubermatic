@@ -559,12 +559,12 @@ func (r *reconciler) deleteKyvernoResourcesForBinding(ctx context.Context, bindi
 func (r *reconciler) deleteKyvernoResourcesByBindingLabel(ctx context.Context, bindingName string) error {
 	clusterPolicies := &kyvernov1.ClusterPolicyList{}
 	if err := r.userClient.List(ctx, clusterPolicies, ctrlruntimeclient.MatchingLabels{LabelPolicyBinding: bindingName}); err != nil {
-		if !meta.IsNoMatchError(err) {
+		if !isKyvernoCleanupCompletedError(err) {
 			return fmt.Errorf("failed to list Kyverno ClusterPolicies for cleanup: %w", err)
 		}
 	} else {
 		for _, clusterPolicy := range clusterPolicies.Items {
-			if err := r.userClient.Delete(ctx, &clusterPolicy); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+			if err := r.userClient.Delete(ctx, &clusterPolicy); err != nil && !isKyvernoCleanupCompletedError(err) {
 				return fmt.Errorf("failed to delete ClusterPolicy %s for PolicyBinding %s: %w", clusterPolicy.Name, bindingName, err)
 			}
 		}
@@ -572,12 +572,12 @@ func (r *reconciler) deleteKyvernoResourcesByBindingLabel(ctx context.Context, b
 
 	policies := &kyvernov1.PolicyList{}
 	if err := r.userClient.List(ctx, policies, ctrlruntimeclient.MatchingLabels{LabelPolicyBinding: bindingName}); err != nil {
-		if !meta.IsNoMatchError(err) {
+		if !isKyvernoCleanupCompletedError(err) {
 			return fmt.Errorf("failed to list Kyverno Policies for cleanup: %w", err)
 		}
 	} else {
 		for _, policy := range policies.Items {
-			if err := r.userClient.Delete(ctx, &policy); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+			if err := r.userClient.Delete(ctx, &policy); err != nil && !isKyvernoCleanupCompletedError(err) {
 				return fmt.Errorf("failed to delete Policy %s/%s for PolicyBinding %s: %w", policy.Namespace, policy.Name, bindingName, err)
 			}
 		}
@@ -596,7 +596,7 @@ func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string)
 			Name: policyName,
 		},
 	}
-	if err := r.userClient.Delete(ctx, cp); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+	if err := r.userClient.Delete(ctx, cp); err != nil && !isKyvernoCleanupCompletedError(err) {
 		return fmt.Errorf("failed to delete ClusterPolicy %s: %w", policyName, err)
 	}
 
@@ -614,10 +614,14 @@ func (r *reconciler) deleteKyvernoPolicy(ctx context.Context, policyName, policy
 			Namespace: policyNamespace,
 		},
 	}
-	if err := r.userClient.Delete(ctx, p); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+	if err := r.userClient.Delete(ctx, p); err != nil && !isKyvernoCleanupCompletedError(err) {
 		return fmt.Errorf("failed to delete Policy %s/%s: %w", policyNamespace, policyName, err)
 	}
 	return nil
+}
+
+func isKyvernoCleanupCompletedError(err error) bool {
+	return apierrors.IsNotFound(err) || meta.IsNoMatchError(err)
 }
 
 // updateStatus updates the PolicyBinding status.
