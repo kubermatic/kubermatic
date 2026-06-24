@@ -215,9 +215,12 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:     "kyverno disabled triggers cleanup",
-			binding:  genPolicyBindingWithFinalizer(testPolicyName, testClusterNamespace, testPolicyName),
+			binding:  genActivePolicyBindingWithFinalizer(testPolicyName, testClusterNamespace, testPolicyName),
 			template: genPolicyTemplate(testPolicyName, false),
 			cluster:  genCluster(testClusterName, false),
+			userObjects: []ctrlruntimeclient.Object{
+				genClusterPolicy(testPolicyName, testPolicyName),
+			},
 			validate: func(t *testing.T, seedClient, userClient ctrlruntimeclient.Client, binding *kubermaticv1.PolicyBinding) error {
 				ctx := context.Background()
 
@@ -229,6 +232,20 @@ func TestReconcile(t *testing.T) {
 
 				if len(binding.Finalizers) > 0 {
 					return fmt.Errorf("Finalizer should be removed, got: %v", binding.Finalizers)
+				}
+
+				readyCondition := getCondition(binding, kubermaticv1.PolicyBindingConditionReady)
+				if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != policyBindingReasonKyvernoDisabled {
+					return fmt.Errorf("expected Ready=False/%s, got %#v", policyBindingReasonKyvernoDisabled, readyCondition)
+				}
+
+				appliedCondition := getCondition(binding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
+				if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != policyBindingReasonKyvernoDisabled {
+					return fmt.Errorf("expected KyvernoPolicyApplied=False/%s, got %#v", policyBindingReasonKyvernoDisabled, appliedCondition)
+				}
+
+				if binding.Status.Active == nil || *binding.Status.Active {
+					return fmt.Errorf("Active should be false after Kyverno disable")
 				}
 
 				return nil
@@ -767,6 +784,14 @@ func genPolicyBinding(name, namespace, templateName string) *kubermaticv1.Policy
 func genPolicyBindingWithFinalizer(name, namespace, templateName string) *kubermaticv1.PolicyBinding {
 	binding := genPolicyBinding(name, namespace, templateName)
 	binding.Finalizers = []string{cleanupFinalizer}
+	return binding
+}
+
+func genActivePolicyBindingWithFinalizer(name, namespace, templateName string) *kubermaticv1.PolicyBinding {
+	binding := genPolicyBindingWithFinalizer(name, namespace, templateName)
+	binding.SetStatusFields(genPolicyTemplate(templateName, false), true)
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonPolicyApplied, "Kyverno Policy successfully created/updated")
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonReady, "PolicyBinding is ready")
 	return binding
 }
 
