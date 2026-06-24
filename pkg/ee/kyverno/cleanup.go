@@ -53,8 +53,10 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 		return err
 	}
 
-	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
-		return err
+	if cluster.DeletionTimestamp != nil {
+		if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
+			return err
+		}
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
