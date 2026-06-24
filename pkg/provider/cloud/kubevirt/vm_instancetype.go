@@ -167,8 +167,5 @@ func instanceTypeToNodeCapacity(it kvinstancetypev1alpha1.VirtualMachineInstance
 	if !cpu.IsZero() {
 		capacity.WithCPUCount(int(cpu.Value()))
 	}
-	if len(it.GPUs) > 0 {
-		capacity.WithGPUCount(len(it.GPUs))
-	}
 	return capacity, nil
 }
