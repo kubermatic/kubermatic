@@ -136,6 +136,8 @@ func withPolicyTemplateCleanupEventFilter() predicate.Predicate {
 			return !kuberneteshelper.HasFinalizer(newObj, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
+			// Keep delete events as a safety net for templates that disappeared
+			// before this controller could add or process its cleanup finalizer.
 			return true
 		},
 		GenericFunc: func(e event.GenericEvent) bool {

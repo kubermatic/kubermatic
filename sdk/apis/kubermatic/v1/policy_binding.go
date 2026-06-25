@@ -69,6 +69,9 @@ const (
 	// PolicyBindingReasonDeleting indicates the PolicyBinding or its resources are being deleted.
 	PolicyBindingReasonDeleting = "Deleting"
 
+	// PolicyBindingReasonKyvernoDisabled indicates Kyverno has been disabled for the cluster.
+	PolicyBindingReasonKyvernoDisabled = "KyvernoDisabled"
+
 	// PolicyBindingReasonPolicyNamespaceMissing indicates that a namespaced policy has no target namespace configured.
 	PolicyBindingReasonPolicyNamespaceMissing = "PolicyNamespaceMissing"
 )

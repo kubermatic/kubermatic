@@ -180,12 +180,12 @@ func TestHandleKyvernoCleanupClearsPolicyBindingFinalizersOnLiveDisable(t *testi
 		t.Fatalf("expected live-disable cleanup to mark PolicyBinding inactive, got %#v", updatedBinding.Status.Active)
 	}
 	readyCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionReady)
-	if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != policyBindingReasonKyvernoDisabled {
-		t.Fatalf("expected Ready=False/%s, got %#v", policyBindingReasonKyvernoDisabled, readyCondition)
+	if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != kubermaticv1.PolicyBindingReasonKyvernoDisabled {
+		t.Fatalf("expected Ready=False/%s, got %#v", kubermaticv1.PolicyBindingReasonKyvernoDisabled, readyCondition)
 	}
 	appliedCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
-	if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != policyBindingReasonKyvernoDisabled {
-		t.Fatalf("expected KyvernoPolicyApplied=False/%s, got %#v", policyBindingReasonKyvernoDisabled, appliedCondition)
+	if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != kubermaticv1.PolicyBindingReasonKyvernoDisabled {
+		t.Fatalf("expected KyvernoPolicyApplied=False/%s, got %#v", kubermaticv1.PolicyBindingReasonKyvernoDisabled, appliedCondition)
 	}
 }
 

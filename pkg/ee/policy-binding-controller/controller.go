@@ -64,8 +64,6 @@ const (
 	LabelPolicyBinding  = "kubermatic.k8c.io/policy-binding"
 	LabelPolicyTemplate = "kubermatic.k8c.io/policy-template"
 
-	policyBindingReasonKyvernoDisabled = "KyvernoDisabled"
-
 	// Annotations for Kyverno resources.
 	AnnotationTitle       = "policies.kyverno.io/title"
 	AnnotationDescription = "policies.kyverno.io/description"
@@ -206,8 +204,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 
 	// Handle cleanup when Kyverno is disabled or cluster is being deleted.
 	if !cluster.Spec.IsKyvernoEnabled() {
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
 		binding.SetStatusFields(nil, false)
 
 		if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {

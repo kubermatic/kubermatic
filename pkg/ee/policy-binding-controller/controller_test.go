@@ -235,13 +235,13 @@ func TestReconcile(t *testing.T) {
 				}
 
 				readyCondition := getCondition(binding, kubermaticv1.PolicyBindingConditionReady)
-				if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != policyBindingReasonKyvernoDisabled {
-					return fmt.Errorf("expected Ready=False/%s, got %#v", policyBindingReasonKyvernoDisabled, readyCondition)
+				if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != kubermaticv1.PolicyBindingReasonKyvernoDisabled {
+					return fmt.Errorf("expected Ready=False/%s, got %#v", kubermaticv1.PolicyBindingReasonKyvernoDisabled, readyCondition)
 				}
 
 				appliedCondition := getCondition(binding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
-				if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != policyBindingReasonKyvernoDisabled {
-					return fmt.Errorf("expected KyvernoPolicyApplied=False/%s, got %#v", policyBindingReasonKyvernoDisabled, appliedCondition)
+				if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != kubermaticv1.PolicyBindingReasonKyvernoDisabled {
+					return fmt.Errorf("expected KyvernoPolicyApplied=False/%s, got %#v", kubermaticv1.PolicyBindingReasonKyvernoDisabled, appliedCondition)
 				}
 
 				if binding.Status.Active == nil || *binding.Status.Active {
