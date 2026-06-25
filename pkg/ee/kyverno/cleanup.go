@@ -43,8 +43,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const policyBindingReasonKyvernoDisabled = "KyvernoDisabled"
-
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
 func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	// Remove all Kyverno resources from seed user cluster namespace
@@ -108,9 +106,7 @@ func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, c
 	// The PolicyBinding controller owns precise generated-resource cleanup. This
 	// safety net runs only after Kyverno resources are gone to unblock seed objects.
 	bindings := &kubermaticv1.PolicyBindingList{}
-	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
+	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); err != nil {
 		return fmt.Errorf("failed to list PolicyBindings: %w", err)
 	}
 
@@ -138,8 +134,8 @@ func (r *reconciler) markPolicyBindingInactive(ctx context.Context, cluster *kub
 		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "Kyverno resources have been deleted because the cluster is being deleted")
 		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "PolicyBinding is not active because the cluster is being deleted")
 	} else {
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
 	}
 	binding.SetStatusFields(nil, false)
 

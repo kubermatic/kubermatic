@@ -26,7 +26,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,16 +38,12 @@ func (d *Deletion) cleanupPolicyBindings(ctx context.Context, log *zap.SugaredLo
 	// PolicyBindings live in the cluster namespace and their cleanup finalizer can
 	// otherwise keep that namespace terminating. The fallback mirrors namespace
 	// cleanup for clusters whose namespace was created before status was persisted.
-	if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.PolicyBinding{}, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
+	if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.PolicyBinding{}, ctrlruntimeclient.InNamespace(ns)); err != nil {
 		return err
 	}
 
 	bindings := &kubermaticv1.PolicyBindingList{}
-	if err := d.seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
+	if err := d.seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); err != nil {
 		return err
 	}
 
