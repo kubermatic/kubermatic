@@ -89,6 +89,7 @@ func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	seedClient := fake.NewClientBuilder().
 		WithScheme(fake.NewScheme()).
 		WithObjects(bindingWithFinalizer, bindingWithoutFinalizer, otherNamespaceBinding).
+		WithStatusSubresource(&kubermaticv1.PolicyBinding{}).
 		Build()
 
 	r := &reconciler{Client: seedClient}
@@ -115,7 +116,7 @@ func TestRemovePolicyBindingCleanupFinalizers(t *testing.T) {
 	}
 }
 
-func TestHandleKyvernoCleanupPreservesPolicyBindingFinalizersOnLiveDisable(t *testing.T) {
+func TestHandleKyvernoCleanupClearsPolicyBindingFinalizersOnLiveDisable(t *testing.T) {
 	ctx := context.Background()
 	const clusterNamespace = "cluster-test"
 
@@ -142,6 +143,7 @@ func TestHandleKyvernoCleanupPreservesPolicyBindingFinalizersOnLiveDisable(t *te
 	seedClient := fake.NewClientBuilder().
 		WithScheme(fake.NewScheme()).
 		WithObjects(cluster, binding).
+		WithStatusSubresource(&kubermaticv1.PolicyBinding{}).
 		Build()
 
 	userClusterScheme := fake.NewScheme()
@@ -171,8 +173,19 @@ func TestHandleKyvernoCleanupPreservesPolicyBindingFinalizersOnLiveDisable(t *te
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: binding.Name, Namespace: binding.Namespace}, updatedBinding); err != nil {
 		t.Fatalf("failed to get updated binding: %v", err)
 	}
-	if len(updatedBinding.Finalizers) != 1 || updatedBinding.Finalizers[0] != kubermaticv1.PolicyBindingCleanupFinalizer {
-		t.Fatalf("expected live-disable cleanup to preserve PolicyBinding finalizer, got %v", updatedBinding.Finalizers)
+	if len(updatedBinding.Finalizers) != 0 {
+		t.Fatalf("expected live-disable cleanup to remove PolicyBinding finalizer, got %v", updatedBinding.Finalizers)
+	}
+	if updatedBinding.Status.Active == nil || *updatedBinding.Status.Active {
+		t.Fatalf("expected live-disable cleanup to mark PolicyBinding inactive, got %#v", updatedBinding.Status.Active)
+	}
+	readyCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionReady)
+	if readyCondition == nil || readyCondition.Status != metav1.ConditionFalse || readyCondition.Reason != policyBindingReasonKyvernoDisabled {
+		t.Fatalf("expected Ready=False/%s, got %#v", policyBindingReasonKyvernoDisabled, readyCondition)
+	}
+	appliedCondition := getCondition(updatedBinding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
+	if appliedCondition == nil || appliedCondition.Status != metav1.ConditionFalse || appliedCondition.Reason != policyBindingReasonKyvernoDisabled {
+		t.Fatalf("expected KyvernoPolicyApplied=False/%s, got %#v", policyBindingReasonKyvernoDisabled, appliedCondition)
 	}
 }
 
@@ -199,6 +212,7 @@ func TestRemovePolicyBindingCleanupFinalizersUsesFallbackNamespace(t *testing.T)
 	seedClient := fake.NewClientBuilder().
 		WithScheme(fake.NewScheme()).
 		WithObjects(binding).
+		WithStatusSubresource(&kubermaticv1.PolicyBinding{}).
 		Build()
 
 	r := &reconciler{Client: seedClient}
@@ -215,4 +229,13 @@ func TestRemovePolicyBindingCleanupFinalizersUsesFallbackNamespace(t *testing.T)
 			t.Fatalf("expected cleanup finalizer to be removed from fallback namespace, got %v", updatedBinding.Finalizers)
 		}
 	}
+}
+
+func getCondition(binding *kubermaticv1.PolicyBinding, conditionType kubermaticv1.PolicyBindingConditionType) *metav1.Condition {
+	for i := range binding.Status.Conditions {
+		if binding.Status.Conditions[i].Type == string(conditionType) {
+			return &binding.Status.Conditions[i]
+		}
+	}
+	return nil
 }
