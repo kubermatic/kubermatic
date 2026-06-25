@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +65,7 @@ func TestPolicyTemplateCleanupReconcilerAddsFinalizer(t *testing.T) {
 		t.Fatalf("failed to get PolicyTemplate: %v", err)
 	}
 
-	if !hasFinalizer(updatedPolicyTemplate.Finalizers, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(updatedPolicyTemplate, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
 		t.Fatalf("expected PolicyTemplate cleanup finalizer to be added, got %v", updatedPolicyTemplate.Finalizers)
 	}
 }
@@ -136,10 +137,10 @@ func TestPolicyTemplateCleanupReconcilerDeletesPolicyBindingsWhenTemplateIsTermi
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: policyName}, updatedPolicyTemplate); err != nil {
 		t.Fatalf("failed to get terminating PolicyTemplate: %v", err)
 	}
-	if hasFinalizer(updatedPolicyTemplate.Finalizers, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(updatedPolicyTemplate, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
 		t.Fatalf("expected PolicyTemplate cleanup finalizer to be removed, got %v", updatedPolicyTemplate.Finalizers)
 	}
-	if !hasFinalizer(updatedPolicyTemplate.Finalizers, kubermaticv1.PolicyTemplateSeedCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(updatedPolicyTemplate, kubermaticv1.PolicyTemplateSeedCleanupFinalizer) {
 		t.Fatalf("expected unrelated PolicyTemplate finalizer to remain, got %v", updatedPolicyTemplate.Finalizers)
 	}
 }
@@ -173,7 +174,7 @@ func TestPolicyTemplateCleanupReconcilerSkipsActiveTemplate(t *testing.T) {
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: policyName}, updatedPolicyTemplate); err != nil {
 		t.Fatalf("failed to get active PolicyTemplate: %v", err)
 	}
-	if !hasFinalizer(updatedPolicyTemplate.Finalizers, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(updatedPolicyTemplate, kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer) {
 		t.Fatalf("expected PolicyTemplate cleanup finalizer to be added, got %v", updatedPolicyTemplate.Finalizers)
 	}
 }
@@ -190,14 +191,4 @@ func genPolicyBindingForTemplate(name, namespace, policyTemplateName string) *ku
 			},
 		},
 	}
-}
-
-func hasFinalizer(finalizers []string, expected string) bool {
-	for _, finalizer := range finalizers {
-		if finalizer == expected {
-			return true
-		}
-	}
-
-	return false
 }
