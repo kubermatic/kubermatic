@@ -27,6 +27,7 @@ package kyverno
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	admissioncontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/admission-controller"
@@ -38,8 +39,11 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const policyBindingReasonKyvernoDisabled = "KyvernoDisabled"
 
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
 func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -53,10 +57,8 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 		return err
 	}
 
-	if cluster.DeletionTimestamp != nil {
-		if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
-			return err
-		}
+	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
+		return err
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
@@ -117,9 +119,38 @@ func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, c
 			continue
 		}
 
+		if err := r.markPolicyBindingInactive(ctx, cluster, &binding); err != nil {
+			return err
+		}
+
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, &binding, kubermaticv1.PolicyBindingCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove PolicyBinding cleanup finalizer: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) markPolicyBindingInactive(ctx context.Context, cluster *kubermaticv1.Cluster, binding *kubermaticv1.PolicyBinding) error {
+	oldBinding := binding.DeepCopy()
+
+	if cluster.DeletionTimestamp != nil {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "Kyverno resources have been deleted because the cluster is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "PolicyBinding is not active because the cluster is being deleted")
+	} else {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, policyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
+	}
+	binding.SetStatusFields(nil, false)
+
+	if reflect.DeepEqual(oldBinding.Status, binding.Status) {
+		return nil
+	}
+
+	if err := r.Status().Patch(ctx, binding, ctrlruntimeclient.MergeFrom(oldBinding)); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to update PolicyBinding cleanup status: %w", err)
 	}
 
 	return nil
