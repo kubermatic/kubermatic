@@ -384,6 +384,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					request:  httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/api/admin/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
+				{
+					name:     "verify user is gone",
+					request:  httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "user not found"}`)), StatusCode: http.StatusNotFound},
+				},
 			},
 		},
 		{

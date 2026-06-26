@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"maps"
@@ -25,6 +26,8 @@ import (
 	"net/url"
 	"slices"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -65,10 +68,13 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apiserverconfig "k8s.io/apiserver/pkg/apis/apiserver"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
@@ -757,8 +763,8 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.KyvernoWebhookAllowReconciler(c),
 		}
 
-		// one shared limited context for all hostname resolutions
-		resolverCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		// one shared limited context for required hostname resolutions
+		resolverCtx, cancel := context.WithTimeout(ctx, networkPolicyHostnameResolutionTimeout)
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
@@ -770,15 +776,13 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			)
 		}
 
-		// allow egress traffic to OIDC issuer's external IPs
-		oidcIPs, err := oidcIssuerIPs(resolverCtx, c, data, r.features.KubernetesOIDCAuthentication)
+		// Resolve OIDC issuer destinations for the legacy IPBlock rule and
+		// optional selector-backed LoadBalancer backend peers.
+		oidcDestinations, err := oidcIssuerDestinations(resolverCtx, c, data, r.features.KubernetesOIDCAuthentication)
 		if err != nil {
-			return fmt.Errorf("failed to fetch OIDC issuer IPs: %w", err)
+			return fmt.Errorf("failed to fetch OIDC issuer destinations: %w", err)
 		}
-
-		if len(oidcIPs) > 0 {
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(oidcIPs, cfg.Spec.Ingress.NamespaceOverride))
-		}
+		oidcIPs := oidcIssuerDestinationIPs(oidcDestinations)
 
 		if c.Spec.IsWebhookAuthorizationEnabled() {
 			webhookURL, err := r.extractAuthorizationWebhookURL(ctx, c)
@@ -807,6 +811,20 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.SeedApiserverAllowReconciler(apiIPs))
 
+		if len(oidcIPs) > 0 {
+			// Match optional LoadBalancer backend peers after required DNS lookups.
+			// This must not perform additional DNS resolution during Service matching.
+			loadBalancerBackendPeers, err := r.oidcIssuerLoadBalancerBackendPeers(ctx, oidcDestinations)
+			if err != nil {
+				return fmt.Errorf("failed to fetch OIDC issuer LoadBalancer backend peers: %w", err)
+			}
+			if len(loadBalancerBackendPeers) == 0 && r.log != nil {
+				r.log.Debugw("No OIDC issuer LoadBalancer Service backends matched", "cluster", c.Name)
+			}
+
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(oidcIPs, loadBalancerBackendPeers, cfg.Spec.Ingress.NamespaceOverride))
+		}
+
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, c.Status.NamespaceName, r); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
@@ -815,9 +833,30 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 	return nil
 }
 
-// oidcIssuerIPs returns the list of OIDC issuer IPs specified within the AuthenticationConfiguration or the cluster's old OIDC configuration.
-func oidcIssuerIPs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, enableOIDCAuthentication bool) ([]net.IP, error) {
-	ipAllowList := make([]net.IP, 0, 1)
+type oidcIssuerDestination struct {
+	hostname string
+	port     int32
+	ips      []net.IP
+}
+
+type oidcIssuerDestinationKey struct {
+	hostname string
+	port     int32
+}
+
+type oidcIssuerDestinationPortLookup map[string]sets.Set[int32]
+
+type serviceNetworkPolicyPeerKey struct {
+	namespace string
+	selector  string
+}
+
+type hostnameResolver func(context.Context, string) ([]net.IP, error)
+
+const networkPolicyHostnameResolutionTimeout = 10 * time.Second
+
+// oidcIssuerDestinations returns resolved OIDC issuer destinations specified within the AuthenticationConfiguration or the cluster's old OIDC configuration.
+func oidcIssuerDestinations(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, enableOIDCAuthentication bool) ([]oidcIssuerDestination, error) {
 	authConfigYAML := data.AuthenticationConfigurationYAML()
 
 	if len(authConfigYAML) > 0 {
@@ -826,33 +865,246 @@ func oidcIssuerIPs(ctx context.Context, c *kubermaticv1.Cluster, data *resources
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract issuer URLs from AuthenticationConfiguration: %w", err)
 		}
-		ipList, err := urlsToIPList(ctx, issuerURLs)
+		destinations, err := urlsToOIDCIssuerDestinations(ctx, issuerURLs)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert issuer URLs to IP list: %w", err)
-		}
-		ipAllowList = append(ipAllowList, ipList...)
-	} else {
-		issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
-		if issuerURL == "" && enableOIDCAuthentication {
-			issuerURL = data.OIDCIssuerURL()
+			return nil, fmt.Errorf("failed to convert issuer URLs to OIDC issuer destinations: %w", err)
 		}
 
-		if issuerURL != "" {
-			u, err := url.Parse(issuerURL)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
+		return destinations, nil
+	}
+
+	issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
+	if issuerURL == "" && enableOIDCAuthentication {
+		issuerURL = data.OIDCIssuerURL()
+	}
+
+	if issuerURL == "" {
+		return nil, nil
+	}
+
+	u, err := url.Parse(issuerURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
+	}
+	issuerPort, err := oidcIssuerURLPort(u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
+	}
+
+	// resolve OIDC issuer IPs
+	ipList, err := hostnameToIPList(ctx, u.Hostname())
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
+	}
+
+	return []oidcIssuerDestination{
+		{
+			hostname: normalizeHostname(u.Hostname()),
+			port:     issuerPort,
+			ips:      ipList,
+		},
+	}, nil
+}
+
+func oidcIssuerDestinationIPs(destinations []oidcIssuerDestination) []net.IP {
+	ipList := make([]net.IP, 0, len(destinations))
+	ipSet := make(map[string]struct{}, len(destinations))
+
+	for _, destination := range destinations {
+		for _, ip := range destination.ips {
+			if ip == nil {
+				continue
 			}
 
-			// resolve OIDC issuer IPs
-			ipList, err := hostnameToIPList(ctx, u.Hostname())
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
+			if _, exists := ipSet[ip.String()]; !exists {
+				ipSet[ip.String()] = struct{}{}
+				ipList = append(ipList, ip)
 			}
-			ipAllowList = append(ipAllowList, ipList...)
 		}
 	}
 
-	return ipAllowList, nil
+	return ipList
+}
+
+func (r *Reconciler) oidcIssuerLoadBalancerBackendPeers(ctx context.Context, destinations []oidcIssuerDestination) ([]networkingv1.NetworkPolicyPeer, error) {
+	if len(destinations) == 0 {
+		return nil, nil
+	}
+
+	destinationIPs, destinationHostnames := oidcIssuerDestinationLookups(destinations)
+	if len(destinationIPs) == 0 && len(destinationHostnames) == 0 {
+		return nil, nil
+	}
+
+	// This is intentionally a cache-backed linear scan for now. If this becomes
+	// hot on large seeds, we can add an index for LoadBalancer ingress values.
+	services := &corev1.ServiceList{}
+	if err := r.List(ctx, services); err != nil {
+		return nil, fmt.Errorf("failed to list Services: %w", err)
+	}
+
+	sort.Slice(services.Items, func(i, j int) bool {
+		if services.Items[i].Namespace != services.Items[j].Namespace {
+			return services.Items[i].Namespace < services.Items[j].Namespace
+		}
+		return services.Items[i].Name < services.Items[j].Name
+	})
+
+	peers := []networkingv1.NetworkPolicyPeer{}
+	seenPeers := map[serviceNetworkPolicyPeerKey]struct{}{}
+
+	for i := range services.Items {
+		svc := &services.Items[i]
+		if !oidcIssuerLoadBalancerServiceMatchesIssuerDestination(svc, destinationIPs, destinationHostnames) {
+			continue
+		}
+		if len(svc.Spec.Selector) == 0 {
+			if r.log != nil {
+				r.log.Debugw("Skipping selector-less OIDC issuer LoadBalancer Service backend", "namespace", svc.Namespace, "service", svc.Name)
+			}
+			continue
+		}
+
+		// Shared external VIPs can match more than one Service on the same port.
+		// Keep all matching backend selectors; each peer remains namespace/pod-scoped.
+		peerKey := newServiceNetworkPolicyPeerKey(svc.Namespace, svc.Spec.Selector)
+		if _, exists := seenPeers[peerKey]; exists {
+			continue
+		}
+		seenPeers[peerKey] = struct{}{}
+
+		peers = append(peers, networkingv1.NetworkPolicyPeer{
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					corev1.LabelMetadataName: svc.Namespace,
+				},
+			},
+			PodSelector: &metav1.LabelSelector{
+				MatchLabels: maps.Clone(svc.Spec.Selector),
+			},
+		})
+	}
+
+	return peers, nil
+}
+
+func oidcIssuerDestinationLookups(destinations []oidcIssuerDestination) (oidcIssuerDestinationPortLookup, oidcIssuerDestinationPortLookup) {
+	ips := make(oidcIssuerDestinationPortLookup, len(destinations))
+	hostnames := make(oidcIssuerDestinationPortLookup, len(destinations))
+
+	for _, destination := range destinations {
+		if destination.hostname != "" {
+			if ip := net.ParseIP(destination.hostname); ip != nil {
+				addOIDCIssuerDestinationLookup(ips, ip.String(), destination.port)
+			} else {
+				addOIDCIssuerDestinationLookup(hostnames, normalizeHostname(destination.hostname), destination.port)
+			}
+		}
+
+		for _, ip := range destination.ips {
+			if ip != nil {
+				addOIDCIssuerDestinationLookup(ips, ip.String(), destination.port)
+			}
+		}
+	}
+
+	return ips, hostnames
+}
+
+func addOIDCIssuerDestinationLookup(lookups oidcIssuerDestinationPortLookup, key string, port int32) {
+	if key == "" || port <= 0 {
+		return
+	}
+
+	ports, exists := lookups[key]
+	if !exists {
+		ports = sets.New[int32]()
+		lookups[key] = ports
+	}
+	ports.Insert(port)
+}
+
+func oidcIssuerLoadBalancerServiceMatchesIssuerDestination(svc *corev1.Service, destinationIPs, destinationHostnames oidcIssuerDestinationPortLookup) bool {
+	if svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
+		return false
+	}
+
+	servicePorts := loadBalancerServicePorts(svc)
+	if len(servicePorts) == 0 {
+		return false
+	}
+	// Match the issuer URL port against the Service port. The generated policy
+	// intentionally does not restrict the translated backend targetPort.
+	if !servicePortsMatchAnyDestination(servicePorts, destinationIPs, destinationHostnames) {
+		return false
+	}
+
+	for _, ingress := range svc.Status.LoadBalancer.Ingress {
+		if ingress.IP != "" {
+			if ip := net.ParseIP(ingress.IP); ip != nil {
+				if ports, exists := destinationIPs[ip.String()]; exists && servicePortsMatch(servicePorts, ports) {
+					return true
+				}
+			}
+		}
+
+		if ingress.Hostname != "" {
+			if ip := net.ParseIP(ingress.Hostname); ip != nil {
+				if ports, exists := destinationIPs[ip.String()]; exists && servicePortsMatch(servicePorts, ports) {
+					return true
+				}
+			}
+
+			// Hostname ingress matching is best-effort by name only. We do not
+			// resolve Service LoadBalancer hostnames during reconciliation.
+			hostname := normalizeHostname(ingress.Hostname)
+			if ports, exists := destinationHostnames[hostname]; exists && servicePortsMatch(servicePorts, ports) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func loadBalancerServicePorts(svc *corev1.Service) sets.Set[int32] {
+	ports := sets.New[int32]()
+	for _, port := range svc.Spec.Ports {
+		if port.Port > 0 && (port.Protocol == "" || port.Protocol == corev1.ProtocolTCP) {
+			ports.Insert(port.Port)
+		}
+	}
+
+	return ports
+}
+
+func servicePortsMatchAnyDestination(servicePorts sets.Set[int32], destinationLookups ...oidcIssuerDestinationPortLookup) bool {
+	for _, lookups := range destinationLookups {
+		for _, destinationPorts := range lookups {
+			if servicePortsMatch(servicePorts, destinationPorts) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func servicePortsMatch(servicePorts, destinationPorts sets.Set[int32]) bool {
+	for port := range destinationPorts {
+		if servicePorts.Has(port) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func newServiceNetworkPolicyPeerKey(namespace string, selector map[string]string) serviceNetworkPolicyPeerKey {
+	return serviceNetworkPolicyPeerKey{
+		namespace: namespace,
+		selector:  labels.FormatLabels(selector),
+	}
 }
 
 // issuerURLsFromAuthenticationConfigurationYAML parses the given apiserver AuthenticationConfiguration and returns the contained issuer URLs.
@@ -1244,33 +1496,76 @@ func (r *Reconciler) listAPIServerAlternateNames(ctx context.Context, cluster *k
 	}, nil
 }
 
-// urlsToIPList returns a set of IPs for the given URLs.
-func urlsToIPList(ctx context.Context, urls []string) ([]net.IP, error) {
-	hostnames := make(map[string]struct{}, len(urls))
+func urlsToOIDCIssuerDestinations(ctx context.Context, urls []string) ([]oidcIssuerDestination, error) {
+	return urlsToOIDCIssuerDestinationsWithResolver(ctx, urls, hostnameToIPList)
+}
+
+func urlsToOIDCIssuerDestinationsWithResolver(ctx context.Context, urls []string, resolve hostnameResolver) ([]oidcIssuerDestination, error) {
+	hostnames := make(map[string]string, len(urls))
+	destinationKeys := make(map[oidcIssuerDestinationKey]struct{}, len(urls))
 	for _, u := range urls {
 		parsedURL, err := url.Parse(u)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse URL %q: %w", u, err)
 		}
-		hostnames[parsedURL.Hostname()] = struct{}{}
-	}
-
-	ipList := make([]net.IP, 0, len(hostnames))
-	ipSet := make(map[string]struct{}, len(hostnames))
-	for _, hostname := range slices.Sorted(maps.Keys(hostnames)) {
-		hostIPs, err := hostnameToIPList(ctx, hostname)
+		port, err := oidcIssuerURLPort(parsedURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve hostname %q: %w", hostname, err)
+			return nil, fmt.Errorf("failed to parse URL %q: %w", u, err)
 		}
-		for _, ip := range hostIPs {
-			if _, exists := ipSet[ip.String()]; !exists {
-				ipSet[ip.String()] = struct{}{}
-				ipList = append(ipList, ip)
-			}
+
+		lookupHostname := parsedURL.Hostname()
+		normalizedHostname := normalizeHostname(lookupHostname)
+		existingLookupHostname, exists := hostnames[normalizedHostname]
+		if !exists || (!strings.HasSuffix(existingLookupHostname, ".") && strings.HasSuffix(lookupHostname, ".")) {
+			hostnames[normalizedHostname] = lookupHostname
 		}
+		destinationKeys[oidcIssuerDestinationKey{
+			hostname: normalizedHostname,
+			port:     port,
+		}] = struct{}{}
 	}
 
-	return ipList, nil
+	resolvedHostnames := make(map[string][]net.IP, len(hostnames))
+	for _, hostname := range slices.Sorted(maps.Keys(hostnames)) {
+		lookupHostname := hostnames[hostname]
+		hostIPs, err := resolve(ctx, lookupHostname)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve hostname %q: %w", lookupHostname, err)
+		}
+		resolvedHostnames[hostname] = hostIPs
+	}
+
+	destinations := make([]oidcIssuerDestination, 0, len(destinationKeys))
+	for _, key := range slices.SortedFunc(maps.Keys(destinationKeys), func(a, b oidcIssuerDestinationKey) int {
+		if result := cmp.Compare(a.hostname, b.hostname); result != 0 {
+			return result
+		}
+		return cmp.Compare(a.port, b.port)
+	}) {
+		destinations = append(destinations, oidcIssuerDestination{
+			hostname: key.hostname,
+			port:     key.port,
+			ips:      resolvedHostnames[key.hostname],
+		})
+	}
+
+	return destinations, nil
+}
+
+func oidcIssuerURLPort(u *url.URL) (int32, error) {
+	if port := u.Port(); port != "" {
+		parsedPort, err := strconv.Atoi(port)
+		if err != nil || len(validation.IsValidPortNum(parsedPort)) > 0 {
+			return 0, fmt.Errorf("invalid port %q", port)
+		}
+		return int32(parsedPort), nil
+	}
+
+	if strings.EqualFold(u.Scheme, "http") {
+		return 80, nil
+	}
+
+	return 443, nil
 }
 
 // hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
@@ -1297,6 +1592,10 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 	})
 
 	return ipList, nil
+}
+
+func normalizeHostname(hostname string) string {
+	return strings.TrimSuffix(strings.ToLower(hostname), ".")
 }
 
 func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {

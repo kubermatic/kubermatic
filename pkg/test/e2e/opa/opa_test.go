@@ -107,6 +107,14 @@ func TestOPAIntegration(t *testing.T) {
 		t.Fatalf("Cluster did not get healthy: %v", err)
 	}
 
+	// AllHealthy() does not include Gatekeeper, but its webhook uses failurePolicy=Ignore,
+	// so requests pass silently until the Gatekeeper pods are running; pulling the images
+	// on the fresh worker node alone can take more than a minute
+	logger.Info("Waiting for Gatekeeper to get healthy...")
+	if err := testJig.WaitForGatekeeperHealthy(ctx, 5*time.Minute); err != nil {
+		t.Fatalf("Gatekeeper did not get healthy: %v", err)
+	}
+
 	// Create CT
 	logger.Info("Creating Constraint Template (CT)...")
 	ct, err := createTestConstraintTemplate(ctx, seedClient)
@@ -227,7 +235,9 @@ func genTestConfigMap() *corev1.ConfigMap {
 }
 
 func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	return wait.PollLog(ctx, log, 3*time.Second, 2*time.Minute, func(ctx context.Context) (error, error) {
+	// even with Gatekeeper healthy, registering the webhook and ingesting the
+	// constraint into OPA takes a moment, so keep a generous polling budget
+	return wait.PollLog(ctx, log, 3*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		cm := genTestConfigMap()
 		err := userClient.Create(ctx, cm)
 		if err == nil {
