@@ -114,6 +114,11 @@ func mergeServiceAnnotations(traceability map[string]string, cluster *kubermatic
 		ann[awsAdditionalTagsKey] = awsAdditionalResourceTags(traceability)
 	}
 
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		ann["metallb.io/allow-shared-ip"] = "true"
+		ann["metallb.io/loadBalancerIPs"] = "91.98.176.168"
+	}
+
 	return ann
 }
 
