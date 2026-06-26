@@ -44,11 +44,12 @@ import (
 func ValidateQuota(ctx context.Context,
 	log *zap.SugaredLogger,
 	userClient ctrlruntimeclient.Client,
+	kubeVirtInfraNamespace string,
 	machine *clusterv1alpha1.Machine,
 	caBundle *certificates.CABundle,
 	resourceQuota *kubermaticv1.ResourceQuota,
 ) error {
-	machineResourceUsage, err := GetMachineResourceUsage(ctx, userClient, machine, caBundle)
+	machineResourceUsage, err := GetMachineResourceUsage(ctx, userClient, kubeVirtInfraNamespace, machine, caBundle)
 	if err != nil {
 		return fmt.Errorf("error getting machine resource request: %w", err)
 	}

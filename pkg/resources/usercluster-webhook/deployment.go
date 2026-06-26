@@ -105,6 +105,18 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				fmt.Sprintf("-cluster-name=%s", data.Cluster().Name),
 			}
 
+			// For KubeVirt clusters, tell the webhook which infra-cluster namespace holds the
+			// cluster's namespaced VirtualMachineInstancetypes so the resource-quota validation
+			// resolves them in the right namespace. Defaults to the cluster's dedicated namespace,
+			// or the datacenter's single-namespace ("namespaced mode") namespace when enabled.
+			if data.Cluster().Spec.Cloud.Kubevirt != nil {
+				kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
+				if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
+					kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Namespace
+				}
+				args = append(args, fmt.Sprintf("-kubevirt-infra-namespace=%s", kubeVirtInfraNamespace))
+			}
+
 			if data.Cluster().Spec.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
