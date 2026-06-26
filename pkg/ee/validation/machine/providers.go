@@ -88,7 +88,7 @@ const (
 	envKubeVirtKubeconfig = "KUBEVIRT_KUBECONFIG"
 )
 
-func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, kubeVirtInfraNamespace string, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	config, err := providerconfig.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
@@ -105,7 +105,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	case providerconfig.CloudProviderAzure:
 		quotaUsage, err = getAzureResourceRequirements(ctx, userClient, config)
 	case providerconfig.CloudProviderKubeVirt:
-		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, kubeVirtInfraNamespace, config)
 	case providerconfig.CloudProviderVsphere:
 		quotaUsage, err = getVsphereResourceRequirements(config)
 	case providerconfig.CloudProviderOpenstack:
@@ -254,7 +254,13 @@ func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimecli
 	return NewResourceDetailsFromCapacity(vmSize)
 }
 
-func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
+// getKubeVirtResourceRequirements computes the CPU/memory request of a KubeVirt machine.
+//
+// kubeVirtInfraNamespace is the KubeVirt infra-cluster namespace that holds the cluster's
+// namespaced VirtualMachineInstancetypes. It is resolved by the caller (from the cluster's
+// dedicated namespace, or the datacenter's NamespacedMode namespace when single-namespace mode
+// is enabled) and passed in here. Resolving a custom namespaced instancetype without it fails.
+func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, kubeVirtInfraNamespace string, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := configvar.NewResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
@@ -269,9 +275,13 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}
-		capacity, err := kubevirt.DescribeInstanceType(ctx, kubeconfig, rawConfig.VirtualMachine.Instancetype)
+		// Scope the instancetype lookup to the cluster's KubeVirt infra namespace.
+		capacity, err := kubevirt.DescribeInstanceType(ctx, kubeconfig, kubeVirtInfraNamespace, rawConfig.VirtualMachine.Instancetype)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI instancetype: %w", err)
+		}
+		if capacity.CPUCores == nil || capacity.Memory == nil {
+			return nil, fmt.Errorf("KubeVirt instancetype %q has zero CPU or memory", rawConfig.VirtualMachine.Instancetype.Name)
 		}
 		cpuReq = *capacity.CPUCores
 		memReq = *capacity.Memory
