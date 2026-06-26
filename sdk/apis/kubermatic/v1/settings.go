@@ -87,6 +87,10 @@ type SettingSpec struct {
 	// DisableAdminKubeconfig disables the admin kubeconfig functionality on the dashboard.
 	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
 
+	// DisabledAuditWebhookBackendDCs is the list of datacenters for which the Audit Webhook Backend
+	// option is disabled in the dashboard.
+	DisabledAuditWebhookBackendDCs []string `json:"disabledAuditWebhookBackendDCs,omitempty"`
+
 	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit           int64 `json:"userProjectsLimit"`
 	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
