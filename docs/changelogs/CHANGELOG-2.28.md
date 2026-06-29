@@ -12,6 +12,24 @@
 - [v2.28.9](#v2289)
 - [v2.28.10](#v22810)
 - [v2.28.11](#v22811)
+- [v2.28.12](#v22812)
+
+## v2.28.12
+
+**GitHub release: [v2.28.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.12)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.33.13 ([#15995](https://github.com/kubermatic/kubermatic/pull/15995))
+
+### Bugfixes
+
+- Fix the web terminal failing with a TLS "unknown authority" error ([#8135](https://github.com/kubermatic/dashboard/pull/8135))
+- Vim is now pre-installed in the web-terminal image ([#8148](https://github.com/kubermatic/dashboard/pull/8148))
+
+### Cleanup
+
+- The dashboard now reports its real version and edition at startup instead of always logging "Development" ([#8131](https://github.com/kubermatic/dashboard/pull/8131))
 
 ## v2.28.11
 
