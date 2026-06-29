@@ -5,6 +5,39 @@
 - [v2.30.2](#v2302)
 - [v2.30.3](#v2303)
 - [v2.30.4](#v2304)
+- [v2.30.5](#v2305)
+
+## v2.30.5
+
+**GitHub release: [v2.30.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.5)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases 1.35.6/1.34.9/1.33.13 ([#15993](https://github.com/kubermatic/kubermatic/pull/15993))
+
+### Bugfixes
+
+- Fix a kkp-master-operator issue where the /nvidia-gpu-operator ApplicationDefinition would fail with a context deadline exceeded error during KKP upgrades ([#15960](https://github.com/kubermatic/kubermatic/pull/15960))
+- Fix apiserver OIDC issuer NetworkPolicies for OIDC issuers exposed through selector backed seed side LoadBalancer Services, like KubeLB, when the CNI enforces egress against translated backend pod identities ([#16028](https://github.com/kubermatic/kubermatic/pull/16028))
+- Fix ee resource quota validation for KubeVirt MachineDeployments using user-deployed namespaced VirtualMachineInstancetype resources (e.g. custom GPU instancetypes). Previously, machine creation was incorrectly rejected with "instancetype not found" when resource quotas were configured ([#15958](https://github.com/kubermatic/kubermatic/pull/15958))
+- Fix seed Prometheus scraping envoy-agent directly via worker private IPs for tunneling user clusters ([#16024](https://github.com/kubermatic/kubermatic/pull/16024))
+- KKP now configures Cilium to exclude the reserved (KKP) NodeLocalDNS address from local address detection when NodeLocalDNS is enabled. This fixes DNS access to NodeLocalDNS for Cilium clusters with restrictive egress NetworkPolicies, for example Web Terminal sessions with internet access disabled. Existing clusters require a restart of the Cilium DaemonSet for the new startup configuration to take effect if needed. Admins can either restart it manually or set Cilium's `rollOutCiliumPods=true` Helm value, this will roll the agents automatically on configmap changes ([#15996](https://github.com/kubermatic/kubermatic/pull/15996))
+- Mirror-images now ignores configured dockerTagSuffix values together with repository overrides when --ignore-repository-overrides is set, so reused offline configurations resolve upstream images instead of failing with MANIFEST_UNKNOWN ([#15967](https://github.com/kubermatic/kubermatic/pull/15967))
+- Fix the user cluster event count and last occurrence date ([#8102](https://github.com/kubermatic/dashboard/pull/8102))
+- Fix the web terminal failing with a TLS "unknown authority" error ([#8135](https://github.com/kubermatic/dashboard/pull/8135))
+- Vim is now pre-installed in the web-terminal image ([#8134](https://github.com/kubermatic/dashboard/pull/8134))
+
+### Updates
+
+- Update machine-controller to v1.65.3 ([#16022](https://github.com/kubermatic/kubermatic/pull/16022))
+- Update the default Cilium CNI version to 1.18.10 and added Cilium 1.17.16 and 1.18.10 as supported CNI versions ([#15968](https://github.com/kubermatic/kubermatic/pull/15968)
+- Update Go version to v1.25.11 ([#15987](https://github.com/kubermatic/kubermatic/pull/15987))
+- Update OSM to v1.10.7 ([#16020](https://github.com/kubermatic/kubermatic/pull/16020))
+- Update the KubeVirt CSI driver operator to v0.5.3 to fix StorageClasses getting an empty reclaimPolicy when no reclaimPolicy is configured ([#16032](https://github.com/kubermatic/kubermatic/pull/16032))
+
+### Cleanup
+
+- The dashboard now reports its real version and edition at startup instead of always logging "Development" ([#8131](https://github.com/kubermatic/dashboard/pull/8131))
 
 ## v2.30.4
 
