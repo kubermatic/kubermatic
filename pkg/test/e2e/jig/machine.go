@@ -87,6 +87,7 @@ func (j *MachineJig) Clone() *MachineJig {
 		cloudProviderSpec: j.cloudProviderSpec,
 		clusterClient:     j.clusterClient,
 		sshPubKeys:        j.sshPubKeys.Clone(),
+		networkConfig:     j.networkConfig,
 	}
 }
 
@@ -182,6 +183,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 		WithDatacenter(datacenter).
 		WithOperatingSystemSpec(j.osSpec).
 		WithCloudProviderSpec(j.cloudProviderSpec).
+		WithNetworkConfig(j.networkConfig).
 		AddSSHPublicKey(j.sshPubKeys.UnsortedList()...).
 		BuildProviderSpec()
 	if err != nil {
