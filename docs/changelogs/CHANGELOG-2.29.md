@@ -9,6 +9,25 @@
 - [v2.29.6](#v2296)
 - [v2.29.7](#v2297)
 - [v2.29.8](#v2298)
+- [v2.29.9](#v2299)
+
+## v2.29.9
+
+**GitHub release: [v2.29.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.9)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases 1.34.9/1.33.13 ([#15994](https://github.com/kubermatic/kubermatic/pull/15994))
+
+### Bugfixes
+
+- Fix a kkp-master-operator issue where the /nvidia-gpu-operator ApplicationDefinition would fail with a context deadline exceeded error during KKP upgrades ([#15960](https://github.com/kubermatic/kubermatic/pull/15960))
+- Fix seed Prometheus scraping envoy-agent directly via worker private IPs for tunneling user clusters ([#16024](https://github.com/kubermatic/kubermatic/pull/16024))
+- KKP now configures Cilium to exclude the reserved (KKP) NodeLocalDNS address from local address detection when NodeLocalDNS is enabled. This fixes DNS access to NodeLocalDNS for Cilium clusters with restrictive egress NetworkPolicies, for example Web Terminal sessions with internet access disabled. Existing clusters require a restart of the Cilium DaemonSet for the new startup configuration to take effect if needed. Admins can either restart it manually or set Cilium's `rollOutCiliumPods=true` Helm value, this will roll the agents automatically on configmap changes ([#15996](https://github.com/kubermatic/kubermatic/pull/15996))
+
+### Updates
+
+- Update the default Cilium CNI version to 1.18.10 and added Cilium 1.17.16 and 1.18.10 as supported CNI versions ([#15969](https://github.com/kubermatic/kubermatic/pull/15969))
 
 ## v2.29.8
 
