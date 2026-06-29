@@ -15,11 +15,11 @@ on:
 
 jobs:
   create-issues:
-    if: github.event.pull_request.merged == true && (github.event.pull_request.labels.*.name == 'kind/feature' || github.event.pull_request.labels.*.name == 'kind/bug')
+    if: github.event.pull_request.merged == true && (contains(github.event.pull_request.labels.*.name, 'kind/feature') || contains(github.event.pull_request.labels.*.name, 'kind/bug'))
     runs-on: ubuntu-latest
     permissions:
       issues: write
-    
+
     steps:
       - name: Fetch PR data
         id: pr
