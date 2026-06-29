@@ -15,7 +15,7 @@
 apiVersion: v2
 name: grafana-alloy
 version: 9.9.9-dev
-appVersion: v1.9.2
+appVersion: v1.17.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:
   - kubermatic
@@ -31,5 +31,5 @@ maintainers:
     email: support@kubermatic.com
 dependencies:
   - name: alloy
-    version: "1.1.2"
+    version: "1.10.0"
     repository: "https://grafana.github.io/helm-charts"
