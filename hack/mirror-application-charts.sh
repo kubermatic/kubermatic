@@ -55,7 +55,7 @@ declare -A CHART_URLS=(
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.19.4"
+  ["cilium"]="1.19.5"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -82,7 +82,7 @@ declare -A CHART_VERSIONS=(
 # above. Values are comma-separated version lists. This is consumed by the
 # postsubmit wrapper; direct script callers can still pass explicit versions.
 declare -A CHART_ADDITIONAL_VERSIONS=(
-  ["cilium"]="1.17.16"
+  ["cilium"]="1.17.17,1.18.11"
 )
 
 # Re-enable unset variable checking after array declarations
