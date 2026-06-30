@@ -39,7 +39,7 @@ require (
 	github.com/aws/smithy-go v1.24.2
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.18.10
-	github.com/containerd/containerd/v2 v2.0.3
+	github.com/containerd/containerd/v2 v2.0.10
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
