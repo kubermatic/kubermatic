@@ -19,6 +19,11 @@ jobs:
   dispatch:
     if: contains(github.event.issue.labels.*.name, 'cis-bench-request')
     runs-on: ubuntu-latest
+    # The cross-repo PAT (KKP_CONFORMANCE_CROSS_GH_TOKEN) lives in the
+    # `kkp` GitHub environment. Without this `environment:` declaration the
+    # secret resolves to an empty string and `gh api` aborts before sending
+    # any request.
+    environment: KKP
     permissions:
       issues: write
 
@@ -26,6 +31,8 @@ jobs:
       - name: Parse issue body
         id: parse
         env:
+          # Same-repo read — GITHUB_TOKEN is sufficient; no need to spend the
+          # cross-repo PAT here.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
@@ -34,12 +41,30 @@ jobs:
             --json body --jq '.body')
           ISSUE_BODY=${ISSUE_BODY//$'\r'/}
 
+          # Lenient extractor for "<key>: <value>" lines in the issue body.
+          # Accepts:
+          #   - markdown bold (**kkp-version**: ... / kkp-version: **2.30.0**)
+          #   - inline code (`kkp-version`: ... / `2.30.0`)
+          #   - leading whitespace, list bullets (- / *)
+          #   - any letter case on the key
+          #   - optional space around the colon
+          # Strips trailing whitespace + commas from the value.
           extract() {
-            echo "$ISSUE_BODY" | grep -E "^$1: " | head -1 | sed "s/^$1: *//"
+            local key="$1"
+            echo "$ISSUE_BODY" \
+              | sed -E 's/[`*]+//g' \
+              | grep -iE "^[[:space:]]*[-*]?[[:space:]]*${key}[[:space:]]*:" \
+              | head -1 \
+              | sed -E "s/^[[:space:]]*[-*]?[[:space:]]*${key}[[:space:]]*:[[:space:]]*//I; s/[[:space:]]+$//"
           }
 
           KKP_VERSION=$(extract "kkp-version")
           K8S_VERSIONS=$(extract "k8s-versions")
+
+          # Normalize K8S_VERSIONS: strip whitespace around commas so the
+          # runner workflow's IFS=',' split doesn't produce versions with
+          # leading/trailing spaces (which break semver parsing downstream).
+          K8S_VERSIONS=$(echo "$K8S_VERSIONS" | tr -d '[:space:]')
 
           if [ -z "$KKP_VERSION" ] || [ -z "$K8S_VERSIONS" ]; then
             echo "Missing kkp-version or k8s-versions in issue body — aborting"
@@ -52,6 +77,7 @@ jobs:
 
       - name: Acknowledge on issue
         env:
+          # Same-repo write (comment) — GITHUB_TOKEN with issues: write is enough.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           KKP_VERSION:  ${{ steps.parse.outputs.kkp_version }}
