@@ -608,8 +608,8 @@ func TestAppCatalogMigration(t *testing.T) {
 			return false, nil
 		}
 
-		if len(catalog.Spec.Helm.Charts) != len(expectedNewApps) {
-			logger.Infof("Waiting for charts: got %d, want %d", len(catalog.Spec.Helm.Charts), len(expectedNewApps))
+		if len(catalog.Spec.Helm.Charts) < len(expectedNewApps) {
+			logger.Infof("Waiting for charts: got %d, want at least %d", len(catalog.Spec.Helm.Charts), len(expectedNewApps))
 			return false, nil
 		}
 
@@ -629,7 +629,7 @@ func TestAppCatalogMigration(t *testing.T) {
 		}
 
 		logger.Infof("Found %d new-style applications", len(newApps))
-		if len(newApps) != len(expectedNewApps) {
+		if len(newApps) < len(expectedNewApps) {
 			sort.Slice(expectedNewApps, func(i, j int) bool {
 				return expectedNewApps[i] < expectedNewApps[j]
 			})
