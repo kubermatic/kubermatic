@@ -269,15 +269,14 @@ jobs:
       - name: Delete image from Quay
         if: always()
         env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
           QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-            -H "Authorization: Bearer ${QUAY_PASSWORD}" \
-            "https://quay.io/api/v1/repository/kubermatic/conformance-ee/tag/${IMAGE_TAG}")
-          if [ "$RESPONSE" = "204" ] || [ "$RESPONSE" = "200" ]; then
+          if skopeo delete --creds "${QUAY_USERNAME}:${QUAY_PASSWORD}" \
+            "docker://${IMAGE_REF}"; then
             echo "Image tag ${IMAGE_TAG} deleted from Quay"
           else
-            echo "WARNING: could not delete image tag ${IMAGE_TAG} (HTTP ${RESPONSE})"
+            echo "WARNING: Could not delete image tag ${IMAGE_TAG}"
           fi
 
       # ─── Comment per-k8s status on the triggering issue ──────────────
