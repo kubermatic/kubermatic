@@ -19,6 +19,11 @@ jobs:
   dispatch:
     if: contains(github.event.issue.labels.*.name, 'cis-bench-request')
     runs-on: ubuntu-latest
+    # The cross-repo PAT (KKP_CONFORMANCE_CROSS_GH_TOKEN) lives in the
+    # `kkp` GitHub environment. Without this `environment:` declaration the
+    # secret resolves to an empty string and `gh api` aborts before sending
+    # any request.
+    environment: KKP
     permissions:
       issues: write
 
