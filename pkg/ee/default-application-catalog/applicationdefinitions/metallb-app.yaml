@@ -48,6 +48,13 @@ spec:
           chartVersion: 0.14.9
           url: oci://quay.io/kubermatic-mirror/helm-charts
     version: v0.14.9
+  - template:
+      source:
+        helm:
+          chartName: metallb
+          chartVersion: 0.15.3
+          url: oci://quay.io/kubermatic-mirror/helm-charts
+    version: v0.15.3
   defaultValuesBlock: |-
     speaker:
       frr:
