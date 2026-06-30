@@ -250,9 +250,18 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 		}
 		if err == nil {
 			status, err := grafanaClient.DeleteUser(ctx, grafanaUser.ID)
-			if err != nil {
+			if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 				return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
 					err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
+			}
+
+			// verify the user is gone before removing the finalizer, otherwise the
+			// cleanup would never be retried
+			if _, err := grafanaClient.LookupUser(ctx, user.Spec.Email); !errors.As(err, &grafanasdk.ErrNotFound{}) {
+				return fmt.Errorf(
+					"grafana user %q still exists after deletion (status: %s, message: %s)",
+					user.Spec.Email, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"),
+				)
 			}
 		}
 	}

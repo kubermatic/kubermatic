@@ -42,7 +42,6 @@ linters:
     - errname
     - errorlint
     - fatcontext
-    - goconst
     - gocritic
     - gocyclo
     - godot
@@ -71,8 +70,6 @@ linters:
               desc: https://go.dev/doc/go1.16#ioutil
             - pkg: github.com/ghodss/yaml
               desc: use sigs.k8s.io/yaml instead
-    goconst:
-      min-occurrences: 5
     govet:
       enable:
         - nilness # find tautologies / impossible conditions
@@ -183,9 +180,6 @@ linters:
       - linters:
           - staticcheck
         text: "SA1019: registry.GetOverwriteFunc is deprecated"
-      - linters:
-          - goconst
-        path: (.+)_test\.go
     paths:
       - zz_generated.*.go
       # This package was forked from upstream (in #9826)

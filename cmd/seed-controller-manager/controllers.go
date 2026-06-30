@@ -76,6 +76,7 @@ var AllControllers = map[string]controllerCreator{
 	initialapplicationinstallationcontroller.ControllerName: createInitialApplicationInstallationController,
 	cniapplicationinstallationcontroller.ControllerName:     createCNIApplicationInstallationController,
 	mla.ControllerName:                                      createMLAController,
+	mla.UserClusterMonitoringControllerName:                 createUserClusterMonitoringController,
 	clustertemplatecontroller.ControllerName:                createClusterTemplateController,
 	projectcontroller.ControllerName:                        createProjectController,
 	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
@@ -374,6 +375,20 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.cortexRulerURL,
 		ctrlCtx.runOptions.lokiRulerURL,
 		ctrlCtx.runOptions.enableUserClusterMLA,
+	)
+}
+
+func createUserClusterMonitoringController(ctrlCtx *controllerContext) error {
+	if !userClusterMLAEnabled(ctrlCtx) {
+		return nil
+	}
+	return mla.AddUserClusterMonitoring(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
+		ctrlCtx.clientProvider,
 	)
 }
 

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"time"
 
 	"go.uber.org/zap"
@@ -42,6 +43,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +54,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -229,9 +233,133 @@ func Add(
 		bldr.Watches(t, inNamespaceHandler, builder.WithPredicates(predicateutil.SkipCreateEvents()))
 	}
 
+	bldr.Watches(
+		&corev1.Service{},
+		handler.EnqueueRequestsFromMapFunc(reconciler.enqueueClustersForOIDCIssuerLoadBalancerService),
+		builder.WithPredicates(oidcIssuerLoadBalancerServicePredicate()),
+	)
+
 	_, err := bldr.Build(reconciler)
 
 	return err
+}
+
+func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldSvc, oldOK := e.ObjectOld.(*corev1.Service)
+			newSvc, newOK := e.ObjectNew.(*corev1.Service)
+			if !oldOK || !newOK {
+				return false
+			}
+
+			if !isOIDCIssuerLoadBalancerServiceCandidate(oldSvc) &&
+				!isOIDCIssuerLoadBalancerServiceCandidate(newSvc) {
+				return false
+			}
+
+			return oldSvc.Spec.Type != newSvc.Spec.Type ||
+				!apiequality.Semantic.DeepEqual(oldSvc.Spec.Selector, newSvc.Spec.Selector) ||
+				!apiequality.Semantic.DeepEqual(oldSvc.Spec.Ports, newSvc.Spec.Ports) ||
+				!apiequality.Semantic.DeepEqual(oldSvc.Status.LoadBalancer.Ingress, newSvc.Status.LoadBalancer.Ingress)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return isOIDCIssuerLoadBalancerServiceCandidate(e.Object)
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
+}
+
+// isOIDCIssuerLoadBalancerServiceCandidate only checks cheap Service fields.
+// Reconciliation performs the exact issuer IP/hostname and port match.
+func isOIDCIssuerLoadBalancerServiceCandidate(obj ctrlruntimeclient.Object) bool {
+	svc, ok := obj.(*corev1.Service)
+	if !ok {
+		return false
+	}
+
+	return svc.Spec.Type == corev1.ServiceTypeLoadBalancer &&
+		len(svc.Spec.Selector) > 0 &&
+		len(svc.Status.LoadBalancer.Ingress) > 0
+}
+
+func (r *Reconciler) enqueueClustersForOIDCIssuerLoadBalancerService(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+	if _, ok := obj.(*corev1.Service); !ok {
+		return nil
+	}
+
+	// A LoadBalancer Service can back an issuer used by any user cluster, so the
+	// handler enqueues cheap OIDC candidates and lets reconciliation recompute the exact peers.
+	clusters := &kubermaticv1.ClusterList{}
+	if err := r.List(ctx, clusters); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list Clusters for OIDC issuer LoadBalancer Service change: %w", err))
+		return nil
+	}
+
+	var seed *kubermaticv1.Seed
+	seedUnavailable := false
+	if r.seedGetter != nil {
+		var err error
+		seed, err = r.seedGetter()
+		if err != nil {
+			// Fail open for enqueueing so transient Seed read errors do not leave
+			// stale policies behind; reconciliation still applies normal guards.
+			seedUnavailable = true
+			utilruntime.HandleError(fmt.Errorf("failed to get Seed for OIDC issuer LoadBalancer Service change: %w", err))
+		}
+	}
+
+	requests := make([]reconcile.Request, 0, len(clusters.Items))
+	for i := range clusters.Items {
+		cluster := &clusters.Items[i]
+		if cluster.DeletionTimestamp != nil ||
+			cluster.Status.NamespaceName == "" ||
+			!cluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
+			continue
+		}
+
+		if seedUnavailable || r.isOIDCIssuerClusterCandidate(cluster, seed) {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+		}
+	}
+
+	sort.Slice(requests, func(i, j int) bool {
+		return requests[i].Name < requests[j].Name
+	})
+
+	return requests
+}
+
+// isOIDCIssuerClusterCandidate is a cheap prefilter for Service watch events.
+// It must cover every OIDC source handled by oidcIssuerDestinations; missing
+// one only delays policy updates until the next normal cluster reconcile.
+func (r *Reconciler) isOIDCIssuerClusterCandidate(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) bool {
+	oidcSettings := cluster.Spec.OIDC //nolint:staticcheck
+	if oidcSettings.IssuerURL != "" ||
+		cluster.Spec.IsAuthenticationConfigurationEnabled() ||
+		(r.features.KubernetesOIDCAuthentication && r.oidcIssuerURL != "") {
+		return true
+	}
+
+	if seed == nil {
+		return false
+	}
+
+	if dc, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]; found &&
+		authenticationConfigurationRefConfigured(dc.Spec.AuthenticationConfiguration) {
+		return true
+	}
+
+	return authenticationConfigurationRefConfigured(seed.Spec.AuthenticationConfiguration)
+}
+
+func authenticationConfigurationRefConfigured(ref *kubermaticv1.AuthenticationConfiguration) bool {
+	return ref != nil && ref.SecretName != "" && ref.SecretKey != ""
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

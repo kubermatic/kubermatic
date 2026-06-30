@@ -99,9 +99,10 @@ func setupControllers(
 	caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	namespace string,
+	kubeVirtInfraNamespace string,
 	kyvernoEnabled bool,
 ) error {
-	if err := resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, caBundle, clusterIsPaused); err != nil {
+	if err := resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, kubeVirtInfraNamespace, caBundle, clusterIsPaused); err != nil {
 		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
 	}
 

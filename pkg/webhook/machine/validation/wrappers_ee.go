@@ -33,9 +33,9 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client,
+func validateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, kubeVirtInfraNamespace string,
 	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle, resourceQuota *kubermaticv1.ResourceQuota) error {
-	return eemachinevalidation.ValidateQuota(ctx, log, userClient, machine, caBundle, resourceQuota)
+	return eemachinevalidation.ValidateQuota(ctx, log, userClient, kubeVirtInfraNamespace, machine, caBundle, resourceQuota)
 }
 
 func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, subjectSelector labels.Selector) (*kubermaticv1.ResourceQuota, error) {

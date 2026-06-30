@@ -36,6 +36,13 @@ kubermaticOperator:
       "quay.io": {}
     }
 
+  # imagePullSecretExistingSecret optionally points the operator at a pre-created image
+  # pull Secret instead of generating the "dockercfg" Secret from imagePullSecret above.
+  # When set, the chart skips creating that Secret; the referenced Secret must live in
+  # the operator's namespace, be of type kubernetes.io/dockerconfigjson, and contain the
+  # key ".dockerconfigjson".
+  imagePullSecretExistingSecret: ""
+
   debug: false
   leaderElection: true
   resources:

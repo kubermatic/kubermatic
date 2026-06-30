@@ -101,7 +101,7 @@ func TestGetKubevirtResourceRequirements(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &MockCtrlRuntimeClient{}
-			_, err := getKubeVirtResourceRequirements(context.Background(), mockClient, tc.config)
+			_, err := getKubeVirtResourceRequirements(context.Background(), mockClient, "", tc.config)
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)

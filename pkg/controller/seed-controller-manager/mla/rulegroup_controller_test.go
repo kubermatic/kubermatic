@@ -80,14 +80,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "get",
-					request: httptest.NewRequest(http.MethodGet,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodGet,
 						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 						MetricsRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(generator.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
@@ -108,14 +108,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "get",
-					request: httptest.NewRequest(http.MethodGet,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodGet,
 						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodPost,
 						LogRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(generator.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
@@ -148,7 +148,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "delete",
-					request: httptest.NewRequest(http.MethodDelete,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
 						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
@@ -169,7 +169,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name: "delete",
-					request: httptest.NewRequest(http.MethodDelete,
+					request: httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
 						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
