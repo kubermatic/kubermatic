@@ -27,6 +27,8 @@ REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic-mirror/helm-charts}"
 # ─── Chart-specific configurations ────────────────────────────────────────────
 # Format: key = chart name, value = "<URL_TEMPLATE>"
 declare -A CHART_URLS=(
+  ["agentgateway"]="oci://cr.agentgateway.dev/charts/agentgateway"
+  ["agentgateway-crds"]="oci://cr.agentgateway.dev/charts/agentgateway-crds"
   ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz"
   ["cilium"]="https://helm.cilium.io/cilium-%s.tgz"
   # Add more charts here as needed
@@ -54,6 +56,8 @@ declare -A CHART_URLS=(
 
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
+  ["agentgateway"]="1.3.1"
+  ["agentgateway-crds"]="1.3.1"
   ["cluster-autoscaler"]="9.46.6"
   ["cilium"]="1.19.5"
   # Add more default versions here as needed
