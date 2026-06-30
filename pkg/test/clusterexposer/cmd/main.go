@@ -21,14 +21,17 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/zapr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/clusterexposer/controller"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -106,6 +109,10 @@ func isRequired(flagName string) bool {
 func run(cmd *cobra.Command, _ []string) error {
 	rawLog := log.New(debug, log.FormatJSON)
 	log := rawLog.Sugar()
+
+	// set the controller-runtime logger so its internal components (e.g. the
+	// priority queue) do not emit a "log.SetLogger(...) was never called" warning.
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 	outerCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigOuterFile)
 	if err != nil {
 		return fmt.Errorf("unable to set up client config for outer cluster: %w", err)

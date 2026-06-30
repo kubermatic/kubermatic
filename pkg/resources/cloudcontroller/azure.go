@@ -71,7 +71,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        registry.Must(data.RewriteImage("mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v" + version)),
+					Image:        registry.Must(data.RewriteImage("mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-controller-manager:v" + version)),
 					Command:      []string{"cloud-controller-manager"},
 					Args:         getAzureFlags(data),
 					Env:          getEnvVars(),
@@ -111,19 +111,19 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 
 	// https://github.com/kubernetes-sigs/cloud-provider-azure/releases
-	// gcrane ls --json mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager | jq -r '.tags[]'
+	// gcrane ls --json mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v132:
-		return "1.32.4", nil
 	case v133:
 		return "1.33.6", nil
 	case v134:
-		fallthrough
-	case v135:
-		fallthrough
-	default:
 		return "1.34.3", nil
+	case v135:
+		return "1.35.5", nil
+	case v136:
+		return "1.36.1", nil
+	default:
+		return "1.36.1", nil
 	}
 }
 
