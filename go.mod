@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 // // TODO: Remove once we have vanity import support for application-catalog-manager
-replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260415145230-4aa5a55d0273
+replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.2.0-rc.8.0.20260609180029-65b0942a0405
 
 require (
 	dario.cat/mergo v1.0.2
@@ -125,7 +125,7 @@ require (
 require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	gopkg.in/yaml.v2 v2.4.0
-	k8c.io/application-catalog-manager v0.0.0-00010101000000-000000000000
+	k8c.io/application-catalog-manager v0.2.0-rc.8.0.20260609180029-65b0942a0405
 	k8s.io/pod-security-admission v0.33.1
 	sigs.k8s.io/gateway-api v1.4.1
 )
