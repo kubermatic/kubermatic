@@ -27,6 +27,7 @@ package kubevirtnetworkcontroller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -57,6 +58,12 @@ const (
 	NetworkPolicyPodSelectorLabel = "kubermatic.k8c.io/cluster-id"
 	NetworkPolicyCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubevirt-infra-network-policy"
 )
+
+// clusterIPUnknownRetryTimeout mirrors the retry timeout used in the seed-controller-manager's
+// kubernetes controller (see pkg/controller/seed-controller-manager/kubernetes/resources.go) for the
+// same reason: the apiserver address is only known once a LoadBalancer/NodePort address has been
+// allocated, which can take a moment after cluster creation.
+const clusterIPUnknownRetryTimeout = 5 * time.Second
 
 type Reconciler struct {
 	ctrlruntimeclient.Client
@@ -195,8 +202,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kube
 
 	switch dc.ProviderNetwork.NetworkPolicy.Mode {
 	case kubermaticv1.NetworkPolicyModeDeny:
+		// The apiserver address is only populated once the control plane's LoadBalancer/NodePort address
+		// has been allocated. Reconciling before that happens would create the NetworkPolicy without the
+		// apiserver rule, only to update it again a moment later, so wait until the address is known.
+		if cluster.Status.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+			log.Debugf("Cluster IP address not known yet, retrying in %s", clusterIPUnknownRetryTimeout)
+			return &reconcile.Result{RequeueAfter: clusterIPUnknownRetryTimeout}, nil
+		}
 		log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster in default deny mode")
-		if err := reconcileNamespacedClusterIsolationNetworkPolicyDefaultDeny(ctx, kubeVirtInfraClient, cluster, dc.NamespacedMode.Namespace, dc.DNSConfig.Nameservers); err != nil {
+		var nameservers []string
+		if dc.DNSConfig != nil {
+			nameservers = dc.DNSConfig.Nameservers
+		}
+		if err := reconcileNamespacedClusterIsolationNetworkPolicyDefaultDeny(ctx, kubeVirtInfraClient, cluster, dc.NamespacedMode.Namespace, nameservers); err != nil {
 			return &reconcile.Result{}, err
 		}
 	case kubermaticv1.NetworkPolicyModeAllow:
