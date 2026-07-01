@@ -70,6 +70,12 @@ jobs:
           K8S_VERSIONS=$(extract "k8s-versions")
           K8S_VERSIONS=$(echo "$K8S_VERSIONS" | tr -d '[:space:]')
 
+          # Strip optional leading 'v' from KKP version and every K8S entry so
+          # every downstream user (release list, artifact filenames, docs
+          # paths, ack comment) sees canonical semver: 2.30.5 / 1.35.2.
+          KKP_VERSION=$(echo "$KKP_VERSION" | sed -E 's/^v//')
+          K8S_VERSIONS=$(echo "$K8S_VERSIONS" | sed -E 's/(^|,)v/\1/g')
+
           if [ -z "$KKP_VERSION" ] || [ -z "$K8S_VERSIONS" ]; then
             echo "Missing kkp-version or k8s-versions in issue body — aborting"
             exit 1
@@ -323,8 +329,7 @@ jobs:
             gh issue create \
               --repo "$TRIGGER_ISSUE_REPO" \
               --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
-              --body-file "$ISSUE_BODY" \
-              --label "area/security,area/cis,kind/bug"
+              --body-file "$ISSUE_BODY" 
           done
 
       # ─── Open docs PR in kubermatic/docs ──────────────────────────────
