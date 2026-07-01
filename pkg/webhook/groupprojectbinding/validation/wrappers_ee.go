@@ -23,12 +23,15 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eegroupprojectbindingvalidation "k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateCreate(_ context.Context,
-	_ *kubermaticv1.GroupProjectBinding,
+func validateCreate(ctx context.Context,
+	obj *kubermaticv1.GroupProjectBinding,
+	client ctrlruntimeclient.Client,
 ) error {
-	return nil
+	return eegroupprojectbindingvalidation.ValidateCreate(ctx, obj, client)
 }
 
 func validateUpdate(_ context.Context,
