@@ -32,7 +32,7 @@ import (
 
 var serializer = json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
 
-func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]string, error) {
+func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) (*Collection, error) {
 	credentials := resources.Credentials{}
 
 	addonData, err := addon.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
@@ -40,16 +40,16 @@ func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon,
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
-	var images []string
+	collection := NewCollection()
 	for addonName, addonObj := range addons {
 		addonImages, err := getImagesFromAddon(log.WithField("addon", addonName), addonObj, serializer, addonData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for addon %s: %w", addonName, err)
 		}
-		images = append(images, addonImages...)
+		collection.InsertAll(addonImages, RefTypeImage, "addon:"+addonName)
 	}
 
-	return images, nil
+	return collection, nil
 }
 
 func getImagesFromAddon(log logrus.FieldLogger, addonObj *addon.Addon, decoder runtime.Decoder, data *addon.TemplateData) ([]string, error) {

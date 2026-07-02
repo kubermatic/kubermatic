@@ -81,7 +81,16 @@ func TestRetagImageForAllVersions(t *testing.T) {
 				if err != nil {
 					t.Errorf("Error calling getImagesForVersion for %s / %s / %s: %v", cloudSpec.ProviderName, clusterVersion.Version.String(), cni, err)
 				}
-				imageSet.Insert(images...)
+				imageSet.Insert(images.RefList()...)
+
+				// every discovered ref must carry at least one source label so
+				// that list-images can attribute it; an unlabeled ref is a bug
+				// in the discovery pipeline, not just missing metadata.
+				for _, entry := range images.Sorted() {
+					if entry.Sources.Len() == 0 {
+						t.Errorf("ref %q for %s / %s / %s has no source label", entry.Ref, cloudSpec.ProviderName, clusterVersion.Version.String(), cni)
+					}
+				}
 			}
 		}
 	}
