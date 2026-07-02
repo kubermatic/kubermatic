@@ -14,7 +14,7 @@ name: CIS Benchmark
 #   k8s-versions: 1.32.0,1.33.0
 on:
   issues:
-    types: [opened, labeled]
+    types: [labeled]
 
 # Serialize runs per KKP version — multiple in-flight runs targeting the same
 # shared KKP cluster would race on projects + clusters.
