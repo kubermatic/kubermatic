@@ -17,7 +17,9 @@ jobs:
   create-issues:
     if: github.event.pull_request.merged == true && (contains(github.event.pull_request.labels.*.name, 'kind/feature') || contains(github.event.pull_request.labels.*.name, 'kind/bug'))
     runs-on: ubuntu-latest
-    environment: KKP
+    environment:
+      name: KKP
+      deployment: false
     permissions:
       issues: write
 
