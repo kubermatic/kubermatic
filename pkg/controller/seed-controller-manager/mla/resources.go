@@ -302,7 +302,7 @@ func GatewayExternalServiceReconciler(c *kubermaticv1.Cluster) reconciling.Named
 
 const (
 	image   = "nginxinc/nginx-unprivileged"
-	version = "1.20.1-alpine"
+	version = "1.31.2-alpine"
 
 	nginxScript = `
 set -e
