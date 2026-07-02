@@ -50,11 +50,16 @@ import (
 )
 
 type controllerRunOptions struct {
-	namespace                string
-	internalAddr             string
-	workerCount              int
-	workerName               string
-	enableLeaderElection     bool
+	namespace            string
+	internalAddr         string
+	workerCount          int
+	workerName           string
+	enableLeaderElection bool
+	// enableGatewayAPI binds the --enable-gateway-api flag.
+	//
+	// Deprecated: As of KKP 2.31 Gateway API is the enforced default; this field is no
+	// longer read and is retained only so the flag still parses for backwards compatibility
+	// with older charts that still pass it.
 	enableGatewayAPI         bool
 	httprouteWatchNamespaces string
 }
@@ -79,8 +84,8 @@ func main() {
 	flag.BoolVar(
 		&opt.enableGatewayAPI,
 		"enable-gateway-api",
-		false,
-		"Allow watching Gateway API resources (Gateway and HTTPRoute). Requires Gateway API CRDs to exist",
+		true,
+		"Deprecated and ignored: Gateway API is always enabled as of KKP 2.31. Retained for backwards compatibility with older charts that still pass the flag.",
 	)
 	flag.StringVar(
 		&opt.httprouteWatchNamespaces,
@@ -105,17 +110,15 @@ func main() {
 	}
 
 	httprouteWatchNamespaces := sets.New[string]()
-	if opt.enableGatewayAPI {
-		for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
-			ns = strings.TrimSpace(ns)
-			if ns != "" {
-				httprouteWatchNamespaces.Insert(ns)
-			}
+	for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
+		ns = strings.TrimSpace(ns)
+		if ns != "" {
+			httprouteWatchNamespaces.Insert(ns)
 		}
+	}
 
-		if httprouteWatchNamespaces.Len() == 0 {
-			log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
-		}
+	if httprouteWatchNamespaces.Len() == 0 {
+		log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
 	}
 
 	versions := kubermatic.GetVersions()
@@ -148,10 +151,8 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1.SchemeGroupVersion), zap.Error(err))
 	}
 
-	if opt.enableGatewayAPI {
-		if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
-			log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
-		}
+	if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
@@ -177,7 +178,6 @@ func main() {
 		opt.namespace,
 		opt.workerCount,
 		opt.workerName,
-		opt.enableGatewayAPI,
 		sets.List(httprouteWatchNamespaces),
 	)
 	if err != nil {

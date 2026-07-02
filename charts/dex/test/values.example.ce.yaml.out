@@ -252,40 +252,6 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 10
 ---
-# Source: dex/charts/dex/templates/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: release-name-dex
-  namespace: default
-  labels:
-    helm.sh/chart: dex-0.24.0
-    app.kubernetes.io/name: dex
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.44.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
-    nginx.ingress.kubernetes.io/proxy-body-size: 25m
-    nginx.ingress.kubernetes.io/proxy-buffer-size: 128k
-spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - "kkp.example.com"
-      secretName: dex-tls
-  rules:
-    - host: "kkp.example.com"
-      http:
-        paths:
-          - path: /dex
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: release-name-dex
-                port:
-                  number: 5556
----
 # Source: dex/templates/httproute.yaml
 # Copyright 2026 The Kubermatic Kubernetes Platform contributors.
 #
@@ -300,3 +266,32 @@ spec:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+---
+# Source: dex/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dex
+  namespace: default
+  labels:
+    app.kubernetes.io/name: dex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    kubermatic.io/gateway-route: "true"
+spec:
+  parentRefs:
+    - name: kubermatic
+      namespace: kubermatic
+  hostnames:
+    - "kkp.example.com"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /dex
+      backendRefs:
+        - name: dex
+          port: 5556
+      timeouts:
+        request: 3600s
+        backendRequest: 3600s

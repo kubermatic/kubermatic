@@ -185,7 +185,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-gateway-api-migration-e2e
-    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api|.prow/|gateway/|gateway\\.go)"
+    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api-migration|hack/ci/lib-gateway-api|.prow/|gateway/|gateway\\.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:

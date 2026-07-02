@@ -5,7 +5,7 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   name: release-name-cert-manager-cainjector
-  namespace: sandbox
+  namespace: default
   labels:
     app: cainjector
     app.kubernetes.io/name: cainjector
@@ -21,7 +21,7 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   name: release-name-cert-manager
-  namespace: sandbox
+  namespace: default
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
@@ -37,7 +37,7 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   name: release-name-cert-manager-webhook
-  namespace: sandbox
+  namespace: default
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
@@ -475,7 +475,7 @@ roleRef:
   name: release-name-cert-manager-cainjector
 subjects:
   - name: release-name-cert-manager-cainjector
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -497,7 +497,7 @@ roleRef:
   name: release-name-cert-manager-controller-issuers
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -519,7 +519,7 @@ roleRef:
   name: release-name-cert-manager-controller-clusterissuers
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -541,7 +541,7 @@ roleRef:
   name: release-name-cert-manager-controller-certificates
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -563,7 +563,7 @@ roleRef:
   name: release-name-cert-manager-controller-orders
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -585,7 +585,7 @@ roleRef:
   name: release-name-cert-manager-controller-challenges
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -607,7 +607,7 @@ roleRef:
   name: release-name-cert-manager-controller-ingress-shim
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -629,7 +629,7 @@ roleRef:
   name: release-name-cert-manager-controller-approve:cert-manager-io
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
@@ -651,7 +651,7 @@ roleRef:
   name: release-name-cert-manager-controller-certificatesigningrequests
 subjects:
   - name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
     kind: ServiceAccount
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
@@ -674,7 +674,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: release-name-cert-manager-webhook
-  namespace: sandbox
+  namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 # leader election rules
@@ -733,7 +733,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-cert-manager-tokenrequest
-  namespace: sandbox
+  namespace: default
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
@@ -753,7 +753,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-cert-manager-webhook:dynamic-serving
-  namespace: sandbox
+  namespace: default
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
@@ -796,7 +796,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: release-name-cert-manager-cainjector
-    namespace: sandbox
+    namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # grant cert-manager permission to manage the leaderelection configmap in the
@@ -821,7 +821,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # grant cert-manager permission to create tokens for the serviceaccount
@@ -829,7 +829,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-cert-manager-tokenrequest
-  namespace: sandbox
+  namespace: default
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
@@ -845,14 +845,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: release-name-cert-manager
-    namespace: sandbox
+    namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-cert-manager-webhook:dynamic-serving
-  namespace: sandbox
+  namespace: default
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
@@ -868,14 +868,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: release-name-cert-manager-webhook
-  namespace: sandbox
+  namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/cainjector-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: release-name-cert-manager-cainjector
-  namespace: sandbox
+  namespace: default
   labels:
     app: cainjector
     app.kubernetes.io/name: cainjector
@@ -900,7 +900,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: release-name-cert-manager
-  namespace: sandbox
+  namespace: default
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
@@ -926,7 +926,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: release-name-cert-manager-webhook
-  namespace: sandbox
+  namespace: default
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
@@ -956,7 +956,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: release-name-cert-manager-cainjector
-  namespace: sandbox
+  namespace: default
   labels:
     app: cainjector
     app.kubernetes.io/name: cainjector
@@ -1023,7 +1023,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: release-name-cert-manager
-  namespace: sandbox
+  namespace: default
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
@@ -1109,7 +1109,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: release-name-cert-manager-webhook
-  namespace: sandbox
+  namespace: default
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
@@ -1216,7 +1216,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.19.4
   annotations:
-    cert-manager.io/inject-ca-from-secret: "sandbox/release-name-cert-manager-webhook-ca"
+    cert-manager.io/inject-ca-from-secret: "default/release-name-cert-manager-webhook-ca"
 webhooks:
   - name: webhook.cert-manager.io
     rules:
@@ -1240,7 +1240,7 @@ webhooks:
     clientConfig:
       service:
         name: release-name-cert-manager-webhook
-        namespace: sandbox
+        namespace: default
         path: /mutate
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-validating-webhook.yaml
@@ -1257,7 +1257,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.19.4
   annotations:
-    cert-manager.io/inject-ca-from-secret: "sandbox/release-name-cert-manager-webhook-ca"
+    cert-manager.io/inject-ca-from-secret: "default/release-name-cert-manager-webhook-ca"
 webhooks:
   - name: webhook.cert-manager.io
     namespaceSelector:
@@ -1288,7 +1288,7 @@ webhooks:
     clientConfig:
       service:
         name: release-name-cert-manager-webhook
-        namespace: sandbox
+        namespace: default
         path: /validate
 ---
 # Source: cert-manager/charts/cert-manager/templates/startupapicheck-serviceaccount.yaml
@@ -1297,7 +1297,7 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   name: release-name-cert-manager-startupapicheck
-  namespace: sandbox
+  namespace: default
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -1317,7 +1317,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-cert-manager-startupapicheck:create-cert
-  namespace: sandbox
+  namespace: default
   labels:
     app: startupapicheck
     app.kubernetes.io/name: startupapicheck
@@ -1340,7 +1340,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-cert-manager-startupapicheck:create-cert
-  namespace: sandbox
+  namespace: default
   labels:
     app: startupapicheck
     app.kubernetes.io/name: startupapicheck
@@ -1360,14 +1360,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: release-name-cert-manager-startupapicheck
-    namespace: sandbox
+    namespace: default
 ---
 # Source: cert-manager/charts/cert-manager/templates/startupapicheck-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: release-name-cert-manager-startupapicheck
-  namespace: sandbox
+  namespace: default
   labels:
     app: startupapicheck
     app.kubernetes.io/name: startupapicheck
