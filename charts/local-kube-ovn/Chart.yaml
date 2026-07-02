@@ -16,8 +16,8 @@ apiVersion: v2
 name: kube-ovn
 description: Helm chart for Kube-OVN
 type: application
-version: v1.13.11
-appVersion: "1.13.11"
+version: v1.15.9
+appVersion: "1.15.9"
 
 kubeVersion: ">= 1.29.0-0"
 maintainers:
@@ -26,4 +26,4 @@ maintainers:
 dependencies:
   - repository: https://kubeovn.github.io/kube-ovn
     name: kube-ovn
-    version: 1.13.11
+    version: 1.15.9
