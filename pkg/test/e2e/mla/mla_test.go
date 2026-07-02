@@ -47,6 +47,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -815,12 +816,21 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		`{"streams":[{"stream":{"job":%q},"values":[[%q,"probe"]]}]}`,
 		lokiPushJob, strconv.FormatInt(pushTime.UnixNano(), 10),
 	)
-	pushURL := fmt.Sprintf("https://%s/loki/api/v1/push", net.JoinHostPort(gatewayPodIP, "8080"))
-	pushCurl := append(baseCurl, "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURL)
+	pushURLFor := func(podIP string) string {
+		return fmt.Sprintf("https://%s/loki/api/v1/push", net.JoinHostPort(podIP, "8080"))
+	}
 
 	// pod readiness only proves the 8081 probe endpoint, so the first push can
-	// still hit a transient distributor or resolver blip; retry briefly.
+	// still hit a transient distributor or resolver blip; retry briefly. The
+	// pod IP is re-resolved per attempt in case a gateway rollout replaces the
+	// pod mid-check.
 	if pushErr := wait.Poll(ctx, 2*time.Second, 60*time.Second, func(ctx context.Context) (error, error) {
+		podIP, err := readyGatewayPodIP(ctx, seedClient, clusterNS)
+		if err != nil {
+			return err, nil
+		}
+
+		pushCurl := append(append([]string{}, baseCurl...), "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURLFor(podIP))
 		pushCode, _, err := probe.Exec(ctx, gatewayProbeContainer, pushCurl...)
 		if err != nil {
 			return fmt.Errorf("push failed to execute: %w", err), nil
@@ -868,25 +878,31 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		problems = append(problems, fmt.Sprintf("W1 pushed stream not readable via gateway read path: %v", readErr))
 	}
 
-	noCertCurl := []string{
-		"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
-		"--connect-timeout", "3", "--max-time", "15", "-k",
-		"-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURL,
-	}
+	// the write-path checks above can outlive the pod resolved at the start,
+	// so pick a live pod again for the no-cert probe.
+	if noCertPodIP, err := readyGatewayPodIP(ctx, seedClient, clusterNS); err != nil {
+		problems = append(problems, fmt.Sprintf("W2 could not resolve a ready gateway pod: %v", err))
+	} else {
+		noCertCurl := []string{
+			"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
+			"--connect-timeout", "3", "--max-time", "15", "-k",
+			"-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURLFor(noCertPodIP),
+		}
 
-	noCertCode, _, noCertErr := probe.Exec(ctx, gatewayProbeContainer, noCertCurl...)
-	switch {
-	case noCertErr == nil && isSuccessPushCode(noCertCode):
-		problems = append(problems, fmt.Sprintf("W2 push without client cert unexpectedly succeeded (HTTP %s); mTLS enforcement broken", noCertCode))
-	case noCertErr == nil:
-		// handshake completed but nginx refused the request at the HTTP level
-		// (400 "No required SSL certificate was sent"); mTLS enforced.
-	case isTLSRejection(noCertErr):
-		// curl bailed during or right after the handshake; mTLS enforced.
-	default:
-		// an infrastructure failure (timeout, pod gone) must not pass as
-		// proof of mTLS enforcement.
-		problems = append(problems, fmt.Sprintf("W2 push without client cert failed for a non-TLS reason, cannot prove mTLS enforcement: %v", noCertErr))
+		noCertCode, _, noCertErr := probe.Exec(ctx, gatewayProbeContainer, noCertCurl...)
+		switch {
+		case noCertErr == nil && isSuccessPushCode(noCertCode):
+			problems = append(problems, fmt.Sprintf("W2 push without client cert unexpectedly succeeded (HTTP %s); mTLS enforcement broken", noCertCode))
+		case noCertErr == nil:
+			// handshake completed but nginx refused the request at the HTTP level
+			// (400 "No required SSL certificate was sent"); mTLS enforced.
+		case isTLSRejection(noCertErr):
+			// curl bailed during or right after the handshake; mTLS enforced.
+		default:
+			// an infrastructure failure (timeout, pod gone) must not pass as
+			// proof of mTLS enforcement.
+			problems = append(problems, fmt.Sprintf("W2 push without client cert failed for a non-TLS reason, cannot prove mTLS enforcement: %v", noCertErr))
+		}
 	}
 
 	if len(problems) > 0 {
@@ -912,31 +928,65 @@ func isTLSRejection(err error) bool {
 }
 
 // waitGatewayPodReady returns the pod IP of a ready mla-gateway pod in the
-// cluster namespace.
+// cluster namespace. It first waits for the gateway Deployment rollout to be
+// complete: the rate-limit checks that run just before rewrite the gateway
+// nginx ConfigMap, and the checksum annotation forces a rolling update. A pod
+// picked mid-rollout can belong to the losing ReplicaSet and be deleted while
+// the write-path checks are still curling its IP.
 func waitGatewayPodReady(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (string, error) {
 	var gatewayPodIP string
 	if err := wait.Poll(ctx, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		pods := &corev1.PodList{}
-		if err := client.List(ctx, pods,
-			ctrlruntimeclient.InNamespace(namespace),
-			ctrlruntimeclient.MatchingLabels{"app.kubernetes.io/name": gatewayName}); err != nil {
-			return fmt.Errorf("failed to list gateway pods: %w", err), nil
+		deployment := &appsv1.Deployment{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, deployment); err != nil {
+			return fmt.Errorf("failed to get gateway deployment: %w", err), nil
 		}
 
-		for i := range pods.Items {
-			p := &pods.Items[i]
-			if p.Status.PodIP != "" && isPodReady(p) {
-				gatewayPodIP = p.Status.PodIP
-				return nil, nil
-			}
+		replicas := int32(1)
+		if deployment.Spec.Replicas != nil {
+			replicas = *deployment.Spec.Replicas
 		}
 
-		return errors.New("no ready gateway pod yet"), nil
+		if deployment.Status.ObservedGeneration < deployment.Generation ||
+			deployment.Status.UpdatedReplicas != replicas ||
+			deployment.Status.ReadyReplicas != replicas ||
+			deployment.Status.Replicas != replicas {
+			return errors.New("gateway deployment rollout not complete yet"), nil
+		}
+
+		ip, err := readyGatewayPodIP(ctx, client, namespace)
+		if err != nil {
+			return err, nil
+		}
+
+		gatewayPodIP = ip
+		return nil, nil
 	}); err != nil {
 		return "", err
 	}
 
 	return gatewayPodIP, nil
+}
+
+// readyGatewayPodIP returns the pod IP of a ready, non-terminating mla-gateway
+// pod. Callers that curl the gateway over a longer period re-resolve the IP
+// per attempt so a rollout between attempts does not leave them talking to a
+// deleted pod.
+func readyGatewayPodIP(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (string, error) {
+	pods := &corev1.PodList{}
+	if err := client.List(ctx, pods,
+		ctrlruntimeclient.InNamespace(namespace),
+		ctrlruntimeclient.MatchingLabels{"app.kubernetes.io/name": gatewayName}); err != nil {
+		return "", fmt.Errorf("failed to list gateway pods: %w", err)
+	}
+
+	for i := range pods.Items {
+		p := &pods.Items[i]
+		if p.DeletionTimestamp == nil && p.Status.PodIP != "" && isPodReady(p) {
+			return p.Status.PodIP, nil
+		}
+	}
+
+	return "", errors.New("no ready gateway pod")
 }
 
 func isPodReady(p *corev1.Pod) bool {
