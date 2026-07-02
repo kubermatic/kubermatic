@@ -232,10 +232,8 @@ type OpenStack struct {
 	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
 	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
 
-	// EnableImageDiscovery will make the dashboard dynamically discover and list the images
-	// available to the OpenStack project (identified by their os_distro metadata) in the
-	// image dropdown. If disabled, the dropdown only offers the default images configured
-	// in the datacenter. Disabled by default.
+	// EnableImageDiscovery enables listing the OpenStack project's images (matched by their
+	// os_distro metadata) in the dashboard's image dropdown.
 	EnableImageDiscovery bool `json:"enableImageDiscovery,omitempty"`
 }
 

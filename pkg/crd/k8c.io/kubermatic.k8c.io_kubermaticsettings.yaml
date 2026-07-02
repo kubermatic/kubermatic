@@ -307,10 +307,8 @@ spec:
                       properties:
                         enableImageDiscovery:
                           description: |-
-                            EnableImageDiscovery will make the dashboard dynamically discover and list the images
-                            available to the OpenStack project (identified by their os_distro metadata) in the
-                            image dropdown. If disabled, the dropdown only offers the default images configured
-                            in the datacenter. Disabled by default.
+                            EnableImageDiscovery enables listing the OpenStack project's images (matched by their
+                            os_distro metadata) in the dashboard's image dropdown.
                           type: boolean
                         enforceCustomDisk:
                           description: EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
