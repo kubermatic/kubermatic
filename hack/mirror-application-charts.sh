@@ -27,6 +27,8 @@ REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic-mirror/helm-charts}"
 # ─── Chart-specific configurations ────────────────────────────────────────────
 # Format: key = chart name, value = "<URL_TEMPLATE>"
 declare -A CHART_URLS=(
+  ["agentgateway"]="oci://cr.agentgateway.dev/charts/agentgateway"
+  ["agentgateway-crds"]="oci://cr.agentgateway.dev/charts/agentgateway-crds"
   ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz"
   ["cilium"]="https://helm.cilium.io/cilium-%s.tgz"
   # Add more charts here as needed
@@ -43,7 +45,7 @@ declare -A CHART_URLS=(
   ["ingress-nginx"]="https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-%s/ingress-nginx-%s.tgz"
   ["gpu-operator"]="https://github.com/NVIDIA/gpu-operator/charts/gpu-operator-%s.tgz"
   ["kube-state-metrics"]="https://github.com/prometheus-community/helm-charts/releases/download/kube-state-metrics-%s/kube-state-metrics-%s.tgz"
-  ["node-exporter"]="https://github.com/prometheus-community/helm-charts/releases/download/prometheus-node-exporter-%s/prometheus-node-exporter-%s.tgz"
+  ["prometheus-node-exporter"]="https://github.com/prometheus-community/helm-charts/releases/download/prometheus-node-exporter-%s/prometheus-node-exporter-%s.tgz"
   ["trivy"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-%s/trivy-%s.tgz"
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
@@ -54,8 +56,10 @@ declare -A CHART_URLS=(
 
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
+  ["agentgateway"]="1.3.1"
+  ["agentgateway-crds"]="1.3.1"
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.19.4"
+  ["cilium"]="1.19.5"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -69,7 +73,7 @@ declare -A CHART_VERSIONS=(
   ["ingress-nginx"]="4.14.3"
   ["gpu-operator"]="v25.3.0"
   ["kube-state-metrics"]="7.2.0"
-  ["node-exporter"]="4.51.0"
+  ["prometheus-node-exporter"]="4.51.0"
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
@@ -82,7 +86,7 @@ declare -A CHART_VERSIONS=(
 # above. Values are comma-separated version lists. This is consumed by the
 # postsubmit wrapper; direct script callers can still pass explicit versions.
 declare -A CHART_ADDITIONAL_VERSIONS=(
-  ["cilium"]="1.17.16"
+  ["cilium"]="1.17.17,1.18.11"
 )
 
 # Re-enable unset variable checking after array declarations
