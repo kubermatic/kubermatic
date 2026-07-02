@@ -305,6 +305,11 @@ spec:
                     openStack:
                       description: OpenStack are the configurations for openstack provider.
                       properties:
+                        enableImageDiscovery:
+                          description: |-
+                            EnableImageDiscovery enables listing the OpenStack project's images (matched by their
+                            os_distro metadata) in the dashboard's image dropdown.
+                          type: boolean
                         enforceCustomDisk:
                           description: EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
                           type: boolean
