@@ -29,7 +29,9 @@ jobs:
     # The cross-repo PAT (KKP_CONFORMANCE_CROSS_GH_TOKEN) + suite secrets
     # live in the `KKP` GitHub environment. Without this declaration the
     # env-scoped secrets resolve to empty strings.
-    environment: KKP
+    environment:
+      name: KKP
+      deployment: false
     permissions:
       contents: read
       issues: write
