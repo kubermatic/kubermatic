@@ -686,10 +686,9 @@ const (
 
 // verifyGatewayWritePath exercises the MLA Gateway data plane directly, which
 // the rest of the suite never does (it talks to the Cortex/Loki backends over
-// port-forwards, bypassing the gateway). It confirms three NGINX behaviors that
+// port-forwards, bypassing the gateway). It confirms two NGINX behaviors that
 // an image bump could regress: that a real mTLS push round-trips to storage
-// (W1), that a client without a cert is rejected (W2, ssl_verify_client on),
-// and that TLS 1.2 is rejected while TLS 1.3 works (W3, ssl_protocols TLSv1.3).
+// (W1) and that a client without a cert is rejected (W2, ssl_verify_client on).
 //
 // The gateway write port (8080) has no in-cluster Service (mla-gateway ClusterIP
 // fronts only the read port 8081), so the probe curls a gateway pod IP on 8080
@@ -749,11 +748,20 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		},
 	}
 
+	// best-effort removal of leftovers from a previous aborted run so the
+	// Create calls below do not fail with AlreadyExists.
+	_ = seedClient.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: probeSecretName, Namespace: clusterNS}})
+	_ = seedClient.Delete(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: gatewayProbePodName, Namespace: clusterNS}})
+
 	err := seedClient.Create(ctx, probeSecret)
 	if err != nil {
 		return fmt.Errorf("failed to create probe TLS secret: %w", err)
 	}
-	defer func() { _ = seedClient.Delete(context.Background(), probeSecret) }()
+	defer func() {
+		if err := seedClient.Delete(context.Background(), probeSecret); err != nil && !apierrors.IsNotFound(err) {
+			log.Warnw("Failed to clean up probe TLS secret", zap.Error(err))
+		}
+	}()
 
 	log.Info("Waiting for MLA Gateway pod to be ready...")
 
@@ -778,7 +786,11 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		return fmt.Errorf("failed to deploy gateway probe pod: %w", err)
 	}
 
-	defer func() { _ = probe.CleanUp(context.Background()) }()
+	defer func() {
+		if err := probe.CleanUp(context.Background()); err != nil {
+			log.Warnw("Failed to clean up gateway probe pod", zap.Error(err))
+		}
+	}()
 
 	const (
 		certPath = "/etc/ssl/mla/client.crt"
@@ -798,25 +810,37 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 	// it back through the gateway read path (port 80 -> 8081, no TLS) and assert
 	// the stream is visible. Proves proxy_pass on both ports plus the
 	// X-Scope-OrgID tenant injection end to end.
+	pushTime := time.Now()
 	pushBody := fmt.Sprintf(
 		`{"streams":[{"stream":{"job":%q},"values":[[%q,"probe"]]}]}`,
-		lokiPushJob, strconv.FormatInt(time.Now().UnixNano(), 10),
+		lokiPushJob, strconv.FormatInt(pushTime.UnixNano(), 10),
 	)
 	pushURL := fmt.Sprintf("https://%s/loki/api/v1/push", net.JoinHostPort(gatewayPodIP, "8080"))
-	pushCode, _, err := probe.Exec(
-		ctx, gatewayProbeContainer,
-		append(baseCurl, "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURL)...,
-	)
-	if err != nil {
-		problems = append(problems, fmt.Sprintf("W1 push request failed to execute: %v", err))
-	} else if !isSuccessPushCode(pushCode) {
-		problems = append(problems, fmt.Sprintf("W1 push did not succeed, got HTTP %s", pushCode))
+	pushCurl := append(baseCurl, "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURL)
+
+	// pod readiness only proves the 8081 probe endpoint, so the first push can
+	// still hit a transient distributor or resolver blip; retry briefly.
+	if pushErr := wait.Poll(ctx, 2*time.Second, 60*time.Second, func(ctx context.Context) (error, error) {
+		pushCode, _, err := probe.Exec(ctx, gatewayProbeContainer, pushCurl...)
+		if err != nil {
+			return fmt.Errorf("push failed to execute: %w", err), nil
+		}
+
+		if !isSuccessPushCode(pushCode) {
+			return fmt.Errorf("push returned HTTP %s", pushCode), nil
+		}
+
+		return nil, nil
+	}); pushErr != nil {
+		problems = append(problems, fmt.Sprintf("W1 push did not succeed: %v", pushErr))
 	}
 
 	readURL := fmt.Sprintf(
-		"http://%s/loki/api/v1/query?query=%s",
+		"http://%s/loki/api/v1/query_range?query=%s&start=%d&end=%d",
 		net.JoinHostPort(fmt.Sprintf("%s.%s.svc.cluster.local", gatewayName, clusterNS), "80"),
 		url.QueryEscape(fmt.Sprintf("{job=%q}", lokiPushJob)),
+		pushTime.Add(-time.Minute).UnixNano(),
+		pushTime.Add(10*time.Minute).UnixNano(),
 	)
 	// deliberately no X-Scope-OrgID header: the gateway read server overwrites
 	// it with the cluster name (proxy_set_header at server scope), so getting
@@ -827,21 +851,21 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	// give loki a moment to index the just-pushed stream before reading back
-	streamVisible := false
 	if readErr := wait.Poll(ctx, 2*time.Second, 90*time.Second, func(ctx context.Context) (error, error) {
 		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, readCmd...)
 		if execErr != nil {
 			return execErr, nil
 		}
 
-		if strings.Contains(stdout, lokiPushJob) {
-			streamVisible = true
+		// the label alone is not enough, loki error bodies can echo the query;
+		// require a successful response that contains the pushed stream.
+		if strings.Contains(stdout, `"status":"success"`) && strings.Contains(stdout, lokiPushJob) {
 			return nil, nil
 		}
 
 		return errors.New("stream not yet visible"), nil
-	}); readErr != nil || !streamVisible {
-		problems = append(problems, fmt.Sprintf("W1 pushed stream not readable via gateway read path (visible=%v): %v", streamVisible, readErr))
+	}); readErr != nil {
+		problems = append(problems, fmt.Sprintf("W1 pushed stream not readable via gateway read path: %v", readErr))
 	}
 
 	noCertCurl := []string{
@@ -850,13 +874,41 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		"-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURL,
 	}
 
-	noCertCode, noCertStderr, noCertErr := probe.Exec(ctx, gatewayProbeContainer, noCertCurl...)
-	if noCertErr == nil && isSuccessPushCode(noCertCode) {
-		problems = append(problems, fmt.Sprintf("W2 push without client cert unexpectedly succeeded (HTTP %s, stderr=%q); mTLS enforcement broken", noCertCode, noCertStderr))
+	noCertCode, _, noCertErr := probe.Exec(ctx, gatewayProbeContainer, noCertCurl...)
+	switch {
+	case noCertErr == nil && isSuccessPushCode(noCertCode):
+		problems = append(problems, fmt.Sprintf("W2 push without client cert unexpectedly succeeded (HTTP %s); mTLS enforcement broken", noCertCode))
+	case noCertErr == nil:
+		// handshake completed but nginx refused the request at the HTTP level
+		// (400 "No required SSL certificate was sent"); mTLS enforced.
+	case isTLSRejection(noCertErr):
+		// curl bailed during or right after the handshake; mTLS enforced.
+	default:
+		// an infrastructure failure (timeout, pod gone) must not pass as
+		// proof of mTLS enforcement.
+		problems = append(problems, fmt.Sprintf("W2 push without client cert failed for a non-TLS reason, cannot prove mTLS enforcement: %v", noCertErr))
+	}
+
+	if len(problems) > 0 {
+		return fmt.Errorf("gateway write path checks failed:\n%s", strings.Join(problems, "\n"))
 	}
 
 	log.Info("MLA Gateway write path verified.")
 	return nil
+}
+
+// isTLSRejection reports whether an exec error looks like curl refusing at the
+// TLS layer: exit 35 (SSL connect error) when the handshake is rejected
+// outright, exit 56 (recv failure) when nginx completes the TLS 1.3 handshake
+// and then closes the connection with a certificate-required alert.
+func isTLSRejection(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+
+	return strings.Contains(msg, "exit code 35") || strings.Contains(msg, "exit code 56")
 }
 
 // waitGatewayPodReady returns the pod IP of a ready mla-gateway pod in the
@@ -868,7 +920,7 @@ func waitGatewayPodReady(ctx context.Context, client ctrlruntimeclient.Client, n
 		if err := client.List(ctx, pods,
 			ctrlruntimeclient.InNamespace(namespace),
 			ctrlruntimeclient.MatchingLabels{"app.kubernetes.io/name": gatewayName}); err != nil {
-			return nil, fmt.Errorf("failed to list gateway pods: %w", err)
+			return fmt.Errorf("failed to list gateway pods: %w", err), nil
 		}
 
 		for i := range pods.Items {
@@ -901,10 +953,10 @@ func isPodReady(p *corev1.Pod) bool {
 	return false
 }
 
-// isSuccessPushCode treats 2xx (and 204 no-content, the normal Loki push
-// response) as a successful write. An empty code means curl bailed before any
-// HTTP response (TLS handshake failure), which is a failure for positive
-// assertions and a pass for the mTLS-negative one.
+// isSuccessPushCode treats any 2xx as a successful write (Loki push normally
+// returns 204). An empty code means curl bailed before any HTTP response
+// (TLS handshake failure), which is a failure for positive assertions and a
+// pass for the mTLS-negative one.
 func isSuccessPushCode(code string) bool {
 	return len(code) == 3 && code[0] == '2'
 }
