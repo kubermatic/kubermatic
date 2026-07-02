@@ -285,8 +285,15 @@ jobs:
             echo "WARNING: Could not delete image tag ${IMAGE_TAG}"
           fi
 
-      # ─── Comment per-k8s status on the triggering issue ──────────────
-      - name: Comment status on trigger issue
+      # ─── Comment status on trigger issue + create failure issues ────
+      # Merged so the status comment can link the failure issue it just
+      # created. Order per k8s version:
+      #   1. If no report → post ⚠️ comment, skip.
+      #   2. If FAIL_COUNT == 0 → post ✅ pass comment.
+      #   3. If FAIL_COUNT > 0 → create failure issue first, then post ❌
+      #      comment carrying both the artifact link and the follow-up
+      #      issue URL.
+      - name: Comment status + open failure issues on trigger issue
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -295,41 +302,40 @@ jobs:
           IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
           for K8S in "${VERSIONS[@]}"; do
             JSON="_reports/cis-benchmark-${K8S}.json"
+            ISSUE_BODY="_reports/cis-issue-${K8S}.md"
+
             if [ ! -f "$JSON" ]; then
               gh issue comment "$ISSUE_NUMBER" \
                 --repo "$TRIGGER_ISSUE_REPO" \
                 --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ⚠️ no report produced — [view run](${ARTIFACT_URL})"
               continue
             fi
+
             FAIL_COUNT=$(jq '[.clusters[].results[] | select(.finalStatus=="Fail")] | length' "$JSON")
-            if [ "$FAIL_COUNT" -gt 0 ]; then
-              STATUS="❌ ${FAIL_COUNT} failure(s)"
-            else
-              STATUS="✅ pass"
+            if [ "$FAIL_COUNT" -eq 0 ]; then
+              gh issue comment "$ISSUE_NUMBER" \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ✅ pass — [conformance-reports](${ARTIFACT_URL})"
+              continue
+            fi
+
+            # Failures. Create the follow-up issue first so we can link it
+            # from the status comment.
+            FAILURE_ISSUE_URL=""
+            if [ -f "$ISSUE_BODY" ]; then
+              FAILURE_ISSUE_URL=$(gh issue create \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
+                --body-file "$ISSUE_BODY")
+            fi
+
+            STATUS_BODY="CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ❌ ${FAIL_COUNT} failure(s) — [conformance-reports](${ARTIFACT_URL})"
+            if [ -n "$FAILURE_ISSUE_URL" ]; then
+              STATUS_BODY="${STATUS_BODY} — tracked in ${FAILURE_ISSUE_URL}"
             fi
             gh issue comment "$ISSUE_NUMBER" \
               --repo "$TRIGGER_ISSUE_REPO" \
-              --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ${STATUS} — [conformance-reports](${ARTIFACT_URL})"
-          done
-
-      # ─── Open failure-tracking issues (gated by Fail count > 0) ──────
-      - name: Open failure-tracking issues
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
-          for K8S in "${VERSIONS[@]}"; do
-            JSON="_reports/cis-benchmark-${K8S}.json"
-            ISSUE_BODY="_reports/cis-issue-${K8S}.md"
-            [ -f "$JSON" ] && [ -f "$ISSUE_BODY" ] || continue
-            FAIL_COUNT=$(jq '[.clusters[].results[] | select(.finalStatus=="Fail")] | length' "$JSON")
-            [ "$FAIL_COUNT" -gt 0 ] || continue
-            gh issue create \
-              --repo "$TRIGGER_ISSUE_REPO" \
-              --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
-              --body-file "$ISSUE_BODY" 
+              --body "$STATUS_BODY"
           done
 
       # ─── Open docs PR in kubermatic/docs ──────────────────────────────
