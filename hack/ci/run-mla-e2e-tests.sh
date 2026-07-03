@@ -47,9 +47,11 @@ export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
 source hack/ci/setup-kind-cluster.sh
 
-# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+# gather the logs of all things in the cluster control plane, the Kubermatic namespace
+# and the seed MLA stack (consul/cortex/loki), whose health the data-plane checks depend on
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/mla" --namespace mla > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
