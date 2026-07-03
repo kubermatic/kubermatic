@@ -74,6 +74,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				"prometheus.io/scrape":                                  "true",
 				"prometheus.io/port":                                    strconv.Itoa(EnvoyPort),
 				"prometheus.io/metrics_path":                            "/stats/prometheus",
+				"prometheus.io/path":                                    "/stats/prometheus",
 				"fluentbit.io/parser":                                   "json_iso",
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "envoy-config",
 			})
