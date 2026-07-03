@@ -130,7 +130,7 @@ func main() {
 	applicationinstallationvalidation.NewAdmissionHandler(log, seedMgr.GetScheme(), seedMgr.GetClient(), options.clusterName).SetupWebhookWithManager(seedMgr)
 
 	// Setup Machine Webhook in user manager.
-	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID)
+	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID, options.kubeVirtInfraNamespace)
 	if err != nil {
 		log.Fatalw("Failed to setup Machine validator", zap.Error(err))
 	}

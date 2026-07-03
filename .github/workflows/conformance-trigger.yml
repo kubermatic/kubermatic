@@ -1,7 +1,7 @@
 name: Conformance Issue Trigger
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     branches: [main]
     paths:
@@ -12,34 +12,52 @@ on:
       - 'pkg/ee/kubevirt-network-controller/**'
       - 'addons/csi/kubevirt/**'
       - 'sdk/apis/kubermatic/v1/cluster.go'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to create conformance tracking issues for'
+        required: true
+        type: string
 
 jobs:
   create-issues:
-    if: github.event.pull_request.merged == true && (github.event.pull_request.labels.*.name == 'kind/feature' || github.event.pull_request.labels.*.name == 'kind/bug')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+        (contains(github.event.pull_request.labels.*.name, 'kind/feature') ||
+         contains(github.event.pull_request.labels.*.name, 'kind/bug')))
     runs-on: ubuntu-latest
+    environment:
+      name: KKP
+      deployment: false
     permissions:
       issues: write
-    
+
     steps:
       - name: Fetch PR data
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
-          PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
-          KIND_LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels --jq '[.labels[].name | select(startswith("kind/"))] | join(",")')
+          PR=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json title,url,body,labels,mergedAt)
+
+          # workflow_dispatch can't check merge state/labels in the job "if", so enforce it here.
+          if [ "$(jq -r '.mergedAt != null and ([.labels[].name] | any(. == "kind/feature" or . == "kind/bug"))' <<<"$PR")" != "true" ]; then
+            echo "::error::PR #${PR_NUMBER} must be merged and labeled kind/feature or kind/bug."
+            exit 1
+          fi
 
           {
-            echo "pr_title=${{ github.event.pull_request.title }}"
             echo "pr_number=${PR_NUMBER}"
-            echo "pr_url=${{ github.event.pull_request.html_url }}"
-            echo "kind_labels=${KIND_LABELS}"
+            echo "pr_title=$(jq -r .title <<<"$PR")"
+            echo "pr_url=$(jq -r .url <<<"$PR")"
+            echo "kind_labels=$(jq -r '[.labels[].name | select(startswith("kind/"))] | join(",")' <<<"$PR")"
             echo "pr_body<<PR_BODY_EOF"
-            echo "${PR_BODY}"
+            jq -r .body <<<"$PR"
             echo "PR_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
-
+      
       - name: Create issue in kubermatic
         id: kkp-issue
         env:

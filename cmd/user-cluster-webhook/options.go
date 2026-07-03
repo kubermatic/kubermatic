@@ -29,13 +29,14 @@ import (
 )
 
 type appOptions struct {
-	seedWebhook webhook.Options
-	userWebhook webhook.Options
-	pprof       flagopts.PProf
-	log         kubermaticlog.Options
-	caBundle    *certificates.CABundle
-	projectID   string
-	clusterName string
+	seedWebhook            webhook.Options
+	userWebhook            webhook.Options
+	pprof                  flagopts.PProf
+	log                    kubermaticlog.Options
+	caBundle               *certificates.CABundle
+	projectID              string
+	clusterName            string
+	kubeVirtInfraNamespace string
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -54,9 +55,11 @@ func initApplicationOptions() (appOptions, error) {
 	var caBundleFile string
 	var projectID string
 	var clusterName string
+	var kubeVirtInfraNamespace string
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
 	flag.StringVar(&clusterName, "cluster-name", "", "Cluster name in which the webhook is running in")
+	flag.StringVar(&kubeVirtInfraNamespace, "kubevirt-infra-namespace", "", "KubeVirt infra-cluster namespace that holds the cluster's namespaced VirtualMachineInstancetypes; empty falls back to an unscoped lookup")
 	flag.Parse()
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
@@ -65,6 +68,8 @@ func initApplicationOptions() (appOptions, error) {
 	}
 	c.caBundle = caBundle
 	c.projectID = projectID
+	c.clusterName = clusterName
+	c.kubeVirtInfraNamespace = kubeVirtInfraNamespace
 
 	if err := c.userWebhook.Validate(); err != nil {
 		return c, fmt.Errorf("invalid user cluster webhook configuration: %w", err)

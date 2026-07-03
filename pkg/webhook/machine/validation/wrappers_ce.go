@@ -31,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(_ context.Context, _ *zap.SugaredLogger, _ ctrlruntimeclient.Client, _ *clusterv1alpha1.Machine,
+func validateQuota(_ context.Context, _ *zap.SugaredLogger, _ ctrlruntimeclient.Client, _ string, _ *clusterv1alpha1.Machine,
 	_ *certificates.CABundle, _ *kubermaticv1.ResourceQuota) error {
 	return nil
 }

@@ -77,7 +77,7 @@ const (
 
 	// Default image repository and tag.
 	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
-	DefaultApplicationManagerImageTag        = "4aa5a55d02734ff672a9f018d55430a55e90ef1a"
+	DefaultApplicationManagerImageTag        = "65b0942a040565ff4eaa4329374a94b98ddd1149"
 )
 
 func newSemver(s string) semver.Semver {
@@ -223,7 +223,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.34.8"),
+		Default: semver.NewSemverOrDie("v1.34.9"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -244,6 +244,7 @@ var (
 			newSemver("v1.33.10"),
 			newSemver("v1.33.11"),
 			newSemver("v1.33.12"),
+			newSemver("v1.33.13"),
 			// Kubernetes 1.34
 			newSemver("v1.34.1"),
 			newSemver("v1.34.2"),
@@ -253,6 +254,7 @@ var (
 			newSemver("v1.34.6"),
 			newSemver("v1.34.7"),
 			newSemver("v1.34.8"),
+			newSemver("v1.34.9"),
 			// Kubernetes 1.35
 			newSemver("v1.35.0"),
 			newSemver("v1.35.1"),
@@ -260,6 +262,7 @@ var (
 			newSemver("v1.35.3"),
 			newSemver("v1.35.4"),
 			newSemver("v1.35.5"),
+			newSemver("v1.35.6"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
