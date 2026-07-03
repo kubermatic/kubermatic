@@ -32,6 +32,9 @@ const (
 const (
 	// PolicyTemplateSeedCleanupFinalizer indicates that synced policy template on seed clusters need cleanup.
 	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
+
+	// PolicyTemplatePolicyBindingCleanupFinalizer indicates that PolicyBindings referencing this PolicyTemplate need cleanup.
+	PolicyTemplatePolicyBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-policy-template-bindings"
 )
 
 // PolicyTemplateVisibilityType defines the primary intended audience/scope for the template.
