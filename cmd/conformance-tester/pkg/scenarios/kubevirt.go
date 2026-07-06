@@ -35,7 +35,7 @@ const (
 	kubevirtVCPUs              = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtStorageClassName   = "local-path"
+	kubevirtStorageClassName   = "longhorn"
 )
 
 type kubevirtScenario struct {
