@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
@@ -188,6 +189,172 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 				t.Errorf("machines got deleted before in-cluster cleanup was done")
 			}
 		})
+	}
+}
+
+func TestCleanupPolicyBindingsRemovesCleanupFinalizer(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: testNS,
+		},
+	}
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  testNS,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+	}
+
+	if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
+		t.Fatalf("cleanupPolicyBindings failed: %v", err)
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed, got %v", updatedPolicyBinding.Finalizers)
+		}
+	}
+}
+
+func TestCleanupPolicyBindingsUsesFallbackNamespace(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+	}
+	clusterNamespace := kubernetesprovider.NamespaceName(cluster.Name)
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  clusterNamespace,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+	}
+
+	if err := deletion.cleanupPolicyBindings(ctx, zap.NewNop().Sugar(), cluster); err != nil {
+		t.Fatalf("cleanupPolicyBindings failed: %v", err)
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed from fallback namespace, got %v", updatedPolicyBinding.Finalizers)
+		}
+	}
+}
+
+func TestCleanupClusterRemovesPolicyBindingFinalizersBeforeFinalizerGate(t *testing.T) {
+	ctx := context.Background()
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+			Finalizers: []string{
+				kubermaticv1.NodeDeletionFinalizer,
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: testNS,
+		},
+	}
+	policyBinding := &kubermaticv1.PolicyBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "policy-binding",
+			Namespace:  testNS,
+			Finalizers: []string{kubermaticv1.PolicyBindingCleanupFinalizer},
+		},
+		Spec: kubermaticv1.PolicyBindingSpec{
+			PolicyTemplateRef: corev1.ObjectReference{
+				Name: "policy-template",
+			},
+		},
+	}
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(cluster, policyBinding).
+		Build()
+
+	deletion := &Deletion{
+		seedClient: seedClient,
+		recorder:   &events.FakeRecorder{},
+		userClusterClientGetter: func() (ctrlruntimeclient.Client, error) {
+			return nil, fmt.Errorf("node cleanup blocked")
+		},
+	}
+
+	if err := deletion.CleanupCluster(ctx, zap.NewNop().Sugar(), cluster); err == nil {
+		t.Fatal("expected CleanupCluster to return node cleanup error")
+	}
+
+	updatedPolicyBinding := &kubermaticv1.PolicyBinding{}
+	err := seedClient.Get(ctx, types.NamespacedName{Name: policyBinding.Name, Namespace: policyBinding.Namespace}, updatedPolicyBinding)
+	if apierrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("failed to get PolicyBinding: %v", err)
+	}
+	for _, finalizer := range updatedPolicyBinding.Finalizers {
+		if finalizer == kubermaticv1.PolicyBindingCleanupFinalizer {
+			t.Fatalf("expected PolicyBinding cleanup finalizer to be removed before finalizer gate, got %v", updatedPolicyBinding.Finalizers)
+		}
 	}
 }
 

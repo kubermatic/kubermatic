@@ -27,6 +27,7 @@ package kyverno
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	admissioncontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/admission-controller"
@@ -35,6 +36,11 @@ import (
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
@@ -46,6 +52,10 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 
 	// Remove all Kyverno resources from the user cluster
 	if err := r.ensureKyvernoUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.removePolicyBindingCleanupFinalizers(ctx, cluster); err != nil {
 		return err
 	}
 
@@ -82,6 +92,61 @@ func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx co
 
 	if err := reportscontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
 		return fmt.Errorf("failed to clean up reports controller resources: %w", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	ns := cluster.Status.NamespaceName
+	if ns == "" {
+		ns = kubernetesprovider.NamespaceName(cluster.Name)
+	}
+
+	// The PolicyBinding controller owns precise generated-resource cleanup. This
+	// safety net runs only after Kyverno resources are gone to unblock seed objects.
+	bindings := &kubermaticv1.PolicyBindingList{}
+	if err := r.List(ctx, bindings, ctrlruntimeclient.InNamespace(ns)); err != nil {
+		return fmt.Errorf("failed to list PolicyBindings: %w", err)
+	}
+
+	for _, binding := range bindings.Items {
+		if !kuberneteshelper.HasFinalizer(&binding, kubermaticv1.PolicyBindingCleanupFinalizer) {
+			continue
+		}
+
+		if err := r.markPolicyBindingInactive(ctx, cluster, &binding); err != nil {
+			return err
+		}
+
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, &binding, kubermaticv1.PolicyBindingCleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to remove PolicyBinding cleanup finalizer: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) markPolicyBindingInactive(ctx context.Context, cluster *kubermaticv1.Cluster, binding *kubermaticv1.PolicyBinding) error {
+	oldBinding := binding.DeepCopy()
+
+	if cluster.DeletionTimestamp != nil {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "Kyverno resources have been deleted because the cluster is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "PolicyBinding is not active because the cluster is being deleted")
+	} else {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "Kyverno resources have been deleted because Kyverno is disabled")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, "PolicyBinding is not active because Kyverno is disabled")
+	}
+	binding.SetStatusFields(nil, false)
+
+	if reflect.DeepEqual(oldBinding.Status, binding.Status) {
+		return nil
+	}
+
+	if err := r.Status().Patch(ctx, binding, ctrlruntimeclient.MergeFrom(oldBinding)); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to update PolicyBinding cleanup status: %w", err)
 	}
 
 	return nil

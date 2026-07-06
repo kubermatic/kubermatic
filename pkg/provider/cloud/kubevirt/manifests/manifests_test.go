@@ -23,13 +23,14 @@ import (
 	"testing"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
-	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	kvinstancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -48,7 +49,7 @@ var (
 
 func init() {
 	utilruntime.Must(kubevirtv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(kvinstancetypev1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kvinstancetypev1beta1.AddToScheme(scheme.Scheme))
 	fakeclient = ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -116,19 +117,19 @@ func getInstancetype(cpu uint32, memory, name string) []runtime.Object {
 	if err != nil {
 		return nil
 	}
-	instancetype := &kvinstancetypev1alpha1.VirtualMachineInstancetype{
+	instancetype := &kvinstancetypev1beta1.VirtualMachineInstancetype{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: kvinstancetypev1alpha1.SchemeGroupVersion.String(),
+			APIVersion: kvinstancetypev1beta1.SchemeGroupVersion.String(),
 			Kind:       "VirtualMachineInstancetype",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
-			CPU: kvinstancetypev1alpha1.CPUInstancetype{
+		Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+			CPU: kvinstancetypev1beta1.CPUInstancetype{
 				Guest: cpu,
 			},
-			Memory: kvinstancetypev1alpha1.MemoryInstancetype{
+			Memory: kvinstancetypev1beta1.MemoryInstancetype{
 				Guest: memoryQuantity,
 			},
 		},
@@ -137,17 +138,17 @@ func getInstancetype(cpu uint32, memory, name string) []runtime.Object {
 }
 
 func getPreference(name string) []runtime.Object {
-	preference := &kvinstancetypev1alpha1.VirtualMachinePreference{
+	preference := &kvinstancetypev1beta1.VirtualMachinePreference{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: kvinstancetypev1alpha1.SchemeGroupVersion.String(),
+			APIVersion: kvinstancetypev1beta1.SchemeGroupVersion.String(),
 			Kind:       "VirtualMachinePreference",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: kvinstancetypev1alpha1.VirtualMachinePreferenceSpec{
-			CPU: &kvinstancetypev1alpha1.CPUPreferences{
-				PreferredCPUTopology: kvinstancetypev1alpha1.PreferThreads,
+		Spec: kvinstancetypev1beta1.VirtualMachinePreferenceSpec{
+			CPU: &kvinstancetypev1beta1.CPUPreferences{
+				PreferredCPUTopology: ptr.To(kvinstancetypev1beta1.PreferThreads),
 			},
 		},
 	}

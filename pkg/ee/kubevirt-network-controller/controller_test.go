@@ -61,6 +61,7 @@ func TestReconcile(t *testing.T) {
 		seedGetter                 func() (*kubermaticv1.Seed, error)
 		wantErr                    error
 		wantNetPolicy              *networkingv1.NetworkPolicy
+		wantRequeue                bool
 	}{
 		{
 			name:        "scenario 1: reconcile with network policy feature enabled in default allow mode",
@@ -282,6 +283,166 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
+			name:        "scenario 2b: reconcile with network policy feature enabled in default deny mode before the apiserver address is populated",
+			requestName: clusterName,
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects(generator.GenDefaultProject(), generator.GenCluster(clusterName, clusterName, "projectName", time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.Cloud.DatacenterName = datacenterName
+					// The apiserver address is only populated once the control plane has been initialized.
+					cluster.Status.Address.IP = ""
+				})).
+				Build(),
+			seedGetter: func() (*kubermaticv1.Seed, error) {
+				return &kubermaticv1.Seed{
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							datacenterName: {
+								Country:  "D",
+								Location: "Hamburg",
+								Spec: kubermaticv1.DatacenterSpec{
+									Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
+										NamespacedMode: &kubermaticv1.NamespacedMode{
+											Enabled:   true,
+											Namespace: "test",
+										},
+										DNSConfig: &corev1.PodDNSConfig{
+											Nameservers: []string{"1.1.1.1"},
+										},
+										ProviderNetwork: &kubermaticv1.ProviderNetwork{
+											Name:                 "test",
+											NetworkPolicyEnabled: true,
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
+												Enabled: true,
+												Mode:    kubermaticv1.NetworkPolicyModeDeny,
+											},
+											VPCs: []kubermaticv1.VPC{
+												{
+													Name: "dev",
+													Subnets: []kubermaticv1.Subnet{
+														{Name: "subnet-1"}, {Name: "subnet-2"},
+													},
+												},
+											},
+										},
+									},
+									RequiredEmails: []string{"example.com"},
+								},
+							},
+						},
+					},
+				}, nil
+			},
+			// Reconciliation should wait until the apiserver address is known rather than create a
+			// NetworkPolicy without the apiserver rule.
+			wantNetPolicy: nil,
+			wantRequeue:   true,
+		},
+		{
+			// Regression test: DNSConfig is optional (omitempty) on DatacenterSpecKubevirt, so
+			// reconciling in default deny mode must not panic with a nil pointer dereference when
+			// it's unset, and should simply produce a NetworkPolicy without a nameserver egress rule.
+			name:        "scenario 2c: reconcile with network policy feature enabled in default deny mode without DNSConfig configured",
+			requestName: clusterName,
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects(generator.GenDefaultProject(), generator.GenCluster(clusterName, clusterName, "projectName", time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.Cloud.DatacenterName = datacenterName
+				})).
+				Build(),
+			seedGetter: func() (*kubermaticv1.Seed, error) {
+				return &kubermaticv1.Seed{
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							datacenterName: {
+								Country:  "D",
+								Location: "Hamburg",
+								Spec: kubermaticv1.DatacenterSpec{
+									Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
+										NamespacedMode: &kubermaticv1.NamespacedMode{
+											Enabled:   true,
+											Namespace: "test",
+										},
+										ProviderNetwork: &kubermaticv1.ProviderNetwork{
+											Name:                 "test",
+											NetworkPolicyEnabled: true,
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
+												Enabled: true,
+												Mode:    kubermaticv1.NetworkPolicyModeDeny,
+											},
+											VPCs: []kubermaticv1.VPC{
+												{
+													Name: "dev",
+													Subnets: []kubermaticv1.Subnet{
+														{Name: "subnet-1"}, {Name: "subnet-2"},
+													},
+												},
+											},
+										},
+									},
+									RequiredEmails: []string{"example.com"},
+								},
+							},
+						},
+					},
+				}, nil
+			},
+			wantNetPolicy: &networkingv1.NetworkPolicy{
+				Spec: networkingv1.NetworkPolicySpec{
+					PodSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							NetworkPolicyPodSelectorLabel: clusterName,
+						},
+					},
+					Egress: []networkingv1.NetworkPolicyEgressRule{
+						{
+							Ports: []networkingv1.NetworkPolicyPort{},
+							To: []networkingv1.NetworkPolicyPeer{
+								{
+									PodSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											NetworkPolicyPodSelectorLabel: clusterName,
+										},
+									},
+								},
+							},
+						},
+						{
+							To: []networkingv1.NetworkPolicyPeer{
+								{
+									IPBlock: &networkingv1.IPBlock{
+										CIDR: "35.194.142.199/32",
+									},
+								},
+							},
+						},
+					},
+					Ingress: []networkingv1.NetworkPolicyIngressRule{
+						{
+							From: []networkingv1.NetworkPolicyPeer{
+								{
+									PodSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											NetworkPolicyPodSelectorLabel: clusterName,
+										},
+									},
+								},
+								{
+									IPBlock: &networkingv1.IPBlock{
+										CIDR: "35.194.142.199/32",
+									},
+								},
+							},
+						},
+					},
+					PolicyTypes: []networkingv1.PolicyType{
+						networkingv1.PolicyTypeEgress,
+						networkingv1.PolicyTypeIngress,
+					},
+				},
+			},
+		},
+		{
 			name:        "scenario 3: reconcile with network policy feature disabled",
 			requestName: clusterName,
 			seedClient: fake.
@@ -425,9 +586,13 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			_, err := r.Reconcile(ctx, request)
+			result, err := r.Reconcile(ctx, request)
 			if !errors.Is(tc.wantErr, err) {
 				t.Fatalf("unexpected error occurred: %v, want error: %v", err, tc.wantErr)
+			}
+
+			if tc.wantRequeue && result.RequeueAfter == 0 {
+				t.Fatalf("expected reconciliation to be requeued, but got: %+v", result)
 			}
 
 			currentNetPol := &networkingv1.NetworkPolicy{}

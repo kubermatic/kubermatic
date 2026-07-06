@@ -1,0 +1,435 @@
+name: CIS Benchmark
+
+# Combined trigger + runner. Fires when a kubermatic issue is opened or
+# labeled with `cis-bench-request`. Parses the issue body for KKP version +
+# Kubernetes versions, runs the CIS Kubernetes Benchmark conformance suite
+# (sourced from kubermatic/conformance-ee), and reports results back on the
+# triggering issue. On failure, opens a follow-up issue here. Always opens
+# a PR in kubermatic/docs with the rendered report.
+#
+# Expected issue body format:
+#
+#   ## CIS-BENCH-REQUEST
+#   kkp-version: 2.30.0
+#   k8s-versions: 1.32.0,1.33.0
+on:
+  issues:
+    types: [labeled]
+
+# Serialize runs per KKP version — multiple in-flight runs targeting the same
+# shared KKP cluster would race on projects + clusters.
+concurrency:
+  group: cis-bench-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  cis-bench:
+    if: contains(github.event.issue.labels.*.name, 'cis-bench-request')
+    runs-on: ubuntu-latest
+    # The cross-repo PAT (KKP_CONFORMANCE_CROSS_GH_TOKEN) + suite secrets
+    # live in the `KKP` GitHub environment. Without this declaration the
+    # env-scoped secrets resolve to empty strings.
+    environment:
+      name: KKP
+      deployment: false
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    timeout-minutes: 240
+
+    env:
+      ISSUE_NUMBER:       ${{ github.event.issue.number }}
+      TRIGGER_ISSUE_REPO: ${{ github.repository }}
+      ARTIFACT_URL:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      # ─── Parse issue body ─────────────────────────────────────────────
+      - name: Parse issue body
+        id: parse
+        env:
+          # Same-repo read — GITHUB_TOKEN is sufficient.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_BODY=$(gh issue view "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json body --jq '.body')
+          ISSUE_BODY=${ISSUE_BODY//$'\r'/}
+
+          # Lenient extractor for "<key>: <value>" lines. Accepts markdown
+          # bold, inline code, leading whitespace, list bullets, any letter
+          # case, optional space around the colon.
+          extract() {
+            local key="$1"
+            echo "$ISSUE_BODY" \
+              | sed -E 's/[`*]+//g' \
+              | grep -iE "^[[:space:]]*[-*]?[[:space:]]*${key}[[:space:]]*:" \
+              | head -1 \
+              | sed -E "s/^[[:space:]]*[-*]?[[:space:]]*${key}[[:space:]]*:[[:space:]]*//I; s/[[:space:]]+$//"
+          }
+
+          KKP_VERSION=$(extract "kkp-version")
+          K8S_VERSIONS=$(extract "k8s-versions")
+          K8S_VERSIONS=$(echo "$K8S_VERSIONS" | tr -d '[:space:]')
+
+          # Strip optional leading 'v' from KKP version and every K8S entry so
+          # every downstream user (release list, artifact filenames, docs
+          # paths, ack comment) sees canonical semver: 2.30.5 / 1.35.2.
+          KKP_VERSION=$(echo "$KKP_VERSION" | sed -E 's/^v//')
+          K8S_VERSIONS=$(echo "$K8S_VERSIONS" | sed -E 's/(^|,)v/\1/g')
+
+          if [ -z "$KKP_VERSION" ] || [ -z "$K8S_VERSIONS" ]; then
+            echo "Missing kkp-version or k8s-versions in issue body — aborting"
+            exit 1
+          fi
+
+          # Also export to job env so downstream steps can use $KKP_VERSION /
+          # $K8S_VERSIONS directly (mirrors the conformance-ee runner shape).
+          {
+            echo "kkp_version=${KKP_VERSION}"
+            echo "k8s_versions=${K8S_VERSIONS}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "KKP_VERSION=${KKP_VERSION}"
+            echo "K8S_VERSIONS=${K8S_VERSIONS}"
+          } >> "$GITHUB_ENV"
+          echo "Parsed: kkp=${KKP_VERSION}, k8s=${K8S_VERSIONS}"
+
+      # ─── Acknowledge on the triggering issue ──────────────────────────
+      - name: Acknowledge on issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KKP_VERSION:  ${{ steps.parse.outputs.kkp_version }}
+          K8S_VERSIONS: ${{ steps.parse.outputs.k8s_versions }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --body "🛡️ CIS benchmark requested.
+
+          | Field | Value |
+          |-------|-------|
+          | **KKP version** | \`${KKP_VERSION}\` |
+          | **Kubernetes versions** | \`${K8S_VERSIONS}\` |
+          | **Run** | [view live logs](${ARTIFACT_URL}) |
+
+          Results will be posted as comments here when the run completes. A failure-tracking issue will be opened automatically if any control fails. A docs PR will be opened in \`kubermatic/docs\` regardless of pass/fail."
+
+      # ─── Checkout conformance-ee (the suite source) ───────────────────
+      - name: Checkout conformance-ee
+        uses: actions/checkout@v4
+        with:
+          repository: kubermatic/conformance-ee
+          token: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+          ref: main
+          fetch-depth: 1
+
+      - name: Resolve image tag
+        run: |
+          IMAGE_TAG="cis-${KKP_VERSION//./-}-${{ github.run_id }}"
+          echo "IMAGE_TAG=${IMAGE_TAG}"                                  >> "$GITHUB_ENV"
+          echo "IMAGE_REF=quay.io/kubermatic/conformance-ee:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Quay
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
+      - name: Build and push Docker image to Quay
+        run: |
+          docker build \
+            -f Dockerfile.ginkgo \
+            -t "${IMAGE_REF}" \
+            --push \
+            .
+
+      - name: Build Go binaries
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          make build
+
+      # ─── KKP kubeconfig ───────────────────────────────────────────────
+      - name: Write KKP kubeconfig
+        env:
+          KKP_KUBECONFIG: ${{ secrets.KKP_KUBECONFIG }}
+        run: |
+          if [ -z "$KKP_KUBECONFIG" ]; then
+            echo "KKP_KUBECONFIG secret not set — aborting"
+            exit 1
+          fi
+          echo "$KKP_KUBECONFIG" | base64 -d > /tmp/kubeconfig
+          chmod 600 /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> "$GITHUB_ENV"
+
+      # ─── Load CIS conformance config + per-run overrides ─────────────
+      - name: Load default CIS conformance config
+        env:
+          CIS_CONFORMANCE_CONFIG: ${{ secrets.CIS_CONFORMANCE_CONFIG }}
+        run: |
+          if [ -z "$CIS_CONFORMANCE_CONFIG" ]; then
+            echo "CIS_CONFORMANCE_CONFIG secret not set — aborting"
+            exit 1
+          fi
+          printf '%s' "$CIS_CONFORMANCE_CONFIG" > /tmp/conformance-config.yaml
+          chmod 600 /tmp/conformance-config.yaml
+
+          IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
+          RELEASES_JSON=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s .)
+          yq -i ".releases = ${RELEASES_JSON}"                                 /tmp/conformance-config.yaml
+          yq -i ".reportsRoot   = strenv(GITHUB_WORKSPACE) + \"/_reports\""    /tmp/conformance-config.yaml
+          yq -i ".logDirectory  = strenv(GITHUB_WORKSPACE) + \"/_logs\""       /tmp/conformance-config.yaml
+          yq -i ".managementKubeconfigFile = strenv(KUBECONFIG)"               /tmp/conformance-config.yaml
+          yq -i ".kkpVersion = strenv(KKP_VERSION)"                            /tmp/conformance-config.yaml
+          yq -i '.cis.enabled = true'                                          /tmp/conformance-config.yaml
+          echo "CONFORMANCE_TESTER_CONFIG_FILE=/tmp/conformance-config.yaml" >> "$GITHUB_ENV"
+
+          echo "--- conformance-config.yaml (kubevirt kubeconfig redacted) ---"
+          yq '.secrets.kubevirt.kubeconfigFile = "<REDACTED>"' /tmp/conformance-config.yaml
+
+      - name: Inject KubeVirt kubeconfig
+        env:
+          KUBEVIRT_KUBECONFIG: ${{ secrets.KUBEVIRT_KUBECONFIG }}
+        run: |
+          if [ -z "$KUBEVIRT_KUBECONFIG" ]; then
+            echo "KUBEVIRT_KUBECONFIG not set — leaving secrets.kubevirt.kubeconfigFile unset"
+            exit 0
+          fi
+          yq -i '.secrets.kubevirt.kubeconfigFile = strenv(KUBEVIRT_KUBECONFIG)' "$CONFORMANCE_TESTER_CONFIG_FILE"
+          echo "Injected KubeVirt kubeconfig into conformance config"
+
+      - name: Validate conformance config (dry run)
+        run: |
+          ./bin/conformance-ee-cli \
+            --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --dry-run
+
+      # ─── Run the suite ────────────────────────────────────────────────
+      - name: Run conformance tests (CIS enabled)
+        run: |
+          mkdir -p _logs _reports
+          ./bin/conformance-ee-cli \
+            --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --quiet \
+            --verbose-logs \
+            2>&1 | tee "_logs/test-output-${KKP_VERSION}.txt"
+
+      # ─── Flatten CIS report files to _reports/ top-level ──────────────
+      - name: Flatten CIS report files
+        if: always()
+        run: |
+          shopt -s nullglob globstar
+          for f in _reports/**/cis-benchmark-*.{json,md} _reports/**/cis-issue-*.md _reports/**/junit.cis-*.xml; do
+            base=$(basename "$f")
+            [ -e "_reports/${base}" ] && continue
+            cp "$f" "_reports/${base}"
+          done
+
+      - name: Substitute artifact URL in CIS issue bodies
+        if: always()
+        run: |
+          shopt -s nullglob
+          for f in _reports/cis-issue-*.md; do
+            sed -i "s|__ARTIFACT_URL__|${ARTIFACT_URL}|g" "$f"
+          done
+
+      - name: Upload conformance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-reports-cis-${{ env.KKP_VERSION }}-${{ github.run_id }}
+          path: |
+            _logs/
+            _reports/
+          if-no-files-found: ignore
+          retention-days: 365
+
+      # ─── Cleanup on cancellation ──────────────────────────────────────
+      - name: Clean up conformance resources on cancellation
+        if: cancelled()
+        run: |
+          echo "Run cancelled — tearing down conformance resources..."
+          kubectl delete jobs,configmaps,secrets \
+            -n conformance-tests \
+            -l app=conformance-tester \
+            --ignore-not-found --wait=false || true
+          if [ -f _logs/created-projects.txt ]; then
+            while IFS= read -r proj; do
+              [ -z "$proj" ] && continue
+              kubectl delete projects.kubermatic.k8c.io "$proj" \
+                --ignore-not-found --wait=false || true
+            done < _logs/created-projects.txt
+          fi
+
+      - name: Scrub secret-bearing tempfiles
+        if: always()
+        run: rm -f /tmp/kubeconfig /tmp/conformance-config.yaml || true
+
+      - name: Delete image from Quay
+        if: always()
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          if skopeo delete --creds "${QUAY_USERNAME}:${QUAY_PASSWORD}" \
+            "docker://${IMAGE_REF}"; then
+            echo "Image tag ${IMAGE_TAG} deleted from Quay"
+          else
+            echo "WARNING: Could not delete image tag ${IMAGE_TAG}"
+          fi
+
+      # ─── Comment status on trigger issue + create failure issues ────
+      # Merged so the status comment can link the failure issue it just
+      # created. Order per k8s version:
+      #   1. If no report → post ⚠️ comment, skip.
+      #   2. If FAIL_COUNT == 0 → post ✅ pass comment.
+      #   3. If FAIL_COUNT > 0 → create failure issue first, then post ❌
+      #      comment carrying both the artifact link and the follow-up
+      #      issue URL.
+      - name: Comment status + open failure issues on trigger issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
+          for K8S in "${VERSIONS[@]}"; do
+            JSON="_reports/cis-benchmark-${K8S}.json"
+            ISSUE_BODY="_reports/cis-issue-${K8S}.md"
+
+            if [ ! -f "$JSON" ]; then
+              gh issue comment "$ISSUE_NUMBER" \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ⚠️ no report produced — [view run](${ARTIFACT_URL})"
+              continue
+            fi
+
+            FAIL_COUNT=$(jq '[.clusters[].results[] | select(.finalStatus=="Fail")] | length' "$JSON")
+            if [ "$FAIL_COUNT" -eq 0 ]; then
+              gh issue comment "$ISSUE_NUMBER" \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ✅ pass — [conformance-reports](${ARTIFACT_URL})"
+              continue
+            fi
+
+            # Failures. Create the follow-up issue first so we can link it
+            # from the status comment.
+            FAILURE_ISSUE_URL=""
+            if [ -f "$ISSUE_BODY" ]; then
+              FAILURE_ISSUE_URL=$(gh issue create \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
+                --body-file "$ISSUE_BODY")
+            fi
+
+            STATUS_BODY="CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ❌ ${FAIL_COUNT} failure(s) — [conformance-reports](${ARTIFACT_URL})"
+            if [ -n "$FAILURE_ISSUE_URL" ]; then
+              STATUS_BODY="${STATUS_BODY} — tracked in ${FAILURE_ISSUE_URL}"
+            fi
+            gh issue comment "$ISSUE_NUMBER" \
+              --repo "$TRIGGER_ISSUE_REPO" \
+              --body "$STATUS_BODY"
+          done
+
+      # ─── Open docs PR in kubermatic/docs ──────────────────────────────
+      - name: Checkout kubermatic/docs
+        if: success()
+        uses: actions/checkout@v4
+        with:
+          repository: kubermatic/docs
+          token: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+          path: docs-repo
+          fetch-depth: 1
+
+      - name: Open docs PR in kubermatic/docs
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd docs-repo
+          git config user.name  "kubermatic-bot"
+          git config user.email "kubermatic-bot@users.noreply.github.com"
+
+          IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
+          # Branch name carries the trigger issue number so two requests for
+          # the same KKP version land in separate branches → separate PRs.
+          # Re-runs of the same issue force-push the same branch and the
+          # existing PR is updated in place (idempotent).
+          BRANCH="cis-bench/${KKP_VERSION}-issue-${ISSUE_NUMBER}"
+          git checkout -b "$BRANCH"
+
+          KKP_MINOR=$(echo "$KKP_VERSION" | cut -d. -f1,2)
+          DATE_TS=$(date -u '+%Y-%m-%dT%H:%M:%S+00:00')
+          CHANGED=0
+          for K8S in "${VERSIONS[@]}"; do
+            SRC_MD="../_reports/cis-benchmark-${K8S}.md"
+            SRC_JSON="../_reports/cis-benchmark-${K8S}.json"
+            [ -f "$SRC_MD" ] || continue
+            K8S_MINOR=$(echo "$K8S" | cut -d. -f1,2)
+
+            TITLE="Benchmark on Kubernetes ${K8S} with KKP ${KKP_VERSION}"
+            RENDERED=$(mktemp)
+            {
+              printf '+++\n'
+              printf 'title = "%s"\n' "$TITLE"
+              printf 'date = %s\n' "$DATE_TS"
+              printf '+++\n\n'
+              awk 'NR==1 && /^# / {skip=1; next} skip && NF==0 {skip=0; next} {skip=0; print}' "$SRC_MD"
+            } > "$RENDERED"
+
+            for DOCS_VERSION in "v${KKP_MINOR}" "main"; do
+              DST_DIR="content/kubermatic/${DOCS_VERSION}/security/cis-benchmarking/kkp${KKP_MINOR}-k8s${K8S_MINOR}"
+              mkdir -p "$DST_DIR"
+              cp "$RENDERED" "${DST_DIR}/_index.en.md"
+              git add "${DST_DIR}/_index.en.md"
+              if [ -f "$SRC_JSON" ]; then
+                cp "$SRC_JSON" "${DST_DIR}/result.json"
+                git add "${DST_DIR}/result.json"
+              fi
+            done
+            rm -f "$RENDERED"
+            CHANGED=1
+          done
+
+          if [ "$CHANGED" -eq 0 ]; then
+            echo "No CIS markdown produced — skipping docs PR"
+            exit 0
+          fi
+
+          git commit -m "CIS benchmark report for KKP ${KKP_VERSION}"
+          git push --set-upstream origin "$BRANCH" --force
+
+          BODY="Automated CIS benchmark report for KKP \`${KKP_VERSION}\` (k8s: \`${K8S_VERSIONS}\`).
+
+          Source: [run logs](${ARTIFACT_URL})
+          Related: ${TRIGGER_ISSUE_REPO}#${ISSUE_NUMBER}"
+
+          if PR_URL=$(gh pr view "$BRANCH" --repo kubermatic/docs --json url --jq .url 2>/dev/null); then
+            gh pr edit "$PR_URL" --repo kubermatic/docs --body "$BODY"
+          else
+            PR_URL=$(gh pr create \
+              --repo kubermatic/docs \
+              --title "CIS benchmark — KKP ${KKP_VERSION}" \
+              --body "$BODY" \
+              --base main --head "$BRANCH")
+          fi
+          echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
+
+      - name: Comment docs PR link on trigger issue
+        if: success() && env.PR_URL != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$TRIGGER_ISSUE_REPO" \
+            --body "📄 CIS benchmark docs PR opened: $PR_URL"

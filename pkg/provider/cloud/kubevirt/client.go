@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
-	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	kvinstancetypev1beta1 "kubevirt.io/api/instancetype/v1beta1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -38,7 +38,7 @@ var scheme = runtime.NewScheme()
 func init() {
 	utilruntime.Must(nativescheme.AddToScheme(scheme))
 	utilruntime.Must(kubevirtv1.AddToScheme(scheme))
-	utilruntime.Must(kvinstancetypev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kvinstancetypev1beta1.AddToScheme(scheme))
 	utilruntime.Must(cdiv1beta1.AddToScheme(scheme))
 }
 

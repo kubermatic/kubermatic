@@ -34,16 +34,17 @@ import (
 
 // validator for validating Kubermatic Machine CRD.
 type validator struct {
-	log             *zap.SugaredLogger
-	seedClient      ctrlruntimeclient.Client
-	userClient      ctrlruntimeclient.Client
-	caBundle        *certificates.CABundle
-	subjectSelector labels.Selector
+	log                    *zap.SugaredLogger
+	seedClient             ctrlruntimeclient.Client
+	userClient             ctrlruntimeclient.Client
+	caBundle               *certificates.CABundle
+	subjectSelector        labels.Selector
+	kubeVirtInfraNamespace string
 }
 
 // NewValidator returns a new Machine validator.
 func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *certificates.CABundle,
-	projectID string) (*validator, error) {
+	projectID, kubeVirtInfraNamespace string) (*validator, error) {
 	subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectID})
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
@@ -55,11 +56,12 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 	subjectSelector := labels.NewSelector().Add(*subjectNameReq, *subjectKindReq)
 
 	return &validator{
-		log:             log,
-		seedClient:      seedClient,
-		userClient:      userClient,
-		caBundle:        caBundle,
-		subjectSelector: subjectSelector,
+		log:                    log,
+		seedClient:             seedClient,
+		userClient:             userClient,
+		caBundle:               caBundle,
+		subjectSelector:        subjectSelector,
+		kubeVirtInfraNamespace: kubeVirtInfraNamespace,
 	}, nil
 }
 
@@ -74,7 +76,7 @@ func (v *validator) ValidateCreate(ctx context.Context, machine *clusterv1alpha1
 		return nil, err
 	}
 	if quota != nil {
-		return nil, validateQuota(ctx, log, v.userClient, machine, v.caBundle, quota)
+		return nil, validateQuota(ctx, log, v.userClient, v.kubeVirtInfraNamespace, machine, v.caBundle, quota)
 	}
 	return nil, nil
 }
