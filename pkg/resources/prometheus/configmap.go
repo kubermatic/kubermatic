@@ -440,9 +440,12 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
   metric_relabel_configs:
-    # Keep only what is needed: up for health checks, machine_cpu_cores and machine_memory_bytes for metering
+    # Keep only what is needed: up for health checks, machine_cpu_cores/machine_memory_bytes and
+    # container_cpu_usage_seconds_total/container_memory_working_set_bytes (with the image label) for metering.
+    # The same two container metrics are also scraped by the "resources" job below, but without the
+    # image label metering filters on, so they are dropped there instead.
     - source_labels: [__name__]
-      regex: '^(up|machine_cpu_cores|machine_memory_bytes)$'
+      regex: '^(up|machine_cpu_cores|machine_memory_bytes|container_cpu_usage_seconds_total|container_memory_working_set_bytes)$'
       action: keep
 
 # scrape pods inside the user cluster with a special annotation
@@ -526,6 +529,12 @@ scrape_configs:
     regex: (.+)
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/resource
+  metric_relabel_configs:
+    # container_cpu_usage_seconds_total/container_memory_working_set_bytes from this endpoint lack the
+    # image label metering filters on and duplicate what the cadvisor job already provides, so drop them here.
+    - source_labels: [__name__]
+      regex: '^(container_cpu_usage_seconds_total|container_memory_working_set_bytes)$'
+      action: drop
 
 {{ if eq .TemplateData.Cluster.Spec.ExposeStrategy "Tunneling" -}}
 # scrape envoy-agent
