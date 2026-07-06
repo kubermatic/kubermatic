@@ -15,7 +15,7 @@
 apiVersion: v2
 name: envoy-gateway-controller
 version: 9.9.9-dev
-appVersion: 1.6.1
+appVersion: 1.8.2
 description: Envoy Gateway controller for Kubermatic
 keywords:
   - kubermatic
@@ -30,5 +30,5 @@ maintainers:
 dependencies:
   - name: gateway-helm
     repository: oci://docker.io/envoyproxy
-    version: v1.6.1
+    version: v1.8.2
     alias: gateway
