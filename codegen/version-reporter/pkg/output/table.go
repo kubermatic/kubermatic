@@ -57,14 +57,17 @@ func FormatTable(cfg *config.Config, dest io.Writer) error {
 		return result
 	}
 
+	mergeCfg := tablewriter.NewConfigBuilder().
+		// merge identical adjacent cells vertically in the Product/Type columns,
+		// so repeated values collapse instead of printing on every row
+		Row().Merging().WithMode(tw.MergeVertical).ByColumnIndex([]int{0, 1}).Build().Build().Build()
+
 	table := tablewriter.NewWriter(dest)
 	table.Options(
 		tablewriter.WithHeader(columns),
 		tablewriter.WithHeaderAutoWrap(tw.WrapNone),
 		tablewriter.WithRowAutoWrap(tw.WrapNone),
-		// merge identical adjacent cells vertically, so repeated Product/Type
-		// values collapse instead of printing on every row
-		tablewriter.WithRowMergeMode(tw.MergeVertical),
+		tablewriter.WithConfig(mergeCfg),
 	)
 
 	for _, product := range cfg.Products {
