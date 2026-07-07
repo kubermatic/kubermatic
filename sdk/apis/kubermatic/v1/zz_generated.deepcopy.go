@@ -4518,6 +4518,16 @@ func (in *KubeLBConfiguration) DeepCopy() *KubeLBConfiguration {
 func (in *KubeLBDatacenterSettings) DeepCopyInto(out *KubeLBDatacenterSettings) {
 	*out = *in
 	out.KubeLBSettings = in.KubeLBSettings
+	if in.Enabled != nil {
+		in, out := &in.Enabled, &out.Enabled
+		*out = new(bool)
+		**out = **in
+	}
+	if in.Enforced != nil {
+		in, out := &in.Enforced, &out.Enforced
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ExtraArgs != nil {
 		in, out := &in.ExtraArgs, &out.ExtraArgs
 		*out = make(map[string]string, len(*in))
