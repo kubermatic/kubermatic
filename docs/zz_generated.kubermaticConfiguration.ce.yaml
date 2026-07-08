@@ -80,7 +80,7 @@ spec:
         # The default value is "quay.io/kubermatic/application-catalog-manager"
         repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
-        tag: 65b0942a040565ff4eaa4329374a94b98ddd1149
+        tag: 75ec0542d54c123863ef9f6bab48ae53593e449e
       # Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
 
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
