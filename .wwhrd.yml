@@ -21,6 +21,7 @@ denylist:
 allowlist:
   - Apache-2.0
   - MIT
+  - MIT-0
   - BSD-2-Clause
   - BSD-2-Clause-FreeBSD
   - BSD-3-Clause
@@ -55,6 +56,7 @@ exceptions:
   - github.com/hashicorp/hcl/json/token # MPL-2.0
   - github.com/hashicorp/yamux # MPL-2.0
   - github.com/letsencrypt/boulder/core # LetsEncrypt Boulder packages (MPL-2.0)
+  - github.com/letsencrypt/boulder/core/proto # LetsEncrypt Boulder packages (MPL-2.0)
   - github.com/letsencrypt/boulder/strictyaml # LetsEncrypt Boulder packages (MPL-2.0)
   - github.com/letsencrypt/boulder/revocation # LetsEncrypt Boulder packages (MPL-2.0)
   - github.com/letsencrypt/boulder/identifier # LetsEncrypt Boulder packages (MPL-2.0)
