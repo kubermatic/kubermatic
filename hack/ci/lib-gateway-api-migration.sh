@@ -354,6 +354,56 @@ deploy_kkp_under_test() {
   retry 10 check_all_deployments_ready envoy-gateway-controller
 }
 
+verify_legacy_ingresses_still_present() {
+  local phase_label="$1"
+  echodate "Verifying legacy Ingress objects remain after --skip-ingress-cleanup (${phase_label})..."
+
+  local expected=("kubermatic/kubermatic" "dex/dex")
+  local missing=()
+  for entry in "${expected[@]}"; do
+    local ns="${entry%%/*}"
+    local name="${entry##*/}"
+    if ! kubectl -n "${ns}" get ingress "${name}" > /dev/null 2>&1; then
+      missing+=("${entry}")
+    fi
+  done
+
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echodate "FAIL: expected these legacy Ingresses to remain after --skip-ingress-cleanup, but they were deleted: ${missing[*]}"
+    return 1
+  fi
+  echodate "Legacy Ingress objects are still in place, as expected."
+}
+
+expect_installer_rejects_skip_and_clean_combo() {
+  echodate "Verifying installer rejects --skip-ingress-cleanup + --clean-nginx-lb combination..."
+  TEST_NAME="Installer rejects --skip-ingress-cleanup + --clean-nginx-lb"
+
+  set +e
+  ./_build/kubermatic-installer deploy kubermatic-master \
+    --storageclass copy-default \
+    --config "${KUBERMATIC_CONFIG}" \
+    --helm-values "${HELM_VALUES_FILE_UNDER_TEST}" \
+    --skip-seed-validation=kubermatic \
+    --skip-ingress-cleanup \
+    --clean-nginx-lb \
+    --verbose > /tmp/installer-reject.log 2>&1
+  local rc=$?
+  set -e
+
+  if [ "${rc}" -eq 0 ]; then
+    echodate "FAIL: installer exited 0 with --skip-ingress-cleanup + --clean-nginx-lb; expected non-zero"
+    cat /tmp/installer-reject.log
+    return 1
+  fi
+  if ! grep -q "skip-ingress-cleanup cannot be combined with --clean-nginx-lb" /tmp/installer-reject.log; then
+    echodate "FAIL: installer failed but did not emit the expected rejection message"
+    cat /tmp/installer-reject.log
+    return 1
+  fi
+  echodate "Installer correctly rejected the flag combination."
+}
+
 run_pre_migration_tests() {
   local phase_label="$1"
   echodate "Running pre-migration tests (Ingress mode) — ${phase_label}..."

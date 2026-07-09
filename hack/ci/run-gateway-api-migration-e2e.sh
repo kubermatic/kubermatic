@@ -30,6 +30,15 @@
 ###     4. Run the installer without --migrate-gateway-api again (idempotency).
 ###     5. Run the installer with --clean-nginx-lb.
 ###
+###   Case 3 (late DNS flipper, --skip-ingress-cleanup staging):
+###     1. Install KKP v2.29.x.
+###     2. Upgrade to KKP v2.30.x with --migrate-gateway-api.
+###     3. Run PR installer with --skip-ingress-cleanup — Ingresses stay, nginx keeps serving.
+###     4. Verify legacy Ingress objects are still present.
+###     5. Verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb combined.
+###     6. Run PR installer without flags — Ingresses removed.
+###     7. Run PR installer with --clean-nginx-lb — nginx-ingress-controller release gone.
+###
 ### After each case the script verifies the nginx-ingress-controller release, namespace,
 ### and legacy Ingress objects are gone, and that Gateway API resources are healthy.
 
@@ -85,8 +94,39 @@ run_case_2() {
   verify_cleanup_state
 }
 
+run_case_3() {
+  echodate "================================================================"
+  echodate " Case 3: 2.29 -> 2.30 (Gateway API) -> 2.31 --skip-ingress-cleanup staging"
+  echodate "================================================================"
+
+  setup_kkp_migration_environment
+
+  deploy_kkp_v229
+  run_pre_migration_tests "case3-v229"
+
+  deploy_kkp_v230_with_gateway_api_flag
+
+  echodate "Case 3 / Step 3: PR installer with --skip-ingress-cleanup (Ingresses must remain)..."
+  deploy_kkp_under_test --skip-ingress-cleanup
+
+  verify_legacy_ingresses_still_present "case3-after-skip"
+
+  echodate "Case 3 / Step 5: verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb..."
+  expect_installer_rejects_skip_and_clean_combo
+
+  echodate "Case 3 / Step 6: PR installer default (Ingresses now removed)..."
+  deploy_kkp_under_test
+
+  echodate "Case 3 / Step 7: PR installer with --clean-nginx-lb..."
+  deploy_kkp_under_test --clean-nginx-lb
+
+  verify_cleanup_state
+}
+
 run_case_1
 reset_kind_cluster
 run_case_2
+reset_kind_cluster
+run_case_3
 
-echodate "Both upgrade-path cases completed successfully!"
+echodate "All three upgrade-path cases completed successfully!"
