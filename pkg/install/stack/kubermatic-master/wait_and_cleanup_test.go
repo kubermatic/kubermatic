@@ -294,6 +294,36 @@ func TestCleanupLegacyIngressesIdempotentWhenNothingPresent(t *testing.T) {
 	}
 }
 
+// TestCleanupLegacyIngressesSkipsWhenSkipIngressCleanupSet verifies the flag path:
+// when opt.SkipIngressCleanup is true, the legacy Ingress objects must remain in
+// place so nginx can keep serving traffic while DNS is flipped to Envoy Gateway.
+func TestCleanupLegacyIngressesSkipsWhenSkipIngressCleanupSet(t *testing.T) {
+	cfg := defaultKubermaticConfiguration("kubermatic")
+	kubermaticIngress := &networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{
+		Namespace: cfg.Namespace,
+		Name:      defaulting.DefaultIngressName,
+	}}
+	dexIngress := &networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{
+		Namespace: DexNamespace,
+		Name:      DexChartName,
+	}}
+	client := fake.NewClientBuilder().WithObjects(kubermaticIngress, dexIngress).Build()
+
+	opt := stack.DeployOptions{KubermaticConfiguration: cfg, SkipIngressCleanup: true}
+	if err := cleanupLegacyIngresses(context.Background(), logrus.NewEntry(logrus.New()), client, opt); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Both Ingress objects must still exist.
+	remaining := &networkingv1.Ingress{}
+	if err := client.Get(context.Background(), types.NamespacedName{Namespace: cfg.Namespace, Name: defaulting.DefaultIngressName}, remaining); err != nil {
+		t.Fatalf("expected kubermatic Ingress to remain, got: %v", err)
+	}
+	if err := client.Get(context.Background(), types.NamespacedName{Namespace: DexNamespace, Name: DexChartName}, remaining); err != nil {
+		t.Fatalf("expected Dex Ingress to remain, got: %v", err)
+	}
+}
+
 func TestWaitForGatewayAndHTTPRoutesReadyFailsOnUnacceptedDexRoute(t *testing.T) {
 	cfg := defaultKubermaticConfiguration("kubermatic")
 	gatewayKey := gatewayObjectKey(cfg)

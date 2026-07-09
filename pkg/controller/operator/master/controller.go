@@ -185,7 +185,7 @@ func gatewayAPICRDExists(ctx context.Context, reader ctrlruntimeclient.Reader) (
 	key := types.NamespacedName{Name: "gateways.gateway.networking.k8s.io"}
 
 	var lastErr error
-	err := wait.PollUntilContextTimeout(ctx, 2*time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
 		crd := apiextensionsv1.CustomResourceDefinition{}
 		if err := reader.Get(ctx, key, &crd); err != nil {
 			if apierrors.IsNotFound(err) {

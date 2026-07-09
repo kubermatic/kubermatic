@@ -81,11 +81,14 @@ type DeployOptions struct {
 	// nginx-ingress-controller path has been removed; this field is always treated as
 	// true regardless of its value and is retained only for backwards compatibility.
 	MigrateToGatewayAPI bool
-	// SkipIngressCleanup used to disable the legacy Ingress cleanup step.
-	//
-	// Deprecated: As of KKP 2.31 the installer always runs the legacy Ingress cleanup
-	// after Gateway/HTTPRoute readiness; this field is no longer read and is retained
-	// only so the matching CLI flag still parses for backwards compatibility.
+	// SkipIngressCleanup skips the legacy Ingress cleanup step during an upgrade to
+	// KKP 2.31. When true, the installer leaves any pre-existing nginx-ingress Ingress
+	// objects in place so nginx can continue to serve traffic while the operator flips
+	// DNS to the new Envoy Gateway. Cleanup is then expected to happen on a deliberate
+	// later run (with SkipIngressCleanup = false and, optionally, CleanNginxLB = true)
+	// once DNS is confirmed on the new Gateway. It is invalid to set both
+	// SkipIngressCleanup and CleanNginxLB at the same time — validation rejects that
+	// combination.
 	SkipIngressCleanup bool
 	// CleanNginxLB controls cleanup of the legacy nginx-ingress-controller Helm release.
 	// When true, the installer uninstalls the release and deletes its namespace after the

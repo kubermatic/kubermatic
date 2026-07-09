@@ -103,14 +103,41 @@ func TestCleanupLegacyNginxIngressFlagUnsetWarnsWhenNamespaceExists(t *testing.T
 	if got := len(helmClient.uninstallCalls); got != 0 {
 		t.Fatalf("expected no helm uninstall calls when --clean-nginx-lb is unset, got %d", got)
 	}
-	if hook.warnings != 1 {
-		t.Fatalf("expected 1 warning log entry, got %d", hook.warnings)
+	// Expect the main "release still installed" warning plus two follow-up warnings
+	// (DNS 404 hazard + confirm DNS on new Gateway) and the re-run reminder.
+	if hook.warnings < 1 {
+		t.Fatalf("expected at least one warning log entry, got %d", hook.warnings)
 	}
 
 	// namespace is left in place
 	ns := &corev1.Namespace{}
 	if err := kubeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: common.NginxIngressControllerNamespace}, ns); err != nil {
 		t.Fatalf("expected nginx namespace to remain, got error: %v", err)
+	}
+}
+
+// TestCleanupLegacyNginxIngressSkipIngressCleanupSuppressesDNS404Warning covers the
+// case where the admin ran the installer with --skip-ingress-cleanup: the legacy
+// Ingress objects are still in place, so the "nginx is currently 404-ing" warning
+// should NOT be emitted (nginx still has valid rules). The main "release still
+// installed" warning is still expected.
+func TestCleanupLegacyNginxIngressSkipIngressCleanupSuppressesDNS404Warning(t *testing.T) {
+	helmClient := &fakeHelmClient{}
+	kubeClient := fake.NewClientBuilder().WithObjects(nginxNamespaceObject()).Build()
+	hook := &warnHook{}
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	opt := stack.DeployOptions{CleanNginxLB: false, SkipIngressCleanup: true}
+	if err := cleanupLegacyNginxIngress(context.Background(), logrus.NewEntry(logger), kubeClient, helmClient, opt); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := len(helmClient.uninstallCalls); got != 0 {
+		t.Fatalf("expected no helm uninstall calls with --skip-ingress-cleanup + --clean-nginx-lb unset, got %d", got)
+	}
+	if hook.warnings < 1 {
+		t.Fatalf("expected at least the main release-still-installed warning, got %d", hook.warnings)
 	}
 }
 

@@ -91,7 +91,7 @@ func main() {
 		&opt.httprouteWatchNamespaces,
 		"httproute-watch-namespaces",
 		"monitoring,mla",
-		"Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync. Only used when --enable-gateway-api is set.",
+		"Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync.",
 	)
 	flag.Parse()
 

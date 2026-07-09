@@ -560,7 +560,7 @@ func waitForGatewayObjectWithPollConfig(
 	err := wait.PollUntilContextTimeout(ctx, pollConfig.interval, pollConfig.timeout, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
 			if apierrors.IsNotFound(err) && !reportedMissingGateway {
-				l.Debug("Gateway does not exist yet, waiting...")
+				l.Info("Gateway does not exist yet, waiting...")
 				reportedMissingGateway = true
 			} else {
 				l.Debugf("failed to get Gateway, err: %v", err)
@@ -751,6 +751,10 @@ func cleanupLegacyIngresses(ctx context.Context, l *logrus.Entry, c ctrlruntimec
 		l.Debug("Headless installation requested, skipping legacy Ingress cleanup")
 		return nil
 	}
+	if opt.SkipIngressCleanup {
+		l.Info("⏭️  --skip-ingress-cleanup is set: leaving legacy Ingress objects in place so nginx-ingress can keep serving traffic. Re-run without the flag once DNS has been flipped to the new Envoy Gateway.")
+		return nil
+	}
 	l.Info("🧹 Removing legacy Ingress resources left over from the nginx-ingress installation path")
 
 	kubermaticIngressName := types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}
@@ -894,7 +898,12 @@ func cleanupLegacyNginxIngress(ctx context.Context, logger *logrus.Entry, kubeCl
 	}
 
 	if !opt.CleanNginxLB {
-		logger.Warnf("⚠️  Legacy %s release is still installed. Re-run the installer with --clean-nginx-lb to remove it, or uninstall manually.", common.NginxIngressControllerChartName)
+		logger.Warnf("⚠️  Legacy %s release is still installed.", common.NginxIngressControllerChartName)
+		if !opt.SkipIngressCleanup {
+			logger.Warn("The legacy Ingress objects have just been removed, so nginx-ingress-controller is currently serving zero rules and will 404 any request that still lands on its LoadBalancer.")
+			logger.Warn("Confirm that DNS for the Kubermatic domain resolves to the new Envoy Gateway address printed at the end of this run (`kubectl -n envoy-gateway-controller get svc`) before assuming traffic is healthy.")
+		}
+		logger.Warnf("Once DNS is on the new Gateway, re-run the installer with --clean-nginx-lb to remove the %s release, or uninstall it manually.", common.NginxIngressControllerChartName)
 		return nil
 	}
 

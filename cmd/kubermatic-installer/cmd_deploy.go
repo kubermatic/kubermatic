@@ -85,11 +85,11 @@ type DeployOptions struct {
 	// Deprecated: As of KKP 2.31 Gateway API is the enforced default; this field is no
 	// longer read and is retained only so the flag still parses for backwards compatibility.
 	MigrateGatewayAPI bool
-	// SkipIngressCleanup binds the --skip-ingress-cleanup flag.
-	//
-	// Deprecated: As of KKP 2.31 the installer always runs the legacy Ingress cleanup
-	// after Gateway/HTTPRoute readiness; this field is no longer read and is retained
-	// only so the flag still parses for backwards compatibility.
+	// SkipIngressCleanup binds the --skip-ingress-cleanup flag. When set, the
+	// installer leaves the pre-existing nginx-ingress Ingress objects in place so
+	// nginx can keep serving traffic while the operator flips DNS to the new Envoy
+	// Gateway. Cleanup is then expected to happen on a deliberate later run once DNS
+	// has been confirmed on the new Gateway. Cannot be combined with CleanNginxLB.
 	SkipIngressCleanup bool
 	// CleanNginxLB controls cleanup of the legacy nginx-ingress-controller Helm release
 	// after Gateway API has taken over.
@@ -164,7 +164,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "DEPRECATED: This flag is no-op. nginx-ingress-controller has been removed in favour of Gateway API.")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "DEPRECATED: This flag is no-op. Gateway API is now the default and always enabled.")
-	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "DEPRECATED: This flag is no-op. The installer no longer runs legacy Ingress cleanup.")
+	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "skip removal of pre-existing nginx-ingress Ingress objects during the 2.30 → 2.31 migration. Set this on the initial 2.31 run if DNS still points at the nginx LoadBalancer, then re-run without the flag once DNS has been flipped to the new Envoy Gateway. Cannot be combined with --clean-nginx-lb.")
 	cmd.PersistentFlags().BoolVar(&opt.CleanNginxLB, "clean-nginx-lb", false, "uninstall the legacy nginx-ingress-controller Helm release after Gateway API is healthy. When not set, nginx is left in place and a warning is logged.")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
@@ -198,6 +198,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		}
 
 		logger.WithFields(fields).Info("🚀 Initializing installer…")
+
+		if opt.SkipIngressCleanup && opt.CleanNginxLB {
+			return errors.New("--skip-ingress-cleanup cannot be combined with --clean-nginx-lb: removing the nginx-ingress LoadBalancer while keeping the legacy Ingress objects that point at it is contradictory. Run the installer first with --skip-ingress-cleanup to stage DNS, then re-run without --skip-ingress-cleanup (optionally with --clean-nginx-lb) once DNS is flipped to the new Envoy Gateway")
+		}
 
 		// load config files
 		if len(opt.Kubeconfig) == 0 {
