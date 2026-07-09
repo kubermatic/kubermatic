@@ -434,7 +434,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// for an overview.
 
 	// Kubernetes 1.36 requires etcd 3.6; older versions keep using etcd 3.5.
-	if c.Status.Versions.Apiserver.Semver().Minor() >= 36 {
+	if c.Status.Versions.Apiserver.Semver() != nil && c.Status.Versions.Apiserver.Semver().Minor() >= 36 {
 		return "3.6.12"
 	}
 
