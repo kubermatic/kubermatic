@@ -31,13 +31,12 @@
 ###     5. Run the installer with --clean-nginx-lb.
 ###
 ###   Case 3 (late DNS flipper, --skip-ingress-cleanup staging):
-###     1. Install KKP v2.29.x.
-###     2. Upgrade to KKP v2.30.x with --migrate-gateway-api.
-###     3. Run PR installer with --skip-ingress-cleanup — Ingresses stay, nginx keeps serving.
-###     4. Verify legacy Ingress objects are still present.
-###     5. Verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb combined.
-###     6. Run PR installer without flags — Ingresses removed.
-###     7. Run PR installer with --clean-nginx-lb — nginx-ingress-controller release gone.
+###     1. Install KKP v2.30.x with nginx-ingress (no --migrate-gateway-api).
+###     2. Run PR installer with --skip-ingress-cleanup — Gateway API stands up alongside nginx and legacy Ingresses stay.
+###     3. Verify legacy Ingress objects are still present.
+###     4. Verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb combined.
+###     5. Run PR installer without flags — Ingresses removed.
+###     6. Run PR installer with --clean-nginx-lb — nginx-ingress-controller release gone.
 ###
 ### After each case the script verifies the nginx-ingress-controller release, namespace,
 ### and legacy Ingress objects are gone, and that Gateway API resources are healthy.
@@ -96,28 +95,32 @@ run_case_2() {
 
 run_case_3() {
   echodate "================================================================"
-  echodate " Case 3: 2.29 -> 2.30 (Gateway API) -> 2.31 --skip-ingress-cleanup staging"
+  echodate " Case 3: 2.30 (nginx) -> 2.31 --skip-ingress-cleanup staging"
   echodate "================================================================"
 
   setup_kkp_migration_environment
 
-  deploy_kkp_v229
-  run_pre_migration_tests "case3-v229"
+  deploy_kkp_v230_without_gateway_api_flag
+  run_pre_migration_tests "case3-v230-nginx"
 
-  deploy_kkp_v230_with_gateway_api_flag
+  # Steps 2-4 run with hybrid values (Gateway API config + dex.ingress.enabled: true)
+  # so the Dex helm chart does not remove the legacy Dex Ingress via reconciliation
+  # while nginx is still expected to serve traffic.
+  echodate "Case 3 / Step 2: PR installer with --skip-ingress-cleanup (hybrid values keep dex.ingress.enabled: true)..."
+  HELM_VALUES_FILE_UNDER_TEST_OVERRIDE="${HELM_VALUES_FILE_UNDER_TEST_HYBRID}" \
+    deploy_kkp_under_test --skip-ingress-cleanup
 
-  echodate "Case 3 / Step 3: PR installer with --skip-ingress-cleanup (Ingresses must remain)..."
-  deploy_kkp_under_test --skip-ingress-cleanup
-
+  echodate "Case 3 / Step 3: verify legacy Ingress objects are still present..."
   verify_legacy_ingresses_still_present "case3-after-skip"
 
-  echodate "Case 3 / Step 5: verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb..."
-  expect_installer_rejects_skip_and_clean_combo
+  echodate "Case 3 / Step 4: verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb..."
+  HELM_VALUES_FILE_UNDER_TEST_OVERRIDE="${HELM_VALUES_FILE_UNDER_TEST_HYBRID}" \
+    expect_installer_rejects_skip_and_clean_combo
 
-  echodate "Case 3 / Step 6: PR installer default (Ingresses now removed)..."
+  echodate "Case 3 / Step 5: PR installer default (Ingresses now removed)..."
   deploy_kkp_under_test
 
-  echodate "Case 3 / Step 7: PR installer with --clean-nginx-lb..."
+  echodate "Case 3 / Step 6: PR installer with --clean-nginx-lb..."
   deploy_kkp_under_test --clean-nginx-lb
 
   verify_cleanup_state

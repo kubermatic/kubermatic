@@ -97,7 +97,13 @@ minio:
     secretKey: testtest
 EOF
 
-  if [ "${migrate_gateway_api}" = "true" ]; then
+  # migrate_gateway_api values:
+  #   "true"   Gateway API enabled, dex.ingress disabled (fresh Gateway API state)
+  #   "false"  nginx-ingress mode, dex.ingress enabled (legacy state)
+  #   "hybrid" Gateway API enabled AND dex.ingress enabled — models the staged
+  #            --skip-ingress-cleanup path where Envoy comes up alongside nginx
+  #            and both data planes coexist until DNS is flipped.
+  if [ "${migrate_gateway_api}" = "true" ] || [ "${migrate_gateway_api}" = "hybrid" ]; then
     cat >> "${file}" << EOF
 
 migrateGatewayAPI: true
@@ -126,6 +132,11 @@ envoyProxy:
               port: 443
               nodePort: 30443
               targetPort: 10443
+EOF
+  fi
+
+  if [ "${migrate_gateway_api}" = "true" ]; then
+    cat >> "${file}" << EOF
 
 dex:
   replicaCount: 1
@@ -191,7 +202,9 @@ reset_kind_cluster() {
     HELM_VALUES_FILE_V229_NGINX \
     HELM_VALUES_FILE_V230_NGINX \
     HELM_VALUES_FILE_V230_GATEWAY_API \
-    HELM_VALUES_FILE_UNDER_TEST
+    HELM_VALUES_FILE_UNDER_TEST \
+    HELM_VALUES_FILE_UNDER_TEST_HYBRID \
+    HELM_VALUES_FILE_UNDER_TEST_OVERRIDE
 }
 
 build_kkp_under_test() {
@@ -289,10 +302,15 @@ setup_kkp_migration_environment() {
   export HELM_VALUES_FILE_V230_NGINX="$(mktemp)"
   export HELM_VALUES_FILE_V230_GATEWAY_API="$(mktemp)"
   export HELM_VALUES_FILE_UNDER_TEST="$(mktemp)"
+  # Hybrid values: Gateway API config + dex.ingress.enabled: true. Used by
+  # Case 3 during the --skip-ingress-cleanup phase so the Dex chart doesn't
+  # wipe the legacy Dex Ingress via helm reconciliation while Envoy stands up.
+  export HELM_VALUES_FILE_UNDER_TEST_HYBRID="$(mktemp)"
   write_migration_helm_values "${HELM_VALUES_FILE_V229_NGINX}" "false" "${KKP_V229_VERSION}"
   write_migration_helm_values "${HELM_VALUES_FILE_V230_NGINX}" "false" "${KKP_V230_VERSION}"
   write_migration_helm_values "${HELM_VALUES_FILE_V230_GATEWAY_API}" "true" "${KKP_V230_VERSION}"
   write_migration_helm_values "${HELM_VALUES_FILE_UNDER_TEST}" "true" "${KUBERMATIC_VERSION}"
+  write_migration_helm_values "${HELM_VALUES_FILE_UNDER_TEST_HYBRID}" "hybrid" "${KUBERMATIC_VERSION}"
 }
 
 deploy_kkp_v229() {
@@ -340,12 +358,18 @@ deploy_kkp_v230_without_gateway_api_flag() {
 
 deploy_kkp_under_test() {
   local extra_flags=("$@")
-  echodate "Running KKP installer under test (this PR) with flags: ${extra_flags[*]:-<none>}..."
+  # When the caller sets HELM_VALUES_FILE_UNDER_TEST_OVERRIDE, use that values
+  # file instead of the default under-test one. This lets Case 3 keep the
+  # existing 2.30 nginx values (dex.ingress.enabled: true, etc.) while running
+  # the PR installer with --skip-ingress-cleanup, mirroring what an admin would
+  # do in production during a staged DNS-flip migration.
+  local values_file="${HELM_VALUES_FILE_UNDER_TEST_OVERRIDE:-${HELM_VALUES_FILE_UNDER_TEST}}"
+  echodate "Running KKP installer under test (this PR) with flags: ${extra_flags[*]:-<none>}, values: ${values_file}..."
   TEST_NAME="KKP installer under test (${extra_flags[*]:-default})"
   ./_build/kubermatic-installer deploy kubermatic-master \
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
-    --helm-values "${HELM_VALUES_FILE_UNDER_TEST}" \
+    --helm-values "${values_file}" \
     --skip-seed-validation=kubermatic \
     --verbose \
     "${extra_flags[@]}"
@@ -379,11 +403,13 @@ expect_installer_rejects_skip_and_clean_combo() {
   echodate "Verifying installer rejects --skip-ingress-cleanup + --clean-nginx-lb combination..."
   TEST_NAME="Installer rejects --skip-ingress-cleanup + --clean-nginx-lb"
 
+  local values_file="${HELM_VALUES_FILE_UNDER_TEST_OVERRIDE:-${HELM_VALUES_FILE_UNDER_TEST}}"
+
   set +e
   ./_build/kubermatic-installer deploy kubermatic-master \
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
-    --helm-values "${HELM_VALUES_FILE_UNDER_TEST}" \
+    --helm-values "${values_file}" \
     --skip-seed-validation=kubermatic \
     --skip-ingress-cleanup \
     --clean-nginx-lb \
