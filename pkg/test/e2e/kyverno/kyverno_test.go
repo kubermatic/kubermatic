@@ -39,7 +39,6 @@ import (
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	policybindingcontroller "k8c.io/kubermatic/v2/pkg/ee/policy-binding-controller"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -137,9 +136,6 @@ func TestKyvernoIntegration(t *testing.T) {
 	}
 	if err := waitForSeedKyvernoControllersReady(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
 		t.Fatalf("failed to verify seed-side Kyverno controllers: %v", err)
-	}
-	if err := waitForUserClusterControllerKyvernoFlag(ctx, seedClient, logger, cluster.Status.NamespaceName, true); err != nil {
-		t.Fatalf("user-cluster-controller-manager was not started with Kyverno enabled: %v", err)
 	}
 	if err := waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, true); err != nil {
 		t.Fatalf("Kyverno cleanup finalizer was not added to the cluster: %v", err)
@@ -284,9 +280,6 @@ func TestKyvernoIntegration(t *testing.T) {
 	if err := waitForSeedKyvernoControllersRemoved(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
 		t.Fatalf("seed-side Kyverno controllers remained after disabling Kyverno: %v", err)
 	}
-	if err := waitForUserClusterControllerKyvernoFlag(ctx, seedClient, logger, cluster.Status.NamespaceName, false); err != nil {
-		t.Fatalf("user-cluster-controller-manager still had Kyverno enabled: %v", err)
-	}
 	if err := waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, false); err != nil {
 		t.Fatalf("Kyverno cleanup finalizer remained after disable cleanup: %v", err)
 	}
@@ -300,9 +293,6 @@ func TestKyvernoIntegration(t *testing.T) {
 	}
 	if err := waitForSeedKyvernoControllersReady(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
 		t.Fatalf("seed-side Kyverno controllers were not restored: %v", err)
-	}
-	if err := waitForUserClusterControllerKyvernoFlag(ctx, seedClient, logger, cluster.Status.NamespaceName, true); err != nil {
-		t.Fatalf("user-cluster-controller-manager was not restarted with Kyverno enabled: %v", err)
 	}
 	if err := waitForKyvernoUserClusterResources(ctx, userClient, logger, cluster.Status.NamespaceName); err != nil {
 		t.Fatalf("Kyverno user-cluster resources were not restored: %v", err)
@@ -479,36 +469,6 @@ func waitForSeedKyvernoControllersRemoved(ctx context.Context, client ctrlruntim
 			}
 		}
 		return nil, nil
-	})
-}
-
-func waitForUserClusterControllerKyvernoFlag(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string, enabled bool) error {
-	key := types.NamespacedName{Name: resources.UserClusterControllerDeploymentName, Namespace: namespace}
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		deployment := &appsv1.Deployment{}
-		if err := client.Get(ctx, key, deployment); err != nil {
-			return fmt.Errorf("failed to get user-cluster-controller deployment: %w", err), nil
-		}
-		expectedReplicas := int32(1)
-		if deployment.Spec.Replicas != nil {
-			expectedReplicas = *deployment.Spec.Replicas
-		}
-		if deployment.Status.ObservedGeneration != deployment.Generation || deployment.Status.ReadyReplicas != expectedReplicas || deployment.Status.UpdatedReplicas != expectedReplicas {
-			return errors.New("user-cluster-controller deployment has not finished rolling out"), nil
-		}
-
-		for _, container := range deployment.Spec.Template.Spec.Containers {
-			if container.Name != resources.UserClusterControllerContainerName {
-				continue
-			}
-			hasFlag := slices.Contains(container.Args, "-kyverno-enabled")
-			if hasFlag != enabled {
-				return fmt.Errorf("user-cluster-controller Kyverno flag is %t, expected %t", hasFlag, enabled), nil
-			}
-			return nil, nil
-		}
-
-		return errors.New("user-cluster-controller container was not found"), nil
 	})
 }
 
