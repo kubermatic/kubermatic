@@ -229,6 +229,14 @@ scrape_configs:
     replacement: $1
     target_label: instance
 
+  # drop etcd's gRPC server request-count metrics; not referenced by any
+  # alert/recording rule (only grpc_server_handling_seconds_bucket is, and
+  # newer etcd versions no longer even expose that histogram)
+  metric_relabel_configs:
+  - source_labels: [__name__]
+    regex: 'grpc_server_.*'
+    action: drop
+
 # scrape the cluster's control plane (apiserver, controller-manager, scheduler)
 - job_name: kubernetes-control-plane
   scheme: https
@@ -293,6 +301,10 @@ scrape_configs:
   - source_labels: [__name__]
     regex: 'workqueue_.*'
     action: drop
+  # instance (pod IP:port) is redundant with the pod label set above, since
+  # each pod maps to exactly one instance here
+  - action: labeldrop
+    regex: instance
 
 # scrape other cluster control plane components,
 # except kube-state-metrics (handled separately below), DNS resolver,
@@ -331,6 +343,12 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+
+  # instance (pod IP:port) is redundant with the pod label set above, since
+  # each pod maps to exactly one instance here
+  metric_relabel_configs:
+  - action: labeldrop
+    regex: instance
 
 # Dedicated, highly-filtered job for KSM
 - job_name: kube-state-metrics
@@ -409,6 +427,12 @@ scrape_configs:
     target_label: pod
   - target_label: job
     replacement: konnectivity-server
+
+  # instance (pod IP:port) is redundant with the pod label set above, since
+  # each pod maps to exactly one instance here
+  metric_relabel_configs:
+  - action: labeldrop
+    regex: instance
 {{- end }}
 
 #######################################################################
@@ -578,6 +602,12 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+
+  # instance (pod IP:port) is redundant with the pod label set above, since
+  # each pod maps to exactly one instance here
+  metric_relabel_configs:
+  - action: labeldrop
+    regex: instance
 {{- end }}
 {{- end }}
 {{- with .CustomScrapingConfigs -}}
