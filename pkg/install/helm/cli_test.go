@@ -144,3 +144,83 @@ func TestListReleasesUsesCorrectFlagsForHelmVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
+	testcases := []struct {
+		name         string
+		helmVersion  string
+		flags        []string
+		expectedArgs []string
+	}{
+		{
+			name:        "helm v3 does not enable server-side apply and keeps --atomic",
+			helmVersion: "3.19.0",
+			flags:       []string{"--atomic"},
+			expectedArgs: []string{
+				"helm",
+				"--namespace", "test-namespace",
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--values", "values.yaml",
+				"--atomic",
+				"release", "chart-dir",
+			},
+		},
+		{
+			name:        "helm v4.0 enables server-side apply and translates --atomic",
+			helmVersion: "4.0.0",
+			flags:       []string{"--atomic"},
+			expectedArgs: []string{
+				"helm",
+				"--namespace", "test-namespace",
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--server-side=true", "--force-conflicts",
+				"--values", "values.yaml",
+				"--rollback-on-failure",
+				"release", "chart-dir",
+			},
+		},
+		{
+			name:        "helm v4.1 enables server-side apply without extra flags",
+			helmVersion: "4.1.1",
+			flags:       nil,
+			expectedArgs: []string{
+				"helm",
+				"--namespace", "test-namespace",
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--server-side=true", "--force-conflicts",
+				"--values", "values.yaml",
+				"release", "chart-dir",
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			originalRunCmd := runCmd
+			t.Cleanup(func() {
+				runCmd = originalRunCmd
+			})
+
+			capturedArgs := []string{}
+			runCmd = func(cmd *exec.Cmd) ([]byte, error) {
+				capturedArgs = append([]string{}, cmd.Args...)
+				return nil, nil
+			}
+
+			c := &cli{
+				binary:     "helm",
+				kubeconfig: "test-kubeconfig",
+				timeout:    30 * time.Second,
+				version:    *semverlib.MustParse(tc.helmVersion),
+				logger:     logrus.New(),
+			}
+
+			err := c.InstallChart("test-namespace", "release", "chart-dir", "values.yaml", nil, tc.flags)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedArgs, capturedArgs)
+		})
+	}
+}
