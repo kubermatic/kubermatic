@@ -149,6 +149,9 @@ func TestKyvernoIntegration(t *testing.T) {
 	if err := kyvernov1.Install(userClient.Scheme()); err != nil {
 		t.Fatalf("failed to add Kyverno APIs to user cluster client scheme: %v", err)
 	}
+	if err := apiextensionsv1.AddToScheme(userClient.Scheme()); err != nil {
+		t.Fatalf("failed to add apiextensions APIs to user cluster client scheme: %v", err)
+	}
 
 	logger.Info("Waiting for Kyverno CRDs and user-cluster resources...")
 	if err := waitForKyvernoUserClusterResources(ctx, userClient, logger, cluster.Status.NamespaceName); err != nil {
