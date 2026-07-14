@@ -58,8 +58,6 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	IAPNamespace = "iap"
-
 	KubermaticOperatorChartName      = "kubermatic-operator"
 	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
 	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
@@ -618,11 +616,12 @@ func waitForGatewayObjectWithPollConfig(
 	return &gw, nil
 }
 
-// waitForGatewayAndHTTPRoutesReady waits unconditionally for the active Gateway to be
-// Programmed and for the kubermatic, Dex, and IAP HTTPRoutes to be Accepted by their
-// respective Gateways. The wait is skipped entirely under HeadlessInstallation. The
-// Dex stage is skipped when the Dex chart is in opt.SkipCharts. The IAP stage is
-// skipped when the iap namespace is not present on the cluster.
+// waitForGatewayAndHTTPRoutesReady waits unconditionally for the active Gateway to
+// be Programmed and for the kubermatic and Dex HTTPRoutes to be Accepted by their
+// respective Gateways. The wait is skipped entirely under HeadlessInstallation.
+// The Dex stage is skipped when the Dex chart is in opt.SkipCharts. IAP (installed
+// by the seed-mla stack into the monitoring namespace) is not the master installer's
+// responsibility and is handled by that stack instead.
 func waitForGatewayAndHTTPRoutesReady(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	return waitForGatewayAndHTTPRoutesReadyWithPollConfig(ctx, l, c, opt, defaultGatewayAPIReadinessPollConfig())
 }
@@ -689,53 +688,7 @@ func waitForGatewayAndHTTPRoutesReadyWithPollConfig(ctx context.Context, logger 
 		l.Info("Skipping Dex HTTPRoute readiness check because the Dex chart is skipped")
 	}
 
-	if err := waitForIAPHTTPRoutesReady(ctx, l, c, pollConfig); err != nil {
-		return err
-	}
-
 	logger.Info("✅ Gateway and HTTPRoutes ready.")
-	return nil
-}
-
-func waitForIAPHTTPRoutesReady(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, pollConfig gatewayAPIReadinessPollConfig) error {
-	exists, err := namespaceExists(ctx, c, IAPNamespace)
-	if err != nil {
-		l.Warnf("Failed to probe for %s namespace; cannot verify IAP HTTPRoute readiness.", IAPNamespace)
-		return err
-	}
-	if !exists {
-		l.Debug("IAP namespace not present, skipping IAP HTTPRoute readiness checks")
-		return nil
-	}
-
-	routes := &gatewayapiv1.HTTPRouteList{}
-	if err := c.List(ctx, routes, ctrlruntimeclient.InNamespace(IAPNamespace)); err != nil {
-		l.Warnf("Failed to list HTTPRoutes in %s namespace; cannot verify IAP HTTPRoute readiness.", IAPNamespace)
-		return fmt.Errorf("failed to list HTTPRoutes in %s namespace: %w", IAPNamespace, err)
-	}
-	if len(routes.Items) == 0 {
-		l.Debug("No IAP HTTPRoutes found, skipping IAP HTTPRoute readiness checks")
-		return nil
-	}
-
-	for i := range routes.Items {
-		route := &routes.Items[i]
-		routeKey := types.NamespacedName{Namespace: route.Namespace, Name: route.Name}
-		if len(route.Spec.ParentRefs) == 0 {
-			l.WithField("httproute", routeKey.String()).Warn("IAP HTTPRoute has no parentRefs; cannot determine target Gateway.")
-			return fmt.Errorf("IAP HTTPRoute %s has no parentRefs", routeKey.String())
-		}
-		for _, parent := range route.Spec.ParentRefs {
-			gw := types.NamespacedName{Namespace: route.Namespace, Name: string(parent.Name)}
-			if parent.Namespace != nil && *parent.Namespace != "" {
-				gw.Namespace = string(*parent.Namespace)
-			}
-			if err := waitForHTTPRouteAcceptedByGateway(ctx, l, c, routeKey, gw, pollConfig); err != nil {
-				l.WithField("httproute", routeKey.String()).WithField("gateway", gw.String()).Warn("IAP HTTPRoute did not become accepted by the Gateway.")
-				return err
-			}
-		}
-	}
 	return nil
 }
 
@@ -769,25 +722,6 @@ func cleanupLegacyIngresses(ctx context.Context, l *logrus.Entry, c ctrlruntimec
 		}
 	}
 
-	iapExists, err := namespaceExists(ctx, c, IAPNamespace)
-	if err != nil {
-		return err
-	}
-	if !iapExists {
-		return nil
-	}
-
-	list := &networkingv1.IngressList{}
-	if err := c.List(ctx, list, ctrlruntimeclient.InNamespace(IAPNamespace)); err != nil {
-		return fmt.Errorf("failed to list Ingresses in %s namespace: %w", IAPNamespace, err)
-	}
-	for i := range list.Items {
-		ing := &list.Items[i]
-		if err := c.Delete(ctx, ing); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete Ingress %s/%s: %w", ing.Namespace, ing.Name, err)
-		}
-		l.WithField("ingress", fmt.Sprintf("%s/%s", ing.Namespace, ing.Name)).Info("Deleted legacy IAP Ingress")
-	}
 	return nil
 }
 
@@ -888,6 +822,10 @@ func httpRouteGatewayAcceptanceStatus(route *gatewayapiv1.HTTPRoute, gatewayName
 // and deletes its namespace when --clean-nginx-lb is set. Otherwise, when the namespace
 // still exists, it logs a warning so the operator knows to remove it manually.
 func cleanupLegacyNginxIngress(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if opt.KubermaticConfiguration != nil && opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		logger.Debug("Headless installation requested, skipping legacy nginx-ingress cleanup")
+		return nil
+	}
 	exists, err := common.NginxIngressNamespaceExists(ctx, kubeClient)
 	if err != nil {
 		return err
