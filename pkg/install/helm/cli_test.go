@@ -167,7 +167,7 @@ func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
 			},
 		},
 		{
-			name:        "helm v4.0 enables server-side apply and translates --atomic",
+			name:        "helm v4.0 forces conflict resolution and translates --atomic",
 			helmVersion: "4.0.0",
 			flags:       []string{"--atomic"},
 			expectedArgs: []string{
@@ -175,14 +175,14 @@ func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
 				"--namespace", "test-namespace",
 				"upgrade", "--install",
 				"--timeout", "30s",
-				"--server-side=true", "--force-conflicts",
+				"--force-conflicts",
 				"--values", "values.yaml",
 				"--rollback-on-failure",
 				"release", "chart-dir",
 			},
 		},
 		{
-			name:        "helm v4.1 enables server-side apply without extra flags",
+			name:        "helm v4.1 forces conflict resolution without extra flags",
 			helmVersion: "4.1.1",
 			flags:       nil,
 			expectedArgs: []string{
@@ -190,7 +190,7 @@ func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
 				"--namespace", "test-namespace",
 				"upgrade", "--install",
 				"--timeout", "30s",
-				"--server-side=true", "--force-conflicts",
+				"--force-conflicts",
 				"--values", "values.yaml",
 				"release", "chart-dir",
 			},
