@@ -178,13 +178,16 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 	}
 
 	if c.version.Major() >= 4 {
-		// Helm 4 defaults --server-side to "auto", which follows the apply method of the
-		// previous release revision. KKP components legitimately co-own fields of some
-		// chart-managed objects (e.g. the operator reconciles .dockerconfigjson of the
-		// dockercfg secret), so a plain server-side apply upgrade fails with field
-		// conflicts. Force SSA and conflict resolution so the installer always converges
-		// on the chart-defined state.
-		command = append(command, "--server-side=true", "--force-conflicts")
+		// Helm 4 defaults --server-side to "auto" and already applies chart objects
+		// server-side. KKP components legitimately co-own fields of some chart-managed
+		// objects (e.g. the operator reconciles .dockerconfigjson of the dockercfg
+		// secret), so a plain server-side apply upgrade fails with field conflicts.
+		// --force-conflicts resolves those in helm's favor without forcing the apply
+		// method to "true", which would rewrite the full object body of every managed
+		// resource on every deploy and overwhelm loaded apiservers (e.g. the large
+		// user-cluster MLA stack). The conflict resolution is driven by --force-conflicts,
+		// not by forcing --server-side=true.
+		command = append(command, "--force-conflicts")
 	}
 
 	if valuesFile != "" {
