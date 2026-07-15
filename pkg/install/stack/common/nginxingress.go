@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/util"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,8 +51,11 @@ func NginxIngressNamespaceExists(ctx context.Context, kubeClient ctrlruntimeclie
 }
 
 // UninstallNginxIngressController removes the legacy nginx-ingress-controller Helm release
-// and deletes its namespace. Both steps are best-effort and skipped silently when the
-// release or namespace no longer exists.
+// and deletes its namespace. Both steps are idempotent: the release step is skipped when
+// CheckHelmRelease reports the release is no longer registered (matching the seed-mla
+// convention for release teardown), and the namespace step is skipped when the namespace
+// is already gone. This lets a retry recover from a half-completed prior --clean-nginx-lb
+// run where the release was removed but the namespace or its LoadBalancer Service lingered.
 func UninstallNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client) error {
 	exists, err := NginxIngressNamespaceExists(ctx, kubeClient)
 	if err != nil {
@@ -62,9 +66,17 @@ func UninstallNginxIngressController(ctx context.Context, logger *logrus.Entry, 
 		return nil
 	}
 
-	logger.Infof("🧹 Uninstalling legacy %s Helm release…", NginxIngressControllerChartName)
-	if err := helmClient.UninstallRelease(NginxIngressControllerNamespace, NginxIngressControllerReleaseName); err != nil {
-		return fmt.Errorf("failed to uninstall %s Helm release: %w", NginxIngressControllerReleaseName, err)
+	release, err := util.CheckHelmRelease(ctx, logger, helmClient, NginxIngressControllerNamespace, NginxIngressControllerReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check for %s Helm release: %w", NginxIngressControllerReleaseName, err)
+	}
+	if release == nil {
+		logger.Infof("⭕ %s Helm release not registered; skipping helm uninstall and proceeding to namespace cleanup.", NginxIngressControllerReleaseName)
+	} else {
+		logger.Infof("🧹 Uninstalling legacy %s Helm release…", NginxIngressControllerChartName)
+		if err := helmClient.UninstallRelease(NginxIngressControllerNamespace, NginxIngressControllerReleaseName); err != nil {
+			return fmt.Errorf("failed to uninstall %s Helm release: %w", NginxIngressControllerReleaseName, err)
+		}
 	}
 
 	ns := &corev1.Namespace{}

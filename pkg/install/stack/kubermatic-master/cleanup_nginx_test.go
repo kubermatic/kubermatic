@@ -34,6 +34,7 @@ import (
 )
 
 type fakeHelmClient struct {
+	releaseExists  bool
 	uninstallCalls []struct{ namespace, name string }
 }
 
@@ -41,8 +42,13 @@ func (f *fakeHelmClient) BuildChartDependencies(string, []string) error { return
 func (f *fakeHelmClient) InstallChart(string, string, string, string, map[string]string, []string) error {
 	return nil
 }
-func (f *fakeHelmClient) GetRelease(string, string) (*helm.Release, error) { return nil, nil }
-func (f *fakeHelmClient) ListReleases(string) ([]helm.Release, error)      { return nil, nil }
+func (f *fakeHelmClient) GetRelease(namespace, name string) (*helm.Release, error) {
+	if !f.releaseExists {
+		return nil, nil
+	}
+	return &helm.Release{Name: name, Namespace: namespace, Status: "deployed"}, nil
+}
+func (f *fakeHelmClient) ListReleases(string) ([]helm.Release, error) { return nil, nil }
 func (f *fakeHelmClient) UninstallRelease(namespace, name string) error {
 	f.uninstallCalls = append(f.uninstallCalls, struct{ namespace, name string }{namespace, name})
 	return nil
@@ -57,7 +63,7 @@ func nginxNamespaceObject() *corev1.Namespace {
 }
 
 func TestCleanupLegacyNginxIngressFlagSetUninstallsRelease(t *testing.T) {
-	helmClient := &fakeHelmClient{}
+	helmClient := &fakeHelmClient{releaseExists: true}
 	kubeClient := fake.NewClientBuilder().WithObjects(nginxNamespaceObject()).Build()
 
 	opt := stack.DeployOptions{CleanNginxLB: true}

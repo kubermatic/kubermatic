@@ -221,7 +221,6 @@ func TestWaitForGatewayAndHTTPRoutesReadyFailsOnUnacceptedDexRoute(t *testing.T)
 	}
 }
 
-
 func assertIngressGone(t *testing.T, c ctrlruntimeclient.Client, key types.NamespacedName) {
 	t.Helper()
 	ing := &networkingv1.Ingress{}

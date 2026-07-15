@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
-	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -738,17 +737,6 @@ func deleteIngressByName(ctx context.Context, l *logrus.Entry, c ctrlruntimeclie
 	}
 	l.WithField("ingress", name.String()).Info("Deleted legacy Ingress")
 	return nil
-}
-
-func namespaceExists(ctx context.Context, c ctrlruntimeclient.Client, name string) (bool, error) {
-	ns := &corev1.Namespace{}
-	if err := c.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to probe for namespace %s: %w", name, err)
-	}
-	return true, nil
 }
 
 func waitForHTTPRouteAcceptedByGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, routeName, gatewayName types.NamespacedName, pollConfig gatewayAPIReadinessPollConfig) error {

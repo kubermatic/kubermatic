@@ -34,8 +34,12 @@ import (
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// fakeHelmClient is a minimal helm.Client that records UninstallRelease invocations.
+// fakeHelmClient is a minimal helm.Client that records UninstallRelease invocations
+// and returns a stub Release from GetRelease when releaseExists is true. Setting
+// releaseExists to false models a partial prior --clean-nginx-lb run in which the
+// release was already uninstalled but the namespace lingered.
 type fakeHelmClient struct {
+	releaseExists  bool
 	uninstallCalls []struct{ namespace, name string }
 }
 
@@ -43,8 +47,13 @@ func (f *fakeHelmClient) BuildChartDependencies(string, []string) error { return
 func (f *fakeHelmClient) InstallChart(string, string, string, string, map[string]string, []string) error {
 	return nil
 }
-func (f *fakeHelmClient) GetRelease(string, string) (*helm.Release, error) { return nil, nil }
-func (f *fakeHelmClient) ListReleases(string) ([]helm.Release, error)      { return nil, nil }
+func (f *fakeHelmClient) GetRelease(namespace, name string) (*helm.Release, error) {
+	if !f.releaseExists {
+		return nil, nil
+	}
+	return &helm.Release{Name: name, Namespace: namespace, Status: "deployed"}, nil
+}
+func (f *fakeHelmClient) ListReleases(string) ([]helm.Release, error) { return nil, nil }
 func (f *fakeHelmClient) UninstallRelease(namespace, name string) error {
 	f.uninstallCalls = append(f.uninstallCalls, struct{ namespace, name string }{namespace, name})
 	return nil
@@ -98,7 +107,7 @@ func TestUninstallNginxIngressControllerNoopWhenNamespaceAbsent(t *testing.T) {
 
 func TestUninstallNginxIngressControllerRemovesReleaseAndNamespace(t *testing.T) {
 	ctx := context.Background()
-	helmClient := &fakeHelmClient{}
+	helmClient := &fakeHelmClient{releaseExists: true}
 	kubeClient := newFakeClient(nginxNamespace())
 
 	if err := UninstallNginxIngressController(ctx, logrus.NewEntry(logrus.New()), kubeClient, helmClient); err != nil {
@@ -120,6 +129,35 @@ func TestUninstallNginxIngressControllerRemovesReleaseAndNamespace(t *testing.T)
 		// gone or in a terminating state with a deletion timestamp.
 		if ns.DeletionTimestamp == nil {
 			t.Fatalf("expected namespace to be deleted, got live object %+v", ns)
+		}
+	} else if !apierrors.IsNotFound(err) {
+		t.Fatalf("unexpected error checking namespace: %v", err)
+	}
+}
+
+// TestUninstallNginxIngressControllerRemovesNamespaceWhenReleaseAlreadyGone covers
+// the retry-after-partial-cleanup case: a previous --clean-nginx-lb run (or a manual
+// `helm uninstall`) removed the release, but the namespace or its LoadBalancer Service
+// stuck around. The next run must skip the helm uninstall (release not registered) and
+// still delete the namespace.
+func TestUninstallNginxIngressControllerRemovesNamespaceWhenReleaseAlreadyGone(t *testing.T) {
+	ctx := context.Background()
+	helmClient := &fakeHelmClient{releaseExists: false}
+	kubeClient := newFakeClient(nginxNamespace())
+
+	if err := UninstallNginxIngressController(ctx, logrus.NewEntry(logrus.New()), kubeClient, helmClient); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := len(helmClient.uninstallCalls); got != 0 {
+		t.Fatalf("expected no helm uninstall call when release is not registered, got %d", got)
+	}
+
+	ns := &corev1.Namespace{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: NginxIngressControllerNamespace}, ns)
+	if err == nil {
+		if ns.DeletionTimestamp == nil {
+			t.Fatalf("expected lingering namespace to be deleted, got live object %+v", ns)
 		}
 	} else if !apierrors.IsNotFound(err) {
 		t.Fatalf("unexpected error checking namespace: %v", err)
