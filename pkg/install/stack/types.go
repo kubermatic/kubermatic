@@ -54,9 +54,14 @@ type DeployOptions struct {
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
-	EnableNginxIngressMigration        bool
-	DisableTelemetry                   bool
-	DisableDependencyUpdate            bool
+	// EnableNginxIngressMigration was used by the legacy nginx-ingress upgrade path.
+	//
+	// Deprecated: As of KKP 2.31 the nginx-ingress-controller deployment has been removed
+	// in favour of Gateway API; this field is no longer read and is retained only so the
+	// matching CLI flag still parses for backwards compatibility.
+	EnableNginxIngressMigration bool
+	DisableTelemetry            bool
+	DisableDependencyUpdate     bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -70,13 +75,26 @@ type DeployOptions struct {
 
 	DeployDefaultPolicyTemplateCatalog bool
 
-	// MigrateToGatewayAPI indicates whether to deploy Envoy Gateway or ingress-controller.
-	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	// MigrateToGatewayAPI used to gate the Gateway API deployment path in 2.30.
+	//
+	// Deprecated: As of KKP 2.31 Gateway API is the enforced default and the
+	// nginx-ingress-controller path has been removed; this field is always treated as
+	// true regardless of its value and is retained only for backwards compatibility.
 	MigrateToGatewayAPI bool
-	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
-	// When false (default), old resources are cleaned up automatically during migration.
-	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	// SkipIngressCleanup skips the legacy Ingress cleanup step during an upgrade to
+	// KKP 2.31. When true, the installer leaves any pre-existing nginx-ingress Ingress
+	// objects in place so nginx can continue to serve traffic while the operator flips
+	// DNS to the new Envoy Gateway. Cleanup is then expected to happen on a deliberate
+	// later run (with SkipIngressCleanup = false and, optionally, CleanNginxLB = true)
+	// once DNS is confirmed on the new Gateway. It is invalid to set both
+	// SkipIngressCleanup and CleanNginxLB at the same time — validation rejects that
+	// combination.
 	SkipIngressCleanup bool
+	// CleanNginxLB controls cleanup of the legacy nginx-ingress-controller Helm release.
+	// When true, the installer uninstalls the release and deletes its namespace after the
+	// Gateway API stack is healthy. When false (default), the installer leaves the release
+	// in place and logs a warning instructing the operator to remove it manually.
+	CleanNginxLB bool
 }
 
 type Stack interface {

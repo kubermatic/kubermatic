@@ -237,6 +237,7 @@ spec:
   # FeatureGates are used to optionally enable certain features.
   featureGates:
     EtcdLauncher: true
+    HTTPRouteGatewaySync: true
   # ImagePullSecret is used to authenticate against Docker registries.
   imagePullSecret: ""
   # Ingress contains settings for making the API and UI accessible remotely.
