@@ -81,14 +81,16 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				return nil, fmt.Errorf("failed to parse etcd image tag: %w", err)
 			}
 
-			etcdConstraint, err := semverlib.NewConstraint(">= 3.5.0, < 3.6.0")
+			etcdConstraint, err := semverlib.NewConstraint(">= 3.5.0, < 3.7.0")
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse etcd constraint: %w", err)
 			}
 
-			// enable initial and periodic etcd data corruption checks by default if running etcd 3.5.
+			// enable initial and periodic etcd data corruption checks by default if running etcd 3.5 or 3.6.
 			// The etcd team has recommended to enable this feature for etcd 3.5 due to data consistency issues.
 			// Reference: https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ
+			// Note: the --experimental-* corruption check flags are deprecated (but still functional) in
+			// etcd 3.6 and will only be removed in etcd 3.7.
 			if ok := etcdConstraint.Check(imageTagVersion); ok {
 				enableDataCorruptionChecks = true
 			}
@@ -427,17 +429,14 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
 	// with the apiserver.
-	// As of now, all supported Kubernetes versions use the same etcd release, but the
-	// comment above is left as a reminder in case future versions switches will be needed
-	// again.
-	//
 	// See the SupportedEtcdVersion variable in
 	// https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/constants/constants.go
 	// for an overview.
 
-	// if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
-	// 	return "v3.4.3"
-	// }
+	// Kubernetes 1.36 requires etcd 3.6; older versions keep using etcd 3.5.
+	if c.Status.Versions.Apiserver.Semver() != nil && c.Status.Versions.Apiserver.Semver().Minor() >= 36 {
+		return "3.6.12"
+	}
 
 	return "3.5.21"
 }
