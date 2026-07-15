@@ -511,6 +511,19 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		configCopy.Spec.FeatureGates[features.EtcdLauncher] = true
 	}
 
+	// Gateway API is the enforced default as of KKP 2.31. cert-manager requires
+	// the httproute-gateway-sync controller to project HTTPRoute hostnames onto
+	// Gateway listeners so it can provision Certificates. Default the feature
+	// gate to true so cert-manager works out of the box; users who explicitly
+	// set the gate to false in their KubermaticConfiguration are respected.
+	if _, httpRouteGatewaySyncSet := configCopy.Spec.FeatureGates[features.HTTPRouteGatewaySync]; !httpRouteGatewaySyncSet {
+		if configCopy.Spec.FeatureGates == nil {
+			configCopy.Spec.FeatureGates = make(map[string]bool)
+		}
+
+		configCopy.Spec.FeatureGates[features.HTTPRouteGatewaySync] = true
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultDashboardImage, "api.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}

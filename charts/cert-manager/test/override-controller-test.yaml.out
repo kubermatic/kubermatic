@@ -47,6 +47,26 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.20.3
 ---
+# Source: cert-manager/charts/cert-manager/templates/controller-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-manager
+  namespace: default
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: "controller"
+    app.kubernetes.io/version: "v1.20.3"
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: cert-manager-v1.20.3
+data:
+  config.yaml: |
+    apiVersion: controller.config.cert-manager.io/v1alpha1
+    enableGatewayAPI: true
+    kind: ControllerConfiguration
+---
 # Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1073,12 +1093,18 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - name: config
+          configMap:
+            name: cert-manager
+        
       containers:
         - name: cert-manager-controller
           image: "quay.io/jetstack/cert-manager-controller:v1.20.3"
           imagePullPolicy: IfNotPresent
           args:
           - --v=2
+          - --config=/var/cert-manager/config/config.yaml
           - --cluster-resource-namespace=$(POD_NAMESPACE)
           - --leader-election-namespace=kube-system
           - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.20.3
@@ -1096,6 +1122,9 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /var/cert-manager/config
           env:
           - name: POD_NAMESPACE
             valueFrom:
