@@ -251,19 +251,17 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 						FailureThreshold:    3,
 						InitialDelaySeconds: 5,
 						ProbeHandler: corev1.ProbeHandler{
-							Exec: &corev1.ExecAction{
-								Command: []string{
-									"/usr/local/bin/etcdctl",
-									"--command-timeout", "10s",
-									"endpoint", "health",
-								},
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/readyz",
+								Port:   intstr.FromInt(2378),
+								Scheme: corev1.URISchemeHTTP,
 							},
 						},
 					},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/health?exclude=NOSPACE&serializable=true",
+								Path:   "/livez",
 								Port:   intstr.FromInt(2378),
 								Scheme: corev1.URISchemeHTTP,
 							},
@@ -279,7 +277,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 					StartupProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/health?serializable=false",
+								Path:   "/readyz",
 								Port:   intstr.FromInt(2378),
 								Scheme: corev1.URISchemeHTTP,
 							},
