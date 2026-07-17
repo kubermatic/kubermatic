@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ca-bundle
-  labels:
-    app.kubernetes.io/name: kubermatic-operator
-data:
-  ca-bundle.pem: |
-{{ .Files.Get "static/ca-bundle.pem" | indent 4 }}
-{{- with .Values.caBundle.additionalCerts }}
-{{ . | indent 4 }}
-{{- end }}
+# Test that custom CA certificates are appended to the built-in bundle.
+caBundle:
+  additionalCerts: |
+    -----BEGIN CERTIFICATE-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtest/custom/ca/cert==
+    -----END CERTIFICATE-----
