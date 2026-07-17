@@ -70,7 +70,7 @@ func Deploy(
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountReconcilerFactory{
 		nodeportproxy.ServiceAccountReconciler(cfg),
 	}, namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAcconts: %w", err)
+		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, []reconciling.NamedRoleReconcilerFactory{
