@@ -40,7 +40,9 @@ import (
 )
 
 // getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
-func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (images []string, err error) {
+func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (*Collection, error) {
+	collection := NewCollection()
+
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelb.DeploymentReconciler(templateData),
 		velero.DeploymentReconciler(templateData),
@@ -49,29 +51,29 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 	deploymentReconcilers = append(deploymentReconcilers, kyverno.GetDeploymentReconcilers(templateData)...)
 
 	for _, createFunc := range deploymentReconcilers {
-		_, dpCreator := createFunc()
+		name, dpCreator := createFunc()
 		deployment, err := dpCreator(&appsv1.Deployment{})
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
+		collection.InsertAll(getImagesFromPodSpec(deployment.Spec.Template.Spec), RefTypeImage, "reconciler:"+name)
 	}
 
-	_, dsCreator := velero.DaemonSetReconciler(templateData)()
+	dsName, dsCreator := velero.DaemonSetReconciler(templateData)()
 	daemonset, err := dsCreator(&appsv1.DaemonSet{})
 	if err != nil {
 		return nil, err
 	}
-	images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
+	collection.InsertAll(getImagesFromPodSpec(daemonset.Spec.Template.Spec), RefTypeImage, "reconciler:"+dsName)
 
-	_, stsCreator := metering.MeteringPrometheusReconciler(templateData.RewriteImage, templateData.Seed())()
+	stsName, stsCreator := metering.MeteringPrometheusReconciler(templateData.RewriteImage, templateData.Seed())()
 	statefulset, err := stsCreator(&appsv1.StatefulSet{})
 	if err != nil {
 		return nil, err
 	}
-	images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
+	collection.InsertAll(getImagesFromPodSpec(statefulset.Spec.Template.Spec), RefTypeImage, "reconciler:"+stsName)
 
-	return images, err
+	return collection, nil
 }
 
 func DefaultAppsHelmCharts(

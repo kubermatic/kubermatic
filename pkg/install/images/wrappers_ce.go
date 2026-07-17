@@ -30,9 +30,9 @@ import (
 )
 
 // getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
-// Since this is the Community Edition, this function is no-op and would always return nil,nil.
-func getAdditionalImagesFromReconcilers(_ *resources.TemplateData) ([]string, error) {
-	return nil, nil
+// Since this is the Community Edition, this function is no-op and returns an empty collection.
+func getAdditionalImagesFromReconcilers(_ *resources.TemplateData) (*Collection, error) {
+	return NewCollection(), nil
 }
 
 func DefaultAppsHelmCharts(
