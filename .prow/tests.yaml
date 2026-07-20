@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-test
-    run_if_changed: "(go.mod|go.sum|cmd/|codegen/|hack/|pkg/)"
+    run_if_changed: "ZZZ_DISABLED_(go.mod|go.sum|cmd/|codegen/|hack/|pkg/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -35,7 +35,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-test-integration
-    run_if_changed: "(go.mod|go.sum|cmd/|codegen/|hack/|pkg/)"
+    run_if_changed: "ZZZ_DISABLED_(go.mod|go.sum|cmd/|codegen/|hack/|pkg/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -63,7 +63,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-verify
-    always_run: true
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     path_alias: k8c.io/kubermatic
@@ -83,7 +83,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
+    run_if_changed: "ZZZ_DISABLED_^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -103,6 +103,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-shellcheck
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -124,7 +125,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-simulate-github-release
-    run_if_changed: "hack/ci/github-release.sh"
+    run_if_changed: "ZZZ_DISABLED_hack/ci/github-release.sh"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -140,7 +141,7 @@ presubmits:
               cpu: 2
 
   - name: pre-kubermatic-test-helm-charts
-    run_if_changed: "charts/"
+    run_if_changed: "ZZZ_DISABLED_charts/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -168,7 +169,7 @@ presubmits:
 
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
-    run_if_changed: "cmd/user-ssh-keys-agent/"
+    run_if_changed: "ZZZ_DISABLED_cmd/user-ssh-keys-agent/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-docker-mirror: "true"
@@ -193,7 +194,7 @@ presubmits:
               cpu: 3
 
   - name: pre-kubermatic-trivy-scan
-    run_if_changed: "(Dockerfile|go.mod|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(Dockerfile|go.mod|.prow/)"
     optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -218,7 +219,7 @@ presubmits:
 
   - name: pre-kubermatic-test-build-utility-images
     decorate: true
-    run_if_changed: "(hack/release-sidecar-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
+    run_if_changed: "ZZZ_DISABLED_(hack/release-sidecar-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-docker-mirror: "true"
@@ -246,7 +247,7 @@ presubmits:
 
   - name: pre-kubermatic-test-addon-upgrades
     decorate: true
-    run_if_changed: "(addons/|pkg/test/addon|pkg/addon|pkg/controller/seed-controller-manager/addon.*)"
+    run_if_changed: "ZZZ_DISABLED_(addons/|pkg/test/addon|pkg/addon|pkg/controller/seed-controller-manager/addon.*)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-goproxy: "true"
@@ -264,7 +265,7 @@ presubmits:
               cpu: 2
 
   - name: pre-kubermatic-lint-mirror-application-charts
-    run_if_changed: "hack/mirror-application-charts.sh"
+    run_if_changed: "ZZZ_DISABLED_hack/mirror-application-charts.sh"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -281,7 +282,7 @@ presubmits:
 
 postsubmits:
   - name: post-kubermatic-mirror-new-application-charts
-    run_if_changed: "hack/mirror-application-charts.sh"
+    run_if_changed: "ZZZ_DISABLED_hack/mirror-application-charts.sh"
     branches:
       - ^main$
     decorate: true

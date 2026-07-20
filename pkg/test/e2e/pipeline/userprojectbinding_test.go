@@ -44,7 +44,7 @@ const (
 	// userResolvedAnnotation mirrors the unexported literal in the UPB controller
 	// (pkg/controller/master-controller-manager/user-project-binding/controller.go).
 	// It is not exported, so the test hardcodes the same string.
-	// TODO (burak) export this
+	// TODO (burak): export this.
 	userResolvedAnnotation = "userprojectbinding.kubermatic.k8c.io/user-resolved"
 
 	testProjectName = "pipeline-upb"
@@ -63,12 +63,18 @@ const (
 func TestUserProjectBinding(t *testing.T) {
 	client := getClient(t)
 
-	// GenProject names the object "<name>-ID"; that name is the projectID the
-	// binding and RBAC aggregator key off, so thread it through everywhere.
-	projectID := fmt.Sprintf("%s-ID", testProjectName)
+	// the project object name is the projectID the binding and RBAC aggregator key
+	// off, so thread one lowercase value through everywhere. It must be a valid
+	// RFC 1123 subdomain (GenProject's default "<name>-ID" suffix is uppercase and
+	// the apiserver rejects it), and every derived RBAC name must stay valid too.
+	projectID := testProjectName
 	// GenBinding sets Spec.Group = "owners-<projectID>" and expects the bare prefix.
 	ownerGroup := rbac.GenerateActualGroupNameFor(projectID, rbac.OwnerGroupNamePrefix)
 	binding := generator.GenBinding(projectID, testUserEmail, rbac.OwnerGroupNamePrefix)
+	// GenBinding names the object "<projectID>-<email>-owners"; the email's "@" and "."
+	// are not valid in an RFC 1123 resource name, so override it with a valid name.
+	// Spec (UserEmail/ProjectID/Group) stays as GenBinding set it.
+	binding.Name = fmt.Sprintf("%s-owners", projectID)
 	user := generator.GenUser("", testUserName, testUserEmail)
 
 	feature := features.New("UserProjectBinding pending-delete").
@@ -78,6 +84,7 @@ func TestUserProjectBinding(t *testing.T) {
 			assertCleanBaseline(ctx, g, client, projectID, binding.Name, user.Name)
 
 			project := generator.GenProject(testProjectName, kubermaticv1.ProjectActive, generator.DefaultCreationTimestamp())
+			project.Name = projectID
 			g.Expect(client.Create(ctx, project)).To(gomega.Succeed(), "failed to create project")
 
 			g.Eventually(func(g gomega.Gomega) {

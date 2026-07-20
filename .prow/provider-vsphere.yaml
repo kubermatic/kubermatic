@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.33
     decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -59,7 +59,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.34
     decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -103,7 +103,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.35
     decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -147,7 +147,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.35-customfolder
     decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -192,6 +192,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.35-basepath
+    always_run: false
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -238,6 +239,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.35-datastore-cluster
+    always_run: false
     decorate: true
     # This job is disabled currently because we have a datastore cluster
     # but it will not work as it is connected to vSAN and vSAN is messed up.

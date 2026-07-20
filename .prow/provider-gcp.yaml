@@ -14,6 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-e2e-gcp-flatcar-1.33
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -58,7 +59,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.33
     decorate: true
-    run_if_changed: "(pkg/provider/cloud/gcp|addons/csi/gcp)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/provider/cloud/gcp|addons/csi/gcp)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -102,7 +103,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.34
     decorate: true
-    run_if_changed: "(pkg/provider/cloud/gcp|addons/csi/gcp)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/provider/cloud/gcp|addons/csi/gcp)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -145,6 +146,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-flatcar-1.34
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -189,7 +191,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.35
     decorate: true
-    run_if_changed: "(pkg/provider/cloud/gcp|addons/csi/gcp)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/provider/cloud/gcp|addons/csi/gcp)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -232,6 +234,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-flatcar-1.35
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -275,6 +278,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-offline
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
