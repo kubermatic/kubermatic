@@ -7,15 +7,21 @@ feature test here correctly. Read it fully before writing any test in this direc
 
 A single e2e test package driven by `sigs.k8s.io/e2e-framework`. It attaches to an
 already-running KKP and asserts reconciled state through a controller-runtime client. It
-does NOT provision KKP, kind, or a cluster — the run script `hack/ci/run-pipeline-e2e-tests.sh`
-stands up kind + KKP once, then runs this package. One package holds many feature tests;
-they share the same live KKP.
+does NOT provision KKP or kind — the run script `hack/ci/run-pipeline-e2e-tests.sh`
+stands up kind + KKP once, then runs this package. By default the package is seed-only (no
+user cluster). When run with `-with-user-cluster`, `TestMain` additionally provisions one
+shared BYO base user cluster for Tier B/C1 features and tears it down at suite end. One
+package holds many feature tests; they share the same live KKP (and, if enabled, the same
+base cluster).
 
 Files:
 - `main_test.go` — `TestMain`, flag registration, and the suite-level health gate. Shared
   by every feature. Do not add feature logic here.
-- `<feature>_test.go` — one file per feature (e.g. `userprojectbinding_test.go`). This is
-  what you add.
+- `cluster_fixture_test.go` — the shared BYO base cluster for Tier B/C1 features (eager,
+  `-with-user-cluster`-gated). Read it once if you write a user-cluster test; leave it
+  alone otherwise.
+- `<feature>_test.go` — one file per feature (e.g. `userprojectbinding_test.go`,
+  `cilium_nodelocaldns_test.go`). This is what you add.
 
 ## Scope rules (read before choosing what to test)
 
@@ -115,6 +121,47 @@ func TestMyFeature(t *testing.T) {
 }
 ```
 
+### Tier C1 recipe (user-cluster apiserver objects)
+
+A Tier C1 feature asserts on an object the seed control plane reconciles *into the
+user-cluster apiserver* (no worker Nodes needed). It does NOT use Setup/Teardown for its
+work — it grabs the shared base cluster and does everything in one Assess closure:
+
+```go
+func TestMyC1Feature(t *testing.T) {
+	uc := requireUserCluster(t) // fails fast if -with-user-cluster was not set
+
+	feature := features.New("MyC1Feature does X").
+		Assess("reconciles into the user cluster", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			g := gomega.NewWithT(t)
+			g.Eventually(func(g gomega.Gomega) {
+				obj := &appskubermaticv1.SomeKind{}
+				g.Expect(uc.user.Get(ctx, types.NamespacedName{Name: "...", Namespace: "..."}, obj)).To(gomega.Succeed())
+				// assert on the reconciled object
+			}).WithContext(ctx).WithTimeout(5 * time.Minute).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			return ctx
+		}).
+		Feature()
+
+	testEnv.Test(t, feature)
+}
+```
+
+Use `uc.seed` (seed client), `uc.user` (user-cluster client), and `uc.cluster` (the base
+`Cluster` CR). Model your test on `cilium_nodelocaldns_test.go`.
+
+**Immutable-field caveat (learned the hard way):** many `Cluster.Spec` fields are immutable
+after creation (the cluster-validation webhook rejects changes with "field is immutable" —
+e.g. `clusterNetwork.nodeLocalDNSCacheEnabled`). You cannot toggle them on the shared warm
+cluster. Either assert against the cluster's created/default state, or restrict mutations to
+fields that are actually mutable. If your test needs an immutable field in a specific state,
+that state must be set at cluster creation in `cluster_fixture_test.go` (affects every C1
+test) or you need a dedicated cluster — not the shared one.
+
+**Read-path caveat:** KKP reconcilers that write Helm values often store them in
+`Spec.ValuesBlock` (YAML) and reset `Spec.Values` to `{}`. Read via `app.Spec.GetParsedValues()`,
+not `Spec.Values`, or you get an always-empty map. See `cilium_nodelocaldns_test.go`.
+
 ## Hard rules
 
 1. **Build tag.** Every file starts with `//go:build e2e` above the header. The package is
@@ -140,15 +187,23 @@ func TestMyFeature(t *testing.T) {
    grab the shared base cluster via `requireUserCluster(t)`. Anything needing a Node-scheduled
    Pod is Tier C2 and belongs in a cloud-backed e2e package, not here.
 6. **No `t.Parallel()`.** Features share one KKP; parallel features race on shared state.
-7. **Isolate via baseline + teardown.** Setup asserts no leftover objects with your test's
-   names exist (fail loudly if they do); Teardown best-effort deletes everything you created.
-   Do not assume a clean cluster — the KKP is reused across features and reruns.
+7. **Isolate via baseline + teardown.** Setup ensures no leftover objects with your test's
+   names exist; `assertCleanBaseline` (in `userprojectbinding_test.go`) does this by
+   converging — it re-issues deletes until the objects are gone, because KKP cleanup
+   finalizers can outlive a previous run's teardown. Copy that helper rather than failing
+   fast on a leftover. Teardown best-effort deletes everything you created. Do not assume a
+   clean cluster — the KKP is reused across features and reruns.
 8. **Constants that mirror unexported source literals** (e.g. an annotation key defined
    unexported in a controller) must be hardcoded here with a comment pointing at the source
    file, and end the comment with a period (the `godot` linter is enforced in CI).
-9. **`main_test.go` is shared infra.** Do not change the flag setup or the health gate to
-   suit one feature. Do not switch to `envconf.NewFromFlags()` — it registers a `--namespace`
-   flag that collides with jig's and panics at startup.
+9. **`main_test.go` is shared infra.** Do not change the existing flag setup or the health
+   gate to suit one feature. The `-with-user-cluster` / `-byo-kkp-datacenter` flags and the
+   gated `provisionBaseCluster` / `tearDownBaseCluster` steps are already there for every
+   Tier C1 feature — reuse them, do not add per-feature provisioning. Do not switch to
+   `envconf.NewFromFlags()` — it registers a `--namespace` flag that collides with jig's and
+   panics at startup. Note `TestMain` calls `flag.Parse()` explicitly; if you register a new
+   flag in `init()`, that call is what makes it take effect (the `testing` package does not
+   parse flags automatically when `TestMain` is defined).
 
 ## Verify before you push
 
@@ -161,10 +216,22 @@ gofmt -l pkg/test/e2e/pipeline/                              # empty = clean
 golangci-lint run --build-tags e2e ./pkg/test/e2e/pipeline/...
 ```
 
-Then, against a live KKP (locally or CI):
+Then, against a live KKP (locally or CI). Seed-only (Tier A):
 
 ```
 go test -tags e2e -p 1 -count=1 -timeout 30m ./pkg/test/e2e/pipeline
+```
+
+With the user-cluster tier (Tier B/C1), point `KUBECONFIG` at a seed whose Seed CR has a
+BYO datacenter and pass the custom flags. Custom flags MUST go AFTER the package path —
+`go test`'s own flag parser runs before the test binary and chokes on an unknown flag placed
+before it (you get "no Go files in ."):
+
+```
+KUBECONFIG=<seed-kubeconfig> \
+go test -tags e2e -p 1 -count=1 -timeout 30m ./pkg/test/e2e/pipeline \
+  -with-user-cluster=true \
+  -byo-kkp-datacenter <byo-datacenter-name>
 ```
 
 `go build` reports "no non-test Go files" for this package — that is expected, use the
@@ -180,16 +247,30 @@ existing).
 
 ## How it runs in CI
 
-- `hack/ci/run-pipeline-e2e-tests.sh` sets up kind + KKP once, captures logs to
-  `$ARTIFACTS/logs`, then runs this package (junit → `junit.pipeline.xml`).
+- `hack/ci/run-pipeline-e2e-tests.sh` sets up kind + KKP once (built from the current source
+  tree, so the running KKP includes the fixes under test), captures logs to
+  `$ARTIFACTS/logs`, then runs this package with `-with-user-cluster` (junit →
+  `junit.pipeline.xml`).
 - `.prow/features.yaml` job `pre-kubermatic-pipeline-e2e` runs the script; its
-  `run_if_changed` covers `pkg/test/e2e/pipeline/`, the script, `.prow/`, and the
-  controllers currently under test. If your new feature exercises a different controller,
-  extend that `run_if_changed` so the job triggers on changes to it.
+  `run_if_changed` covers `pkg/test/e2e/pipeline/`, the script, `.prow/`, and the controllers
+  currently under test (`master-controller-manager/user-project-binding`,
+  `master-controller-manager/rbac`, `seed-controller-manager/cni-application-installation-controller`).
+  If your new feature exercises a different controller, extend that `run_if_changed` so the
+  job triggers on changes to it.
+- **Version assumption:** CI builds KKP from the PR branch, so every test guards a fix that
+  is present in the running cluster. If you run this suite against a released KKP (e.g.
+  v2.30.x), any test guarding a `main`-only fix that was not backported will fail — that is
+  the test doing its job, not a broken test. Cross-check the fix's release-branch status
+  before assuming a failure is a bug.
 
 ## Reference
 
-`userprojectbinding_test.go` is the canonical example (PR #16131 regression). Copy its
-structure: Setup (baseline + create + wait-active), Assess (pending / converge / orphan),
-Teardown (best-effort delete). `main_test.go` is the harness; read it once to understand
-the health gate and flag handling, then leave it alone.
+- `userprojectbinding_test.go` — the canonical seed-only (Tier A) example (PR #16131
+  regression). Copy its structure: Setup (converging baseline + create + wait-active),
+  Assess (pending / converge / orphan), Teardown (best-effort delete).
+- `cilium_nodelocaldns_test.go` — the canonical Tier C1 example (PR #15996 regression).
+  Copy its structure: `requireUserCluster(t)`, single Assess closure, `GetParsedValues()`
+  read path, positive-only assertion against the shared cluster's default state.
+- `cluster_fixture_test.go` + `main_test.go` — the harness; read each once to understand
+  the health gate, the `-with-user-cluster` flag, and the shared base cluster, then leave
+  them alone.
