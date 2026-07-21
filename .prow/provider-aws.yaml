@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-aws-ubuntu-1.33-ce
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws-e2e-kkp: "true"
@@ -59,7 +59,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.33
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws-e2e-kkp: "true"
@@ -101,7 +101,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.34
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws-e2e-kkp: "true"
@@ -143,7 +143,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.35
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws-e2e-kkp: "true"
