@@ -41,6 +41,9 @@ echodate "Setting up KKP in kind cluster..."
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Running pipeline e2e tests..."
-go_test pipeline -count=1 -timeout 30m -tags e2e -p 1 -v ./pkg/test/e2e/pipeline
+# -with-user-cluster provisions the shared BYO base cluster for Tier B/C1 feature tests
+# (e.g. the Cilium NodeLocalDNS exclude-local-address test). Seed-only Tier A tests run
+# regardless.
+go_test pipeline -with-user-cluster -count=1 -timeout 30m -tags e2e -p 1 -v ./pkg/test/e2e/pipeline
 
 echodate "Pipeline e2e tests completed successfully!"

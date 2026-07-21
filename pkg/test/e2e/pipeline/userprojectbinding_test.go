@@ -51,9 +51,10 @@ const (
 	testUserEmail   = "pipeline-upb-user@example.com"
 	testUserName    = "pipeline-upb-user"
 
-	interval    = 1 * time.Second
-	shortWait   = 30 * time.Second
-	convergeAll = 1 * time.Minute
+	interval        = 1 * time.Second
+	shortWait       = 30 * time.Second
+	convergeAll     = 1 * time.Minute
+	baselineCleanup = 2 * time.Minute
 )
 
 // TestUserProjectBinding asserts the PR #16131 behavior against a running KKP:
@@ -180,8 +181,11 @@ func getClient(t *testing.T) ctrlruntimeclient.Client {
 	return client
 }
 
-// assertCleanBaseline fails the test if leftovers from a previous run exist,
-// enforcing the shared-KKP isolation contract before creating anything.
+// assertCleanBaseline converges the cluster to a clean state before the test
+// creates anything. Previous runs can leave objects behind because the Project
+// carries KKP cleanup finalizers and teardown does not wait for them to clear.
+// Each poll re-checks every object, deletes any that still exist (re-issuing
+// the delete when a finalizer stalls), and only succeeds once all are gone.
 func assertCleanBaseline(ctx context.Context, g gomega.Gomega, client ctrlruntimeclient.Client, projectID, bindingName, userName string) {
 	checks := []struct {
 		obj  ctrlruntimeclient.Object
@@ -192,11 +196,23 @@ func assertCleanBaseline(ctx context.Context, g gomega.Gomega, client ctrlruntim
 		{&kubermaticv1.User{}, userName},
 	}
 
-	for _, c := range checks {
-		err := client.Get(ctx, types.NamespacedName{Name: c.name}, c.obj)
-		g.Expect(apierrors.IsNotFound(err)).To(gomega.BeTrue(),
-			fmt.Sprintf("leftover %T %q from a previous run; baseline is not clean", c.obj, c.name))
-	}
+	g.Eventually(func(g gomega.Gomega) {
+		for _, c := range checks {
+			err := client.Get(ctx, types.NamespacedName{Name: c.name}, c.obj)
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			g.Expect(err).To(gomega.Succeed(), "failed to get leftover %T %q", c.obj, c.name)
+
+			// object still exists: (re)issue a delete so finalizers keep draining.
+			_ = client.Delete(ctx, c.obj)
+
+			// fail this poll so Eventually retries until the object is gone.
+			g.Expect(apierrors.IsNotFound(err)).To(gomega.BeTrue(),
+				"leftover %T %q still present, waiting for delete to drain", c.obj, c.name)
+		}
+	}).WithContext(ctx).WithTimeout(baselineCleanup).WithPolling(interval).Should(gomega.Succeed(),
+		"leftover objects from a previous run never cleaned up")
 }
 
 func bestEffortDelete(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) {

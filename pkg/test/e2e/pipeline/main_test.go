@@ -38,19 +38,45 @@ import (
 var (
 	testEnv    env.Environment
 	logOptions = utils.DefaultLogOptions
+
+	// byoCredentials holds the BYO datacenter for the shared base cluster. Defaulted to the
+	// byo-kubernetes datacenter the kind seed registers (hack/ci/testdata/seed.yaml) so local
+	// and CI runs need no extra flags.
+	byoCredentials jig.BYOCredentials
+
+	// withUserCluster gates eager provisioning of the shared BYO base cluster for Tier B/C1
+	// features. When false (default) the run is seed-only and provisions nothing.
+	withUserCluster bool
 )
 
 func init() {
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
+	byoCredentials.KKPDatacenter = "byo-kubernetes"
+	byoCredentials.AddFlags(flag.CommandLine) // registers -byo-kkp-datacenter
+	flag.BoolVar(&withUserCluster, "with-user-cluster", false,
+		"provision a shared BYO base user cluster for Tier B/C1 feature tests")
 }
 
 func TestMain(m *testing.M) {
+	// With a custom TestMain, the testing package does not parse flags itself, so parse
+	// before reading -with-user-cluster / -byo-kkp-datacenter registered in init().
+	flag.Parse()
+
 	// build the config from KUBECONFIG directly instead of envconf.NewFromFlags();
 	// NewFromFlags would register a --namespace flag that collides with jig's.
 	cfg := envconf.New().WithKubeconfigFile(os.Getenv("KUBECONFIG"))
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(waitForMasterControllerManager)
+
+	// Eagerly provision the shared BYO base cluster only when opted in. Seed-only runs
+	// (the default) skip this entirely, so TestUserProjectBinding and other Tier A features
+	// pay no cluster cost and leave main_test.go's seed-only behavior unchanged.
+	if withUserCluster {
+		testEnv.Setup(provisionBaseCluster)
+		testEnv.Finish(tearDownBaseCluster)
+	}
+
 	os.Exit(testEnv.Run(m))
 }
 
