@@ -501,7 +501,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-pipeline-e2e
-    run_if_changed: "(pkg/test/e2e/pipeline/|hack/ci/run-pipeline-e2e-tests.sh|.prow/|pkg/controller/master-controller-manager/user-project-binding/|pkg/controller/master-controller-manager/rbac/|pkg/controller/seed-controller-manager/cni-application-installation-controller/)"
+    run_if_changed: "(pkg/test/e2e/pipeline/|hack/ci/run-pipeline-e2e-tests.sh|.prow/|pkg/controller/master-controller-manager/user-project-binding/|pkg/controller/master-controller-manager/rbac/|pkg/controller/seed-controller-manager/cni-application-installation-controller/|pkg/applicationdefinitions/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
