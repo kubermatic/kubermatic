@@ -44,8 +44,8 @@ func (v *validator) ValidateCreate(ctx context.Context, obj *kubermaticv1.GroupP
 	return nil, validateCreate(ctx, obj, v.client)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	return nil, validateUpdate(ctx, oldObj, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
+	return nil, validateUpdate(ctx, oldObj, newObj, v.client)
 }
 
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {

@@ -36,9 +36,10 @@ func validateCreate(ctx context.Context,
 	return eegroupprojectbindingvalidation.ValidateCreate(ctx, obj, client)
 }
 
-func validateUpdate(_ context.Context,
-	oldObj runtime.Object,
-	newObj runtime.Object,
+func validateUpdate(ctx context.Context,
+	oldObj *kubermaticv1.GroupProjectBinding,
+	newObj *kubermaticv1.GroupProjectBinding,
+	client ctrlruntimeclient.Client,
 ) error {
 	oldGroupProjectBinding, ok := oldObj.(*kubermaticv1.GroupProjectBinding)
 	if !ok {
@@ -50,7 +51,7 @@ func validateUpdate(_ context.Context,
 		return errors.New("updated object is not a GroupProjectBinding")
 	}
 
-	return eegroupprojectbindingvalidation.ValidateUpdate(oldGroupProjectBinding, newGroupProjectBinding)
+	return eegroupprojectbindingvalidation.ValidateUpdate(ctx, oldObj, newObj, client)
 }
 
 func validateDelete(_ context.Context,
