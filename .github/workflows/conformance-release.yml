@@ -44,16 +44,14 @@ jobs:
             PRERELEASE=false
           fi
           
-          # major.minor without the leading "v" (e.g. v2.30.5 -> 2.30). The
-          # conformance-ee release branches are named release/kkp-<major.minor>.
-          MAJOR_MINOR="$(echo "$TAG" | sed -E 's/^v([0-9]+\.[0-9]+)\..*/\1/')"
-          # Major version alone drives the Go module path suffix (kubermatic/vN).
+          MINOR="$(echo "$TAG" | sed -E 's/^(v[0-9]+\.[0-9]+)\..*/\1/')"
           MAJOR="$(echo "$TAG" | sed -E 's/^v([0-9]+)\..*/\1/')"
 
           {
             echo "tag=${TAG}"
+            echo "minor=${MINOR}"
             echo "major=${MAJOR}"
-            echo "release_branch=release/kkp-${MAJOR_MINOR}"
+            echo "release_branch=release/${MINOR}"
             echo "prerelease=${PRERELEASE}"
           } >> "$GITHUB_OUTPUT"
 
