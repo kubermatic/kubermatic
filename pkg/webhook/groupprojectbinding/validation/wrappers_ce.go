@@ -37,6 +37,7 @@ func validateCreate(_ context.Context,
 func validateUpdate(_ context.Context,
 	_ *kubermaticv1.GroupProjectBinding,
 	_ *kubermaticv1.GroupProjectBinding,
+	_ ctrlruntimeclient.Client,
 ) error {
 	return errors.New("this resource is disabled for the Community Edition")
 }
