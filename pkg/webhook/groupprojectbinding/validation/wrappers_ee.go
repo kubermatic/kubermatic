@@ -34,11 +34,12 @@ func validateCreate(ctx context.Context,
 	return eegroupprojectbindingvalidation.ValidateCreate(ctx, obj, client)
 }
 
-func validateUpdate(_ context.Context,
+func validateUpdate(ctx context.Context,
 	oldObj *kubermaticv1.GroupProjectBinding,
 	newObj *kubermaticv1.GroupProjectBinding,
+	client ctrlruntimeclient.Client,
 ) error {
-	return eegroupprojectbindingvalidation.ValidateUpdate(oldObj, newObj)
+	return eegroupprojectbindingvalidation.ValidateUpdate(ctx, oldObj, newObj, client)
 }
 
 func validateDelete(_ context.Context,
