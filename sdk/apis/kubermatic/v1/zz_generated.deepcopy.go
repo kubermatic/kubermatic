@@ -7889,6 +7889,11 @@ func (in *SettingSpec) DeepCopyInto(out *SettingSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.AdminGroups != nil {
+		in, out := &in.AdminGroups, &out.AdminGroups
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	out.CleanupOptions = in.CleanupOptions
 	out.OpaOptions = in.OpaOptions
 	out.MlaOptions = in.MlaOptions
