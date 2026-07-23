@@ -46,6 +46,15 @@ spec:
               type: object
             spec:
               properties:
+                adminGroups:
+                  description: |-
+                    AdminGroups is the list of OIDC group names whose members are automatically
+                    granted KKP administrator privileges. Matching against the user's groups
+                    (populated at login) is exact and case-sensitive. Removing a group demotes
+                    only users whose admin status was granted via these groups.
+                  items:
+                    type: string
+                  type: array
                 allowedOperatingSystems:
                   additionalProperties:
                     type: boolean

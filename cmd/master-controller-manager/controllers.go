@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	admingroupcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/admin-group-controller"
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
@@ -114,6 +115,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 
 	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
+	}
+	if err := admingroupcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount); err != nil {
+		return fmt.Errorf("failed to create admin-group controller: %w", err)
 	}
 	if err := seedstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create seed status controller: %w", err)
