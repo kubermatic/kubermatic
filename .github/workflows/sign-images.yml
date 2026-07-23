@@ -1,0 +1,119 @@
+name: Sign Images
+on:
+  repository_dispatch:
+    types: [images-published-ce, images-published-ee]
+  workflow_dispatch:
+    inputs:
+      edition:
+        type: choice
+        options: [ce, ee]
+        required: true
+      version:
+        type: string
+        required: true
+permissions:
+  id-token: write
+  contents: read
+env:
+  REGISTRY: quay.io
+
+jobs:
+  sign-main-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine edition, version, and main image
+        id: ctx
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            EDITION="${{ inputs.edition }}"
+            VERSION="${{ inputs.version }}"
+          else
+            EDITION="${{ github.event.action == 'images-published-ee' && 'ee' || 'ce' }}"
+            VERSION="${{ github.event.client_payload.version }}"
+          fi
+          if [ "$EDITION" = "ee" ]; then
+            echo "image=quay.io/kubermatic/kubermatic-ee:${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=quay.io/kubermatic/kubermatic:${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "edition=${EDITION}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+
+      - name: Log in to Quay
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Generate SBOM for the main image
+        run: syft "${{ steps.ctx.outputs.image }}" -o spdx-json=main.sbom.spdx.json
+
+      - name: Attest SBOM (keyless)
+        run: |
+          cosign attest --yes \
+            --predicate main.sbom.spdx.json \
+            --type spdxjson \
+            "${{ steps.ctx.outputs.image }}"
+
+      - name: Sign image (keyless)
+        run: cosign sign --yes "${{ steps.ctx.outputs.image }}"
+
+  # The 6 shared images (addons, nodeport-proxy, etcd-launcher, conformance-tests,
+  # user-ssh-keys-agent, kubeletdnat-controller, network-interface-manager) are
+  # pushed identically by BOTH the CE and EE postsubmits — attest/sign them ONLY
+  # on the CE dispatch, to avoid double-attesting the same already-pushed digest.
+  sign-shared-images:
+    if: github.event.action == 'images-published-ce' || (github.event_name == 'workflow_dispatch' && inputs.edition == 'ce')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - addons
+          - nodeport-proxy
+          - etcd-launcher
+          - conformance-tests
+          - user-ssh-keys-agent
+          - kubeletdnat-controller
+          - network-interface-manager
+      fail-fast: false
+    steps:
+      - name: Determine version
+        id: ctx
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+
+      - name: Log in to Quay
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Generate SBOM
+        run: syft "quay.io/kubermatic/${{ matrix.image }}:${{ steps.ctx.outputs.version }}" -o spdx-json=${{ matrix.image }}.sbom.spdx.json
+
+      - name: Attest SBOM (keyless)
+        run: |
+          cosign attest --yes \
+            --predicate ${{ matrix.image }}.sbom.spdx.json \
+            --type spdxjson \
+            "quay.io/kubermatic/${{ matrix.image }}:${{ steps.ctx.outputs.version }}"
+
+      - name: Sign image (keyless)
+        run: cosign sign --yes "quay.io/kubermatic/${{ matrix.image }}:${{ steps.ctx.outputs.version }}"
+

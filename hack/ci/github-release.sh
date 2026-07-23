@@ -26,6 +26,13 @@
 
 set -euo pipefail
 
+if ! command -v syft &>/dev/null; then
+  # Pin to the latest syft version 
+  echodate "Installing syft..."
+  curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp/bin v1.46.0
+  export PATH="/tmp/bin:$PATH"
+fi
+
 cd $(dirname $0)/../..
 source hack/lib.sh
 
@@ -90,10 +97,16 @@ function create_release {
 # upload an archive from a file
 function upload_archive {
   local file="$1"
+  local contentType="application/gzip"
+  if [[ "$file" == *.zip ]]; then
+    contentType="application/zip"
+  elif [[ "$file" == *.json ]]; then
+    contentType="application/json"
+  fi
   res=$(github_cli \
     "https://uploads.github.com/repos/$GIT_REPO/releases/$releaseID/assets?name=$(basename "$file")" \
     --header 'Accept: application/json' \
-    --header 'Content-Type: application/gzip' \
+    --header "Content-Type: $contentType" \
     --silent --data-binary "@$file")
 
   if echo "$res" | jq --exit-status '.' > /dev/null; then
@@ -145,6 +158,8 @@ function build_installer() {
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
+  shift 2
+  local sboms=("$@")
 
   if [ "$GOOS" == "windows" ]; then
     echodate "Converting $archive to Zip..."
@@ -155,6 +170,12 @@ function ship_archive() {
     echodate "Uploading $buildTarget archive..."
     upload_archive "$archive"
     rm -- "$archive"
+
+    for sbom in "${sboms[@]}"; do
+      echodate "Uploading $(basename "$sbom")..."
+      upload_archive "$sbom"
+      rm -- "$sbom"
+    done
   fi
 }
 
@@ -233,6 +254,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Compiling CE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ce build_installer
 
+  installerBinary="_build/kubermatic-installer"
+  if [ "$GOOS" == "windows" ]; then
+    installerBinary="_build/kubermatic-installer.exe"
+  fi
+  binarySbom="_dist/kubermatic-installer-ce-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
+  echodate "Generating SBOM for $installerBinary..."
+  syft "$installerBinary" -o "spdx-json=$binarySbom"
+
   echodate "Creating CE archive..."
 
   # switch Docker repository used by the operator to the CE repository
@@ -270,10 +299,22 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget"
+  sbom="${archive%.tar.gz}.sbom.spdx.json"
+  echodate "Generating SBOM for $archive..."
+  syft "$archive" -o "spdx-json=$sbom"
+
+  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
+
+  installerBinary="_build/kubermatic-installer"
+  if [ "$GOOS" == "windows" ]; then
+    installerBinary="_build/kubermatic-installer.exe"
+  fi
+  binarySbom="_dist/kubermatic-installer-ee-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
+  echodate "Generating SBOM for $installerBinary..."
+  syft "$installerBinary" -o "spdx-json=$binarySbom"
 
   echodate "Creating EE archive..."
 
@@ -314,7 +355,11 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget"
+  sbom="${archive%.tar.gz}.sbom.spdx.json"
+  echodate "Generating SBOM for $archive..."
+  syft "$archive" -o "spdx-json=$sbom"
+
+  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 done
 
 echodate "Done."

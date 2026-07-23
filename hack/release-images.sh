@@ -46,6 +46,8 @@ fi
 cd $(dirname "$0")/..
 source hack/lib.sh
 
+mkdir -p _dist/images
+
 export ALL_TAGS=$@
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
@@ -57,6 +59,21 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
+if ! command -v syft &>/dev/null; then
+  # Pinned to latest syft version
+  echodate "Installing syft..."
+  curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp/bin v1.42.3
+  export PATH="/tmp/bin:$PATH"
+fi
+
+generate_image_sbom() {
+  local imageRef="$1"
+  local outFile="$2"
+
+  echodate "Generating SBOM for $imageRef..."
+  syft "docker:$imageRef" -o "spdx-json=$outFile"
+}
+
 # build Docker images
 PRIMARY_TAG="${1}"
 VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
@@ -65,6 +82,12 @@ make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
+
+generate_image_sbom "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/addons:$PRIMARY_TAG" "_dist/images/addons.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" "_dist/images/conformance-tests.sbom.spdx.json"
 
 # switch to a multi platform-enabled builder
 docker buildx create --use
@@ -132,11 +155,23 @@ create_manifest() {
 echodate "Building user-ssh-keys-agent images..."
 buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG"
 
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$PRIMARY_TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+done
+
 echodate "Building kubeletdnat-controller images..."
 buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG"
 
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$PRIMARY_TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+done
+
 echodate "Building network-interface-manager images..."
 buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG"
+
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/network-interface-manager:$PRIMARY_TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+done
 
 # for each given tag, tag and push the image
 for TAG in $ALL_TAGS; do
@@ -171,4 +206,13 @@ done
 
 if [ -n "${NO_PUSH:-}" ]; then
   echodate "Not pushing images because \$NO_PUSH is set."
+elif [ -z "${GITHUB_DISPATCH_TOKEN:-}" ]; then
+  echodate "env var GITHUB_DISPATCH_TOKEN unset, cannot notify GitHub Actions to sign images"
+else
+  echodate "Notifying GitHub Actions that ${KUBERMATIC_EDITION} images are published..."
+  curl -sf -X POST \
+    -H "Authorization: token ${GITHUB_DISPATCH_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    https://api.github.com/repos/kubermatic/kubermatic/dispatches \
+    -d "{\"event_type\":\"images-published-${KUBERMATIC_EDITION}\",\"client_payload\":{\"version\":\"${PRIMARY_TAG}\"}}"
 fi
