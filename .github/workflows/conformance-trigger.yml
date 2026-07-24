@@ -94,11 +94,15 @@ jobs:
           KIND_LABELS: ${{ steps.pr.outputs.kind_labels }}
         run: |
           LABEL_ARGS=()
+          KIND_DISPLAY="—"
           if [ -n "$KIND_LABELS" ]; then
+            KIND_DISPLAY=""
             IFS=',' read -ra LABELS <<< "$KIND_LABELS"
             for label in "${LABELS[@]}"; do
               gh label create "$label" --repo "kubermatic/conformance-ee" --force 2>/dev/null || true
               LABEL_ARGS+=(--label "$label")
+              [ -n "$KIND_DISPLAY" ] && KIND_DISPLAY="${KIND_DISPLAY}, "
+              KIND_DISPLAY="${KIND_DISPLAY}\`${label}\`"
             done
           fi
 
@@ -114,6 +118,7 @@ jobs:
           |-------|-------|
           | **KKP PR** | [#${PR_NUMBER} — ${PR_TITLE}](${PR_URL}) |
           | **KKP Issue** | [#${KKP_ISSUE_NUMBER}](${KKP_ISSUE_URL}) |
+          | **Kind labels** | ${KIND_DISPLAY} |
           
           ### PR Description
           ${PR_BODY}

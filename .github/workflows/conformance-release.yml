@@ -1,0 +1,120 @@
+name: Conformance Release Bump
+
+# This workflow is triggered when a new KKP release is tagged, and it opens a tracking issue in the
+# conformance-ee repository to bump the KKP module dependencies and cut a new conformance-ee release.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to open the conformance-ee bump issue for (e.g. v2.30.5 or v2.30.0-rc.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release-bump-issue:
+    runs-on: ubuntu-latest
+    environment:
+      name: KKP
+      deployment: false
+
+    steps:
+      - name: Parse tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          # Tag pushes set GITHUB_REF_NAME to the tag; manual runs pass it in.
+          TAG="${INPUT_TAG:-${GITHUB_REF_NAME}}"
+
+          # Manual runs accept a free-form tag, so validate the shape before
+          # deriving a release branch / module path from it.
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::'${TAG}' is not a valid vMAJOR.MINOR.PATCH[-prerelease] release tag."
+            exit 1
+          fi
+          
+          # A pre-release tag carries a hyphenated suffix (e.g. v2.30.0-rc.0).
+          if [[ "$TAG" == *-* ]]; then
+            PRERELEASE=true
+          else
+            PRERELEASE=false
+          fi
+          
+          MINOR="$(echo "$TAG" | sed -E 's/^(v[0-9]+\.[0-9]+)\..*/\1/')"
+          MAJOR="$(echo "$TAG" | sed -E 's/^v([0-9]+)\..*/\1/')"
+
+          {
+            echo "tag=${TAG}"
+            echo "minor=${MINOR}"
+            echo "major=${MAJOR}"
+            echo "release_branch=release/${MINOR}"
+            echo "prerelease=${PRERELEASE}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create issue in conformance-ee
+        env:
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          RELEASE_BRANCH: ${{ steps.tag.outputs.release_branch }}
+          MAJOR: ${{ steps.tag.outputs.major }}
+          PRERELEASE: ${{ steps.tag.outputs.prerelease }}
+          SOURCE_REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          if [ "$PRERELEASE" = "true" ]; then
+            TITLE="Bump KKP to ${TAG} (pre-release) and cut a new conformance-ee release"
+            RELEASE_NOTE="This is a **pre-release** (\`${TAG}\`); mark the conformance-ee release as a pre-release too."
+          else
+            TITLE="Bump KKP to ${TAG} and cut a new conformance-ee release"
+            RELEASE_NOTE="Cut a new conformance-ee release for \`${TAG}\`."
+          fi
+
+          # Idempotency: a tag push is a one-time event, but a re-run (or a
+          # re-pushed tag) should not open a duplicate.
+          EXISTING=$(gh issue list \
+            --repo kubermatic/conformance-ee \
+            --state open \
+            --search "in:title \"${TITLE}\"" \
+            --json number \
+            --jq 'length')
+          if [ "${EXISTING:-0}" -gt 0 ]; then
+            echo "An open issue titled '${TITLE}' already exists; skipping."
+            exit 0
+          fi
+          
+          ISSUE_URL=$(gh issue create \
+            --repo kubermatic/conformance-ee \
+            --title "${TITLE}" \
+            --assignee "kubermatic-bot" \
+            --assignee "@copilot" \
+            --body "## Release Bump Tracking
+
+          A new KKP release tag has been created in [\`${SOURCE_REPO}\`](${SERVER_URL}/${SOURCE_REPO}).
+
+          | Field | Value |
+          |-------|-------|
+          | **Release tag** | [\`${TAG}\`](${SERVER_URL}/${SOURCE_REPO}/releases/tag/${TAG}) |
+          | **Release branch** | \`${RELEASE_BRANCH}\` |
+
+          ### Action required
+          On the \`${RELEASE_BRANCH}\` branch of this repository:
+          
+          1. Bump the KKP module dependencies in \`go.mod\` to \`${TAG}\`:
+             - \`k8c.io/kubermatic/v${MAJOR}@${TAG}\`
+             - \`k8c.io/kubermatic/sdk/v${MAJOR}@${TAG}\`
+          2. Run \`go mod tidy\` and commit the updated \`go.mod\`/\`go.sum\`.
+          3. Open a PR against \`${RELEASE_BRANCH}\`, get it merged.
+          4. ${RELEASE_NOTE}
+
+          <!-- SOURCE-METADATA
+          source-repo: ${SOURCE_REPO}
+          source-tag: ${TAG}
+          release-branch: ${RELEASE_BRANCH}
+          prerelease: ${PRERELEASE}
+          -->")
+
+          echo "Created conformance-ee issue: ${ISSUE_URL}"
