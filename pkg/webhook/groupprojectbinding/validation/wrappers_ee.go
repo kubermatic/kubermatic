@@ -24,19 +24,22 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eegroupprojectbindingvalidation "k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
-
 	"k8s.io/apimachinery/pkg/runtime"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateCreate(_ context.Context,
-	_ runtime.Object,
+func validateCreate(ctx context.Context,
+	obj *kubermaticv1.GroupProjectBinding,
+	client ctrlruntimeclient.Client,
 ) error {
-	return nil
+	return eegroupprojectbindingvalidation.ValidateCreate(ctx, obj, client)
 }
 
-func validateUpdate(_ context.Context,
-	oldObj runtime.Object,
-	newObj runtime.Object,
+func validateUpdate(ctx context.Context,
+	oldObj *kubermaticv1.GroupProjectBinding,
+	newObj *kubermaticv1.GroupProjectBinding,
+	client ctrlruntimeclient.Client,
 ) error {
 	oldGroupProjectBinding, ok := oldObj.(*kubermaticv1.GroupProjectBinding)
 	if !ok {
@@ -48,7 +51,7 @@ func validateUpdate(_ context.Context,
 		return errors.New("updated object is not a GroupProjectBinding")
 	}
 
-	return eegroupprojectbindingvalidation.ValidateUpdate(oldGroupProjectBinding, newGroupProjectBinding)
+	return eegroupprojectbindingvalidation.ValidateUpdate(ctx, oldObj, newObj, client)
 }
 
 func validateDelete(_ context.Context,
