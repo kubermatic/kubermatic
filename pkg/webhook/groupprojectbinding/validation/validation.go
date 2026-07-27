@@ -18,28 +18,50 @@ package validation
 
 import (
 	"context"
+	"errors"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating GroupProjectBinding CRD.
 type validator struct {
+	client ctrlruntimeclient.Client
 }
 
 // NewValidator returns a new GroupProjectBinding validator.
-func NewValidator() *validator {
-	return &validator{}
+func NewValidator(client ctrlruntimeclient.Client) *validator {
+	return &validator{
+		client: client,
+	}
 }
 
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return nil, validateCreate(ctx, obj)
+	groupProjectBinding, ok := obj.(*kubermaticv1.GroupProjectBinding)
+	if !ok {
+		return nil, errors.New("new object is not a GroupProjectBinding")
+	}
+
+	return nil, validateCreate(ctx, groupProjectBinding, v.client)
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	return nil, validateUpdate(ctx, oldObj, newObj)
+	oldGroupProjectBinding, ok := oldObj.(*kubermaticv1.GroupProjectBinding)
+	if !ok {
+		return nil, errors.New("existing object is not a GroupProjectBinding")
+	}
+
+	newGroupProjectBinding, ok := newObj.(*kubermaticv1.GroupProjectBinding)
+	if !ok {
+		return nil, errors.New("updated object is not a GroupProjectBinding")
+	}
+
+	return nil, validateUpdate(ctx, oldGroupProjectBinding, newGroupProjectBinding, v.client)
 }
 
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
