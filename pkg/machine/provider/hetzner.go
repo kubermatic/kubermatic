@@ -42,7 +42,7 @@ func (b *hetznerConfig) WithServerType(serverType string) *hetznerConfig {
 }
 
 func (b *hetznerConfig) WithDatacenter(datacenter string) *hetznerConfig {
-	b.Datacenter.Value = datacenter
+	b.Datacenter.Value = datacenter //nolint:staticcheck
 	return b
 }
 
@@ -85,8 +85,8 @@ func CompleteHetznerProviderSpec(config *hetzner.RawConfig, cluster *kubermaticv
 	}
 
 	if datacenter != nil {
-		if config.Datacenter.Value == "" {
-			config.Datacenter.Value = datacenter.Datacenter
+		if config.Datacenter.Value == "" { //nolint:staticcheck
+			config.Datacenter.Value = datacenter.Datacenter //nolint:staticcheck
 		}
 
 		if config.Location.Value == "" {
