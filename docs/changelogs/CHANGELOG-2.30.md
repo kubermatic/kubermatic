@@ -6,6 +6,39 @@
 - [v2.30.3](#v2303)
 - [v2.30.4](#v2304)
 - [v2.30.5](#v2305)
+- [v2.30.6](#v2306)
+
+## v2.30.6
+
+**GitHub release: [v2.30.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.6)**
+
+### New Features
+
+- The KubeVirt node defaults shown in the Custom Configuration path have been raised: primary disk 10G -> 25G, memory 2000 MB -> 4000 MB. CPU default is unchanged at 2 ([#8182](https://github.com/kubermatic/dashboard/pull/8182))
+
+### Design
+
+- Hide KubeVirt instance type tabs that have no options ([#8196](https://github.com/kubermatic/dashboard/pull/8196))
+
+### Bugfixes
+
+- Fix a bug where multiple GroupProjectBindings with the same group and project could be created. The admission webhook now rejects duplicate bindings at creation time and prevents  an existing binding from being updated into a conflicting group/project pair ([#16162](https://github.com/kubermatic/kubermatic/pull/16162))
+- Fix nodeport-proxy-envoy Prometheus annotations to include the standard `prometheus.io/path` metrics path annotation ([#16092](https://github.com/kubermatic/kubermatic/pull/16092))
+- Fix the kubevirt-network-controller emitting spurious "invalid NetworkPolicy" warning events and potentially panicking when reconciling cluster-isolation NetworkPolicies in default-deny mode before the cluster's apiserver address or DNS configuration were available ([#16074](https://github.com/kubermatic/kubermatic/pull/16074))
+- Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
+- Kubermatic-installer now enables server-side apply with conflict forcing when running with Helm 4, fixing `deploy` failures caused by field-ownership conflicts (for example on the dockercfg Secret). With Helm 4 the deprecated `--atomic` flag is replaced by `--rollback-on-failure` ([#16138](https://github.com/kubermatic/kubermatic/pull/16138))
+- Add improvements for the handling of Kyverno PolicyBindings and generated Kyverno resources when PolicyTemplates are deleted, Kyverno is disabled, or clusters are deleted ([#16034](https://github.com/kubermatic/kubermatic/pull/16034))
+- Fix KubeLB option precedence so enforced datacenters always show the option regardless of the enabled flag ([#7999](https://github.com/kubermatic/dashboard/pull/7999))
+- Fix KubeVirt instancetype/preference dropdowns failing on KubeVirt 1.6.x+ infra clusters by listing via the v1beta1 API (v1alpha1 fallback retained for older clusters) ([#8202](https://github.com/kubermatic/dashboard/pull/8202))
+- Add some KubeLB Enhancements ([#7958](https://github.com/kubermatic/dashboard/pull/7958))
+
+### Updates
+
+- Add support for k8s patch releases v1.35.7/v1.34.10 ([#16166](https://github.com/kubermatic/kubermatic/pull/16166))
+- Update KubeLB CCM to v1.4.3 ([#16132](https://github.com/kubermatic/kubermatic/pull/16132))
+- Update Machine-controller to [v1.65.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.5) ([#16180](https://github.com/kubermatic/kubermatic/pull/16180))
+- Update machine-controller to v1.65.4 ([#16175](https://github.com/kubermatic/kubermatic/pull/16175))
+- Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 
 ## v2.30.5
 
