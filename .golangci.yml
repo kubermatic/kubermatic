@@ -180,6 +180,10 @@ linters:
       - linters:
           - staticcheck
         text: "SA1019: registry.GetOverwriteFunc is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*Datacenter is deprecated"
+
     paths:
       - zz_generated.*.go
       # This package was forked from upstream (in #9826)
