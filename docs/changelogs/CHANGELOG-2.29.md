@@ -10,6 +10,25 @@
 - [v2.29.7](#v2297)
 - [v2.29.8](#v2298)
 - [v2.29.9](#v2299)
+- [v2.29.10](#v22910)
+
+## v2.29.10
+
+**GitHub release: [v2.29.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.10)**
+
+### Bugfixes
+
+- Fix a bug where multiple GroupProjectBindings with the same group and project could be created. The admission webhook now rejects duplicate bindings at creation time and prevents  an existing binding from being updated into a conflicting group/project pair ([#16162](https://github.com/kubermatic/kubermatic/pull/16162))
+- Fix nodeport-proxy-envoy Prometheus annotations to include the standard `prometheus.io/path` metrics path annotation ([#16092](https://github.com/kubermatic/kubermatic/pull/16092))
+- Fix the kubevirt-network-controller emitting spurious "invalid NetworkPolicy" warning events and potentially panicking when reconciling cluster-isolation NetworkPolicies in default-deny mode before the cluster's apiserver address or DNS configuration were available ([#16074](https://github.com/kubermatic/kubermatic/pull/16074))
+- Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
+- Fix KubeLB option precedence so enforced datacenters always show the option regardless of the enabled flag ([#8174](https://github.com/kubermatic/dashboard/pull/8174))
+
+### Updates
+
+- Add support for k8s patch release v1.34.10 ([#16167](https://github.com/kubermatic/kubermatic/pull/16167))
+- Update machine-controller to v1.64.3 ([#16176](https://github.com/kubermatic/kubermatic/pull/16176))
+- Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 
 ## v2.29.9
 
