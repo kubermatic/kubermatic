@@ -13,6 +13,20 @@
 - [v2.28.10](#v22810)
 - [v2.28.11](#v22811)
 - [v2.28.12](#v22812)
+- [v2.28.13](#v22813)
+
+## v2.28.13
+
+**GitHub release: [v2.28.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.13)**
+
+### Bugfixes
+
+- Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
+- Fix KubeLB option precedence so enforced datacenters always show the option regardless of the enabled flag ([#8175](https://github.com/kubermatic/dashboard/pull/8175))
+
+### Updates
+
+- Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 
 ## v2.28.12
 
