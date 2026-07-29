@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	kubevirtcorev1 "kubevirt.io/api/core/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
 	"k8c.io/machine-controller/sdk/providerconfig"
@@ -79,6 +81,11 @@ func (b *kubevirtConfig) WithClusterName(clusterName string) *kubevirtConfig {
 	return b
 }
 
+func (b *kubevirtConfig) WithInstancetype(name string) *kubevirtConfig {
+	b.VirtualMachine.Instancetype = &kubevirtcorev1.InstancetypeMatcher{Name: name}
+	return b
+}
+
 func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecKubevirt) (*kubevirt.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Kubevirt == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Kubevirt cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
@@ -99,6 +106,22 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 
 		if config.VirtualMachine.EvictionStrategy == "" {
 			config.VirtualMachine.EvictionStrategy = string(datacenter.VMEvictionStrategy)
+		}
+
+		// Instance types already determine CPU and memory, so the defaults only apply
+		// when no instance type is selected.
+		if datacenter.NodeDefaults != nil && config.VirtualMachine.Instancetype == nil {
+			if config.VirtualMachine.Template.CPUs.Value == "" && config.VirtualMachine.Template.VCPUs.Cores == 0 {
+				config.VirtualMachine.Template.CPUs.Value = datacenter.NodeDefaults.CPUs
+			}
+
+			if config.VirtualMachine.Template.Memory.Value == "" {
+				config.VirtualMachine.Template.Memory.Value = datacenter.NodeDefaults.Memory
+			}
+		}
+
+		if datacenter.NodeDefaults != nil && config.VirtualMachine.Template.PrimaryDisk.Size.Value == "" {
+			config.VirtualMachine.Template.PrimaryDisk.Size.Value = datacenter.NodeDefaults.PrimaryDiskSize
 		}
 	}
 

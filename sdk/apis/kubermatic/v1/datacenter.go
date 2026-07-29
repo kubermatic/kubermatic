@@ -990,6 +990,22 @@ type DatacenterSpecKubevirt struct {
 	DisableDefaultInstanceTypes bool `json:"disableDefaultInstanceTypes,omitempty"`
 	// DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
 	DisableDefaultPreferences bool `json:"disableDefaultPreferences,omitempty"`
+	// Optional: NodeDefaults sets the default CPU, memory and primary disk size for KubeVirt worker
+	// nodes in this datacenter. These defaults are used to pre-fill the "Custom Configuration" node
+	// form in the dashboard when an instance type is not selected, and are applied server-side to
+	// machine deployments that do not already specify a value. They have no effect once an instance
+	// type is chosen, as instance types already determine CPU and memory.
+	NodeDefaults *KubeVirtNodeDefaults `json:"nodeDefaults,omitempty"`
+}
+
+// KubeVirtNodeDefaults describes the default CPU, memory and primary disk size for KubeVirt worker nodes.
+type KubeVirtNodeDefaults struct {
+	// Optional: CPUs sets the default number of CPU cores for the virtual machine.
+	CPUs string `json:"cpus,omitempty"`
+	// Optional: Memory sets the default amount of memory for the virtual machine.
+	Memory string `json:"memory,omitempty"`
+	// Optional: PrimaryDiskSize sets the default size of the primary disk of the virtual machine.
+	PrimaryDiskSize string `json:"primaryDiskSize,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
