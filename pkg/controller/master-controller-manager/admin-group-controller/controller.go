@@ -131,11 +131,17 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, user
 		}
 
 		// admin and globalViewer are mutually exclusive (rejected by the User webhook),
-		// so a global viewer is never promoted.
+		// so a global viewer is never promoted. A user promoted earlier and turned into
+		// a global viewer afterwards still carries our annotation; drop it, as they are
+		// no longer a group-granted admin.
 		if user.Spec.IsGlobalViewer {
 			log.Infow("skipping admin promotion: user is a global viewer", "user", user.Name)
 			r.recorder.Eventf(user, nil, corev1.EventTypeWarning, "AdminSkipped", "Skipping",
 				"not granting admin via group %q: user is a global viewer", matched)
+
+			if annotated {
+				return r.clearGroupAnnotation(ctx, user)
+			}
 			return nil
 		}
 
@@ -185,6 +191,19 @@ func (r *reconciler) setAdmin(ctx context.Context, user *kubermaticv1.User, admi
 		r.recorder.Eventf(user, nil, corev1.EventTypeNormal, "AdminGranted", "Granting", "granted admin via group %q", group)
 	} else {
 		r.recorder.Eventf(user, nil, corev1.EventTypeNormal, "AdminDemoted", "Demoting", "revoked group-granted admin")
+	}
+
+	return nil
+}
+
+// clearGroupAnnotation removes the group-granted marker without touching the admin
+// flag, for users who may no longer hold admin for a reason of their own.
+func (r *reconciler) clearGroupAnnotation(ctx context.Context, user *kubermaticv1.User) error {
+	oldUser := user.DeepCopy()
+	delete(user.Annotations, kubermaticv1.AdminGrantedByGroupAnnotation)
+
+	if err := r.masterClient.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+		return fmt.Errorf("failed to remove the group-granted admin annotation: %w", err)
 	}
 
 	return nil
@@ -251,6 +270,7 @@ func withUserEventFilter() predicate.Predicate {
 			}
 			return !reflect.DeepEqual(oldUser.Spec.Groups, newUser.Spec.Groups) ||
 				oldUser.Spec.IsAdmin != newUser.Spec.IsAdmin ||
+				oldUser.Spec.IsGlobalViewer != newUser.Spec.IsGlobalViewer ||
 				oldUser.Annotations[kubermaticv1.AdminGrantedByGroupAnnotation] != newUser.Annotations[kubermaticv1.AdminGrantedByGroupAnnotation]
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {

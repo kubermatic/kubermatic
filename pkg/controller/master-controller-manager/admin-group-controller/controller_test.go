@@ -179,6 +179,15 @@ func TestReconcile(t *testing.T) {
 			wantAdmin:      false,
 			wantAnnotation: "",
 		},
+		{
+			// A user promoted via a group and turned into a global viewer afterwards
+			// keeps the annotation until we clear it, even though the group still matches.
+			name:           "global viewer loses a leftover annotation",
+			adminGroups:    []string{"admins"},
+			user:           globalViewer(testUser(userName, "bob@acme.com", []string{"admins"}, false, "admins")),
+			wantAdmin:      false,
+			wantAnnotation: "",
+		},
 	}
 
 	for _, tc := range testCases {

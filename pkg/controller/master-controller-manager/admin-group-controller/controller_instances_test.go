@@ -54,6 +54,13 @@ func TestEventFiltersIgnoreLabels(t *testing.T) {
 		t.Error("user filter ignored a groups change because a worker-name label was present")
 	}
 
+	// Losing the global viewer flag makes a matching user eligible for promotion,
+	// so it has to requeue on its own.
+	viewer := globalViewer(joined.DeepCopy())
+	if !userFilter.Update(event.UpdateEvent{ObjectOld: viewer, ObjectNew: joined}) {
+		t.Error("user filter ignored a global viewer change")
+	}
+
 	oldSettings := genSettings([]string{"admins"})
 	labeledSettings := oldSettings.DeepCopy()
 	labeledSettings.Labels = map[string]string{"worker-name": "somelocaltest"}
