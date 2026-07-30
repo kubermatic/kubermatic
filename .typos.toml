@@ -27,6 +27,8 @@ toByteWithSerOpts = "toByteWithSerOpts"
 ba00 = "ba00"
 HashiCorp = "HashiCorp"
 KubeDaemonSetMisScheduled = "KubeDaemonSetMisScheduled"
+k8snet = "k8snet"
+CONNECTing = "CONNECTing"
 
 # parts of random base64 chunks
 A1UEBxMHSGFtYnVyZzEQMA4GA1UECBMHSGFtYnVyZzELMAkGA1UEBhMCREUwHhcN = "A1UEBxMHSGFtYnVyZzEQMA4GA1UECBMHSGFtYnVyZzELMAkGA1UEBhMCREUwHhcN"
