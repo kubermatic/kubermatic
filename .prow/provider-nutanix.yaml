@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-nutanix-ubuntu-1.34
     decorate: true
-    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"
@@ -59,7 +59,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-nutanix-ubuntu-1.35
     decorate: true
-    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"

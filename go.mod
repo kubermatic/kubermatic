@@ -127,6 +127,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8c.io/application-catalog-manager v0.2.0-rc.8.0.20260609180029-65b0942a0405
 	k8s.io/pod-security-admission v0.34.1
+	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/gateway-api v1.4.1
 )
 

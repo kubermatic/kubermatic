@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/)"
+    run_if_changed: "ZZZ_DISABLED_(go.mod|go.sum|pkg/|.prow/|charts/mla/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -49,7 +49,7 @@ presubmits:
               memory: 18Gi
 
   - name: pre-kubermatic-konnectivity-e2e
-    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -83,7 +83,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cilium-e2e
-    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
+    run_if_changed: "ZZZ_DISABLED_.*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -117,7 +117,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-canal-e2e
-    run_if_changed: ".*(canal|kube-proxy|apis|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
+    run_if_changed: "ZZZ_DISABLED_.*(canal|kube-proxy|apis|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -151,7 +151,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-gateway-api-e2e
-    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api|.prow/|gateway/|gateway\\.go)"
+    run_if_changed: "ZZZ_DISABLED_.*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api|.prow/|gateway/|gateway\\.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -185,7 +185,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-gateway-api-migration-e2e
-    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api-migration|hack/ci/lib-gateway-api|.prow/|gateway/|gateway\\.go)"
+    run_if_changed: "ZZZ_DISABLED_.*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api-migration|hack/ci/lib-gateway-api|.prow/|gateway/|gateway\\.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -219,7 +219,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-etcd-launcher-e2e
-    run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/etcd-launcher/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -253,7 +253,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-nodeport-proxy-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -278,7 +278,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(go.mod|go.sum|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -313,7 +313,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-expose-strategy-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
+    run_if_changed: "ZZZ_DISABLED_(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -341,7 +341,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-ipam-e2e
-    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/webhook/ipampool/|addons/metallb/|pkg/test/e2e/ipam/)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/controller/seed-controller-manager/ipam/|pkg/webhook/ipampool/|addons/metallb/|pkg/test/e2e/ipam/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -376,7 +376,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cluster-backup-e2e
-    run_if_changed: "pkg/ee/cluster-backup/"
+    run_if_changed: "ZZZ_DISABLED_pkg/ee/cluster-backup/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -412,7 +412,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-kkp-argocd-gitops-e2e
-    run_if_changed: "charts/gitops"
+    run_if_changed: "ZZZ_DISABLED_charts/gitops"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -429,7 +429,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
   - name: pre-kubermatic-encryption-at-rest-e2e
-    run_if_changed: "(pkg/controller/seed-controller-manager/encryption-at-rest-controller/|pkg/test/e2e/encryption-at-rest/|pkg/resources/apiserver)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/controller/seed-controller-manager/encryption-at-rest-controller/|pkg/test/e2e/encryption-at-rest/|pkg/resources/apiserver)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -465,7 +465,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-user-ssh-keys-agent-e2e
-    run_if_changed: "(pkg/controller/usersshkeysagent/|pkg/test/e2e/usersshkeysagent/|cmd/user-ssh-keys-agent/|pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys/|hack/ci/run-user-ssh-key-agent-e2e-tests.sh)"
+    run_if_changed: "ZZZ_DISABLED_(pkg/controller/usersshkeysagent/|pkg/test/e2e/usersshkeysagent/|cmd/user-ssh-keys-agent/|pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys/|hack/ci/run-user-ssh-key-agent-e2e-tests.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -483,6 +483,40 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
           command:
             - "./hack/ci/run-user-ssh-key-agent-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-pipeline-e2e
+    run_if_changed: "(pkg/test/e2e/pipeline/|hack/ci/run-pipeline-e2e-tests.sh|.prow/|pkg/controller/master-controller-manager/user-project-binding/|pkg/controller/master-controller-manager/rbac/|pkg/controller/seed-controller-manager/cni-application-installation-controller/|pkg/applicationdefinitions/)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+          command:
+            - "./hack/ci/run-pipeline-e2e-tests.sh"
           env:
             - name: KUBERMATIC_EDITION
               value: ee

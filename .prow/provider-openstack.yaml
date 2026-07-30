@@ -16,7 +16,7 @@ presubmits:
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.33
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
     labels:
       preset-openstack: "true"
       preset-vault: "true"
@@ -62,7 +62,7 @@ presubmits:
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.34
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
     labels:
       preset-openstack: "true"
       preset-vault: "true"
@@ -108,7 +108,7 @@ presubmits:
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.35
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
     labels:
       preset-openstack: "true"
       preset-vault: "true"

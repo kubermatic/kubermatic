@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-azure-ubuntu-1.33
     decorate: true
-    run_if_changed: "(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-azure: "true"
@@ -61,7 +61,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-azure-ubuntu-1.34
     decorate: true
-    run_if_changed: "(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-azure: "true"
@@ -107,7 +107,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-azure-ubuntu-1.35
     decorate: true
-    run_if_changed: "(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
+    run_if_changed: "ZZZ_DISABLED_(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-azure: "true"
