@@ -94,7 +94,7 @@ type SettingSpec struct {
 	// AdminGroups is the list of OIDC group names whose members are automatically
 	// granted KKP administrator privileges. Matching against the user's groups
 	// (populated at login) is exact and case-sensitive. Removing a group demotes
-	// only users whose admin status was granted via these groups.
+	// only users whose admin status was granted via these groups. EE-version only.
 	// +optional
 	AdminGroups []string `json:"adminGroups,omitempty"`
 
