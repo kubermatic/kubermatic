@@ -94,6 +94,7 @@ type controllerRunOptions struct {
 	opaIntegration                    bool
 	opaEnableMutation                 bool
 	opaWebhookTimeout                 int
+	kubeLBDisableGatewayAPICRDProtect bool
 	useSSHKeyAgent                    bool
 	networkPolicies                   bool
 	caBundleFile                      string
@@ -156,6 +157,7 @@ func main() {
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
+	flag.BoolVar(&runOp.kubeLBDisableGatewayAPICRDProtect, "kubelb-disable-gateway-api-crd-protection", false, "Do not deploy the ValidatingAdmissionPolicy that reserves the Gateway API CRDs for the kubeLB CCM")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
@@ -326,6 +328,7 @@ func main() {
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.networkPolicies,
+		runOp.kubeLBDisableGatewayAPICRDProtect,
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{

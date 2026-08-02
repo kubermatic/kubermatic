@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubelb"
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
@@ -222,6 +223,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
+		return err
+	}
+
+	if err := r.reconcileValidatingAdmissionPolicies(ctx, data); err != nil {
 		return err
 	}
 
@@ -695,6 +700,49 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
+	}
+	return nil
+}
+
+// reconcileValidatingAdmissionPolicies keeps the ValidatingAdmissionPolicies in the user cluster in
+// sync. Currently this is only the guard rail that reserves the Gateway API CRDs for the kubeLB CCM,
+// which applies as long as Gateway API support is enabled for this cluster.
+//
+// ValidatingAdmissionPolicy is GA since Kubernetes 1.30 and KKP supports 1.33 and higher, so the type
+// is always available in a user cluster.
+func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, data reconcileData) error {
+	gatewayAPIEnabled := data.cluster != nil && data.cluster.Spec.KubeLB != nil && data.cluster.Spec.KubeLB.IsGatewayAPIEnabled()
+
+	// Removing the policy when it is switched off matters as much as creating it, otherwise a cluster
+	// would keep rejecting Gateway API CRD writes after an admin opted out.
+	if !gatewayAPIEnabled || r.kubeLBDisableGatewayAPIProtection {
+		return r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx)
+	}
+
+	policyCreators := []kkpreconciling.NamedValidatingAdmissionPolicyReconcilerFactory{
+		kubelb.GatewayAPIValidatingAdmissionPolicyReconciler(),
+	}
+	if err := kkpreconciling.ReconcileValidatingAdmissionPolicies(ctx, policyCreators, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicies: %w", err)
+	}
+
+	// The binding is reconciled after the policy so that it never references a policy that does not
+	// exist yet.
+	bindingCreators := []kkpreconciling.NamedValidatingAdmissionPolicyBindingReconcilerFactory{
+		kubelb.GatewayAPIValidatingAdmissionPolicyBindingReconciler(),
+	}
+	if err := kkpreconciling.ReconcileValidatingAdmissionPolicyBindings(ctx, bindingCreators, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicyBindings: %w", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {
+	for _, resource := range kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion() {
+		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure %T %q is removed/not present: %w", resource, resource.GetName(), err)
+		}
 	}
 	return nil
 }

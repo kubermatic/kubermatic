@@ -205,6 +205,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-enable-network-policies")
 			}
 
+			// The Gateway API CRDs in a user cluster are owned by the kubeLB CCM, so KKP guards them with a
+			// ValidatingAdmissionPolicy. Admins can turn that guard off per datacenter.
+			if dc := data.DC(); dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection {
+				args = append(args, "-kubelb-disable-gateway-api-crd-protection=true")
+			}
+
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				args = append(args, "-tunneling-agent-ip", data.GetTunnelingAgentIP())
 				args = append(args, "-kas-secure-port", fmt.Sprint(resources.APIServerSecurePort))
