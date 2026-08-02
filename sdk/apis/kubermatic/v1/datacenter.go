@@ -22,12 +22,14 @@ import (
 	"slices"
 	"strings"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+
 	"k8c.io/machine-controller/sdk/providerconfig"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
 // +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector

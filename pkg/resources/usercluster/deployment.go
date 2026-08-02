@@ -208,7 +208,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			// The Gateway API CRDs in a user cluster are owned by the kubeLB CCM, so KKP guards them with a
 			// ValidatingAdmissionPolicy. Admins can turn that guard off per datacenter.
 			if dc := data.DC(); dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection {
-				args = append(args, "-kubelb-disable-gateway-api-crd-protection=true")
+				args = append(args, "-kubelb-disable-gateway-api-protection=true")
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
