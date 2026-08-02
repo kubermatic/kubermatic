@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"k8c.io/kubermatic/sdk/v2/semver"
-
 	"k8c.io/machine-controller/sdk/providerconfig"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

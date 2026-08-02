@@ -19,9 +19,9 @@ package v1
 import (
 	"encoding/json"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-
 	semverlib "github.com/Masterminds/semver/v3"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 // ObjectMeta defines the set of fields that objects returned from the API have
