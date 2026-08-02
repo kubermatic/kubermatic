@@ -646,6 +646,13 @@ spec:
                               Optional: KubeLB holds the configuration for the kubeLB at the data center level.
                               Only available in Enterprise Edition.
                             properties:
+                              disableGatewayAPIProtection:
+                                description: |-
+                                  DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that KKP installs in user clusters
+                                  alongside Gateway API support for kubeLB. That policy reserves the Gateway API CRDs for the kubeLB CCM,
+                                  because installing a different set of them, in particular from the standard channel, makes the CCM crash.
+                                  Only disable this if the Gateway API CRDs in the user clusters have to be managed by someone else.
+                                type: boolean
                               disableIngressClass:
                                 description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
                                 type: boolean

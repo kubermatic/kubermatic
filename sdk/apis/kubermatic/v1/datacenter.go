@@ -22,14 +22,12 @@ import (
 	"slices"
 	"strings"
 
-	kubevirtv1 "kubevirt.io/api/core/v1"
-
 	"k8c.io/machine-controller/sdk/providerconfig"
-
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
 // +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
@@ -1392,6 +1390,11 @@ type KubeLBDatacenterSettings struct {
 	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
 	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
+	// DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that KKP installs in user clusters
+	// alongside Gateway API support for kubeLB. That policy reserves the Gateway API CRDs for the kubeLB CCM,
+	// because installing a different set of them, in particular from the standard channel, makes the CCM crash.
+	// Only disable this if the Gateway API CRDs in the user clusters have to be managed by someone else.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
 	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
