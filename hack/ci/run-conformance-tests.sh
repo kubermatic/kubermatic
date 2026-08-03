@@ -179,6 +179,7 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
   -distributions="${DISTRIBUTIONS:-}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
+  -log-debug="true" \
   -exclude-tests="${EXCLUDE_TESTS:-}" \
   -scenario-options="${SCENARIO_OPTIONS:-}" \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091" \
