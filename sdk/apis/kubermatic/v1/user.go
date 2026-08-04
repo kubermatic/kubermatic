@@ -36,6 +36,12 @@ const (
 	// a ServiceAccount, the the serviceaccount-projectbinding-controller will
 	// create a matching ProjectBinding for the User.
 	ServiceAccountInitialGroupLabel = "initialGroup"
+
+	// AdminGrantedByGroupAnnotation is set on a User whose admin status was granted
+	// because one of their OIDC groups is listed in KubermaticSetting.Spec.AdminGroups.
+	// Its value is the granting group name. When absent, the admin status is treated
+	// as manually managed and is never modified by the admin-group controller.
+	AdminGrantedByGroupAnnotation = "admin.kubermatic.k8c.io/granted-by-group"
 )
 
 // +kubebuilder:resource:scope=Cluster
