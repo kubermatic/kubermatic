@@ -112,10 +112,14 @@ func GatewayAPIValidatingAdmissionPolicyReconciler() kkpreconciling.NamedValidat
 					{
 						Expression: "false",
 						Reason:     ptr.To(metav1.StatusReasonForbidden),
+						// Both paths out are spelled exactly as they serialize: the JSON tag on the field is
+						// "kubelb", not "kubeLB", and the cluster CRD schema silently prunes the wrong
+						// spelling - so anyone copying it out of this message would see no effect at all.
 						Message: "Gateway API CRDs in this cluster are installed and managed by KubeLB, because " +
-							"Gateway API support is enabled for this cluster (spec.kubeLB.enableGatewayAPI). " +
-							"Installing or modifying them breaks the KubeLB CCM. Disable " +
-							"spec.kubeLB.enableGatewayAPI if you want to manage the Gateway API CRDs yourself.",
+							"Gateway API support is enabled for this cluster (spec.kubelb.enableGatewayAPI). " +
+							"Installing or modifying them breaks the KubeLB CCM. Set " +
+							"spec.kubelb.disableGatewayAPIProtection to true to manage the Gateway API CRDs " +
+							"yourself, or disable spec.kubelb.enableGatewayAPI to stop KubeLB from using them.",
 					},
 				},
 			}
