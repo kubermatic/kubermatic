@@ -6,10 +6,10 @@ metadata:
   name: blackbox-exporter
   namespace: default
   labels:
-    helm.sh/chart: blackbox-exporter-9.2.0
+    helm.sh/chart: blackbox-exporter-9.8.0
     app.kubernetes.io/name: blackbox-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/version: "v0.26.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: blackbox-exporter/charts/blackbox-exporter/templates/configmap.yaml
@@ -19,10 +19,10 @@ metadata:
   name: blackbox-exporter
   namespace: default
   labels:
-    helm.sh/chart: blackbox-exporter-9.2.0
+    helm.sh/chart: blackbox-exporter-9.8.0
     app.kubernetes.io/name: blackbox-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/version: "v0.26.0"
     app.kubernetes.io/managed-by: Helm
 data:
   blackbox.yaml: |
@@ -65,10 +65,10 @@ metadata:
   name: blackbox-exporter
   namespace: default
   labels:
-    helm.sh/chart: blackbox-exporter-9.2.0
+    helm.sh/chart: blackbox-exporter-9.8.0
     app.kubernetes.io/name: blackbox-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/version: "v0.26.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -89,10 +89,10 @@ metadata:
   name: blackbox-exporter
   namespace: default
   labels:
-    helm.sh/chart: blackbox-exporter-9.2.0
+    helm.sh/chart: blackbox-exporter-9.8.0
     app.kubernetes.io/name: blackbox-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/version: "v0.26.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -132,7 +132,7 @@ spec:
       containers:
       
       - name: blackbox-exporter
-        image: quay.io/prometheus/blackbox-exporter:v0.25.0
+        image: quay.io/prometheus/blackbox-exporter:v0.26.0
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false

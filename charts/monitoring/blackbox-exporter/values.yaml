@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Reference to upstream values.yaml:
-# https://github.com/prometheus-community/helm-charts/blob/prometheus-blackbox-exporter-9.2.0/charts/prometheus-blackbox-exporter/values.yaml
+# https://github.com/prometheus-community/helm-charts/blob/prometheus-blackbox-exporter-9.8.0/charts/prometheus-blackbox-exporter/values.yaml
 
 blackbox-exporter:
   fullnameOverride: blackbox-exporter
