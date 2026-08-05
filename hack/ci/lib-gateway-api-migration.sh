@@ -26,6 +26,10 @@
 : "${KUBERMATIC_EDITION:=ee}"
 : "${KIND_CLUSTER_NAME:=${SEED_NAME:-kubermatic}}"
 : "${KUBERMATIC_DOMAIN:=worker.ci.k8c.io}"
+# Released 2.29/2.30 installers call `helm version --client`, which Helm 4
+# removed. Point them at a Helm 3 binary. Resolved from PATH so it survives
+# image-layout changes. Override if the binary is named differently.
+: "${KKP_LEGACY_HELM_BINARY:=helm3}"
 
 INSTALL_DIR_V229="${INSTALL_DIR_V229:-/tmp/kkp-${KKP_V229_VERSION}}"
 INSTALL_DIR_V230="${INSTALL_DIR_V230:-/tmp/kkp-${KKP_V230_VERSION}}"
@@ -320,7 +324,8 @@ deploy_kkp_v229() {
     --charts-directory "${INSTALL_DIR_V229}/charts" \
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
-    --helm-values "${HELM_VALUES_FILE_V229_NGINX}"
+    --helm-values "${HELM_VALUES_FILE_V229_NGINX}" \
+    --helm-binary "${KKP_LEGACY_HELM_BINARY}"
 
   retry 10 check_all_deployments_ready kubermatic
   retry 10 check_all_deployments_ready nginx-ingress-controller
@@ -335,6 +340,7 @@ deploy_kkp_v230_with_gateway_api_flag() {
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
     --helm-values "${HELM_VALUES_FILE_V230_GATEWAY_API}" \
+    --helm-binary "${KKP_LEGACY_HELM_BINARY}" \
     --migrate-gateway-api
 
   retry 10 check_all_deployments_ready kubermatic
@@ -349,7 +355,8 @@ deploy_kkp_v230_without_gateway_api_flag() {
     --charts-directory "${INSTALL_DIR_V230}/charts" \
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
-    --helm-values "${HELM_VALUES_FILE_V230_NGINX}"
+    --helm-values "${HELM_VALUES_FILE_V230_NGINX}" \
+    --helm-binary "${KKP_LEGACY_HELM_BINARY}"
 
   retry 10 check_all_deployments_ready kubermatic
   retry 10 check_all_deployments_ready nginx-ingress-controller
