@@ -14,7 +14,7 @@
 
 apiVersion: v2
 version: 9.9.9-dev
-appVersion: 13.0.1
+appVersion: 13.1.2
 description: The leading tool for querying and visualizing time series and metrics.
 home: https://grafana.net
 icon: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
@@ -26,4 +26,4 @@ type: application
 dependencies:
   - name: grafana
     repository: https://grafana-community.github.io/helm-charts
-    version: 12.3.3
+    version: 12.10.3
