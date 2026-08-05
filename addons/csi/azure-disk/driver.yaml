@@ -556,8 +556,6 @@ spec:
             - --user-agent-suffix=OSS-helm
             - --allow-empty-cloud-config=false
             - --vmss-cache-ttl-seconds=-1
-            - --kube-api-qps=0
-            - --kube-api-burst=0
             - --enable-traffic-manager=false
             - --traffic-manager-port=7788
             - --enable-otel-tracing=false
