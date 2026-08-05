@@ -1,12 +1,12 @@
 ---
 # Source: kube-state-metrics/charts/kube-state-metrics/templates/pdb.yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: kube-state-metrics
   namespace: default
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -25,7 +25,7 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -42,7 +42,7 @@ metadata:
   name: kube-state-metrics-customresourcestate-config
   namespace: default
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -86,7 +86,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -111,12 +111,12 @@ rules:
   - cronjobs
   verbs: ["list", "watch"]
 
-- apiGroups: ["extensions", "apps"]
+- apiGroups: ["apps"]
   resources:
   - daemonsets
   verbs: ["list", "watch"]
 
-- apiGroups: ["extensions", "apps"]
+- apiGroups: ["apps"]
   resources:
   - deployments
   verbs: ["list", "watch"]
@@ -131,7 +131,7 @@ rules:
   - horizontalpodautoscalers
   verbs: ["list", "watch"]
 
-- apiGroups: ["extensions", "networking.k8s.io"]
+- apiGroups: ["networking.k8s.io"]
   resources:
   - ingresses
   verbs: ["list", "watch"]
@@ -191,7 +191,7 @@ rules:
   - pods
   verbs: ["list", "watch"]
 
-- apiGroups: ["extensions", "apps"]
+- apiGroups: ["apps"]
   resources:
   - replicasets
   verbs: ["list", "watch"]
@@ -254,7 +254,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -278,7 +278,7 @@ metadata:
   name: kube-state-metrics
   namespace: default
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -311,7 +311,7 @@ metadata:
   name: kube-state-metrics
   namespace: default
   labels:    
-    helm.sh/chart: kube-state-metrics-5.30.0
+    helm.sh/chart: kube-state-metrics-5.37.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: kube-state-metrics
@@ -330,7 +330,7 @@ spec:
   template:
     metadata:
       labels:        
-        helm.sh/chart: kube-state-metrics-5.30.0
+        helm.sh/chart: kube-state-metrics-5.37.0
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: metrics
         app.kubernetes.io/part-of: kube-state-metrics
@@ -347,6 +347,7 @@ spec:
       automountServiceAccountToken: true
       hostNetwork: false
       serviceAccountName: kube-state-metrics
+      dnsPolicy: ClusterFirst
       containers:
       - name: kube-state-metrics
         args:
