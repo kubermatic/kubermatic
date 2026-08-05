@@ -26,6 +26,61 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestGatewayAPIProtectionDisabled(t *testing.T) {
+	testCases := []struct {
+		name     string
+		cluster  *kubermaticv1.KubeLB
+		dc       *kubermaticv1.KubeLBDatacenterSettings
+		expected bool
+	}{
+		{
+			name:     "nothing configured keeps the guard",
+			expected: false,
+		},
+		{
+			name:     "both explicitly false keeps the guard",
+			cluster:  &kubermaticv1.KubeLB{DisableGatewayAPIProtection: false},
+			dc:       &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: false},
+			expected: false,
+		},
+		{
+			name:     "the datacenter disables it for every cluster",
+			dc:       &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: true},
+			expected: true,
+		},
+		{
+			// The case that separates these semantics from precedence: a cluster cannot bring the guard
+			// back once an admin has turned it off for the datacenter.
+			name:     "a cluster cannot re-enable what the datacenter disabled",
+			cluster:  &kubermaticv1.KubeLB{DisableGatewayAPIProtection: false},
+			dc:       &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: true},
+			expected: true,
+		},
+		{
+			name:     "a cluster can opt out on its own",
+			cluster:  &kubermaticv1.KubeLB{DisableGatewayAPIProtection: true},
+			dc:       &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: false},
+			expected: true,
+		},
+		{
+			// Datacenters without any kubeLB settings are common, so the nil must not shadow the cluster.
+			name:     "a cluster can opt out without any datacenter settings",
+			cluster:  &kubermaticv1.KubeLB{DisableGatewayAPIProtection: true},
+			expected: true,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := gatewayAPIProtectionDisabled(test.cluster, test.dc); got != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, got)
+			}
+		})
+	}
+}
+
 func TestGetLabelArgsValue(t *testing.T) {
 	testCases := []struct {
 		name           string

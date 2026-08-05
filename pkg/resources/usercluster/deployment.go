@@ -206,8 +206,13 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 
 			// The Gateway API CRDs in a user cluster are owned by the kubeLB CCM, so KKP guards them with a
-			// ValidatingAdmissionPolicy. Admins can turn that guard off per datacenter.
-			if dc := data.DC(); dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection {
+			// ValidatingAdmissionPolicy. Admins can turn that guard off for a whole datacenter, and a
+			// single cluster can opt out of it on its own.
+			var dcKubeLB *kubermaticv1.KubeLBDatacenterSettings
+			if dc := data.DC(); dc != nil {
+				dcKubeLB = dc.Spec.KubeLB
+			}
+			if gatewayAPIProtectionDisabled(data.Cluster().Spec.KubeLB, dcKubeLB) {
 				args = append(args, "-kubelb-disable-gateway-api-protection=true")
 			}
 
@@ -461,6 +466,21 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	}
 
 	return networkFlags
+}
+
+// gatewayAPIProtectionDisabled reports whether the ValidatingAdmissionPolicy that reserves the Gateway
+// API CRDs for the kubeLB CCM should be skipped.
+//
+// Either level can switch the guard off, and neither can switch it back on: an admin who disables it
+// for the datacenter cannot be overridden by a single cluster. Because of that, an unset cluster field
+// and an explicit false mean the same thing, which is why this is a plain bool rather than the *bool
+// its siblings use for their inherit-or-override semantics.
+func gatewayAPIProtectionDisabled(cluster *kubermaticv1.KubeLB, dc *kubermaticv1.KubeLBDatacenterSettings) bool {
+	if dc != nil && dc.DisableGatewayAPIProtection {
+		return true
+	}
+
+	return cluster != nil && cluster.DisableGatewayAPIProtection
 }
 
 func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {

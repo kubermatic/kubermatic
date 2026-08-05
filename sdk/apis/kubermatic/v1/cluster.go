@@ -321,6 +321,13 @@ type KubeLB struct {
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that reserves the Gateway API
+	// CRDs in this cluster for the kubeLB CCM. Set this only when those CRDs are managed elsewhere;
+	// installing a set that the CCM does not expect makes it crash loop.
+	//
+	// The datacenter has the same setting. Protection is skipped when either of them disables it, so
+	// this cannot re-enable protection that the datacenter has turned off.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }

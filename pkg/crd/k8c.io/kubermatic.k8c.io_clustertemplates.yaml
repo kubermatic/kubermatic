@@ -3947,6 +3947,15 @@ spec:
                     KubeLB holds the configuration for the kubeLB component.
                     Only available in Enterprise Edition.
                   properties:
+                    disableGatewayAPIProtection:
+                      description: |-
+                        DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that reserves the Gateway API
+                        CRDs in this cluster for the kubeLB CCM. Set this only when those CRDs are managed elsewhere;
+                        installing a set that the CCM does not expect makes it crash loop.
+
+                        The datacenter has the same setting. Protection is skipped when either of them disables it, so
+                        this cannot re-enable protection that the datacenter has turned off.
+                      type: boolean
                     enableGatewayAPI:
                       description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
                       type: boolean
