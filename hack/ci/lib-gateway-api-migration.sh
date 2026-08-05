@@ -340,7 +340,6 @@ deploy_kkp_v230_with_gateway_api_flag() {
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
     --helm-values "${HELM_VALUES_FILE_V230_GATEWAY_API}" \
-    --helm-binary "${KKP_LEGACY_HELM_BINARY}" \
     --migrate-gateway-api
 
   retry 10 check_all_deployments_ready kubermatic
@@ -355,8 +354,7 @@ deploy_kkp_v230_without_gateway_api_flag() {
     --charts-directory "${INSTALL_DIR_V230}/charts" \
     --storageclass copy-default \
     --config "${KUBERMATIC_CONFIG}" \
-    --helm-values "${HELM_VALUES_FILE_V230_NGINX}" \
-    --helm-binary "${KKP_LEGACY_HELM_BINARY}"
+    --helm-values "${HELM_VALUES_FILE_V230_NGINX}"
 
   retry 10 check_all_deployments_ready kubermatic
   retry 10 check_all_deployments_ready nginx-ingress-controller
