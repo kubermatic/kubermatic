@@ -715,7 +715,7 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 
 	// Removing the policy when it is switched off matters as much as creating it, otherwise a cluster
 	// would keep rejecting Gateway API CRD writes after an admin opted out.
-	if !gatewayAPIEnabled || r.kubeLBDisableGatewayAPIProtection {
+	if !gatewayAPIEnabled || r.gatewayAPIProtectionDisabled(data.cluster) {
 		return r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx)
 	}
 
@@ -736,6 +736,24 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 	}
 
 	return nil
+}
+
+// gatewayAPIProtectionDisabled reports whether the guard rail that reserves the Gateway API CRDs for
+// the kubeLB CCM should be skipped for this cluster.
+//
+// Either level can switch it off and neither can switch it back on, so an admin who disables it for
+// the whole datacenter cannot be overridden by a single cluster.
+//
+// The two values arrive by different routes on purpose. The datacenter setting comes in as a startup
+// flag, because this controller only ever sees its own cluster and has no Datacenter object to read.
+// The cluster setting is read straight off the Cluster here, so flipping it takes effect on the next
+// reconcile instead of requiring the pod to be restarted with a new flag.
+func (r *reconciler) gatewayAPIProtectionDisabled(cluster *kubermaticv1.Cluster) bool {
+	if r.kubeLBDisableGatewayAPIProtection {
+		return true
+	}
+
+	return cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection
 }
 
 func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {

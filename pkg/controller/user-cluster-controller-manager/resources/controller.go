@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubelb"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -175,8 +176,6 @@ func Add(
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.MutatingWebhookConfiguration{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
-		&admissionregistrationv1.ValidatingAdmissionPolicy{},
-		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
 		&apiextensionsv1.CustomResourceDefinition{},
 		&appsv1.Deployment{},
 		&policyv1.PodDisruptionBudget{},
@@ -200,6 +199,25 @@ func Add(
 	}
 	for _, t := range typesToWatch {
 		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew))
+	}
+
+	// The admission policy types are cluster scoped and shared with everything else in the user
+	// cluster, most notably the Gateway API's own safe-upgrades policy, which is written often enough
+	// to keep this controller busy for no reason. Only the one KKP owns is worth a reconcile.
+	//
+	// Matched by name rather than by the managed-by label, so that stripping the label off our policy
+	// cannot also stop us from restoring it.
+	kubeLBGatewayAPIPolicy := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
+		return o.GetName() == kubelb.GatewayAPIAdmissionPolicyName
+	})
+
+	// The policy and its binding deliberately share a name, so one check covers both.
+	policyTypesToWatch := []ctrlruntimeclient.Object{
+		&admissionregistrationv1.ValidatingAdmissionPolicy{},
+		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
+	}
+	for _, t := range policyTypesToWatch {
+		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew, kubeLBGatewayAPIPolicy))
 	}
 
 	seedTypesToWatch := []ctrlruntimeclient.Object{

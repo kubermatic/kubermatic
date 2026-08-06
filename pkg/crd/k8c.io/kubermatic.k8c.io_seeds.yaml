@@ -652,6 +652,9 @@ spec:
                                   alongside Gateway API support for kubeLB. That policy reserves the Gateway API CRDs for the kubeLB CCM,
                                   because installing a different set of them, in particular from the standard channel, makes the CCM crash.
                                   Only disable this if the Gateway API CRDs in the user clusters have to be managed by someone else.
+
+                                  This is embedded into both the seed and the datacenter settings, and clusters have the same field. The
+                                  protection is skipped when any of them disables it, so a narrower level can never re-enable it.
                                 type: boolean
                               disableIngressClass:
                                 description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
@@ -3690,6 +3693,16 @@ spec:
                     KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
                     Only available in Enterprise Edition.
                   properties:
+                    disableGatewayAPIProtection:
+                      description: |-
+                        DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that KKP installs in user clusters
+                        alongside Gateway API support for kubeLB. That policy reserves the Gateway API CRDs for the kubeLB CCM,
+                        because installing a different set of them, in particular from the standard channel, makes the CCM crash.
+                        Only disable this if the Gateway API CRDs in the user clusters have to be managed by someone else.
+
+                        This is embedded into both the seed and the datacenter settings, and clusters have the same field. The
+                        protection is skipped when any of them disables it, so a narrower level can never re-enable it.
+                      type: boolean
                     enableForAllDatacenters:
                       description: |-
                         EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.

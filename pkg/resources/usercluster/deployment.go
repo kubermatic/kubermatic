@@ -73,6 +73,7 @@ type userclusterControllerData interface {
 	IsKonnectivityEnabled() bool
 	IsSSHKeysDisabled() bool
 	DC() *kubermaticv1.Datacenter
+	Seed() *kubermaticv1.Seed
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
@@ -206,13 +207,13 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 
 			// The Gateway API CRDs in a user cluster are owned by the kubeLB CCM, so KKP guards them with a
-			// ValidatingAdmissionPolicy. Admins can turn that guard off for a whole datacenter, and a
-			// single cluster can opt out of it on its own.
-			var dcKubeLB *kubermaticv1.KubeLBDatacenterSettings
-			if dc := data.DC(); dc != nil {
-				dcKubeLB = dc.Spec.KubeLB
-			}
-			if gatewayAPIProtectionDisabled(data.Cluster().Spec.KubeLB, dcKubeLB) {
+			// ValidatingAdmissionPolicy. Admins can turn that guard off for a whole seed or a single
+			// datacenter.
+			//
+			// Only the admin settings travel as a flag; the per-cluster one is read directly off the Cluster
+			// by the user-cluster-controller-manager, which has no Seed or Datacenter object but does have
+			// its own Cluster, and which then needs no restart when that field changes.
+			if adminDisabledGatewayAPIProtection(data.Seed(), data.DC()) {
 				args = append(args, "-kubelb-disable-gateway-api-protection=true")
 			}
 
@@ -468,19 +469,19 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	return networkFlags
 }
 
-// gatewayAPIProtectionDisabled reports whether the ValidatingAdmissionPolicy that reserves the Gateway
-// API CRDs for the kubeLB CCM should be skipped.
+// adminDisabledGatewayAPIProtection reports whether an admin has switched off the guard rail that
+// reserves the Gateway API CRDs for the kubeLB CCM, either for a whole seed or for one datacenter.
 //
-// Either level can switch the guard off, and neither can switch it back on: an admin who disables it
-// for the datacenter cannot be overridden by a single cluster. Because of that, an unset cluster field
-// and an explicit false mean the same thing, which is why this is a plain bool rather than the *bool
-// its siblings use for their inherit-or-override semantics.
-func gatewayAPIProtectionDisabled(cluster *kubermaticv1.KubeLB, dc *kubermaticv1.KubeLBDatacenterSettings) bool {
-	if dc != nil && dc.DisableGatewayAPIProtection {
+// Both live on the same embedded KubeLBSettings, and either one disabling it is enough; a narrower
+// level can never re-enable what a wider one turned off. The per-cluster setting is deliberately not
+// considered here - the user-cluster-controller-manager reads that one off the Cluster itself, so
+// changing it does not have to roll the deployment this argument belongs to.
+func adminDisabledGatewayAPIProtection(seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter) bool {
+	if seed != nil && seed.Spec.KubeLB != nil && seed.Spec.KubeLB.DisableGatewayAPIProtection {
 		return true
 	}
 
-	return cluster != nil && cluster.DisableGatewayAPIProtection
+	return dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection
 }
 
 func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
