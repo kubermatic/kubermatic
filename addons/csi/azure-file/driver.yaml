@@ -935,6 +935,7 @@ spec:
               name: socket-dir
             - mountPath: /registration
               name: registration-dir
+        {{- if semverCompare .Cluster.Version ">= 1.34" }}
         - command:
             - azfilesrefresh
           image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
@@ -954,6 +955,7 @@ spec:
               name: azfilesauth
             - mountPath: /var/log/
               name: log-dir
+        {{- end }}
       dnsPolicy: Default
       hostNetwork: true
       hostPID: true
@@ -973,8 +975,10 @@ spec:
               value: /var/lib/kubelet
             - name: MIGRATE_K8S_REPO
               value: "false"
+            {{- if semverCompare .Cluster.Version ">= 1.34" }}
             - name: ENABLE_MI_AUTH
               value: "true"
+            {{- end }}
           image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           name: install-azurefile-proxy
