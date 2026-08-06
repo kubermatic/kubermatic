@@ -53,6 +53,32 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-con
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/mla" --namespace mla > /dev/null 2>&1 &
 
+# The MLA agents run inside the user cluster, so the seed kubeconfig above cannot
+# see them. The user cluster is created by the test and its kubeconfig only exists
+# as a Secret in the cluster namespace, so wait for that Secret to show up before
+# starting to capture. protokol tolerates a namespace that does not exist yet.
+capture_usercluster_logs() {
+  local ucKubeconfig namespace
+
+  ucKubeconfig="$(mktemp)"
+
+  for _ in $(seq 1 150); do
+    namespace="$(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | grep -m1 '^cluster-' || true)"
+
+    if [ -n "$namespace" ] && kubectl --namespace "$namespace" get secret admin-kubeconfig &> /dev/null; then
+      kubectl --namespace "$namespace" get secret admin-kubeconfig -o jsonpath='{.data.kubeconfig}' | base64 -d > "$ucKubeconfig"
+      protokol --kubeconfig "$ucKubeconfig" --flat --output "$ARTIFACTS/logs/usercluster-mla" --namespace mla-system > /dev/null 2>&1
+      return
+    fi
+
+    sleep 4
+  done
+
+  echodate "WARNING: no user cluster kubeconfig appeared, user cluster MLA logs will not be captured"
+}
+
+capture_usercluster_logs &
+
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
 echodate "Waiting for kubermatic-webhook deployment to exist..."
@@ -114,7 +140,7 @@ fi
 
 echodate "Running MLA tests..."
 
-go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
+go_test mla_e2e -timeout 40m -tags mla -v ./pkg/test/e2e/mla \
   -kubeconfig "$KUBECONFIG" \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"

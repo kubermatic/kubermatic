@@ -20,6 +20,7 @@ package mla
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -52,6 +53,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,6 +124,14 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to enable MLA: %v", err)
 	}
 
+	// deployed this early so the agent's 30s scrape and remote_write overlap the
+	// checks below; verifyMetricsRoundTrip asserts on it near the end of the run.
+	logger.Info("Deploying the metrics probe workload into the user cluster...")
+	if err := deployMetricsProbe(ctx, logger, testJig, cluster.Name); err != nil {
+		t.Fatalf("failed to deploy metrics probe workload: %v", err)
+	}
+	defer cleanupMetricsProbe(context.Background(), logger, testJig)
+
 	logger.Info("Waiting for project to get Grafana org annotation...")
 	p := &kubermaticv1.Project{}
 	orgID := ""
@@ -183,8 +193,25 @@ func TestMLAIntegration(t *testing.T) {
 		t.Errorf("failed to verify rate limits: %v", err)
 	}
 
-	if err := verifyGatewayWritePath(ctx, logger, seedClient, seedConfig, testJig, cluster); err != nil {
+	// one probe pod serves all data-plane checks below. It is created after the
+	// rate-limit checks, which rewrite the gateway nginx ConfigMap and trigger a
+	// rollout the probe setup waits out.
+	probe, err := newGatewayProbe(ctx, logger, seedClient, seedConfig, testJig, cluster)
+	if err != nil {
+		t.Fatalf("failed to set up MLA gateway probe: %v", err)
+	}
+	defer probe.cleanup(logger)
+
+	if err := verifyGatewayWritePath(ctx, logger, seedClient, probe, cluster); err != nil {
 		t.Errorf("failed to verify MLA Gateway write path: %v", err)
+	}
+
+	if err := verifyTenantHeaderSpoofing(ctx, logger, seedClient, probe, cluster); err != nil {
+		t.Errorf("failed to verify tenant header spoofing is ignored: %v", err)
+	}
+
+	if err := verifyMetricsRoundTrip(ctx, logger, probe, testJig, cluster); err != nil {
+		t.Errorf("failed to verify metrics round trip: %v", err)
 	}
 
 	logger.Info("Disabling MLA...")
@@ -699,22 +726,47 @@ const (
 	// lokiPushJob is the log stream label the probe writes and later queries,
 	// so it can be told apart from real agent traffic.
 	lokiPushJob = "mla-gateway-e2e-probe"
+
+	// lokiPushPath is the gateway write-path location for Loki
+	// (mla/resources.go:89).
+	lokiPushPath = "/loki/api/v1/push"
+
+	// forgedTenantID is the tenant a client would write to if the gateway honored
+	// a client-supplied X-Scope-OrgID.
+	forgedTenantID = "mla-e2e-forged-tenant"
+
+	// lokiSpoofJob is the stream pushed with the forged tenant header, kept apart
+	// from the lokiPushJob stream.
+	lokiSpoofJob = "mla-gateway-e2e-spoof"
+
+	// lokiQueryFrontendAddr is the Loki read endpoint the gateway proxies to. It
+	// is queried directly to ask for a tenant the gateway would overwrite.
+	lokiQueryFrontendAddr = "loki-distributed-query-frontend.mla.svc.cluster.local:3100"
+
+	// paths the staged mTLS material is mounted at inside the probe pod.
+	probeCertPath = "/etc/ssl/mla/client.crt"
+	probeKeyPath  = "/etc/ssl/mla/client.key"
 )
 
-// verifyGatewayWritePath exercises the MLA Gateway data plane directly, which
-// the rest of the suite never does (it talks to the Cortex/Loki backends over
-// port-forwards, bypassing the gateway). It confirms two NGINX behaviors that
-// an image bump could regress: that a real mTLS push round-trips to storage
-// (W1) and that a client without a cert is rejected (W2, ssl_verify_client on).
-//
-// The gateway write port (8080) has no in-cluster Service (mla-gateway ClusterIP
-// fronts only the read port 8081), so the probe curls a gateway pod IP on 8080
-// directly. This covers the gateway's NGINX behavior across all expose
-// strategies; the nodeport-proxy layer in front is out of scope.
-func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, seedConfig *rest.Config, testJig *jig.TestJig, cluster *kubermaticv1.Cluster) error {
+// gatewayProbe is the agnhost pod the data-plane checks curl from: it holds the
+// monitoring-agent client cert, so it can talk to the gateway write port, and it
+// runs in the seed cluster namespace, so it can also reach cluster-local
+// Services (the gateway read port, the mla namespace).
+type gatewayProbe struct {
+	utils.TestPodConfig
+
+	// tlsSecret is staged alongside the pod; TestPodConfig.CleanUp only deletes
+	// the pod.
+	tlsSecret *corev1.Secret
+}
+
+// newGatewayProbe reads the monitoring-agent mTLS material out of the user
+// cluster, stages it as a Secret in the seed cluster namespace and deploys the
+// probe pod that mounts it. It also waits out the gateway Deployment rollout.
+func newGatewayProbe(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, seedConfig *rest.Config, testJig *jig.TestJig, cluster *kubermaticv1.Cluster) (*gatewayProbe, error) {
 	clusterNS := cluster.Status.NamespaceName
 	if clusterNS == "" {
-		return errors.New("cluster has no namespace yet (Status.NamespaceName empty)")
+		return nil, errors.New("cluster has no namespace yet (Status.NamespaceName empty)")
 	}
 
 	// the agent mTLS client cert is reconciled into the user cluster and signed
@@ -747,10 +799,10 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 
 		return nil, nil
 	}); err != nil {
-		return fmt.Errorf("failed to gather mTLS material: %w", err)
+		return nil, fmt.Errorf("failed to gather mTLS material: %w", err)
 	}
 
-	// stage the cert/key/CA in the seed cluster-namespace as a Secret the probe
+	// stage the cert/key in the seed cluster-namespace as a Secret the probe
 	// pod mounts, so curl can present them without writing them to a command line.
 	probeSecretName := gatewayProbePodName + "-tls"
 	probeSecret := &corev1.Secret{
@@ -770,56 +822,138 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 	_ = seedClient.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: probeSecretName, Namespace: clusterNS}})
 	_ = seedClient.Delete(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: gatewayProbePodName, Namespace: clusterNS}})
 
-	err := seedClient.Create(ctx, probeSecret)
-	if err != nil {
-		return fmt.Errorf("failed to create probe TLS secret: %w", err)
+	if err := seedClient.Create(ctx, probeSecret); err != nil {
+		return nil, fmt.Errorf("failed to create probe TLS secret: %w", err)
 	}
-	defer func() {
-		if err := seedClient.Delete(context.Background(), probeSecret); err != nil && !apierrors.IsNotFound(err) {
-			log.Warnw("Failed to clean up probe TLS secret", zap.Error(err))
-		}
-	}()
+
+	probe := &gatewayProbe{
+		TestPodConfig: utils.TestPodConfig{
+			Log:       log,
+			Namespace: clusterNS,
+			Client:    seedClient,
+			Config:    seedConfig,
+			CreatePodFunc: func(ns string) *corev1.Pod {
+				return newGatewayProbePod(ns, probeSecretName)
+			},
+		},
+		tlsSecret: probeSecret,
+	}
 
 	log.Info("Waiting for MLA Gateway pod to be ready...")
 
 	gatewayPodIP, err := waitGatewayPodReady(ctx, seedClient, clusterNS)
 	if err != nil {
-		return fmt.Errorf("failed to find ready gateway pod: %w", err)
+		probe.cleanup(log)
+		return nil, fmt.Errorf("failed to find ready gateway pod: %w", err)
 	}
 
 	log.Infof("Gateway pod IP: %s", gatewayPodIP)
 
-	probe := &utils.TestPodConfig{
-		Log:       log,
-		Namespace: clusterNS,
-		Client:    seedClient,
-		Config:    seedConfig,
-		CreatePodFunc: func(ns string) *corev1.Pod {
-			return newGatewayProbePod(ns, probeSecretName)
-		},
-	}
-
 	if err := probe.DeployTestPod(ctx, log); err != nil {
-		return fmt.Errorf("failed to deploy gateway probe pod: %w", err)
+		probe.cleanup(log)
+		return nil, fmt.Errorf("failed to deploy gateway probe pod: %w", err)
 	}
 
-	defer func() {
-		if err := probe.CleanUp(context.Background()); err != nil {
-			log.Warnw("Failed to clean up gateway probe pod", zap.Error(err))
-		}
-	}()
+	return probe, nil
+}
 
-	const (
-		certPath = "/etc/ssl/mla/client.crt"
-		keyPath  = "/etc/ssl/mla/client.key"
-	)
-	// -k: the server cert SAN does not cover a pod IP, but client-cert
-	// verification (ssl_verify_client on) still runs server-side regardless.
-	baseCurl := []string{
+// cleanup deletes the probe pod and the staged TLS Secret.
+func (p *gatewayProbe) cleanup(log *zap.SugaredLogger) {
+	ctx := context.Background()
+
+	if err := p.CleanUp(ctx); err != nil && !apierrors.IsNotFound(err) {
+		log.Warnw("Failed to clean up gateway probe pod", zap.Error(err))
+	}
+
+	if err := p.Client.Delete(ctx, p.tlsSecret); err != nil && !apierrors.IsNotFound(err) {
+		log.Warnw("Failed to clean up probe TLS secret", zap.Error(err))
+	}
+}
+
+// pushCurl builds a write-path curl that presents the agent client cert and
+// prints only the HTTP status code.
+//
+// -k: the server cert SAN does not cover a pod IP, but client-cert
+// verification (ssl_verify_client on) still runs server-side regardless.
+func (p *gatewayProbe) pushCurl(podIP, path string, extra ...string) []string {
+	curl := []string{
 		"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
 		"--connect-timeout", "3", "--max-time", "15",
-		"--cert", certPath, "--key", keyPath, "-k",
+		"--cert", probeCertPath, "--key", probeKeyPath, "-k",
 	}
+	curl = append(curl, extra...)
+
+	return append(curl, gatewayPushURL(podIP, path))
+}
+
+// gatewayPushURL is the gateway write port, which has no in-cluster Service
+// (mla-gateway ClusterIP fronts only the read port 8081), so callers curl a
+// gateway pod IP directly.
+func gatewayPushURL(podIP, path string) string {
+	return fmt.Sprintf("https://%s%s", net.JoinHostPort(podIP, "8080"), path)
+}
+
+// lokiQueryRangeURL builds a query_range request for a single job label, over a
+// window around the moment the stream was pushed.
+func lokiQueryRangeURL(hostPort, job string, pushTime time.Time) string {
+	return fmt.Sprintf(
+		"http://%s/loki/api/v1/query_range?query=%s&start=%d&end=%d",
+		hostPort,
+		url.QueryEscape(fmt.Sprintf("{job=%q}", job)),
+		pushTime.Add(-time.Minute).UnixNano(),
+		pushTime.Add(10*time.Minute).UnixNano(),
+	)
+}
+
+// gatewayReadAddr is the gateway read path: the mla-gateway Service on port 80,
+// which fronts the internal read server on 8081.
+func gatewayReadAddr(clusterNS string) string {
+	return net.JoinHostPort(fmt.Sprintf("%s.%s.svc.cluster.local", gatewayName, clusterNS), "80")
+}
+
+// lokiQueryResponse is the part of a Loki query response the checks assert on.
+type lokiQueryResponse struct {
+	Status string `json:"status"`
+	Data   struct {
+		ResultType string            `json:"resultType"`
+		Result     []json.RawMessage `json:"result"`
+	} `json:"data"`
+}
+
+// parseLokiQueryResponse decodes a Loki query body and requires a successful
+// response: error bodies echo the query, so a substring check for the job label
+// alone would also pass on failures.
+func parseLokiQueryResponse(body string) (*lokiQueryResponse, error) {
+	response := &lokiQueryResponse{}
+	if err := json.Unmarshal([]byte(body), response); err != nil {
+		return nil, fmt.Errorf("unable to decode response %q: %w", body, err)
+	}
+
+	if response.Status != "success" {
+		return nil, fmt.Errorf("expected a successful response, got %q", body)
+	}
+
+	return response, nil
+}
+
+// curlGet is a plain GET from the probe pod, with the response body on stdout.
+func curlGet(url string, extra ...string) []string {
+	curl := []string{"curl", "-s", "--connect-timeout", "3", "--max-time", "15"}
+	curl = append(curl, extra...)
+
+	return append(curl, url)
+}
+
+// verifyGatewayWritePath exercises the MLA Gateway data plane directly, which
+// the rest of the suite never does (it talks to the Cortex/Loki backends over
+// port-forwards, bypassing the gateway). It confirms two NGINX behaviors that
+// an image bump could regress: that a real mTLS push round-trips to storage
+// (W1) and that a client without a cert is rejected (W2, ssl_verify_client on).
+//
+// This covers the gateway's NGINX behavior across all expose strategies; the
+// nodeport-proxy layer in front is out of scope.
+func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, probe *gatewayProbe, cluster *kubermaticv1.Cluster) error {
+	clusterNS := probe.Namespace
 
 	var problems []string
 
@@ -832,10 +966,6 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		`{"streams":[{"stream":{"job":%q},"values":[[%q,"probe"]]}]}`,
 		lokiPushJob, strconv.FormatInt(pushTime.UnixNano(), 10),
 	)
-	pushURLFor := func(podIP string) string {
-		return fmt.Sprintf("https://%s/loki/api/v1/push", net.JoinHostPort(podIP, "8080"))
-	}
-
 	// pod readiness only proves the 8081 probe endpoint, so the first push can
 	// still hit a transient distributor or resolver blip; retry briefly. The
 	// pod IP is re-resolved per attempt in case a gateway rollout replaces the
@@ -846,7 +976,7 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 			return err, nil
 		}
 
-		pushCurl := append(append([]string{}, baseCurl...), "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURLFor(podIP))
+		pushCurl := probe.pushCurl(podIP, lokiPushPath, "-XPOST", "-H", "Content-Type: application/json", "-d", pushBody)
 		pushCode, _, err := probe.Exec(ctx, gatewayProbeContainer, pushCurl...)
 		if err != nil {
 			return fmt.Errorf("push failed to execute: %w", err), nil
@@ -861,20 +991,11 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		problems = append(problems, fmt.Sprintf("W1 push did not succeed: %v", pushErr))
 	}
 
-	readURL := fmt.Sprintf(
-		"http://%s/loki/api/v1/query_range?query=%s&start=%d&end=%d",
-		net.JoinHostPort(fmt.Sprintf("%s.%s.svc.cluster.local", gatewayName, clusterNS), "80"),
-		url.QueryEscape(fmt.Sprintf("{job=%q}", lokiPushJob)),
-		pushTime.Add(-time.Minute).UnixNano(),
-		pushTime.Add(10*time.Minute).UnixNano(),
-	)
 	// deliberately no X-Scope-OrgID header: the gateway read server overwrites
 	// it with the cluster name (proxy_set_header at server scope), so getting
 	// the pushed stream back proves the gateway's tenant injection works on
 	// both paths, not just that loki honors a header the test set itself.
-	readCmd := []string{
-		"curl", "-s", "--connect-timeout", "3", "--max-time", "15", readURL,
-	}
+	readCmd := curlGet(lokiQueryRangeURL(gatewayReadAddr(clusterNS), lokiPushJob, pushTime))
 
 	// give loki a moment to index the just-pushed stream before reading back
 	if readErr := wait.Poll(ctx, 2*time.Second, 90*time.Second, func(ctx context.Context) (error, error) {
@@ -883,13 +1004,16 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 			return execErr, nil
 		}
 
-		// the label alone is not enough, loki error bodies can echo the query;
-		// require a successful response that contains the pushed stream.
-		if strings.Contains(stdout, `"status":"success"`) && strings.Contains(stdout, lokiPushJob) {
-			return nil, nil
+		response, err := parseLokiQueryResponse(stdout)
+		if err != nil {
+			return err, nil
 		}
 
-		return errors.New("stream not yet visible"), nil
+		if len(response.Data.Result) == 0 || !strings.Contains(stdout, lokiPushJob) {
+			return errors.New("stream not yet visible"), nil
+		}
+
+		return nil, nil
 	}); readErr != nil {
 		problems = append(problems, fmt.Sprintf("W1 pushed stream not readable via gateway read path: %v", readErr))
 	}
@@ -902,7 +1026,7 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 		noCertCurl := []string{
 			"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
 			"--connect-timeout", "3", "--max-time", "15", "-k",
-			"-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, pushURLFor(noCertPodIP),
+			"-XPOST", "-H", "Content-Type: application/json", "-d", pushBody, gatewayPushURL(noCertPodIP, lokiPushPath),
 		}
 
 		noCertCode, _, noCertErr := probe.Exec(ctx, gatewayProbeContainer, noCertCurl...)
@@ -926,6 +1050,231 @@ func verifyGatewayWritePath(ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	log.Info("MLA Gateway write path verified.")
+	return nil
+}
+
+// verifyTenantHeaderSpoofing checks that a user cluster cannot write into or
+// read from another tenant by setting X-Scope-OrgID itself: the gateway's
+// server-scope proxy_set_header overwrites whatever the client sent.
+//
+// The read-back through the gateway carries the assertion. It sends no
+// X-Scope-OrgID, and loki runs with auth_enabled, so both regressions fail it: a
+// honored client header would put the stream under forgedTenantID, out of reach
+// of a read tenanted to the cluster name, and a gateway that stopped setting the
+// header at all would make the read a 401. The direct loki queries afterwards
+// name the tenant the data actually landed in.
+func verifyTenantHeaderSpoofing(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, probe *gatewayProbe, cluster *kubermaticv1.Cluster) error {
+	log.Info("Verifying a client-supplied X-Scope-OrgID is ignored...")
+
+	clusterNS := probe.Namespace
+
+	pushTime := time.Now()
+	pushBody := fmt.Sprintf(
+		`{"streams":[{"stream":{"job":%q},"values":[[%q,"spoof-probe"]]}]}`,
+		lokiSpoofJob, strconv.FormatInt(pushTime.UnixNano(), 10),
+	)
+	forgedHeader := fmt.Sprintf("X-Scope-OrgID: %s", forgedTenantID)
+
+	var problems []string
+
+	// the gateway must ignore the forged header, not reject the request, so a
+	// non-2xx here is a failure just like it is for W1.
+	if pushErr := wait.Poll(ctx, 2*time.Second, 60*time.Second, func(ctx context.Context) (error, error) {
+		podIP, err := readyGatewayPodIP(ctx, seedClient, clusterNS)
+		if err != nil {
+			return err, nil
+		}
+
+		pushCurl := probe.pushCurl(podIP, lokiPushPath,
+			"-XPOST", "-H", "Content-Type: application/json", "-H", forgedHeader, "-d", pushBody)
+
+		pushCode, _, err := probe.Exec(ctx, gatewayProbeContainer, pushCurl...)
+		if err != nil {
+			return fmt.Errorf("push failed to execute: %w", err), nil
+		}
+
+		if !isSuccessPushCode(pushCode) {
+			return fmt.Errorf("push returned HTTP %s", pushCode), nil
+		}
+
+		return nil, nil
+	}); pushErr != nil {
+		problems = append(problems, fmt.Sprintf("push with a forged tenant header did not succeed: %v", pushErr))
+	}
+
+	// no header is sent here, so the gateway is the only thing that can supply one
+	gatewayReadCmd := curlGet(lokiQueryRangeURL(gatewayReadAddr(clusterNS), lokiSpoofJob, pushTime))
+
+	if readErr := wait.Poll(ctx, 2*time.Second, 90*time.Second, func(ctx context.Context) (error, error) {
+		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, gatewayReadCmd...)
+		if execErr != nil {
+			return execErr, nil
+		}
+
+		response, err := parseLokiQueryResponse(stdout)
+		if err != nil {
+			return err, nil
+		}
+
+		if len(response.Data.Result) == 0 || !strings.Contains(stdout, lokiSpoofJob) {
+			return errors.New("stream not yet visible"), nil
+		}
+
+		return nil, nil
+	}); readErr != nil {
+		problems = append(problems, fmt.Sprintf("stream pushed with a forged tenant header is not readable under the real tenant %q: %v", cluster.Name, readErr))
+	}
+
+	// control, and the precondition for the check after it: the same query
+	// straight at loki, asking for the real tenant. Without it, an empty
+	// forged-tenant result could just mean loki is unreachable or has not indexed
+	// the stream yet.
+	directURL := lokiQueryRangeURL(lokiQueryFrontendAddr, lokiSpoofJob, pushTime)
+	realTenantCmd := curlGet(directURL, "-H", fmt.Sprintf("X-Scope-OrgID: %s", cluster.Name))
+
+	controlErr := wait.Poll(ctx, 2*time.Second, 60*time.Second, func(ctx context.Context) (error, error) {
+		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, realTenantCmd...)
+		if execErr != nil {
+			return execErr, nil
+		}
+
+		response, err := parseLokiQueryResponse(stdout)
+		if err != nil {
+			return err, nil
+		}
+
+		if len(response.Data.Result) == 0 || !strings.Contains(stdout, lokiSpoofJob) {
+			return errors.New("stream not visible for the real tenant yet"), nil
+		}
+
+		return nil, nil
+	})
+
+	if controlErr != nil {
+		problems = append(problems, fmt.Sprintf("control query against %s for tenant %q never returned the stream, so the forged-tenant check would be inconclusive and was skipped: %v", lokiQueryFrontendAddr, cluster.Name, controlErr))
+	} else {
+		// not polled: this asserts data is *not* there, so retrying would only
+		// widen the window for it to show up.
+		forgedTenantCmd := curlGet(directURL, "-H", forgedHeader)
+
+		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, forgedTenantCmd...)
+		if execErr != nil {
+			problems = append(problems, fmt.Sprintf("forged-tenant query failed to execute, cannot prove the tenant is empty: %v", execErr))
+		} else if response, err := parseLokiQueryResponse(stdout); err != nil {
+			problems = append(problems, fmt.Sprintf("forged-tenant query did not return a usable response: %v", err))
+		} else if len(response.Data.Result) > 0 || strings.Contains(stdout, lokiSpoofJob) {
+			problems = append(problems, fmt.Sprintf("stream is readable under the forged tenant %q, the gateway honored the client header: %s", forgedTenantID, stdout))
+		}
+	}
+
+	if len(problems) > 0 {
+		return fmt.Errorf("tenant header spoofing checks failed:\n%s", strings.Join(problems, "\n"))
+	}
+
+	log.Info("Tenant header spoofing correctly ignored.")
+
+	return nil
+}
+
+// promQueryResponse is the part of a Cortex instant-query response the metrics
+// check asserts on.
+type promQueryResponse struct {
+	Status string `json:"status"`
+	Data   struct {
+		ResultType string `json:"resultType"`
+		Result     []struct {
+			Metric map[string]string `json:"metric"`
+			Value  []any             `json:"value"`
+		} `json:"result"`
+	} `json:"data"`
+}
+
+// verifyMetricsRoundTrip exercises the Cortex data plane end to end: the
+// annotated user-cluster pod is scraped by the monitoring agent, remote_written
+// through the gateway write path to cortex-distributor and queried back out of
+// the gateway read path. Nothing else in the suite touches /api/v1/push or the
+// Cortex query path; verifyGatewayWritePath only exercises the Loki endpoints.
+func verifyMetricsRoundTrip(ctx context.Context, log *zap.SugaredLogger, probe *gatewayProbe, testJig *jig.TestJig, cluster *kubermaticv1.Cluster) error {
+	log.Info("Verifying the metrics round trip through Cortex...")
+
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	// without a healthy agent nothing can be scraped, so check it first to get a
+	// precise error instead of an opaque query timeout
+	if err := utils.WaitForDeploymentReady(ctx, clusterClient, log, resources.UserClusterMLANamespace, resources.MLAMonitoringAgentDeploymentName, 5*time.Minute); err != nil {
+		return fmt.Errorf("monitoring agent Deployment did not get ready: %w", err)
+	}
+
+	query := fmt.Sprintf("%s{run=%q}", metricsProbeMetric, cluster.Name)
+	queryCmd := curlGet(fmt.Sprintf(
+		"http://%s/api/prom/api/v1/query?query=%s",
+		gatewayReadAddr(probe.Namespace),
+		url.QueryEscape(query),
+	))
+
+	// on failure this is the only evidence of what the read path answered
+	lastBody := ""
+
+	queryErr := wait.Poll(ctx, 5*time.Second, 6*time.Minute, func(ctx context.Context) (error, error) {
+		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, queryCmd...)
+		if execErr != nil {
+			return execErr, nil
+		}
+
+		lastBody = stdout
+
+		response := &promQueryResponse{}
+		if err := json.Unmarshal([]byte(stdout), response); err != nil {
+			return fmt.Errorf("unable to decode response %q: %w", stdout, err), nil
+		}
+
+		if response.Status != "success" {
+			return fmt.Errorf("expected a successful response, got %q", stdout), nil
+		}
+
+		if response.Data.ResultType != "vector" {
+			return fmt.Errorf("expected an instant vector, got resultType %q", response.Data.ResultType), nil
+		}
+
+		if len(response.Data.Result) == 0 {
+			return errors.New("series not visible in Cortex yet"), nil
+		}
+
+		// the labels arrive with the series, so a mismatch will not fix itself; fail
+		// right away with the actual label set. This catches a regression in the
+		// agent's relabel pipeline, which emits kubernetes_namespace and
+		// kubernetes_pod_name rather than the namespace/pod a stock Prometheus
+		// setup would. A single series is expected: cortex runs the HA tracker, so
+		// the agent's two replicas do not each produce one.
+		metric := response.Data.Result[0].Metric
+		expectedLabels := map[string]string{
+			"__name__":             metricsProbeMetric,
+			"job":                  "kubernetes-pods",
+			"kubernetes_namespace": metav1.NamespaceDefault,
+			"kubernetes_pod_name":  metricsProbePodName,
+			"run":                  cluster.Name,
+		}
+
+		for key, expected := range expectedLabels {
+			if actual := metric[key]; actual != expected {
+				return nil, fmt.Errorf("expected label %s=%q, got %q (full label set: %v)", key, expected, actual, metric)
+			}
+		}
+
+		return nil, nil
+	})
+	if queryErr != nil {
+		// the agent logs that tell an agent-side failure apart from a cortex-side
+		// one are captured by protokol from the user cluster's mla-system namespace,
+		// see hack/ci/run-mla-e2e-tests.sh
+		return fmt.Errorf("%s not queryable through the gateway read path (last response: %q): %w", query, lastBody, queryErr)
+	}
+
+	log.Info("Metrics round trip verified.")
+
 	return nil
 }
 
@@ -1025,6 +1374,103 @@ func isPodReady(p *corev1.Pod) bool {
 // pass for the mTLS-negative one.
 func isSuccessPushCode(code string) bool {
 	return len(code) == 3 && code[0] == '2'
+}
+
+const (
+	metricsProbePodName   = "mla-metrics-probe"
+	metricsProbeContainer = "porter"
+	metricsProbePort      = 9101
+
+	// metricsProbeMetric is the series the probe pod serves and the test queries
+	// back out of Cortex.
+	metricsProbeMetric = "mla_e2e_probe_total"
+)
+
+// newMetricsProbePod returns an agnhost "porter" pod, which serves the content of
+// SERVE_PORT_<port> on every request path. That makes it a scrape target with no
+// ConfigMap and no volume. The prometheus.io annotations are what the monitoring
+// agent's kubernetes-pods job keys off.
+func newMetricsProbePod(ns, runID string) *corev1.Pod {
+	metrics := fmt.Sprintf(`# HELP %s counter served by the MLA e2e metrics probe
+# TYPE %s counter
+%s{run=%q} 1
+`, metricsProbeMetric, metricsProbeMetric, metricsProbeMetric, runID)
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      metricsProbePodName,
+			Namespace: ns,
+			Annotations: map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/port":   strconv.Itoa(metricsProbePort),
+			},
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyAlways,
+			Containers: []corev1.Container{
+				{
+					Name:            metricsProbeContainer,
+					Image:           gatewayWriteProbeImage,
+					Args:            []string{"porter"},
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Env: []corev1.EnvVar{
+						{
+							Name:  fmt.Sprintf("SERVE_PORT_%d", metricsProbePort),
+							Value: metrics,
+						},
+					},
+					Ports: []corev1.ContainerPort{
+						{ContainerPort: metricsProbePort, Protocol: corev1.ProtocolTCP},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path: "/metrics",
+								Port: intstr.FromInt32(metricsProbePort),
+							},
+						},
+					},
+				},
+			},
+			TerminationGracePeriodSeconds: ptr.To[int64](0),
+		},
+	}
+}
+
+// deployMetricsProbe creates the scrape target in the user cluster.
+func deployMetricsProbe(ctx context.Context, log *zap.SugaredLogger, testJig *jig.TestJig, runID string) error {
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	// best-effort removal of leftovers from a previous aborted run.
+	_ = clusterClient.Delete(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: metricsProbePodName, Namespace: metav1.NamespaceDefault}})
+
+	pod := newMetricsProbePod(metav1.NamespaceDefault, runID)
+	if err := clusterClient.Create(ctx, pod); err != nil {
+		return fmt.Errorf("failed to create metrics probe pod: %w", err)
+	}
+
+	// 5 minutes covers the image pull on a fresh node.
+	if !utils.CheckPodsRunningReady(ctx, clusterClient, log, metav1.NamespaceDefault, []string{metricsProbePodName}, 5*time.Minute) {
+		return errors.New("timeout occurred while waiting for metrics probe pod readiness")
+	}
+
+	return nil
+}
+
+func cleanupMetricsProbe(ctx context.Context, log *zap.SugaredLogger, testJig *jig.TestJig) {
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		log.Warnw("Failed to clean up metrics probe pod", zap.Error(err))
+		return
+	}
+
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: metricsProbePodName, Namespace: metav1.NamespaceDefault}}
+	if err := clusterClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
+		log.Warnw("Failed to clean up metrics probe pod", zap.Error(err))
+	}
 }
 
 // newGatewayProbePod returns an agnhost pod that stays alive (pause) and mounts
