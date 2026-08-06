@@ -192,7 +192,7 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 
 	if c.version.Major() >= 4 {
 		// --force-conflicts is only valid under server-side apply, which Helm 4
-		// decides per release (see serverSideApplyActive). Passing it unconditionally
+		// decides per release (see `serverSideApplyActive`). Passing it unconditionally
 		// makes Helm reject releases installed by Helm 3.
 		forcingConflicts = c.serverSideApplyActive(namespace, releaseName)
 		if forcingConflicts {
