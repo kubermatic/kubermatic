@@ -107,6 +107,10 @@ func (i *dummySharedIndexInformer) HasSynced() bool {
 	panic("implement me")
 }
 
+func (i *dummySharedIndexInformer) HasSyncedChecker() cache.DoneChecker {
+	panic("implement me")
+}
+
 func (i *dummySharedIndexInformer) IsStopped() bool {
 	panic("implement me")
 }

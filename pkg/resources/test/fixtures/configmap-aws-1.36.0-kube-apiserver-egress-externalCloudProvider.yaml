@@ -1,0 +1,16 @@
+# This file has been generated, DO NOT EDIT.
+
+data:
+  egress-selector-configuration.yaml: |
+    apiVersion: apiserver.k8s.io/v1beta1
+    egressSelections:
+    - connection:
+        proxyProtocol: GRPC
+        transport:
+          uds:
+            udsName: /etc/kubernetes/konnectivity-server/konnectivity-server.socket
+      name: cluster
+    kind: EgressSelectorConfiguration
+metadata:
+  name: kube-apiserver-egress
+  namespace: cluster-de-test-01
