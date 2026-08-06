@@ -17,7 +17,10 @@ limitations under the License.
 package helm
 
 import (
+	"encoding/json"
+	"errors"
 	"os/exec"
+	"slices"
 	"testing"
 	"time"
 
@@ -146,54 +149,204 @@ func TestListReleasesUsesCorrectFlagsForHelmVersion(t *testing.T) {
 }
 
 func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
+	const (
+		namespace   = "test-namespace"
+		releaseName = "release"
+	)
+
+	// Helm rejects --force-conflicts unless server-side apply is enabled, and
+	// --server-side defaults to "auto", which inherits the apply method from the
+	// release's newest revision. So the flags depend on release state, not just on
+	// the helm version.
 	testcases := []struct {
-		name         string
-		helmVersion  string
-		flags        []string
+		name        string
+		helmVersion string
+		flags       []string
+
+		// metadataStatus and metadataApplyMethod are what `helm get metadata`
+		// reports. An empty apply method means helm never recorded one, which is the
+		// case for every release installed by Helm 3.
+		metadataStatus      string
+		metadataApplyMethod string
+		// metadataFails simulates a release helm cannot report on, either because it
+		// does not exist or because the read failed. releaseListed then decides
+		// which of the two the fallback `helm list` sees.
+		metadataFails bool
+		releaseListed bool
+		listFails     bool
+
 		expectedArgs []string
+		// expectMetadataProbe guards against probing with a helm that has no such
+		// subcommand. expectListProbe guards against listing when the metadata call
+		// already answered the question.
+		expectMetadataProbe bool
+		expectListProbe     bool
 	}{
 		{
-			name:        "helm v3 does not enable server-side apply and keeps --atomic",
-			helmVersion: "3.19.0",
-			flags:       []string{"--atomic"},
+			name:                "helm 3 never enables server-side apply and keeps --atomic",
+			helmVersion:         "3.19.0",
+			flags:               []string{"--atomic"},
+			metadataStatus:      "deployed",
+			metadataApplyMethod: "csa",
 			expectedArgs: []string{
 				"helm",
-				"--namespace", "test-namespace",
+				"--namespace", namespace,
 				"upgrade", "--install",
 				"--timeout", "30s",
 				"--values", "values.yaml",
 				"--atomic",
-				"release", "chart-dir",
+				releaseName, "chart-dir",
 			},
+			expectMetadataProbe: false,
+			expectListProbe:     false,
 		},
 		{
-			name:        "helm v4.0 forces conflict resolution and translates --atomic",
-			helmVersion: "4.0.0",
-			flags:       []string{"--atomic"},
+			name:          "helm 4 forces conflicts on a fresh install and translates --atomic",
+			helmVersion:   "4.0.0",
+			flags:         []string{"--atomic"},
+			metadataFails: true,
+			releaseListed: false,
 			expectedArgs: []string{
 				"helm",
-				"--namespace", "test-namespace",
+				"--namespace", namespace,
 				"upgrade", "--install",
 				"--timeout", "30s",
-				"--force-conflicts",
+				"--server-side=true", "--force-conflicts",
 				"--values", "values.yaml",
 				"--rollback-on-failure",
-				"release", "chart-dir",
+				releaseName, "chart-dir",
 			},
+			expectMetadataProbe: true,
+			expectListProbe:     true,
 		},
 		{
-			name:        "helm v4.1 forces conflict resolution without extra flags",
-			helmVersion: "4.1.1",
-			flags:       nil,
+			// --server-side=true is load-bearing next to --rollback-on-failure: helm
+			// forwards both values into the rollback, which resolves the apply method
+			// against the rollback target's revision. Leaving --server-side at auto
+			// there can make the rollback itself fail on the invalid flag pair and
+			// mask the real upgrade error.
+			name:                "helm 4 keeps the full pair alongside the rollback flag",
+			helmVersion:         "4.1.1",
+			flags:               []string{"--atomic"},
+			metadataStatus:      "deployed",
+			metadataApplyMethod: "ssa",
 			expectedArgs: []string{
 				"helm",
-				"--namespace", "test-namespace",
+				"--namespace", namespace,
 				"upgrade", "--install",
 				"--timeout", "30s",
-				"--force-conflicts",
+				"--server-side=true", "--force-conflicts",
 				"--values", "values.yaml",
-				"release", "chart-dir",
+				"--rollback-on-failure",
+				releaseName, "chart-dir",
 			},
+			expectMetadataProbe: true,
+			expectListProbe:     false,
+		},
+		{
+			name:                "helm 4 forces conflicts when the release already applies server-side",
+			helmVersion:         "4.1.1",
+			metadataStatus:      "deployed",
+			metadataApplyMethod: "ssa",
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--server-side=true", "--force-conflicts",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     false,
+		},
+		{
+			name:                "helm 4 leaves a client-side release alone",
+			helmVersion:         "4.1.1",
+			metadataStatus:      "deployed",
+			metadataApplyMethod: "csa",
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     false,
+		},
+		{
+			// The regression that shipped in v2.30.6: a release installed by Helm 3
+			// has no recorded apply method, so helm resolves "auto" to client-side and
+			// refuses --force-conflicts.
+			name:                "helm 4 leaves a release with no recorded apply method alone",
+			helmVersion:         "4.1.1",
+			metadataStatus:      "deployed",
+			metadataApplyMethod: "",
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     false,
+		},
+		{
+			// helm treats a release whose newest revision is uninstalled as a fresh
+			// install, which applies server-side no matter what that revision
+			// recorded. Deciding on the apply method alone would withhold
+			// --force-conflicts exactly where a conflict can occur.
+			name:                "helm 4 forces conflicts on an uninstalled release with a client-side revision",
+			helmVersion:         "4.1.1",
+			metadataStatus:      "uninstalled",
+			metadataApplyMethod: "csa",
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--server-side=true", "--force-conflicts",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     false,
+		},
+		{
+			name:          "helm 4 does not force conflicts when an existing release cannot be read",
+			helmVersion:   "4.1.1",
+			metadataFails: true,
+			releaseListed: true,
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     true,
+		},
+		{
+			name:          "helm 4 does not force conflicts when releases cannot be listed either",
+			helmVersion:   "4.1.1",
+			metadataFails: true,
+			listFails:     true,
+			expectedArgs: []string{
+				"helm",
+				"--namespace", namespace,
+				"upgrade", "--install",
+				"--timeout", "30s",
+				"--values", "values.yaml",
+				releaseName, "chart-dir",
+			},
+			expectMetadataProbe: true,
+			expectListProbe:     true,
 		},
 	}
 
@@ -204,10 +357,44 @@ func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
 				runCmd = originalRunCmd
 			})
 
-			capturedArgs := []string{}
+			upgradeCalls := [][]string{}
+			metadataArgs := []string{}
+			listProbed := false
+
 			runCmd = func(cmd *exec.Cmd) ([]byte, error) {
-				capturedArgs = append([]string{}, cmd.Args...)
-				return nil, nil
+				switch {
+				case containsArg(cmd.Args, "metadata"):
+					metadataArgs = append([]string{}, cmd.Args...)
+					if tc.metadataFails {
+						return nil, errors.New("simulated helm get metadata failure")
+					}
+					payload := map[string]any{
+						"name":     releaseName,
+						"revision": 1,
+						"status":   tc.metadataStatus,
+					}
+					// helm omits the field entirely when it was never recorded
+					if tc.metadataApplyMethod != "" {
+						payload["applyMethod"] = tc.metadataApplyMethod
+					}
+					encoded, err := json.Marshal(payload)
+					require.NoError(t, err)
+					return encoded, nil
+
+				case containsArg(cmd.Args, "list"):
+					listProbed = true
+					if tc.listFails {
+						return nil, errors.New("simulated helm list failure")
+					}
+					if !tc.releaseListed {
+						return []byte(`[]`), nil
+					}
+					return []byte(`[{"name":"` + releaseName + `","namespace":"` + namespace + `","chart":"test-chart-1.2.3"}]`), nil
+
+				default:
+					upgradeCalls = append(upgradeCalls, append([]string{}, cmd.Args...))
+					return nil, nil
+				}
 			}
 
 			c := &cli{
@@ -218,9 +405,95 @@ func TestInstallChartUsesCorrectFlagsForHelmVersion(t *testing.T) {
 				logger:     logrus.New(),
 			}
 
-			err := c.InstallChart("test-namespace", "release", "chart-dir", "values.yaml", nil, tc.flags)
+			err := c.InstallChart(namespace, releaseName, "chart-dir", "values.yaml", nil, tc.flags)
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedArgs, capturedArgs)
+
+			require.Len(t, upgradeCalls, 1, "expected exactly one helm upgrade invocation")
+			upgradeArgs := upgradeCalls[0]
+			require.Equal(t, tc.expectedArgs, upgradeArgs)
+
+			require.Equal(t, tc.expectMetadataProbe, len(metadataArgs) > 0,
+				"unexpected `helm get metadata` probing behaviour")
+			require.Equal(t, tc.expectListProbe, listProbed,
+				"unexpected `helm list` probing behaviour")
+
+			if len(metadataArgs) > 0 {
+				// The probe must read the same revision helm's own upgrade reads, which
+				// means no --revision, and it must be namespaced and JSON.
+				require.Equal(t, []string{
+					"helm",
+					"--namespace", namespace,
+					"get", "metadata", releaseName, "-o", "json",
+				}, metadataArgs)
+			}
+
+			// The invariant the v2.30.6 regression violated: helm rejects
+			// --force-conflicts unless server-side apply is enabled alongside it.
+			if containsArg(upgradeArgs, "--force-conflicts") {
+				require.Contains(t, upgradeArgs, "--server-side=true",
+					"--force-conflicts must never be emitted without --server-side=true")
+			}
 		})
 	}
+}
+
+func TestInstallChartPropagatesUpgradeFailure(t *testing.T) {
+	testcases := []struct {
+		name        string
+		applyMethod string
+		// expectHint asserts the error names the apply method, which is the only way
+		// an operator can tell a field conflict apart from any other failure.
+		expectHint bool
+	}{
+		{
+			name:        "server-side release fails without the client-side hint",
+			applyMethod: "ssa",
+			expectHint:  false,
+		},
+		{
+			name:        "client-side release explains that conflicts were not forced",
+			applyMethod: "csa",
+			expectHint:  true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			originalRunCmd := runCmd
+			t.Cleanup(func() {
+				runCmd = originalRunCmd
+			})
+
+			runCmd = func(cmd *exec.Cmd) ([]byte, error) {
+				if containsArg(cmd.Args, "metadata") {
+					return []byte(`{"name":"release","revision":1,"status":"deployed","applyMethod":"` + tc.applyMethod + `"}`), nil
+				}
+				return nil, errors.New("conflict occurred while applying object")
+			}
+
+			c := &cli{
+				binary:     "helm",
+				kubeconfig: "test-kubeconfig",
+				timeout:    30 * time.Second,
+				version:    *semverlib.MustParse("4.1.1"),
+				logger:     logrus.New(),
+			}
+
+			err := c.InstallChart("test-namespace", "release", "chart-dir", "values.yaml", nil, nil)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), "conflict occurred while applying object",
+				"the underlying helm error must survive wrapping")
+
+			if tc.expectHint {
+				require.Contains(t, err.Error(), "applies client-side")
+				require.Contains(t, err.Error(), "helm get metadata release --namespace test-namespace")
+			} else {
+				require.NotContains(t, err.Error(), "applies client-side")
+			}
+		})
+	}
+}
+
+func containsArg(args []string, want string) bool {
+	return slices.Contains(args, want)
 }
