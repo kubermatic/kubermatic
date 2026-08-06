@@ -736,7 +736,7 @@ command:
     SSL_FLAGS="--no-ssl"
   fi
 
-  s3cmd --debug $SSL_FLAGS \
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
@@ -759,7 +759,7 @@ command:
     SSL_FLAGS="--no-ssl"
   fi
 
-  s3cmd --debug $SSL_FLAGS \
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
