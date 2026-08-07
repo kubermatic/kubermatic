@@ -93,3 +93,67 @@ func TestGatewayAPIProtectionDisabled(t *testing.T) {
 		})
 	}
 }
+
+func TestGatewayAPIProtectionDisabler(t *testing.T) {
+	clusterWith := func(disabled bool) *kubermaticv1.Cluster {
+		return &kubermaticv1.Cluster{
+			Spec: kubermaticv1.ClusterSpec{
+				KubeLB: &kubermaticv1.KubeLB{DisableGatewayAPIProtection: disabled},
+			},
+		}
+	}
+
+	testCases := []struct {
+		name      string
+		adminFlag bool
+		cluster   *kubermaticv1.Cluster
+		expected  kubermaticv1.GatewayAPIProtectionDisabler
+	}{
+		{
+			name:     "nobody disabled it",
+			cluster:  clusterWith(false),
+			expected: "",
+		},
+		{
+			name:      "the admin disabled it",
+			adminFlag: true,
+			cluster:   clusterWith(false),
+			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
+		},
+		{
+			name:     "the cluster disabled it",
+			cluster:  clusterWith(true),
+			expected: kubermaticv1.GatewayAPIProtectionDisabledByCluster,
+		},
+		{
+			// Both switched it off, but only the admin's decision is binding, so reporting Cluster here
+			// would imply the tenant could put the protection back by flipping their own field.
+			name:      "the admin wins when both disabled it",
+			adminFlag: true,
+			cluster:   clusterWith(true),
+			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
+		},
+		{
+			name:     "a cluster without kubeLB settings blames nobody",
+			cluster:  &kubermaticv1.Cluster{},
+			expected: "",
+		},
+		{
+			name:      "a nil cluster still reports the admin",
+			adminFlag: true,
+			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			r := &reconciler{kubeLBDisableGatewayAPIProtection: test.adminFlag}
+
+			if got := r.gatewayAPIProtectionDisabler(test.cluster); got != test.expected {
+				t.Errorf("expected %q, got %q", test.expected, got)
+			}
+		})
+	}
+}
