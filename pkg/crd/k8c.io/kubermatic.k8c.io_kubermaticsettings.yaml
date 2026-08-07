@@ -157,8 +157,19 @@ spec:
                     will be set for all projects that do not have a custom quota already set. EE-version only.
                   properties:
                     quota:
-                      description: Quota specifies the default CPU, Memory and Storage quantities for all the projects.
+                      description: Quota specifies the default compute and storage resource quantities for all projects.
                       properties:
+                        accelerators:
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            Accelerators holds accelerator quantities keyed by a stable accounting identifier.
+                            Accelerator resources with different keys are accounted independently.
+                          type: object
                         cpu:
                           anyOf:
                             - type: integer

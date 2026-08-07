@@ -35,6 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	utilpredicate "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -107,6 +108,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, setting *kubermaticv1.KubermaticSetting, log *zap.SugaredLogger) error {
+	if setting.Spec.DefaultProjectResourceQuota != nil {
+		if err := validation.ValidateAcceleratorQuota(setting.Spec.DefaultProjectResourceQuota.Quota); err != nil {
+			return fmt.Errorf("invalid default project resource quota: %w", err)
+		}
+	}
+
 	projects := &kubermaticv1.ProjectList{}
 	if err := r.masterClient.List(ctx, projects); err != nil {
 		return fmt.Errorf("failed to list projects: %w", err)

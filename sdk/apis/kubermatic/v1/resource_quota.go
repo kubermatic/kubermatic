@@ -78,7 +78,7 @@ type Subject struct {
 	Kind string `json:"kind"`
 }
 
-// ResourceDetails holds the CPU, Memory and Storage quantities.
+// ResourceDetails holds the compute and storage resource quantities.
 type ResourceDetails struct {
 	// CPU holds the quantity of CPU. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	CPU *resource.Quantity `json:"cpu,omitempty"`
@@ -86,10 +86,69 @@ type ResourceDetails struct {
 	Memory *resource.Quantity `json:"memory,omitempty"`
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
+	// Accelerators holds accelerator quantities keyed by a stable accounting identifier.
+	// Accelerator resources with different keys are accounted independently.
+	Accelerators map[string]resource.Quantity `json:"accelerators,omitempty"`
 }
 
 func (r ResourceDetails) IsEmpty() bool {
-	return (r.CPU == nil || r.CPU.IsZero()) && (r.Memory == nil || r.Memory.IsZero()) && (r.Storage == nil || r.Storage.IsZero())
+	if (r.CPU != nil && !r.CPU.IsZero()) || (r.Memory != nil && !r.Memory.IsZero()) || (r.Storage != nil && !r.Storage.IsZero()) {
+		return false
+	}
+
+	// Accelerator key presence is significant even when its quantity is zero:
+	// an explicit zero is a configured quota that denies consumption, whereas
+	// a nil or empty map means that no accelerator quota is configured.
+	return len(r.Accelerators) == 0
+}
+
+// Add adds all resource quantities from other to r.
+func (r *ResourceDetails) Add(other ResourceDetails) {
+	if other.CPU != nil {
+		if r.CPU == nil {
+			quantity := other.CPU.DeepCopy()
+			r.CPU = &quantity
+		} else {
+			r.CPU.Add(*other.CPU)
+		}
+	}
+
+	if other.Memory != nil {
+		if r.Memory == nil {
+			quantity := other.Memory.DeepCopy()
+			r.Memory = &quantity
+		} else {
+			r.Memory.Add(*other.Memory)
+		}
+	}
+
+	if other.Storage != nil {
+		if r.Storage == nil {
+			quantity := other.Storage.DeepCopy()
+			r.Storage = &quantity
+		} else {
+			r.Storage.Add(*other.Storage)
+		}
+	}
+
+	if len(other.Accelerators) == 0 {
+		return
+	}
+
+	if r.Accelerators == nil {
+		r.Accelerators = make(map[string]resource.Quantity, len(other.Accelerators))
+	}
+
+	for name, quantity := range other.Accelerators {
+		current, exists := r.Accelerators[name]
+		if !exists {
+			r.Accelerators[name] = quantity.DeepCopy()
+			continue
+		}
+
+		current.Add(quantity)
+		r.Accelerators[name] = current
+	}
 }
 
 // +kubebuilder:object:generate=true
