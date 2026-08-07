@@ -43,6 +43,9 @@ for f in _dist/*; do
 
   if [[ $f =~ '.zip' ]]; then
     unzip -ql "$f"
+  elif [[ $f =~ '.sbom.spdx.json' ]]; then
+    jq -e '.packages | length' "$f" > /dev/null
+    echodate "  contains $(jq '.packages | length' "$f") packages"
   else
     tar tvzf "$f"
   fi
