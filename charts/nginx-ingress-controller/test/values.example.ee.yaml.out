@@ -22,6 +22,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: controller
   minAvailable: 1
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-serviceaccount.yaml
 apiVersion: v1
@@ -38,6 +39,7 @@ metadata:
   name: nginx-ingress
   namespace: default
 automountServiceAccountToken: true
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-configmap.yaml
 apiVersion: v1
@@ -56,6 +58,7 @@ metadata:
 data:
   large-client-header-buffers: "4 64k"
   proxy-body-size: "0"
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -140,6 +143,7 @@ rules:
       - list
       - watch
       - get
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -161,6 +165,7 @@ subjects:
   - kind: ServiceAccount
     name: nginx-ingress
     namespace: default
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -255,6 +260,7 @@ rules:
       - list
       - watch
       - get
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -278,6 +284,7 @@ subjects:
   - kind: ServiceAccount
     name: nginx-ingress
     namespace: default
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service-metrics.yaml
 apiVersion: v1
@@ -304,6 +311,7 @@ spec:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: controller
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service-webhook.yaml
 apiVersion: v1
@@ -330,6 +338,7 @@ spec:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: controller
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service.yaml
 apiVersion: v1
@@ -367,6 +376,7 @@ spec:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: controller
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-deployment.yaml
 apiVersion: apps/v1
@@ -518,6 +528,7 @@ spec:
         - name: webhook-cert
           secret:
             secretName: nginx-ingress-admission
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-ingressclass.yaml
 apiVersion: networking.k8s.io/v1
@@ -534,6 +545,7 @@ metadata:
   name: nginx
 spec:
   controller: k8s.io/ingress-nginx
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/validating-webhook.yaml
 # before changing this value, check the required kubernetes version
@@ -593,6 +605,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
 automountServiceAccountToken: true
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -618,6 +631,7 @@ rules:
     verbs:
       - get
       - update
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -643,6 +657,7 @@ subjects:
   - kind: ServiceAccount
     name: nginx-ingress-admission
     namespace: default
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -669,6 +684,7 @@ rules:
     verbs:
       - get
       - create
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -695,6 +711,7 @@ subjects:
   - kind: ServiceAccount
     name: nginx-ingress-admission
     namespace: default
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/job-createSecret.yaml
 apiVersion: batch/v1
@@ -757,6 +774,7 @@ spec:
       automountServiceAccountToken: true
       nodeSelector: 
         kubernetes.io/os: linux
+
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/job-patchWebhook.yaml
 apiVersion: batch/v1
@@ -821,3 +839,4 @@ spec:
       automountServiceAccountToken: true
       nodeSelector: 
         kubernetes.io/os: linux
+

@@ -152,7 +152,7 @@ func main() {
 	}
 
 	if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.GroupVersion), zap.Error(err))
 	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)

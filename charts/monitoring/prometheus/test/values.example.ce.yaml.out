@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       app: 'release-name'
+
 ---
 # Source: prometheus/templates/serviceaccount.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -30,6 +31,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: 'release-name'
+
 ---
 # Source: prometheus/templates/configmaps.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3156,6 +3158,8 @@ data:
               severity: warning
               resource: loki
               service: loki
+    
+
 ---
 # Source: prometheus/templates/clusterrole.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3205,6 +3209,7 @@ rules:
   - services/node-exporter
   verbs:
   - get
+
 ---
 # Source: prometheus/templates/clusterrolebinding.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3233,6 +3238,7 @@ subjects:
 - kind: ServiceAccount
   name: 'release-name'
   namespace: 'default'
+
 ---
 # Source: prometheus/templates/role.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3285,6 +3291,9 @@ rules:
   - get
   - list
   - watch
+
+
+
 ---
 # Source: prometheus/templates/rolebinding.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3329,6 +3338,7 @@ subjects:
 - kind: ServiceAccount
   name: 'release-name'
   namespace: 'default'
+
 ---
 # Source: prometheus/templates/service.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -3358,6 +3368,7 @@ spec:
     targetPort: web
   selector:
     app: 'release-name'
+
 ---
 # Source: prometheus/templates/statefulset.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.

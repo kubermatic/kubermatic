@@ -21,6 +21,7 @@ type: Opaque
 data:
   admin-user: "YWRtaW4="
   admin-password: "c3Ryb25ncGFzc3dvcmQ="
+
 ---
 # Source: mla-secrets/templates/minio-secret.yaml
 # Copyright 2022 The Kubermatic Kubernetes Platform contributors.

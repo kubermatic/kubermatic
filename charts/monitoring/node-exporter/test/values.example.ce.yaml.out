@@ -103,6 +103,7 @@ spec:
   selector:
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: node-exporter/charts/node-exporter/templates/daemonset.yaml
 apiVersion: apps/v1
