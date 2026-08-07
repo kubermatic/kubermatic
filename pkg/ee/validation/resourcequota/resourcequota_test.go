@@ -122,7 +122,7 @@ func TestValidateCreate(t *testing.T) {
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
 						Accelerators: map[string]resource.Quantity{
-							"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
 						},
 					},
 				},
@@ -135,7 +135,7 @@ func TestValidateCreate(t *testing.T) {
 					Subject: kubermaticv1.Subject{Name: "project-with-negative-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
 						Accelerators: map[string]resource.Quantity{
-							"nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
+							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
 						},
 					},
 				},
@@ -149,7 +149,7 @@ func TestValidateCreate(t *testing.T) {
 					Subject: kubermaticv1.Subject{Name: "project-with-fractional-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
 						Accelerators: map[string]resource.Quantity{
-							"nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
+							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
 						},
 					},
 				},
@@ -243,7 +243,7 @@ func TestValidateUpdate(t *testing.T) {
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
 						Accelerators: map[string]resource.Quantity{
-							"nvidia.com/GH100_H200_NVL": resource.MustParse("1.5"),
+							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1.5"),
 						},
 					},
 				},

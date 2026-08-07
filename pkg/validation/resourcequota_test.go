@@ -35,8 +35,8 @@ func TestValidateAcceleratorQuota(t *testing.T) {
 		{
 			name: "whole accelerator quantities",
 			accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
-				"nvidia.com/A100_80GB":      resource.MustParse("0"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+				"kubevirt/nvidia.com/A100_80GB":      resource.MustParse("0"),
 			},
 		},
 		{
@@ -49,14 +49,14 @@ func TestValidateAcceleratorQuota(t *testing.T) {
 		{
 			name: "negative quantity",
 			accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
 			},
 			expectError: true,
 		},
 		{
 			name: "fractional quantity",
 			accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
 			},
 			expectError: true,
 		},

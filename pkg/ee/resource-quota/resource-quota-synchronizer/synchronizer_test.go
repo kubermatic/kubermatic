@@ -154,7 +154,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 			Memory:  &mem,
 			Storage: &storage,
 			Accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("4"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("4"),
 			},
 		},
 	}
@@ -164,7 +164,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 			Memory:  &mem,
 			Storage: &storage,
 			Accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
 			},
 		},
 		LocalUsage: kubermaticv1.ResourceDetails{
@@ -172,7 +172,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 			Memory:  &mem,
 			Storage: &storage,
 			Accelerators: map[string]resource.Quantity{
-				"nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
+				"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
 			},
 		},
 	}

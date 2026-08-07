@@ -49,7 +49,7 @@ func TestResourceDetailsJSONBackwardCompatibility(t *testing.T) {
 func TestResourceDetailsJSONPreservesExplicitZeroAcceleratorQuota(t *testing.T) {
 	resourceDetails := ResourceDetails{
 		Accelerators: map[string]resource.Quantity{
-			"nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
+			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
 		},
 	}
 
@@ -63,7 +63,7 @@ func TestResourceDetailsJSONPreservesExplicitZeroAcceleratorQuota(t *testing.T) 
 		t.Fatalf("failed to decode resource details: %v", err)
 	}
 
-	quantity, exists := decoded.Accelerators["nvidia.com/GH100_H200_NVL"]
+	quantity, exists := decoded.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"]
 	if !exists {
 		t.Fatal("expected explicit zero accelerator quota to be preserved")
 	}
@@ -93,7 +93,7 @@ func TestResourceDetailsIsEmpty(t *testing.T) {
 			name: "zero accelerator quantity",
 			resourceDetails: ResourceDetails{
 				Accelerators: map[string]resource.Quantity{
-					"nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
+					"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
 				},
 			},
 			expected: false,
@@ -102,7 +102,7 @@ func TestResourceDetailsIsEmpty(t *testing.T) {
 			name: "non-zero accelerator quantity",
 			resourceDetails: ResourceDetails{
 				Accelerators: map[string]resource.Quantity{
-					"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+					"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
 				},
 			},
 		},
@@ -132,7 +132,7 @@ func TestResourceDetailsAdd(t *testing.T) {
 	resourceDetails := ResourceDetails{
 		CPU: quantityPtr("1"),
 		Accelerators: map[string]resource.Quantity{
-			"nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
+			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
 		},
 	}
 	other := ResourceDetails{
@@ -140,8 +140,8 @@ func TestResourceDetailsAdd(t *testing.T) {
 		Memory:  &memory,
 		Storage: quantityPtr("10Gi"),
 		Accelerators: map[string]resource.Quantity{
-			"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
-			"nvidia.com/A100_80GB":      a100,
+			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+			"kubevirt/nvidia.com/A100_80GB":      a100,
 		},
 	}
 
@@ -150,32 +150,32 @@ func TestResourceDetailsAdd(t *testing.T) {
 	assertQuantityEqual(t, resourceDetails.CPU, "3")
 	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
 	assertQuantityEqual(t, resourceDetails.Storage, "10Gi")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "nvidia.com/GH100_H200_NVL"), "3")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "nvidia.com/A100_80GB"), "1")
+	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/GH100_H200_NVL"), "3")
+	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/A100_80GB"), "1")
 
 	// Mutating the source after Add must not mutate the destination.
 	other.Memory.Add(resource.MustParse("1Gi"))
-	otherAccelerator := other.Accelerators["nvidia.com/A100_80GB"]
+	otherAccelerator := other.Accelerators["kubevirt/nvidia.com/A100_80GB"]
 	otherAccelerator.Add(resource.MustParse("1"))
-	other.Accelerators["nvidia.com/A100_80GB"] = otherAccelerator
+	other.Accelerators["kubevirt/nvidia.com/A100_80GB"] = otherAccelerator
 
 	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "nvidia.com/A100_80GB"), "1")
+	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/A100_80GB"), "1")
 }
 
 func TestResourceDetailsDeepCopy(t *testing.T) {
 	original := ResourceDetails{
 		Accelerators: map[string]resource.Quantity{
-			"nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
+			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
 		},
 	}
 	copied := original.DeepCopy()
 
-	quantity := original.Accelerators["nvidia.com/GH100_H200_NVL"]
+	quantity := original.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"]
 	quantity.Add(resource.MustParse("1"))
-	original.Accelerators["nvidia.com/GH100_H200_NVL"] = quantity
+	original.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"] = quantity
 
-	assertQuantityEqual(t, acceleratorQuantityPtr(*copied, "nvidia.com/GH100_H200_NVL"), "1")
+	assertQuantityEqual(t, acceleratorQuantityPtr(*copied, "kubevirt/nvidia.com/GH100_H200_NVL"), "1")
 }
 
 func acceleratorQuantityPtr(resourceDetails ResourceDetails, name string) *resource.Quantity {

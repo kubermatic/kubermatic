@@ -143,12 +143,12 @@ func TestReconcile(t *testing.T) {
 				*genResourceQuota(
 					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
 					generator.GenDefaultProject().Name,
-					*genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "2"),
+					*genAcceleratorResourceDetails("kubevirt/nvidia.com/GH100_H200_NVL", "2"),
 					true),
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "2")), generator.GenDefaultProject()).
+				WithObjects(genSettings(genAcceleratorResourceDetails("kubevirt/nvidia.com/GH100_H200_NVL", "2")), generator.GenDefaultProject()).
 				Build(),
 		},
 		{
@@ -157,12 +157,12 @@ func TestReconcile(t *testing.T) {
 				*genResourceQuota(
 					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
 					generator.GenDefaultProject().Name,
-					*genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "0"),
+					*genAcceleratorResourceDetails("kubevirt/nvidia.com/GH100_H200_NVL", "0"),
 					true),
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "0")), generator.GenDefaultProject()).
+				WithObjects(genSettings(genAcceleratorResourceDetails("kubevirt/nvidia.com/GH100_H200_NVL", "0")), generator.GenDefaultProject()).
 				Build(),
 		},
 		{
@@ -170,7 +170,7 @@ func TestReconcile(t *testing.T) {
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{},
 			masterClient: fake.
 				NewClientBuilder().
-				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "500m")), generator.GenDefaultProject()).
+				WithObjects(genSettings(genAcceleratorResourceDetails("kubevirt/nvidia.com/GH100_H200_NVL", "500m")), generator.GenDefaultProject()).
 				Build(),
 			expectError: true,
 		},
