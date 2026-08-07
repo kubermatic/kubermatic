@@ -40,7 +40,11 @@ const GatewayAPIAdmissionPolicyName = "kubermatic-kubelb-gateway-api-crds"
 const managedByLabelValue = "kkp"
 
 // gatewayAPIGroups are the API groups whose CRDs the kubeLB CCM installs and manages while Gateway API
-// support is enabled for a cluster. The CCM installs the experimental channel, which spans both groups.
+// support is enabled for a cluster. Both groups are covered because the CCM's bundle spans both.
+//
+// The release channel is deliberately not part of this: which channel the CCM installs is its own
+// configuration, the annotation recording it is writable by whoever submits the CRD, and both channels
+// ship the same upstream safe-upgrades policy. Anything that keys off the channel would be guessing.
 var gatewayAPIGroups = []string{
 	"gateway.networking.k8s.io",
 	"gateway.networking.x-k8s.io",

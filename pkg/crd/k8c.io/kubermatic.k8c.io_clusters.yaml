@@ -4878,6 +4878,29 @@ spec:
                     type: string
                   description: InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
                   type: object
+                kubelb:
+                  description: KubeLB contains the observed state of the kubeLB integration.
+                  properties:
+                    gatewayAPIProtected:
+                      description: |-
+                        GatewayAPIProtected reports whether the ValidatingAdmissionPolicy that reserves the Gateway API
+                        CRDs for the kubeLB CCM is currently installed in the user cluster.
+
+                        It is false when the protection has been switched off at any level - the seed, the datacenter or
+                        this cluster - which is why the spec alone does not tell you the answer.
+
+                        Deliberately without omitempty: false is the interesting value here, and omitempty would drop it
+                        from the output exactly when somebody is looking to find out why they are unprotected.
+                      type: boolean
+                    gatewayAPIProtectionDisabledBy:
+                      description: |-
+                        GatewayAPIProtectionDisabledBy names which side switched the protection off, so that reading the
+                        cluster answers "was this us or an admin" without having to go and look at the Seed.
+
+                        Empty while the protection is in place. Seed and datacenter both report Admin: they reach the
+                        controller as one flag, and by the time the decision is made they are no longer distinguishable.
+                      type: string
+                  type: object
                 lastProviderReconciliation:
                   description: |-
                     LastProviderReconciliation is the time when the cloud provider resources
