@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "v1.8.3"
     app.kubernetes.io/managed-by: Helm
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-config.yaml
 apiVersion: v1
@@ -51,6 +52,7 @@ data:
         shutdownManager:
           image: docker.io/envoyproxy/gateway:v1.8.3
       type: Kubernetes
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -211,6 +213,8 @@ subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
   namespace: default
+
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/infra-manager-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -340,6 +344,7 @@ subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
   namespace: default
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/leader-election-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -361,6 +366,7 @@ subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
   namespace: default
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-service.yaml
 apiVersion: v1
@@ -397,6 +403,7 @@ spec:
   - name: webhook
     port: 9443
     targetPort: 9443
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-deployment.yaml
 apiVersion: apps/v1
@@ -517,6 +524,7 @@ spec:
       - name: certs
         secret:
           secretName: envoy-gateway
+
 ---
 # Source: envoy-gateway-controller/templates/clienttrafficpolicy.yaml
 # Copyright 2026 The Kubermatic Kubernetes Platform contributors.
@@ -563,6 +571,7 @@ spec:
       name: kubermatic
   requestBuffer:
     limit: "100Mi"
+
 ---
 # Source: envoy-gateway-controller/templates/clienttrafficpolicy.yaml
 apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -581,6 +590,7 @@ spec:
       name: kubermatic
   connection:
     bufferLimit: "256Ki"
+
 ---
 # Source: envoy-gateway-controller/templates/envoyproxy.yaml
 # Copyright 2026 The Kubermatic Kubernetes Platform contributors.
@@ -694,6 +704,7 @@ spec:
         type: LoadBalancer
         externalTrafficPolicy: Local
   ipFamily: IPv4
+
 ---
 # Source: envoy-gateway-controller/templates/gatewayclass.yaml
 # Copyright 2026 The Kubermatic Kubernetes Platform contributors.
@@ -794,6 +805,7 @@ subjects:
   - kind: ServiceAccount
     name: 'release-name-gateway-certgen'
     namespace: default
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/certgen-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -898,6 +910,7 @@ spec:
       restartPolicy: Never
       serviceAccountName: release-name-gateway-certgen
   ttlSecondsAfterFinished: 30
+
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-proxy-topology-injector-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
@@ -936,3 +949,4 @@ webhooks:
           operator: In
           values:
             - default
+

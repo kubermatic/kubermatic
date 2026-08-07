@@ -34,6 +34,7 @@ data:
             url: ""
         overrideChartNames: {}
         registryNames: []
+
 ---
 # Source: helm-exporter/charts/helm-exporter/templates/role.yaml
 kind: ClusterRole
@@ -102,6 +103,7 @@ spec:
   selector:
     app.kubernetes.io/name: helm-exporter
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: helm-exporter/charts/helm-exporter/templates/deployment.yaml
 apiVersion: apps/v1
@@ -197,3 +199,4 @@ spec:
       command: ['wget']
       args:  ['release-name-helm-exporter:9571/healthz']
   restartPolicy: Never
+

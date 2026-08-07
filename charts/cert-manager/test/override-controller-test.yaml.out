@@ -14,6 +14,7 @@ metadata:
     app.kubernetes.io/version: "v1.20.3"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.20.3
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/serviceaccount.yaml
 apiVersion: v1
@@ -30,6 +31,7 @@ metadata:
     app.kubernetes.io/version: "v1.20.3"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.20.3
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-serviceaccount.yaml
 apiVersion: v1
@@ -46,6 +48,7 @@ metadata:
     app.kubernetes.io/version: "v1.20.3"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.20.3
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/controller-config.yaml
 apiVersion: v1
@@ -679,6 +682,7 @@ subjects:
   - name: cert-manager
     namespace: default
     kind: ServiceAccount
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -701,6 +705,7 @@ subjects:
 - kind: ServiceAccount
   name: cert-manager-webhook
   namespace: default
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 # leader election rules
@@ -823,6 +828,7 @@ subjects:
   - kind: ServiceAccount
     name: cert-manager-cainjector
     namespace: default
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # grant cert-manager permission to manage the leaderelection configmap in the
@@ -920,6 +926,7 @@ spec:
     app.kubernetes.io/name: cainjector
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: "cainjector"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/service.yaml
 apiVersion: v1
@@ -946,6 +953,7 @@ spec:
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: "controller"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-service.yaml
 apiVersion: v1
@@ -976,6 +984,7 @@ spec:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: "webhook"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/cainjector-deployment.yaml
 apiVersion: apps/v1
@@ -1050,6 +1059,7 @@ spec:
               memory: 32Mi
       nodeSelector:
         kubernetes.io/os: "linux"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/deployment.yaml
 apiVersion: apps/v1
@@ -1151,6 +1161,7 @@ spec:
             failureThreshold: 8
       nodeSelector:
         kubernetes.io/os: "linux"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-deployment.yaml
 apiVersion: apps/v1
@@ -1255,6 +1266,7 @@ spec:
               memory: 30Mi
       nodeSelector:
         kubernetes.io/os: "linux"
+
 ---
 # Source: cert-manager/charts/cert-manager/templates/webhook-mutating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1

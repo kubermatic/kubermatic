@@ -24,6 +24,8 @@ type: Opaque
 data:
   ACCESS_KEY_ID: ""
   SECRET_ACCESS_KEY: ""
+
+
 ---
 # Source: minio/templates/secret.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -48,6 +50,7 @@ type: Opaque
 data:
   accessKey: ""
   secretKey: ""
+
 ---
 # Source: minio/templates/pvc.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -77,6 +80,7 @@ spec:
   resources:
     requests:
       storage: 500Gi
+
 ---
 # Source: minio/templates/service.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -110,6 +114,7 @@ spec:
       protocol: TCP
   selector:
     app: minio
+
 ---
 # Source: minio/templates/deployment.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -228,6 +233,7 @@ spec:
         {}
       tolerations:
         []
+
 ---
 # Source: minio/templates/ingress.yaml
 # Copyright 2023 The Kubermatic Kubernetes Platform contributors.
