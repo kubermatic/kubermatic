@@ -1,0 +1,154 @@
+name: Conformance Release Sync
+
+# Forwards release activity in this repository to kubermatic/conformance-ee:
+#
+#   * every push to a release/vX.Y branch, including the push that creates it
+#   * every vX.Y.Z[-prerelease] release tag
+#
+# conformance-ee owns the actual work (creating release/kkp-X.Y, bumping the KKP
+# modules in go.mod, building the ginkgo image). This workflow only resolves the
+# release context and hands it over, so the sync logic lives next to the code it
+# modifies.
+
+on:
+  push:
+    # 'release/**' also matches nested names; the regex below rejects anything
+    # that is not exactly release/vMAJOR.MINOR, since only those map onto a
+    # conformance-ee release/kkp-MAJOR.MINOR branch.
+    branches:
+      - 'release/**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Release branch (release/v2.30) or release tag (v2.30.6) to sync'
+        required: true
+        type: string
+
+# Serialize per ref: two pushes to the same release branch in quick succession
+# would otherwise race on the same release/kkp-X.Y branch in conformance-ee.
+# cancel-in-progress is false — an in-flight sync has already pushed a commit or
+# an image, so let it finish rather than abandoning it half-done.
+concurrency:
+  group: conformance-release-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch-sync:
+    runs-on: ubuntu-latest
+    environment:
+      name: KKP
+      deployment: false
+
+    env:
+      DEST_REPO: kubermatic/conformance-ee
+      DEST_WORKFLOW: kkp-release-sync.yml
+      DEST_REF: main
+    
+    steps:
+      - name: Resolve release context
+        id: ctx
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_REF: ${{ inputs.ref }}
+          # Only set on push events; true when the push created the ref.
+          REF_CREATED: ${{ github.event.created }}
+        run: |
+          REF="${INPUT_REF:-$REF_NAME}"
+          
+          # Decide from the ref's shape rather than github.ref_type: a manual run
+          # is always dispatched from a branch, so ref_type would say "branch"
+          # even when the operator asked to sync a tag.
+          if [[ "$REF" =~ ^release/v([0-9]+\.[0-9]+)$ ]]; then
+            MINOR="${BASH_REMATCH[1]}"
+            KKP_BRANCH="$REF"
+            KKP_TAG=""
+          elif [[ "$REF" =~ ^v([0-9]+\.[0-9]+)\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            MINOR="${BASH_REMATCH[1]}"
+            KKP_TAG="$REF"
+            KKP_BRANCH="release/v${MINOR}"
+          else
+            # Feature branches under release/ and non-release tags are not an
+            # error, there is simply nothing to sync. Skip quietly so pushes to
+            # them do not show up as failed runs.
+            echo "::notice::'${REF}' is neither a release/vX.Y branch nor a vX.Y.Z[-prerelease] tag — nothing to sync."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # github.sha points at the dispatch ref, not at the ref being synced.
+            SHA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${REF}" --jq '.sha')
+            BRANCH_CREATED=false
+          else
+            SHA="$GITHUB_SHA"
+            # github.event.created is also true for a freshly pushed tag; only a
+            # branch creation should make conformance-ee cut a new branch.
+            if [ -z "$KKP_TAG" ] && [ "$REF_CREATED" = "true" ]; then
+              BRANCH_CREATED=true
+            else
+              BRANCH_CREATED=false
+            fi
+          fi
+
+          {
+            echo "skip=false"
+            echo "kkp_minor=${MINOR}"
+            echo "kkp_branch=${KKP_BRANCH}"
+            echo "kkp_tag=${KKP_TAG}"
+            echo "kkp_sha=${SHA}"
+            echo "branch_created=${BRANCH_CREATED}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Syncing ${REF} (minor ${MINOR}, sha ${SHA}, tag '${KKP_TAG:-none}', branch_created ${BRANCH_CREATED})"
+
+      - name: Trigger sync workflow in conformance-ee
+        if: steps.ctx.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
+          KKP_MINOR: ${{ steps.ctx.outputs.kkp_minor }}
+          KKP_BRANCH: ${{ steps.ctx.outputs.kkp_branch }}
+          KKP_TAG: ${{ steps.ctx.outputs.kkp_tag }}
+          KKP_SHA: ${{ steps.ctx.outputs.kkp_sha }}
+          BRANCH_CREATED: ${{ steps.ctx.outputs.branch_created }}
+        run: |
+          gh workflow run "$DEST_WORKFLOW" \
+            --repo "$DEST_REPO" \
+            --ref "$DEST_REF" \
+            --field kkp_minor="$KKP_MINOR" \
+            --field kkp_branch="$KKP_BRANCH" \
+            --field kkp_tag="$KKP_TAG" \
+            --field kkp_sha="$KKP_SHA" \
+            --field branch_created="$BRANCH_CREATED" \
+            --field source_repo="$GITHUB_REPOSITORY"
+
+          echo "Dispatched ${DEST_REPO} / ${DEST_WORKFLOW} for KKP ${KKP_MINOR}"
+
+      - name: Summarize the handover
+        if: steps.ctx.outputs.skip == 'false'
+        continue-on-error: true
+        env:
+          KKP_BRANCH: ${{ steps.ctx.outputs.kkp_branch }}
+          KKP_TAG: ${{ steps.ctx.outputs.kkp_tag }}
+          KKP_SHA: ${{ steps.ctx.outputs.kkp_sha }}
+        run: |
+          if [ -n "$KKP_TAG" ]; then
+            TAG_CELL="\`${KKP_TAG}\`"
+          else
+            TAG_CELL="—"
+          fi
+
+          {
+            echo "## Conformance Release Sync"
+            echo
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| **KKP branch** | \`${KKP_BRANCH}\` |"
+            echo "| **KKP tag** | ${TAG_CELL} |"
+            echo "| **KKP commit** | [\`${KKP_SHA:0:12}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${KKP_SHA}) |"
+            echo
+            echo "Handed over to the conformance-ee sync workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
