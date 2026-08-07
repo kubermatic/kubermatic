@@ -47,11 +47,15 @@ spec:
 
     # This must match the secret configured for the kubermaticIssuer client from
     # the dex clients in values.yaml.
-    # Needed if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting
+    # Required for logging into the KKP dashboard and for the OIDC kubeconfig
+    # endpoints ("enableOIDCKubeconfig: true" in KubermaticSetting).
     issuerClientSecret: <dex-kubermatic-issuer-oauth-secret-here>
 
     # these need to be randomly generated. Those can be generated on the
     # shell using:
     # cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32
+    #
+    # issuerCookieKey signs the short-lived cookie that carries the OAuth state
+    # during login and is required for logging into the KKP dashboard.
     issuerCookieKey: <a-random-key>
     serviceAccountKey: <another-random-key>
