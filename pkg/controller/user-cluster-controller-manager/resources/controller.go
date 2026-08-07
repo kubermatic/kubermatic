@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubelb"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -91,6 +92,7 @@ func Add(
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
 	networkPolices bool,
+	kubeLBDisableGatewayAPIProtection bool,
 	opaWebhookTimeout int,
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
@@ -105,36 +107,38 @@ func Add(
 	kyvernoEnabled bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
-		version:                   version,
-		rLock:                     &sync.Mutex{},
-		namespace:                 namespace,
-		clusterURL:                clusterURL,
-		clusterIsPaused:           clusterIsPaused,
-		imageRewriter:             registry.GetImageRewriterFunc(overwriteRegistry),
-		openvpnServerPort:         openvpnServerPort,
-		kasSecurePort:             kasSecurePort,
-		tunnelingAgentIP:          tunnelingAgentIP,
-		log:                       log,
-		dnsClusterIP:              dnsClusterIP,
-		nodeLocalDNSCache:         nodeLocalDNSCache,
-		opaIntegration:            opaIntegration,
-		opaEnableMutation:         opaEnableMutation,
-		opaWebhookTimeout:         opaWebhookTimeout,
-		userSSHKeyAgent:           userSSHKeyAgent,
-		networkPolices:            networkPolices,
-		versions:                  versions,
-		caBundle:                  caBundle,
-		userClusterMLA:            userClusterMLA,
-		cloudProvider:             kubermaticv1.ProviderType(cloudProviderName),
-		clusterName:               clusterName,
-		nutanixCSIEnabled:         nutanixCSIEnabled,
-		isKonnectivityEnabled:     konnectivity,
-		konnectivityServerHost:    konnectivityServerHost,
-		konnectivityServerPort:    konnectivityServerPort,
-		konnectivityKeepaliveTime: konnectivityKeepaliveTime,
-		ccmMigration:              ccmMigration,
-		ccmMigrationCompleted:     ccmMigrationCompleted,
-		kyvernoEnabled:            kyvernoEnabled,
+		version:           version,
+		rLock:             &sync.Mutex{},
+		namespace:         namespace,
+		clusterURL:        clusterURL,
+		clusterIsPaused:   clusterIsPaused,
+		imageRewriter:     registry.GetImageRewriterFunc(overwriteRegistry),
+		openvpnServerPort: openvpnServerPort,
+		kasSecurePort:     kasSecurePort,
+		tunnelingAgentIP:  tunnelingAgentIP,
+		log:               log,
+		dnsClusterIP:      dnsClusterIP,
+		nodeLocalDNSCache: nodeLocalDNSCache,
+		opaIntegration:    opaIntegration,
+		opaEnableMutation: opaEnableMutation,
+		opaWebhookTimeout: opaWebhookTimeout,
+		userSSHKeyAgent:   userSSHKeyAgent,
+		networkPolices:    networkPolices,
+		versions:          versions,
+
+		kubeLBDisableGatewayAPIProtection: kubeLBDisableGatewayAPIProtection,
+		caBundle:                          caBundle,
+		userClusterMLA:                    userClusterMLA,
+		cloudProvider:                     kubermaticv1.ProviderType(cloudProviderName),
+		clusterName:                       clusterName,
+		nutanixCSIEnabled:                 nutanixCSIEnabled,
+		isKonnectivityEnabled:             konnectivity,
+		konnectivityServerHost:            konnectivityServerHost,
+		konnectivityServerPort:            konnectivityServerPort,
+		konnectivityKeepaliveTime:         konnectivityKeepaliveTime,
+		ccmMigration:                      ccmMigration,
+		ccmMigrationCompleted:             ccmMigrationCompleted,
+		kyvernoEnabled:                    kyvernoEnabled,
 	}
 
 	var err error
@@ -197,6 +201,25 @@ func Add(
 		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew))
 	}
 
+	// The admission policy types are cluster scoped and shared with everything else in the user
+	// cluster, most notably the Gateway API's own safe-upgrades policy, which is written often enough
+	// to keep this controller busy for no reason. Only the one KKP owns is worth a reconcile.
+	//
+	// Matched by name rather than by the managed-by label, so that stripping the label off our policy
+	// cannot also stop us from restoring it.
+	kubeLBGatewayAPIPolicy := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
+		return o.GetName() == kubelb.GatewayAPIAdmissionPolicyName
+	})
+
+	// The policy and its binding deliberately share a name, so one check covers both.
+	policyTypesToWatch := []ctrlruntimeclient.Object{
+		&admissionregistrationv1.ValidatingAdmissionPolicy{},
+		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
+	}
+	for _, t := range policyTypesToWatch {
+		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew, kubeLBGatewayAPIPolicy))
+	}
+
 	seedTypesToWatch := []ctrlruntimeclient.Object{
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
@@ -238,37 +261,41 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster.
 type reconciler struct {
 	ctrlruntimeclient.Client
-	seedClient                ctrlruntimeclient.Client
-	version                   string
-	clusterSemVer             *semverlib.Version
-	cache                     cache.Cache
-	namespace                 string
-	clusterURL                *url.URL
-	clusterIsPaused           userclustercontrollermanager.IsPausedChecker
-	imageRewriter             registry.ImageRewriter
-	openvpnServerPort         uint32
-	kasSecurePort             uint32
-	tunnelingAgentIP          net.IP
-	dnsClusterIP              string
-	nodeLocalDNSCache         bool
-	opaIntegration            bool
-	opaEnableMutation         bool
-	opaWebhookTimeout         int
-	userSSHKeyAgent           bool
-	networkPolices            bool
-	versions                  kubermatic.Versions
-	caBundle                  resources.CABundle
-	userClusterMLA            UserClusterMLA
-	cloudProvider             kubermaticv1.ProviderType
-	clusterName               string
-	nutanixCSIEnabled         bool
-	isKonnectivityEnabled     bool
-	konnectivityServerHost    string
-	konnectivityServerPort    int
-	konnectivityKeepaliveTime string
-	ccmMigration              bool
-	ccmMigrationCompleted     bool
-	kyvernoEnabled            bool
+	seedClient        ctrlruntimeclient.Client
+	version           string
+	clusterSemVer     *semverlib.Version
+	cache             cache.Cache
+	namespace         string
+	clusterURL        *url.URL
+	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
+	imageRewriter     registry.ImageRewriter
+	openvpnServerPort uint32
+	kasSecurePort     uint32
+	tunnelingAgentIP  net.IP
+	dnsClusterIP      string
+	nodeLocalDNSCache bool
+	opaIntegration    bool
+	opaEnableMutation bool
+	opaWebhookTimeout int
+	userSSHKeyAgent   bool
+	networkPolices    bool
+	versions          kubermatic.Versions
+
+	// kubeLBDisableGatewayAPIProtection turns off the ValidatingAdmissionPolicy that reserves the
+	// Gateway API CRDs for the kubeLB CCM.
+	kubeLBDisableGatewayAPIProtection bool
+	caBundle                          resources.CABundle
+	userClusterMLA                    UserClusterMLA
+	cloudProvider                     kubermaticv1.ProviderType
+	clusterName                       string
+	nutanixCSIEnabled                 bool
+	isKonnectivityEnabled             bool
+	konnectivityServerHost            string
+	konnectivityServerPort            int
+	konnectivityKeepaliveTime         string
+	ccmMigration                      bool
+	ccmMigrationCompleted             bool
+	kyvernoEnabled                    bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

@@ -1373,6 +1373,14 @@ type KubeLBSeedSettings struct {
 type KubeLBSettings struct {
 	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
+	// DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that KKP installs in user clusters
+	// alongside Gateway API support for kubeLB. That policy reserves the Gateway API CRDs for the kubeLB CCM,
+	// because installing a different set of them, in particular from the standard channel, makes the CCM crash.
+	// Only disable this if the Gateway API CRDs in the user clusters have to be managed by someone else.
+	//
+	// This is embedded into both the seed and the datacenter settings, and clusters have the same field. The
+	// protection is skipped when any of them disables it, so a narrower level can never re-enable it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 }
 
 type KubeLBDatacenterSettings struct {

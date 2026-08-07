@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubelb"
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
@@ -222,6 +223,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
+		return err
+	}
+
+	if err := r.reconcileValidatingAdmissionPolicies(ctx, data); err != nil {
 		return err
 	}
 
@@ -695,6 +700,149 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
+	}
+	return nil
+}
+
+// reconcileValidatingAdmissionPolicies keeps the ValidatingAdmissionPolicies in the user cluster in
+// sync. Currently this is only the guard rail that reserves the Gateway API CRDs for the kubeLB CCM,
+// which applies as long as Gateway API support is enabled for this cluster.
+//
+// ValidatingAdmissionPolicy is GA since Kubernetes 1.30 and KKP supports 1.33 and higher, so the type
+// is always available in a user cluster.
+func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, data reconcileData) error {
+	gatewayAPIEnabled := data.cluster != nil && data.cluster.Spec.KubeLB != nil && data.cluster.Spec.KubeLB.IsGatewayAPIEnabled()
+
+	// Removing the policy when it is switched off matters as much as creating it, otherwise a cluster
+	// would keep rejecting Gateway API CRD writes after an admin opted out.
+	if !gatewayAPIEnabled {
+		if err := r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx); err != nil {
+			return err
+		}
+
+		// Nothing to report: without Gateway API there is nothing to protect, and saying "unprotected"
+		// on a cluster that does not use kubeLB reads as a problem rather than as a non-subject. This
+		// runs for every cluster, so most of them end up here.
+		return r.clearGatewayAPIProtectedStatus(ctx)
+	}
+
+	if r.gatewayAPIProtectionDisabled(data.cluster) {
+		if err := r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx); err != nil {
+			return err
+		}
+
+		return r.setGatewayAPIProtectedStatus(ctx, false, r.gatewayAPIProtectionDisabler(data.cluster))
+	}
+
+	policyCreators := []kkpreconciling.NamedValidatingAdmissionPolicyReconcilerFactory{
+		kubelb.GatewayAPIValidatingAdmissionPolicyReconciler(),
+	}
+	if err := kkpreconciling.ReconcileValidatingAdmissionPolicies(ctx, policyCreators, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicies: %w", err)
+	}
+
+	// The binding is reconciled after the policy so that it never references a policy that does not
+	// exist yet.
+	bindingCreators := []kkpreconciling.NamedValidatingAdmissionPolicyBindingReconcilerFactory{
+		kubelb.GatewayAPIValidatingAdmissionPolicyBindingReconciler(),
+	}
+	if err := kkpreconciling.ReconcileValidatingAdmissionPolicyBindings(ctx, bindingCreators, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicyBindings: %w", err)
+	}
+
+	return r.setGatewayAPIProtectedStatus(ctx, true, "")
+}
+
+// setGatewayAPIProtectedStatus records on the Cluster whether the guard rail is currently in place.
+//
+// The inputs to that decision are spread across the Seed, the Datacenter and the Cluster, so the spec
+// on its own never answers "is this cluster protected right now". This is written after the policy has
+// actually been reconciled, so it reports what is true rather than what was intended.
+//
+// Status is the right home precisely because nothing else writes it: mirroring an admin setting into
+// the spec would be indistinguishable from a user having asked for it, and could not follow an admin
+// changing their mind without clobbering real user intent.
+func (r *reconciler) setGatewayAPIProtectedStatus(ctx context.Context, protected bool, disabledBy kubermaticv1.GatewayAPIProtectionDisabler) error {
+	cluster, err := r.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed getting cluster to record the Gateway API protection status: %w", err)
+	}
+
+	current := cluster.Status.KubeLB
+	if current != nil && current.GatewayAPIProtected == protected && current.GatewayAPIProtectionDisabledBy == disabledBy {
+		return nil
+	}
+
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.KubeLB == nil {
+			c.Status.KubeLB = &kubermaticv1.KubeLBStatus{}
+		}
+		c.Status.KubeLB.GatewayAPIProtected = protected
+		c.Status.KubeLB.GatewayAPIProtectionDisabledBy = disabledBy
+	})
+}
+
+// clearGatewayAPIProtectedStatus drops the whole kubeLB status block, for clusters where Gateway API
+// support is not enabled and the question therefore does not apply.
+//
+// It also cleans up after a cluster that used to have it enabled: status is never pruned on its own, so
+// without this a cluster would keep advertising a stale protection verdict for a feature it no longer
+// runs.
+func (r *reconciler) clearGatewayAPIProtectedStatus(ctx context.Context) error {
+	cluster, err := r.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed getting cluster to clear the Gateway API protection status: %w", err)
+	}
+
+	if cluster.Status.KubeLB == nil {
+		return nil
+	}
+
+	// Nil on a pointer field becomes a null in the merge patch, which removes the key.
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.KubeLB = nil
+	})
+}
+
+// gatewayAPIProtectionDisabler names who switched the protection off, for the status field. The admin
+// setting is checked first because it wins: a cluster that also opted out changes nothing, and
+// reporting Cluster there would suggest the tenant could put the protection back.
+func (r *reconciler) gatewayAPIProtectionDisabler(cluster *kubermaticv1.Cluster) kubermaticv1.GatewayAPIProtectionDisabler {
+	if r.kubeLBDisableGatewayAPIProtection {
+		return kubermaticv1.GatewayAPIProtectionDisabledByAdmin
+	}
+
+	if cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection {
+		return kubermaticv1.GatewayAPIProtectionDisabledByCluster
+	}
+
+	// Gateway API is simply not enabled, so there is nothing to protect and nobody disabled anything.
+	return ""
+}
+
+// gatewayAPIProtectionDisabled reports whether the guard rail that reserves the Gateway API CRDs for
+// the kubeLB CCM should be skipped for this cluster.
+//
+// Either level can switch it off and neither can switch it back on, so an admin who disables it for
+// the whole datacenter cannot be overridden by a single cluster.
+//
+// The two values arrive by different routes on purpose. The datacenter setting comes in as a startup
+// flag, because this controller only ever sees its own cluster and has no Datacenter object to read.
+// The cluster setting is read straight off the Cluster here, so flipping it takes effect on the next
+// reconcile instead of requiring the pod to be restarted with a new flag.
+func (r *reconciler) gatewayAPIProtectionDisabled(cluster *kubermaticv1.Cluster) bool {
+	if r.kubeLBDisableGatewayAPIProtection {
+		return true
+	}
+
+	return cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection
+}
+
+func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {
+	for _, resource := range kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion() {
+		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure %T %q is removed/not present: %w", resource, resource.GetName(), err)
+		}
 	}
 	return nil
 }
