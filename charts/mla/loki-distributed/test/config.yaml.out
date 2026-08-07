@@ -19,6 +19,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: distributor
   maxUnavailable: 1
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ingester/poddisruptionbudget-ingester.yaml
 apiVersion: policy/v1
@@ -40,6 +41,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: ingester
   maxUnavailable: 1
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/serviceaccount.yaml
 apiVersion: v1
@@ -54,6 +56,8 @@ metadata:
     app.kubernetes.io/version: "2.9.2"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
+
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/configmap.yaml
 apiVersion: v1
@@ -205,6 +209,7 @@ data:
   runtime.yaml: |
     
     {}
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/compactor/service-compactor.yaml
 apiVersion: v1
@@ -234,6 +239,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: compactor
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/distributor/service-distributor.yaml
 apiVersion: v1
@@ -263,6 +269,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: distributor
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ingester/service-ingester-headless.yaml
 apiVersion: v1
@@ -291,6 +298,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: ingester
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ingester/service-ingester.yaml
 apiVersion: v1
@@ -320,6 +328,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: ingester
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-chunks/service-memcached-chunks.yaml
 apiVersion: v1
@@ -347,6 +356,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: memcached-chunks
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-frontend/service-memcached-frontend.yaml
 apiVersion: v1
@@ -374,6 +384,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: memcached-frontend
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-index-queries/service-memcached-index-queries.yaml
 apiVersion: v1
@@ -401,6 +412,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: memcached-index-queries
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-index-writes/service-memcached-index-writes.yaml
 apiVersion: v1
@@ -428,6 +440,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: memcached-index-writes
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/querier/service-querier-headless.yaml
 apiVersion: v1
@@ -456,6 +469,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: querier
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/querier/service-querier.yaml
 apiVersion: v1
@@ -485,6 +499,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: querier
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/query-frontend/service-query-frontend-headless.yaml
 apiVersion: v1
@@ -521,6 +536,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: query-frontend
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/query-frontend/service-query-frontend.yaml
 apiVersion: v1
@@ -555,6 +571,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: query-frontend
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ruler/service-ruler.yaml
 apiVersion: v1
@@ -581,6 +598,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: ruler
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/service-memberlist.yaml
 apiVersion: v1
@@ -606,6 +624,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/part-of: memberlist
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/table-manager/service-table-manager.yaml
 apiVersion: v1
@@ -634,6 +653,7 @@ spec:
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: table-manager
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/distributor/deployment-distributor.yaml
 apiVersion: apps/v1
@@ -748,6 +768,7 @@ spec:
         - name: runtime-config
           configMap:
             name: release-name-loki-distributed-runtime
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/query-frontend/deployment-query-frontend.yaml
 apiVersion: apps/v1
@@ -861,6 +882,7 @@ spec:
         - name: runtime-config
           configMap:
             name: release-name-loki-distributed-runtime
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ruler/deployment-ruler.yaml
 apiVersion: apps/v1
@@ -991,6 +1013,7 @@ spec:
           emptyDir: {}
         - name: data
           emptyDir: {}
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/table-manager/deployment-table-manager.yaml
 apiVersion: apps/v1
@@ -1105,6 +1128,7 @@ spec:
             name: release-name-loki-distributed-runtime
         - name: data
           emptyDir: {}
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/compactor/statefulset-compactor.yaml
 apiVersion: apps/v1
@@ -1234,6 +1258,7 @@ spec:
             name: release-name-loki-distributed-runtime
         - name: data
           emptyDir: {}
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/ingester/statefulset-ingester.yaml
 apiVersion: apps/v1
@@ -1376,6 +1401,7 @@ spec:
         resources:
           requests:
             storage: "10Gi"
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-chunks/statefulset-memcached-chunks.yaml
 apiVersion: apps/v1
@@ -1483,6 +1509,8 @@ spec:
                     app.kubernetes.io/instance: release-name
                     app.kubernetes.io/component: memcached-chunks
                 topologyKey: failure-domain.beta.kubernetes.io/zone
+        
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-frontend/statefulset-memcached-frontend.yaml
 apiVersion: apps/v1
@@ -1590,6 +1618,8 @@ spec:
                     app.kubernetes.io/instance: release-name
                     app.kubernetes.io/component: memcached-frontend
                 topologyKey: failure-domain.beta.kubernetes.io/zone
+        
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-index-queries/statefulset-memcached-index-queries.yaml
 apiVersion: apps/v1
@@ -1697,6 +1727,8 @@ spec:
                     app.kubernetes.io/instance: release-name
                     app.kubernetes.io/component: memcached-index-queries
                 topologyKey: failure-domain.beta.kubernetes.io/zone
+        
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/memcached-index-writes/statefulset-memcached-index-writes.yaml
 apiVersion: apps/v1
@@ -1804,6 +1836,8 @@ spec:
                     app.kubernetes.io/instance: release-name
                     app.kubernetes.io/component: memcached-index-writes
                 topologyKey: failure-domain.beta.kubernetes.io/zone
+        
+
 ---
 # Source: loki-distributed/charts/loki-distributed/templates/querier/statefulset-querier.yaml
 apiVersion: apps/v1

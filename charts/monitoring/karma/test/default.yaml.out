@@ -23,6 +23,7 @@ metadata:
     app.kubernetes.io/instance: 'release-name'
     app.kubernetes.io/version: '9.9.9-dev'
     app.kubernetes.io/managed-by: helm
+
 ---
 # Source: karma/templates/configmap.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -82,6 +83,8 @@ data:
     alertmanager:
       interval: 60s
       servers:
+    
+
 ---
 # Source: karma/templates/role.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -117,6 +120,7 @@ rules:
   - get
   - list
   - watch
+
 ---
 # Source: karma/templates/rolebinding.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -151,6 +155,7 @@ subjects:
 - kind: ServiceAccount
   name: 'release-name'
   namespace: 'default'
+
 ---
 # Source: karma/templates/service.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -184,6 +189,7 @@ spec:
   selector:
     app.kubernetes.io/name: karma
     app.kubernetes.io/instance: 'release-name'
+
 ---
 # Source: karma/templates/deployment.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.

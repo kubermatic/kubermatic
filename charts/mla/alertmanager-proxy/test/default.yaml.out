@@ -18,6 +18,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: alertmanager-authz-server
+
 ---
 # Source: alertmanager-proxy/templates/proxy-configmap.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -219,6 +220,7 @@ data:
                   socket_address:
                     address: 127.0.0.1
                     port_value: 9901
+
 ---
 # Source: alertmanager-proxy/templates/authzserver-clusterrole.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -251,6 +253,7 @@ rules:
       - get
       - list
       - watch
+
 ---
 # Source: alertmanager-proxy/templates/authzserver-clusterrolebinding.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -279,6 +282,7 @@ subjects:
   - kind: ServiceAccount
     name: alertmanager-authz-server
     namespace: default
+
 ---
 # Source: alertmanager-proxy/templates/authzserver-service.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -310,6 +314,7 @@ spec:
       protocol: TCP
   selector:
     app.kubernetes.io/name: alertmanager-authz-server
+
 ---
 # Source: alertmanager-proxy/templates/proxy-service.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -341,6 +346,7 @@ spec:
       protocol: TCP
   selector:
     app.kubernetes.io/name: alertmanager-proxy
+
 ---
 # Source: alertmanager-proxy/templates/authzserver-deployment.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -417,6 +423,7 @@ spec:
             weight: 100
       tolerations:
         []
+
 ---
 # Source: alertmanager-proxy/templates/proxy-deployment.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
