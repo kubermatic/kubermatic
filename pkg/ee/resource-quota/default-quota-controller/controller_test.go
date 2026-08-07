@@ -47,6 +47,7 @@ func TestReconcile(t *testing.T) {
 		expectedResourceQuotas []kubermaticv1.ResourceQuota
 		masterClient           ctrlruntimeclient.Client
 		seedClients            map[string]ctrlruntimeclient.Client
+		expectError            bool
 	}{
 		{
 			name: "scenario 1: create default project quota",
@@ -136,6 +137,43 @@ func TestReconcile(t *testing.T) {
 						false),
 				).Build(),
 		},
+		{
+			name: "scenario 6: create accelerator-only default project quota",
+			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
+				*genResourceQuota(
+					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					generator.GenDefaultProject().Name,
+					*genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "2"),
+					true),
+			},
+			masterClient: fake.
+				NewClientBuilder().
+				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "2")), generator.GenDefaultProject()).
+				Build(),
+		},
+		{
+			name: "scenario 7: create an explicit zero accelerator default project quota",
+			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
+				*genResourceQuota(
+					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					generator.GenDefaultProject().Name,
+					*genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "0"),
+					true),
+			},
+			masterClient: fake.
+				NewClientBuilder().
+				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "0")), generator.GenDefaultProject()).
+				Build(),
+		},
+		{
+			name:                   "scenario 8: reject a fractional accelerator default quota",
+			expectedResourceQuotas: []kubermaticv1.ResourceQuota{},
+			masterClient: fake.
+				NewClientBuilder().
+				WithObjects(genSettings(genAcceleratorResourceDetails("nvidia.com/GH100_H200_NVL", "500m")), generator.GenDefaultProject()).
+				Build(),
+			expectError: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -148,12 +186,13 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}}
-			if _, err := r.Reconcile(ctx, request); err != nil {
-				t.Fatalf("reconciling failed: %v", err)
+			_, err := r.Reconcile(ctx, request)
+			if (err != nil) != tc.expectError {
+				t.Fatalf("expected error: %t, got: %v", tc.expectError, err)
 			}
 
 			rqs := &kubermaticv1.ResourceQuotaList{}
-			err := tc.masterClient.List(ctx, rqs)
+			err = tc.masterClient.List(ctx, rqs)
 			if err != nil {
 				t.Fatalf("failed to get resource quotas: %v", err)
 			}
@@ -189,6 +228,14 @@ func genSettings(resourceDetails *kubermaticv1.ResourceDetails) *kubermaticv1.Ku
 
 func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails {
 	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
+}
+
+func genAcceleratorResourceDetails(name, quantity string) *kubermaticv1.ResourceDetails {
+	return &kubermaticv1.ResourceDetails{
+		Accelerators: map[string]resource.Quantity{
+			name: resource.MustParse(quantity),
+		},
+	}
 }
 
 func genResourceQuota(name, subjectName string, quota kubermaticv1.ResourceDetails, def bool) *kubermaticv1.ResourceQuota {

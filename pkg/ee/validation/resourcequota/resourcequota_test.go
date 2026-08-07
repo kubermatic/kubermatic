@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -114,6 +115,61 @@ func TestValidateCreate(t *testing.T) {
 			},
 			errExpected: true,
 		},
+		{
+			name: "Create ResourceQuota with accelerator quota success",
+			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: map[string]resource.Quantity{
+							"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Create ResourceQuota with negative accelerator quota failure",
+			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-negative-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: map[string]resource.Quantity{
+							"nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
+						},
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Create ResourceQuota with fractional accelerator quota failure",
+			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-fractional-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: map[string]resource.Quantity{
+							"nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
+						},
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Create ResourceQuota with empty accelerator key failure",
+			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-empty-accelerator-key", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: map[string]resource.Quantity{
+							"": resource.MustParse("1"),
+						},
+					},
+				},
+			},
+			errExpected: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -171,6 +227,25 @@ func TestValidateUpdate(t *testing.T) {
 						Kind: "project",
 					},
 					Quota: kubermaticv1.ResourceDetails{},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			name: "Update ResourceQuota with fractional accelerator quota failure",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: map[string]resource.Quantity{
+							"nvidia.com/GH100_H200_NVL": resource.MustParse("1.5"),
+						},
+					},
 				},
 			},
 			errExpected: true,

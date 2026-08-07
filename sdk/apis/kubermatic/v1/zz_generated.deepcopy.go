@@ -27,6 +27,7 @@ import (
 	"k8c.io/machine-controller/sdk/providerconfig"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -7405,6 +7406,13 @@ func (in *ResourceDetails) DeepCopyInto(out *ResourceDetails) {
 		in, out := &in.Storage, &out.Storage
 		x := (*in).DeepCopy()
 		*out = &x
+	}
+	if in.Accelerators != nil {
+		in, out := &in.Accelerators, &out.Accelerators
+		*out = make(map[string]resource.Quantity, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val.DeepCopy()
+		}
 	}
 }
 
