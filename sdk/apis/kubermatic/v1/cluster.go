@@ -332,6 +332,42 @@ type KubeLB struct {
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
+// KubeLBStatus is the observed state of the kubeLB integration. Everything here is derived by the
+// controllers, never set by a user, which is what makes it safe to mirror settings that live on the
+// Seed: the effective value can follow an admin changing their mind without ever being mistaken for
+// somebody's request.
+type KubeLBStatus struct {
+	// GatewayAPIProtected reports whether the ValidatingAdmissionPolicy that reserves the Gateway API
+	// CRDs for the kubeLB CCM is currently installed in the user cluster.
+	//
+	// It is false when the protection has been switched off at any level - the seed, the datacenter or
+	// this cluster - which is why the spec alone does not tell you the answer.
+	//
+	// Deliberately without omitempty: false is the interesting value here, and omitempty would drop it
+	// from the output exactly when somebody is looking to find out why they are unprotected.
+	// +optional
+	GatewayAPIProtected bool `json:"gatewayAPIProtected"`
+
+	// GatewayAPIProtectionDisabledBy names which side switched the protection off, so that reading the
+	// cluster answers "was this us or an admin" without having to go and look at the Seed.
+	//
+	// Empty while the protection is in place. Seed and datacenter both report Admin: they reach the
+	// controller as one flag, and by the time the decision is made they are no longer distinguishable.
+	// +optional
+	GatewayAPIProtectionDisabledBy GatewayAPIProtectionDisabler `json:"gatewayAPIProtectionDisabledBy,omitempty"`
+}
+
+// GatewayAPIProtectionDisabler identifies who switched off the Gateway API CRD protection.
+type GatewayAPIProtectionDisabler string
+
+const (
+	// GatewayAPIProtectionDisabledByAdmin means the seed or the datacenter disabled it, which a single
+	// cluster cannot override.
+	GatewayAPIProtectionDisabledByAdmin GatewayAPIProtectionDisabler = "Admin"
+	// GatewayAPIProtectionDisabledByCluster means this cluster opted out on its own.
+	GatewayAPIProtectionDisabledByCluster GatewayAPIProtectionDisabler = "Cluster"
+)
+
 func (c ClusterSpec) IsKubeLBEnabled() bool {
 	return c.KubeLB != nil && c.KubeLB.Enabled
 }
@@ -704,6 +740,10 @@ type ClusterStatus struct {
 	// of the cluster control plane and worker nodes.
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
+
+	// KubeLB contains the observed state of the kubeLB integration.
+	// +optional
+	KubeLB *KubeLBStatus `json:"kubelb,omitempty"`
 
 	// Deprecated: UserName contains the name of the owner of this cluster.
 	// This field is not actively used and will be removed in the future.
