@@ -16,6 +16,24 @@ to creating a new release. All these tests must be executed with every supported
 
 This section covers the process to create a new Kubermatic release. Reflects the procedure as of 2020-09-16.
 
+### Component image bumps
+
+This applies to every release, minor and patch alike, whenever the OSM and
+machine-controller images are updated for the release.
+
+1. Bump the OSM and machine-controller images in a **single PR**, not two.
+    - Update both image `Tag` values: `pkg/resources/operatingsystemmanager/deployment.go`
+      and `pkg/resources/machinecontroller/deployment.go`, plus the matching `go.mod`
+      lines and the re-vendored tree.
+    - One PR runs the conformance suite once for both components. Two separate PRs run
+      it twice and force a Tide base-move retest of the second PR after the first merges,
+      costing an extra full conformance run.
+    - The `pre-kubermatic-verify-component-bumps` presubmit enforces this: a PR that
+      bumps only one of the two image Tags fails the check.
+    - If you genuinely need to bump only one component (OSM and machine-controller
+      release independently), add the `release/single-component-bump` label and comment
+      `/retest` to re-run the check, which then passes.
+
 ### Major|Minor release
 
 1. Kubernetes lifecycle
