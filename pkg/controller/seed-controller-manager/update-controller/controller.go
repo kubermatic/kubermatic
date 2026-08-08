@@ -282,7 +282,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// update rules configured in the KubermaticConfiguration make a distinction between control-plane upgrades
 	// and node upgrades). However we must still ensure that this controller doesn't advance the control-plane
 	// to a point where it is not compatible with the nodes anymore.
-	// Kubelets can be 2 versions behind the control-plane.
+	// Kubelets can be 2 versions behind the control-plane (or 3 versions starting from Kubernetes 1.28).
 	if cpStatus.nodes != nil {
 		a := int(cpStatus.nodes.Semver().Minor())
 		b := int(cluster.Status.Versions.ControlPlane.Semver().Minor())
@@ -292,12 +292,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			distance = -distance
 		}
 
-		if distance >= 2 {
+		maxSkew := 2
+		if b >= 27 { // Updating starting from 1.27 to 1.28 will require a skew size of 3 to be allowed
+			maxSkew = 3
+		}
+		if distance > maxSkew {
 			log.Debugw("Cluster control plane is healthy but cluster still has old nodes.", "controlPlane", cluster.Status.Versions.ControlPlane, "oldestNode", cpStatus.nodes)
 			return r.setClusterCondition(ctx, cluster, ClusterConditionOldNodes, fmt.Sprintf("Update in progress, control plane (v%s) is healthy but cluster still has old nodes (v%s).", cluster.Status.Versions.ControlPlane.String(), cpStatus.nodes.String()))
 		}
 
-		// Distance is at most 1 release, so the control plane is free to be updated at any time.
+		// Distance is within allowed release skew, so the control plane is free to be updated at any time.
 	}
 
 	// At this point we know that the entire control plane is healthy, that scheduler/ctrlmgr versions
