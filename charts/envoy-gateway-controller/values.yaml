@@ -190,6 +190,16 @@ clientTrafficPolicy:
 
 # gateway configures the Envoy Gateway controller (control plane).
 # These values are passed to the upstream gateway-helm chart.
+#
+# Since gateway-helm v1.8.0 the upstream CRDs live in a `crds` subchart
+# (crds.enabled, default true) that bundles the Gateway API CRDs, the Envoy
+# extension CRDs (gateway.envoyproxy.io/*), and the safe-upgrade VAP. KKP also
+# deploys the Gateway API CRDs from crd/ before installing this chart, so those
+# are applied twice (both v1.5.1; Helm is idempotent on pre-existing CRDs).
+# Do NOT set crds.enabled=false: the flag is all-or-nothing and would also drop
+# the Envoy extension CRDs KKP does not embed but the controller needs.
+# Refs: https://gateway.envoyproxy.io/news/releases/notes/v1.8.0/
+#       https://github.com/envoyproxy/gateway/tree/v1.8.2/charts/gateway-helm/charts/crds
 gateway:
   deployment:
     # Number of control plane replicas.

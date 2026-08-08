@@ -4,12 +4,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: envoy-gateway
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-config.yaml
@@ -17,12 +17,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: envoy-gateway-config
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 data:
   envoy-gateway.yaml: |
@@ -38,7 +38,7 @@ data:
       kubernetes:
         rateLimitDeployment:
           container:
-            image: docker.io/envoyproxy/ratelimit:99d85510
+            image: docker.io/envoyproxy/ratelimit:1e50889b
           patch:
             type: StrategicMerge
             value:
@@ -49,7 +49,7 @@ data:
                     - imagePullPolicy: IfNotPresent
                       name: envoy-ratelimit
         shutdownManager:
-          image: docker.io/envoyproxy/gateway:v1.6.1
+          image: docker.io/envoyproxy/gateway:v1.8.2
       type: Kubernetes
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-rbac.yaml
@@ -58,6 +58,12 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: release-name-gateway-envoy-gateway-role
+  labels:
+    helm.sh/chart: gateway-v1.8.2
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.8.2"
+    app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
   - ""
@@ -149,6 +155,7 @@ rules:
   - gateway.networking.k8s.io
   resources:
   - gateways
+  - listenersets
   - grpcroutes
   - httproutes
   - referencegrants
@@ -164,6 +171,7 @@ rules:
   - gateway.networking.k8s.io
   resources:
   - gateways/status
+  - listenersets/status
   - grpcroutes/status
   - httproutes/status
   - tcproutes/status
@@ -189,6 +197,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: release-name-gateway-envoy-gateway-rolebinding
+  labels:
+    helm.sh/chart: gateway-v1.8.2
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.8.2"
+    app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -196,19 +210,19 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
-  namespace: 'default'
+  namespace: default
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/infra-manager-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-gateway-infra-manager
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -224,6 +238,7 @@ rules:
   - delete
   - deletecollection
   - patch
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -232,9 +247,11 @@ rules:
   verbs:
   - create
   - get
+  - list
   - delete
   - deletecollection
   - patch
+  - watch
 - apiGroups:
   - autoscaling
   - policy
@@ -248,6 +265,7 @@ rules:
   - delete
   - deletecollection
   - patch
+  - watch
 - apiGroups:
   - certificates.k8s.io
   resources:
@@ -262,12 +280,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-gateway-leader-election-role
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -307,12 +325,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-gateway-infra-manager
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -321,19 +339,19 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
-  namespace: 'default'
+  namespace: default
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/leader-election-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-gateway-leader-election-rolebinding
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -342,20 +360,20 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: 'envoy-gateway'
-  namespace: 'default'
+  namespace: default
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/envoy-gateway-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: envoy-gateway
-  namespace: 'default'
+  namespace: default
   labels:
     control-plane: envoy-gateway
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -385,13 +403,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: envoy-gateway
-  namespace: 'default'
+  namespace: default
   labels:
     control-plane: envoy-gateway
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -437,7 +455,7 @@ spec:
               fieldPath: metadata.namespace
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: cluster.local
-        image: docker.io/envoyproxy/gateway:v1.6.1
+        image: docker.io/envoyproxy/gateway:v1.8.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -705,17 +723,69 @@ spec:
     name: kubermatic-default-proxy
     namespace: default
 ---
+# Source: envoy-gateway-controller/charts/gateway/charts/crds/templates/gatewayapi-safe-upgrade-policy.yaml
+#
+# config/crd/experimental/gateway.networking.k8s.io_vap_safeupgrades.yaml
+#
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  annotations:
+    gateway.networking.k8s.io/bundle-version: v1.5.0-dev
+    gateway.networking.k8s.io/channel: standard
+  name: "safe-upgrades.gateway.networking.k8s.io"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   ["apiextensions.k8s.io"]
+      apiVersions: ["v1"]
+      operations:  ["CREATE", "UPDATE"]
+      resources:   ["*"]
+  validations:
+    - expression: "object.spec.group != 'gateway.networking.k8s.io' || oldObject == null || (
+        has(object.metadata.annotations) && object.metadata.annotations.exists(k, k == 'gateway.networking.k8s.io/channel') && 
+        object.metadata.annotations['gateway.networking.k8s.io/channel'] == 'standard' ) || (
+        oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(k, k == 'gateway.networking.k8s.io/channel') && 
+        oldObject.metadata.annotations['gateway.networking.k8s.io/channel'] == 'experimental' )"
+      message: "Installing experimental CRDs on top of standard channel CRDs is prohibited by default. Uninstall ValidatingAdmissionPolicy safe-upgrades.gateway.networking.k8s.io to install experimental CRDs on top of standard channel CRDs."
+      reason: Invalid
+    - expression: "object.spec.group != 'gateway.networking.k8s.io' ||
+        (has(object.metadata.annotations) && object.metadata.annotations.exists(k, k == 'gateway.networking.k8s.io/bundle-version') &&
+        !matches(object.metadata.annotations['gateway.networking.k8s.io/bundle-version'], 'v1.[0-4].\\\\d+') &&
+        !matches(object.metadata.annotations['gateway.networking.k8s.io/bundle-version'], 'v0'))" #TODO Kubernetes 1.37: Migrate to kubernetes semver library
+      message: "Installing CRDs with version before v1.5.0 is prohibited by default. Uninstall ValidatingAdmissionPolicy safe-upgrades.gateway.networking.k8s.io to install older versions."
+      reason: Invalid
+---
+# Source: envoy-gateway-controller/charts/gateway/charts/crds/templates/gatewayapi-safe-upgrade-policy.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  annotations:
+    gateway.networking.k8s.io/bundle-version: v1.5.0-dev
+    gateway.networking.k8s.io/channel: standard
+  name: safe-upgrades.gateway.networking.k8s.io
+spec:
+  policyName: safe-upgrades.gateway.networking.k8s.io
+  validationActions: [Deny]
+  matchResources:
+    resourceRules:
+    - apiGroups:   ["apiextensions.k8s.io"]
+      apiVersions: ["v1"]
+      resources:   ["customresourcedefinitions"]
+      operations:  ["CREATE", "UPDATE"]
+---
 # Source: envoy-gateway-controller/charts/gateway/templates/certgen-rbac.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: release-name-gateway-certgen
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -727,10 +797,10 @@ kind: ClusterRole
 metadata:
   name: 'release-name-gateway-certgen:default'
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -760,10 +830,10 @@ kind: ClusterRoleBinding
 metadata:
   name: 'release-name-gateway-certgen:default'
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -775,19 +845,19 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: 'release-name-gateway-certgen'
-    namespace: 'default'
+    namespace: default
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/certgen-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: release-name-gateway-certgen
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -807,12 +877,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: release-name-gateway-certgen
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -824,19 +894,19 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: 'release-name-gateway-certgen'
-  namespace: 'default'
+  namespace: default
 ---
 # Source: envoy-gateway-controller/charts/gateway/templates/certgen.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: release-name-gateway-certgen
-  namespace: 'default'
+  namespace: default
   labels:
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
@@ -861,7 +931,7 @@ spec:
               fieldPath: metadata.namespace
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: cluster.local
-        image: docker.io/envoyproxy/gateway:v1.6.1
+        image: docker.io/envoyproxy/gateway:v1.8.2
         imagePullPolicy: IfNotPresent
         name: envoy-gateway-certgen
         securityContext:
@@ -891,10 +961,10 @@ metadata:
     "helm.sh/hook-weight": "-1"
   labels:
     app.kubernetes.io/component: topology-injector
-    helm.sh/chart: gateway-v1.6.1
+    helm.sh/chart: gateway-v1.8.2
     app.kubernetes.io/name: gateway
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.6.1"
+    app.kubernetes.io/version: "v1.8.2"
     app.kubernetes.io/managed-by: Helm
 webhooks:
   - name: topology.webhook.gateway.envoyproxy.io
@@ -903,7 +973,7 @@ webhooks:
     clientConfig:
       service:
         name: envoy-gateway
-        namespace: 'default'
+        namespace: default
         path: "/inject-pod-topology"
         port: 9443
     failurePolicy: Ignore
