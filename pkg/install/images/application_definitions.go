@@ -228,7 +228,7 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 							}
 						}
 
-						chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, versionValuesFile, registryPrefix, "")
+						chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, versionValuesFile, registryPrefix, "", nil)
 						if err != nil {
 							yield(nil, fmt.Errorf("failed to get images for cluster-autoscaler (k8s %s): %w", majorMinor, err))
 							return
@@ -242,7 +242,7 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 				}
 
 				// get images
-				chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix, "") // since we don't have the version constraints in AppDefs yet, we can leave kubeVersion parameter empty
+				chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix, "", nil) // since we don't have the version constraints in AppDefs yet, we can leave kubeVersion parameter empty
 				if err != nil {
 					yield(nil, fmt.Errorf("failed to get images for chart: %w", err))
 

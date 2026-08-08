@@ -398,7 +398,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	})
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (*Collection, error) {
 	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
@@ -409,41 +409,31 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromReconcilers(log, templateData, config, kubermaticVersions, seed)
+	collection, err := getImagesFromReconcilers(log, templateData, config, kubermaticVersions, seed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
-
-	images = append(images, creatorImages...)
 
 	addonImages, err := getImagesFromAddons(log, addons, templateData.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
 
-	images = append(images, addonImages...)
-	if backupImages, err := etcdBackupImages(config.Spec.SeedController); err != nil {
+	collection.Merge(addonImages)
+
+	backupImages, err := etcdBackupImages(config.Spec.SeedController)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get images from etcd backups: %w", err)
-	} else {
-		images = append(images, backupImages...)
 	}
+	collection.Merge(backupImages)
 
-	if registryPrefix != "" {
-		var filteredImages []string
-		for _, image := range images {
-			if strings.HasPrefix(image, registryPrefix) {
-				filteredImages = append(filteredImages, image)
-			}
-		}
+	collection.FilterPrefix(registryPrefix)
 
-		images = filteredImages
-	}
-
-	return images, nil
+	return collection, nil
 }
 
-func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfiguration) ([]string, error) {
-	var images []string
+func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfiguration) (*Collection, error) {
+	collection := NewCollection()
 
 	if configuration.BackupStoreContainer == "" {
 		configuration.BackupStoreContainer = defaulting.DefaultBackupStoreContainer
@@ -452,7 +442,7 @@ func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfigu
 	if image, err := kubernetes.ContainerFromString(configuration.BackupStoreContainer); err != nil {
 		return nil, fmt.Errorf("failed to get backup store image: %w", err)
 	} else {
-		images = append(images, image.Image)
+		collection.Insert(image.Image, RefTypeImage, "etcd-backup:store")
 	}
 
 	if configuration.BackupDeleteContainer == "" {
@@ -462,13 +452,15 @@ func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfigu
 	if image, err := kubernetes.ContainerFromString(configuration.BackupDeleteContainer); err != nil {
 		return nil, fmt.Errorf("failed to get backup delete image: %w", err)
 	} else {
-		images = append(images, image.Image)
+		collection.Insert(image.Image, RefTypeImage, "etcd-backup:delete")
 	}
 
-	return images, nil
+	return collection, nil
 }
 
-func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (images []string, err error) {
+func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (*Collection, error) {
+	collection := NewCollection()
+
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false, 0)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
@@ -516,39 +508,39 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(templateData.Cluster(), net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetReconcilers {
-		_, creator := creatorGetter()
+		name, creator := creatorGetter()
 		statefulset, err := creator(&appsv1.StatefulSet{})
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
+		collection.InsertAll(getImagesFromPodSpec(statefulset.Spec.Template.Spec), RefTypeImage, "reconciler:"+name)
 	}
 
 	for _, createFunc := range deploymentReconcilers {
-		_, creator := createFunc()
+		name, creator := createFunc()
 		deployment, err := creator(&appsv1.Deployment{})
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
+		collection.InsertAll(getImagesFromPodSpec(deployment.Spec.Template.Spec), RefTypeImage, "reconciler:"+name)
 	}
 
 	for _, createFunc := range cronjobReconcilers {
-		_, creator := createFunc()
+		name, creator := createFunc()
 		cronJob, err := creator(&batchv1.CronJob{})
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
+		collection.InsertAll(getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec), RefTypeImage, "reconciler:"+name)
 	}
 
 	for _, createFunc := range daemonsetReconcilers {
-		_, creator := createFunc()
+		name, creator := createFunc()
 		daemonset, err := creator(&appsv1.DaemonSet{})
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
+		collection.InsertAll(getImagesFromPodSpec(daemonset.Spec.Template.Spec), RefTypeImage, "reconciler:"+name)
 	}
 
 	// Add images for Enterprise Edition addons/components.
@@ -557,8 +549,8 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		return nil, err
 	}
 
-	images = append(images, additionalImages...)
-	return images, nil
+	collection.Merge(additionalImages)
+	return collection, nil
 }
 
 func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
