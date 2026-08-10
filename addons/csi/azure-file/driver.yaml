@@ -29,7 +29,7 @@
 {{ if eq .Cluster.MajorMinorVersion "1.35" }}
 {{ $version = "v1.35.7" }}
 {{ end }}
-{{ if eq .Cluster.MajorMinorVersion "1.35" }}
+{{ if eq .Cluster.MajorMinorVersion "1.36" }}
 {{ $version = "v1.35.7" }}
 {{ end }}
 apiVersion: v1
