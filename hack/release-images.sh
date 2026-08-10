@@ -67,13 +67,28 @@ generate_image_sbom() {
   syft "docker:$imageRef" -o "spdx-json=$outFile"
 }
 
+declare -A ATTACHED_REFS
+
 attach_image_sbom() {
   local imageRef="$1"
   local sbomFile="$2"
 
-  echodate "Attaching SBOM $(basename "$sbomFile") to $imageRef..."
+  local repo="${imageRef%:*}"
+  local digest
+  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -r '.digest')"
+  local ref="$repo@$digest"
+  local key="$ref:$(basename "$sbomFile")"
+
+  if [[ -n "${ATTACHED_REFS[$key]:-}" ]]; then
+    echodate "SBOM $(basename "$sbomFile") already attached to $ref, skipping duplicate for $imageRef..."
+    return
+  fi
+
+  echodate "Attaching SBOM $(basename "$sbomFile") to $ref..."
   oras attach --artifact-type application/vnd.spdx+json \
-    "$imageRef" "$sbomFile:application/spdx+json"
+    "$ref" "$sbomFile:application/spdx+json"
+
+  ATTACHED_REFS[$key]=1
 }
 
 # build Docker images

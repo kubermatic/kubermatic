@@ -232,6 +232,15 @@ set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
 
+sourceSbom="_dist/kubermatic-sourcecode-$RELEASE_NAME.sbom.spdx.json"
+./hack/generate-sourcecode-sbom.sh "$RELEASE_NAME" _dist
+
+if ! $DRY_RUN; then
+  echodate "Uploading source code SBOM..."
+  upload_archive "$sourceSbom"
+  rm -- "$sourceSbom"
+fi
+
 # CRDs since KKP 2.21 are not directly put into the charts/ directory
 # anymore, but into pkg/ so they can be embedded. In our Github archives
 # we still want and need them to be part of the operator chart.
@@ -292,7 +301,11 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget" "$binarySbom"
+  sbom="${archive%.tar.gz}.sbom.spdx.json"
+  echodate "Generating SBOM for $archive..."
+  syft "$archive" -o "spdx-json=$sbom"
+
+  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
@@ -344,7 +357,11 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget" "$binarySbom"
+  sbom="${archive%.tar.gz}.sbom.spdx.json"
+  echodate "Generating SBOM for $archive..."
+  syft "$archive" -o "spdx-json=$sbom"
+
+  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 done
 
 echodate "Done."
