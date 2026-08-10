@@ -44,8 +44,12 @@ for f in _dist/*; do
   if [[ $f =~ '.zip' ]]; then
     unzip -ql "$f"
   elif [[ $f =~ '.sbom.spdx.json' ]]; then
-    jq -e '.packages | length' "$f" > /dev/null
-    echodate "  contains $(jq '.packages | length' "$f") packages"
+    pkgcount=$(jq '.packages | length' "$f")
+    if [[ "$pkgcount" -eq 0 ]]; then
+      echodate "  ERROR: $f contains zero packages"
+      exit 1
+    fi
+    echodate "  contains $pkgcount packages
   else
     tar tvzf "$f"
   fi

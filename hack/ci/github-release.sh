@@ -26,13 +26,6 @@
 
 set -euo pipefail
 
-if ! command -v syft &>/dev/null; then
-  # Pin to the latest syft version 
-  echodate "Installing syft..."
-  curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp/bin v1.46.0
-  export PATH="/tmp/bin:$PATH"
-fi
-
 cd $(dirname $0)/../..
 source hack/lib.sh
 

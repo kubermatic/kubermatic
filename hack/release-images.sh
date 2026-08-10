@@ -59,13 +59,6 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
-if ! command -v syft &>/dev/null; then
-  # Pinned to latest syft version
-  echodate "Installing syft..."
-  curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp/bin v1.42.3
-  export PATH="/tmp/bin:$PATH"
-fi
-
 generate_image_sbom() {
   local imageRef="$1"
   local outFile="$2"
