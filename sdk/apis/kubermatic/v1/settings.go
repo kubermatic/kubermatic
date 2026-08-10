@@ -266,7 +266,10 @@ type MachineDeploymentOptions struct {
 // DefaultProjectResourceQuota contains the default resource quota which will be set for all
 // projects that do not have a custom quota already set.
 type DefaultProjectResourceQuota struct {
-	// Quota specifies the default CPU, Memory and Storage quantities for all the projects.
+	// Quota specifies the default CPU, memory, and storage quantities for all projects.
+	// Accelerator quotas must be configured explicitly on project ResourceQuota objects.
+	//
+	// +kubebuilder:validation:XValidation:rule="!has(self.accelerators) || self.accelerators.size() == 0",message="accelerator quotas are not supported in default project resource quotas"
 	Quota ResourceDetails `json:"quota,omitempty"`
 }
 

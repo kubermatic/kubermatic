@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -78,7 +79,23 @@ type Subject struct {
 	Kind string `json:"kind"`
 }
 
-// ResourceDetails holds the CPU, Memory and Storage quantities.
+// AcceleratorQuota holds accelerator limits for one KKP infrastructure provider.
+//
+// +kubebuilder:validation:XValidation:rule="self.resources.size() > 0",message="accelerator quota resources must not be empty"
+type AcceleratorQuota struct {
+	// Provider is the KKP infrastructure provider identifier, not the accelerator vendor.
+	// The alpha API supports only kubevirt.
+	//
+	// +kubebuilder:validation:Enum=kubevirt
+	Provider string `json:"provider"`
+
+	// Resources contains provider-native accelerator resource names and their limits.
+	// KubeVirt resource names are exact deviceName values. A missing resource name is
+	// unconstrained, zero denies that resource, and a positive whole number sets its limit.
+	Resources corev1.ResourceList `json:"resources"`
+}
+
+// ResourceDetails holds compute, storage, and accelerator resource quantities.
 type ResourceDetails struct {
 	// CPU holds the quantity of CPU. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	CPU *resource.Quantity `json:"cpu,omitempty"`
@@ -86,6 +103,15 @@ type ResourceDetails struct {
 	Memory *resource.Quantity `json:"memory,omitempty"`
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
+	// Accelerators holds provider-specific accelerator limits. An absent or empty list means
+	// that no accelerator limits are configured. A missing provider or provider/resource pair
+	// is unconstrained; this field is not an allowlist. The list is atomic so a future provider
+	// scope can participate in entry identity without redefining provider as the sole map key.
+	//
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=1
+	Accelerators []AcceleratorQuota `json:"accelerators,omitempty"`
 }
 
 func (r ResourceDetails) IsEmpty() bool {
@@ -110,4 +136,30 @@ func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails
 		Memory:  &memory,
 		Storage: &storage,
 	}
+}
+
+// NewResourceDetailsWithAccelerators constructs ResourceDetails with accelerator quotas
+// while isolating the result from subsequent mutations of the provided quantities and maps.
+func NewResourceDetailsWithAccelerators(cpu, memory, storage resource.Quantity, accelerators ...AcceleratorQuota) *ResourceDetails {
+	cpuCopy := cpu.DeepCopy()
+	memoryCopy := memory.DeepCopy()
+	storageCopy := storage.DeepCopy()
+
+	result := &ResourceDetails{
+		CPU:     &cpuCopy,
+		Memory:  &memoryCopy,
+		Storage: &storageCopy,
+	}
+
+	if len(accelerators) > 0 {
+		result.Accelerators = make([]AcceleratorQuota, len(accelerators))
+		for i := range accelerators {
+			result.Accelerators[i] = AcceleratorQuota{
+				Provider:  accelerators[i].Provider,
+				Resources: accelerators[i].Resources.DeepCopy(),
+			}
+		}
+	}
+
+	return result
 }
