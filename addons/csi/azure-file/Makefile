@@ -16,7 +16,7 @@
 
 OUTPUT_FILE = driver.yaml
 REPO_NAME = kkp-addons-csi-azure-file
-CHART_VERSION = 1.35.6
+CHART_VERSION = 1.35.7
 
 .PHONY: default
 default: setup-helm build clean-helm
