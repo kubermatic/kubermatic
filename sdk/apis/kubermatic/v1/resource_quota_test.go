@@ -226,7 +226,6 @@ func TestNewResourceDetailsWithAcceleratorsCopiesInputs(t *testing.T) {
 	quantity.Add(resource.MustParse("1"))
 	accelerators[0].Resources[h200ResourceName] = quantity
 	accelerators[0].Resources[a100ResourceName] = resource.MustParse("1")
-	accelerators = append(accelerators, AcceleratorQuota{Provider: "changed-again"})
 
 	assertQuantityEqual(t, resourceDetails.CPU, "2")
 	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
@@ -249,7 +248,8 @@ func TestNewResourceDetailsWithAcceleratorsCopiesInputs(t *testing.T) {
 }
 
 func TestNewResourceDetailsRetainsOriginalFunctionSignature(t *testing.T) {
-	var constructor func(resource.Quantity, resource.Quantity, resource.Quantity) *ResourceDetails = NewResourceDetails
+	type constructorFunc func(resource.Quantity, resource.Quantity, resource.Quantity) *ResourceDetails
+	constructor := constructorFunc(NewResourceDetails)
 
 	resourceDetails := constructor(resource.MustParse("2"), resource.MustParse("4Gi"), resource.MustParse("10Gi"))
 	assertQuantityEqual(t, resourceDetails.CPU, "2")
