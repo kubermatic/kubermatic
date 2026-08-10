@@ -115,15 +115,15 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 
 	switch version.MajorMinor() {
 	case v133:
-		return "1.33.6", nil
+		return "1.33.16", nil
 	case v134:
-		return "1.34.3", nil
+		return "1.34.13", nil
 	case v135:
-		return "1.35.5", nil
+		return "1.35.8", nil
 	case v136:
-		return "1.36.1", nil
+		return "1.36.4", nil
 	default:
-		return "1.36.1", nil
+		return "1.36.4", nil
 	}
 }
 

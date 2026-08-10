@@ -42,7 +42,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-controller-manager:v1.36.1
+        image: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-controller-manager:v1.36.4
         livenessProbe:
           failureThreshold: 3
           httpGet:
