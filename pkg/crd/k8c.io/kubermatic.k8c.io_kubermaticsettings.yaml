@@ -157,7 +157,9 @@ spec:
                     will be set for all projects that do not have a custom quota already set. EE-version only.
                   properties:
                     quota:
-                      description: Quota specifies the default CPU, Memory and Storage quantities for all the projects.
+                      description: |-
+                        Quota specifies the default CPU, memory, and storage quantities for all projects.
+                        Accelerator quotas must be configured explicitly on project ResourceQuota objects.
                       properties:
                         accelerators:
                           description: |-
@@ -219,6 +221,9 @@ spec:
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                       type: object
+                      x-kubernetes-validations:
+                        - message: accelerator quotas are not supported in default project resource quotas
+                          rule: '!has(self.accelerators) || self.accelerators.size() == 0'
                   type: object
                 disableAdminKubeconfig:
                   description: DisableAdminKubeconfig disables the admin kubeconfig functionality on the dashboard.
