@@ -49,7 +49,7 @@ for f in _dist/*; do
       echodate "  ERROR: $f contains zero packages"
       exit 1
     fi
-    echodate "  contains $pkgcount packages
+    echodate "  contains $pkgcount packages"
   else
     tar tvzf "$f"
   fi
