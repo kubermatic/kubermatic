@@ -86,7 +86,7 @@ require (
 	golang.org/x/crypto v0.54.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.47.0
-	golang.org/x/tools v0.47.0
+	golang.org/x/tools v0.48.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/api v0.283.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
