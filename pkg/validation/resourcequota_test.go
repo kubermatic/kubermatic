@@ -237,7 +237,7 @@ func TestValidateAcceleratorQuotaAggregatesErrorsDeterministically(t *testing.T)
 	}
 
 	var expectedError string
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		err := validation.ValidateAcceleratorQuota(resourceDetails)
 		if err == nil {
 			t.Fatal("expected validation errors, got nil")
