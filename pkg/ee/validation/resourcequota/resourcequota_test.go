@@ -273,7 +273,7 @@ func TestValidateUpdate(t *testing.T) {
 			errorContains: `invalid accelerator quota: accelerators[0].resources[nvidia.com/GH100_H200_NVL]`,
 		},
 		{
-			name: "unchanged invalid accelerator quota permits finalizer removal",
+			name: "existing quota without accelerators permits finalizer removal",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "existing-quota",
@@ -281,50 +281,20 @@ func TestValidateUpdate(t *testing.T) {
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
 				},
 			},
 			newResourceQuota: &kubermaticv1.ResourceQuota{
 				ObjectMeta: metav1.ObjectMeta{Name: "existing-quota"},
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
 				},
 			},
 		},
 		{
-			name: "unchanged invalid accelerator quota does not bypass subject immutability",
-			oldResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "old-project", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
-				},
-			},
-			newResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "new-project", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
-				},
-			},
-			errExpected:   true,
-			errorContains: "Operation not permitted: updating ResourceQuota Subject is not allowed!",
-		},
-		{
-			name: "unchanged invalid provider permits valid resource change",
+			name: "unsupported provider is rejected",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
 				},
 			},
 			newResourceQuota: &kubermaticv1.ResourceQuota{
@@ -335,42 +305,14 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			},
+			errExpected:   true,
+			errorContains: `invalid accelerator quota: accelerators[0].provider: Unsupported value: "aws"`,
 		},
 		{
-			name: "unchanged invalid resource pair permits another pair change",
+			name: "malformed resource name is rejected",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{Accelerators: []kubermaticv1.AcceleratorQuota{{
-						Provider: "kubevirt",
-						Resources: corev1.ResourceList{
-							"bad":            resource.MustParse("1"),
-							"nvidia.com/GPU": resource.MustParse("1"),
-						},
-					}}},
-				},
-			},
-			newResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{Accelerators: []kubermaticv1.AcceleratorQuota{{
-						Provider: "kubevirt",
-						Resources: corev1.ResourceList{
-							"bad":            resource.MustParse("1"),
-							"nvidia.com/GPU": resource.MustParse("2"),
-						},
-					}}},
-				},
-			},
-		},
-		{
-			name: "changed quantity revalidates invalid resource key",
-			oldResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("kubevirt", "bad", "1"),
-					},
 				},
 			},
 			newResourceQuota: &kubermaticv1.ResourceQuota{
@@ -385,7 +327,7 @@ func TestValidateUpdate(t *testing.T) {
 			errorContains: `invalid accelerator quota: accelerators[0].resources[bad]`,
 		},
 		{
-			name: "newly introduced duplicate provider is rejected",
+			name: "duplicate provider is rejected",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
@@ -407,34 +349,10 @@ func TestValidateUpdate(t *testing.T) {
 			errorContains: `invalid accelerator quota: accelerators[1].provider: Duplicate value: "kubevirt"`,
 		},
 		{
-			name: "changed invalid persisted accelerator quota is rejected",
+			name: "valid accelerator quota is accepted",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "-1"),
-					},
-				},
-			},
-			newResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "500m"),
-					},
-				},
-			},
-			errExpected:   true,
-			errorContains: "invalid accelerator quota:",
-		},
-		{
-			name: "invalid persisted accelerator quota can be repaired",
-			oldResourceQuota: &kubermaticv1.ResourceQuota{
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
-					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
-					},
 				},
 			},
 			newResourceQuota: &kubermaticv1.ResourceQuota{

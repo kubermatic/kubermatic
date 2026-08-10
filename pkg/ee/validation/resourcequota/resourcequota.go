@@ -86,7 +86,7 @@ func ValidateUpdate(ctx context.Context,
 	if newQuota == nil {
 		return nil
 	}
-	if err := validation.ValidateAcceleratorQuotaUpdate(oldQuota.Spec.Quota, newQuota.Spec.Quota); err != nil {
+	if err := validation.ValidateAcceleratorQuota(newQuota.Spec.Quota); err != nil {
 		return fmt.Errorf("invalid accelerator quota: %w", err)
 	}
 
