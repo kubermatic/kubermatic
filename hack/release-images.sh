@@ -67,6 +67,15 @@ generate_image_sbom() {
   syft "docker:$imageRef" -o "spdx-json=$outFile"
 }
 
+attach_image_sbom() {
+  local imageRef="$1"
+  local sbomFile="$2"
+
+  echodate "Attaching SBOM $(basename "$sbomFile") to $imageRef..."
+  oras attach --artifact-type application/vnd.spdx+json \
+    "$imageRef" "$sbomFile:application/spdx+json"
+}
+
 # build Docker images
 PRIMARY_TAG="${1}"
 VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
@@ -181,19 +190,40 @@ for TAG in $ALL_TAGS; do
 
   if [ -z "${NO_PUSH:-}" ]; then
     echodate "Pushing images"
+
     docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+    attach_image_sbom "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
+    attach_image_sbom "$DOCKER_REPO/nodeport-proxy:$TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/addons:$TAG"
+    attach_image_sbom "$DOCKER_REPO/addons:$TAG" "_dist/images/addons.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/etcd-launcher:$TAG"
+    attach_image_sbom "$DOCKER_REPO/etcd-launcher:$TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/conformance-tests:$TAG"
+    attach_image_sbom "$DOCKER_REPO/conformance-tests:$TAG" "_dist/images/conformance-tests.sbom.spdx.json"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" "$TAG"
 
     docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$TAG" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+    done
+
     docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$TAG" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+    done
+
     docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/network-interface-manager:$TAG" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+    done
   fi
 done
 
