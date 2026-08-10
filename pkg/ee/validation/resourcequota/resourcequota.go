@@ -50,7 +50,7 @@ func ValidateCreate(ctx context.Context,
 		return nil
 	}
 	if err := validation.ValidateAcceleratorQuota(incomingQuota.Spec.Quota); err != nil {
-		return err
+		return fmt.Errorf("invalid accelerator quota: %w", err)
 	}
 
 	currentQuotaList := &kubermaticv1.ResourceQuotaList{}
@@ -86,8 +86,8 @@ func ValidateUpdate(ctx context.Context,
 	if newQuota == nil {
 		return nil
 	}
-	if err := validation.ValidateAcceleratorQuota(newQuota.Spec.Quota); err != nil {
-		return err
+	if err := validation.ValidateAcceleratorQuotaUpdate(oldQuota.Spec.Quota, newQuota.Spec.Quota); err != nil {
+		return fmt.Errorf("invalid accelerator quota: %w", err)
 	}
 
 	oldSubject := oldQuota.Spec.Subject

@@ -26,12 +26,14 @@ package resourcequota_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,6 +45,7 @@ func TestValidateCreate(t *testing.T) {
 		existingResourceQuota   []*kubermaticv1.ResourceQuota
 		resourceQuotaToValidate *kubermaticv1.ResourceQuota
 		errExpected             bool
+		errorContains           string
 	}{
 		{
 			name: "Create ResourceQuota Success",
@@ -121,9 +124,12 @@ func TestValidateCreate(t *testing.T) {
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: map[string]resource.Quantity{
-							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
-						},
+						Accelerators: []kubermaticv1.AcceleratorQuota{{
+							Provider: "kubevirt",
+							Resources: corev1.ResourceList{
+								"nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
+							},
+						}},
 					},
 				},
 			},
@@ -134,13 +140,17 @@ func TestValidateCreate(t *testing.T) {
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-negative-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: map[string]resource.Quantity{
-							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
-						},
+						Accelerators: []kubermaticv1.AcceleratorQuota{{
+							Provider: "kubevirt",
+							Resources: corev1.ResourceList{
+								"nvidia.com/GH100_H200_NVL": resource.MustParse("-1"),
+							},
+						}},
 					},
 				},
 			},
-			errExpected: true,
+			errExpected:   true,
+			errorContains: `invalid accelerator quota: accelerators[0].resources[nvidia.com/GH100_H200_NVL]`,
 		},
 		{
 			name: "Create ResourceQuota with fractional accelerator quota failure",
@@ -148,13 +158,17 @@ func TestValidateCreate(t *testing.T) {
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-fractional-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: map[string]resource.Quantity{
-							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
-						},
+						Accelerators: []kubermaticv1.AcceleratorQuota{{
+							Provider: "kubevirt",
+							Resources: corev1.ResourceList{
+								"nvidia.com/GH100_H200_NVL": resource.MustParse("500m"),
+							},
+						}},
 					},
 				},
 			},
-			errExpected: true,
+			errExpected:   true,
+			errorContains: "invalid accelerator quota:",
 		},
 		{
 			name: "Create ResourceQuota with empty accelerator key failure",
@@ -162,13 +176,17 @@ func TestValidateCreate(t *testing.T) {
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-empty-accelerator-key", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: map[string]resource.Quantity{
-							"": resource.MustParse("1"),
-						},
+						Accelerators: []kubermaticv1.AcceleratorQuota{{
+							Provider: "kubevirt",
+							Resources: corev1.ResourceList{
+								"": resource.MustParse("1"),
+							},
+						}},
 					},
 				},
 			},
-			errExpected: true,
+			errExpected:   true,
+			errorContains: "invalid accelerator quota:",
 		},
 	}
 
@@ -192,6 +210,9 @@ func TestValidateCreate(t *testing.T) {
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}
+			if tc.errorContains != "" && !strings.Contains(err.Error(), tc.errorContains) {
+				t.Fatalf("expected error %q to contain %q", err, tc.errorContains)
+			}
 		})
 	}
 }
@@ -202,6 +223,7 @@ func TestValidateUpdate(t *testing.T) {
 		oldResourceQuota *kubermaticv1.ResourceQuota
 		newResourceQuota *kubermaticv1.ResourceQuota
 		errExpected      bool
+		errorContains    string
 	}{
 		{
 			name: "Update ResourceQuota Subject Failure",
@@ -229,10 +251,11 @@ func TestValidateUpdate(t *testing.T) {
 					Quota: kubermaticv1.ResourceDetails{},
 				},
 			},
-			errExpected: true,
+			errExpected:   true,
+			errorContains: "Operation not permitted: updating ResourceQuota Subject is not allowed!",
 		},
 		{
-			name: "Update ResourceQuota with fractional accelerator quota failure",
+			name: "new fractional accelerator quota is rejected",
 			oldResourceQuota: &kubermaticv1.ResourceQuota{
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
@@ -242,13 +265,186 @@ func TestValidateUpdate(t *testing.T) {
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
 					Quota: kubermaticv1.ResourceDetails{
-						Accelerators: map[string]resource.Quantity{
-							"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1.5"),
-						},
+						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "1.5"),
 					},
 				},
 			},
-			errExpected: true,
+			errExpected:   true,
+			errorContains: `invalid accelerator quota: accelerators[0].resources[nvidia.com/GH100_H200_NVL]`,
+		},
+		{
+			name: "unchanged invalid accelerator quota permits finalizer removal",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "existing-quota",
+					Finalizers: []string{"kubermatic.k8c.io/test"},
+				},
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{Name: "existing-quota"},
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+		},
+		{
+			name: "unchanged invalid accelerator quota does not bypass subject immutability",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "old-project", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "new-project", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+			errExpected:   true,
+			errorContains: "Operation not permitted: updating ResourceQuota Subject is not allowed!",
+		},
+		{
+			name: "unchanged invalid provider permits valid resource change",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "2"),
+					},
+				},
+			},
+		},
+		{
+			name: "unchanged invalid resource pair permits another pair change",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{Accelerators: []kubermaticv1.AcceleratorQuota{{
+						Provider: "kubevirt",
+						Resources: corev1.ResourceList{
+							"bad":            resource.MustParse("1"),
+							"nvidia.com/GPU": resource.MustParse("1"),
+						},
+					}}},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{Accelerators: []kubermaticv1.AcceleratorQuota{{
+						Provider: "kubevirt",
+						Resources: corev1.ResourceList{
+							"bad":            resource.MustParse("1"),
+							"nvidia.com/GPU": resource.MustParse("2"),
+						},
+					}}},
+				},
+			},
+		},
+		{
+			name: "changed quantity revalidates invalid resource key",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "bad", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "bad", "2"),
+					},
+				},
+			},
+			errExpected:   true,
+			errorContains: `invalid accelerator quota: accelerators[0].resources[bad]`,
+		},
+		{
+			name: "newly introduced duplicate provider is rejected",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GPU", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{Accelerators: []kubermaticv1.AcceleratorQuota{
+						{Provider: "kubevirt", Resources: corev1.ResourceList{"nvidia.com/GPU": resource.MustParse("1")}},
+						{Provider: "kubevirt", Resources: corev1.ResourceList{"nvidia.com/A100": resource.MustParse("1")}},
+					}},
+				},
+			},
+			errExpected:   true,
+			errorContains: `invalid accelerator quota: accelerators[1].provider: Duplicate value: "kubevirt"`,
+		},
+		{
+			name: "changed invalid persisted accelerator quota is rejected",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "-1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "500m"),
+					},
+				},
+			},
+			errExpected:   true,
+			errorContains: "invalid accelerator quota:",
+		},
+		{
+			name: "invalid persisted accelerator quota can be repaired",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("aws", "accelerators.kubermatic.io/h100", "1"),
+					},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{Name: "project-with-accelerators", Kind: kubermaticv1.ProjectSubjectKind},
+					Quota: kubermaticv1.ResourceDetails{
+						Accelerators: acceleratorQuota("kubevirt", "nvidia.com/GH100_H200_NVL", "1"),
+					},
+				},
+			},
 		},
 	}
 
@@ -258,6 +454,18 @@ func TestValidateUpdate(t *testing.T) {
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}
+			if tc.errorContains != "" && !strings.Contains(err.Error(), tc.errorContains) {
+				t.Fatalf("expected error %q to contain %q", err, tc.errorContains)
+			}
 		})
 	}
+}
+
+func acceleratorQuota(provider, resourceName, quantity string) []kubermaticv1.AcceleratorQuota {
+	return []kubermaticv1.AcceleratorQuota{{
+		Provider: provider,
+		Resources: corev1.ResourceList{
+			corev1.ResourceName(resourceName): resource.MustParse(quantity),
+		},
+	}}
 }

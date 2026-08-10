@@ -54,16 +54,43 @@ spec:
                   description: Quota specifies the current maximum allowed usage of resources.
                   properties:
                     accelerators:
-                      additionalProperties:
-                        anyOf:
-                          - type: integer
-                          - type: string
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
                       description: |-
-                        Accelerators holds accelerator quantities keyed by a stable accounting identifier.
-                        Accelerator resources with different keys are accounted independently.
-                      type: object
+                        Accelerators holds provider-specific accelerator limits. An absent or empty list means
+                        that no accelerator limits are configured. A missing provider or provider/resource pair
+                        is unconstrained; this field is not an allowlist. The list is atomic so a future provider
+                        scope can participate in entry identity without redefining provider as the sole map key.
+                      items:
+                        description: AcceleratorQuota holds accelerator limits for one KKP infrastructure provider.
+                        properties:
+                          provider:
+                            description: |-
+                              Provider is the KKP infrastructure provider identifier, not the accelerator vendor.
+                              The alpha API supports only kubevirt.
+                            enum:
+                              - kubevirt
+                            type: string
+                          resources:
+                            additionalProperties:
+                              anyOf:
+                                - type: integer
+                                - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Resources contains provider-native accelerator resource names and their limits.
+                              KubeVirt resource names are exact deviceName values. A missing resource name is
+                              unconstrained, zero denies that resource, and a positive whole number sets its limit.
+                            type: object
+                        required:
+                          - provider
+                          - resources
+                        type: object
+                        x-kubernetes-validations:
+                          - message: accelerator quota resources must not be empty
+                            rule: self.resources.size() > 0
+                      maxItems: 1
+                      type: array
+                      x-kubernetes-list-type: atomic
                     cpu:
                       anyOf:
                         - type: integer
@@ -113,16 +140,43 @@ spec:
                   description: GlobalUsage is holds the current usage of resources for all seeds.
                   properties:
                     accelerators:
-                      additionalProperties:
-                        anyOf:
-                          - type: integer
-                          - type: string
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
                       description: |-
-                        Accelerators holds accelerator quantities keyed by a stable accounting identifier.
-                        Accelerator resources with different keys are accounted independently.
-                      type: object
+                        Accelerators holds provider-specific accelerator limits. An absent or empty list means
+                        that no accelerator limits are configured. A missing provider or provider/resource pair
+                        is unconstrained; this field is not an allowlist. The list is atomic so a future provider
+                        scope can participate in entry identity without redefining provider as the sole map key.
+                      items:
+                        description: AcceleratorQuota holds accelerator limits for one KKP infrastructure provider.
+                        properties:
+                          provider:
+                            description: |-
+                              Provider is the KKP infrastructure provider identifier, not the accelerator vendor.
+                              The alpha API supports only kubevirt.
+                            enum:
+                              - kubevirt
+                            type: string
+                          resources:
+                            additionalProperties:
+                              anyOf:
+                                - type: integer
+                                - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Resources contains provider-native accelerator resource names and their limits.
+                              KubeVirt resource names are exact deviceName values. A missing resource name is
+                              unconstrained, zero denies that resource, and a positive whole number sets its limit.
+                            type: object
+                        required:
+                          - provider
+                          - resources
+                        type: object
+                        x-kubernetes-validations:
+                          - message: accelerator quota resources must not be empty
+                            rule: self.resources.size() > 0
+                      maxItems: 1
+                      type: array
+                      x-kubernetes-list-type: atomic
                     cpu:
                       anyOf:
                         - type: integer
@@ -149,16 +203,43 @@ spec:
                   description: LocalUsage is holds the current usage of resources for the local seed.
                   properties:
                     accelerators:
-                      additionalProperties:
-                        anyOf:
-                          - type: integer
-                          - type: string
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
                       description: |-
-                        Accelerators holds accelerator quantities keyed by a stable accounting identifier.
-                        Accelerator resources with different keys are accounted independently.
-                      type: object
+                        Accelerators holds provider-specific accelerator limits. An absent or empty list means
+                        that no accelerator limits are configured. A missing provider or provider/resource pair
+                        is unconstrained; this field is not an allowlist. The list is atomic so a future provider
+                        scope can participate in entry identity without redefining provider as the sole map key.
+                      items:
+                        description: AcceleratorQuota holds accelerator limits for one KKP infrastructure provider.
+                        properties:
+                          provider:
+                            description: |-
+                              Provider is the KKP infrastructure provider identifier, not the accelerator vendor.
+                              The alpha API supports only kubevirt.
+                            enum:
+                              - kubevirt
+                            type: string
+                          resources:
+                            additionalProperties:
+                              anyOf:
+                                - type: integer
+                                - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Resources contains provider-native accelerator resource names and their limits.
+                              KubeVirt resource names are exact deviceName values. A missing resource name is
+                              unconstrained, zero denies that resource, and a positive whole number sets its limit.
+                            type: object
+                        required:
+                          - provider
+                          - resources
+                        type: object
+                        x-kubernetes-validations:
+                          - message: accelerator quota resources must not be empty
+                            rule: self.resources.size() > 0
+                      maxItems: 1
+                      type: array
+                      x-kubernetes-list-type: atomic
                     cpu:
                       anyOf:
                         - type: integer

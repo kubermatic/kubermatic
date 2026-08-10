@@ -18,58 +18,97 @@ package v1
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestResourceDetailsJSONBackwardCompatibility(t *testing.T) {
-	resourceDetails := ResourceDetails{}
-	if err := json.Unmarshal([]byte(`{"cpu":"2","memory":"4Gi","storage":"10Gi"}`), &resourceDetails); err != nil {
-		t.Fatalf("failed to decode resource details: %v", err)
-	}
-	if resourceDetails.Accelerators != nil {
-		t.Fatalf("expected accelerators to remain nil, got %v", resourceDetails.Accelerators)
-	}
+const (
+	kubeVirtAcceleratorProvider = "kubevirt"
+	h200ResourceName            = corev1.ResourceName("nvidia.com/GH100_H200_NVL")
+	a100ResourceName            = corev1.ResourceName("nvidia.com/A100_80GB")
+)
 
-	encoded, err := json.Marshal(resourceDetails)
-	if err != nil {
-		t.Fatalf("failed to encode resource details: %v", err)
-	}
-
-	payload := map[string]json.RawMessage{}
-	if err := json.Unmarshal(encoded, &payload); err != nil {
-		t.Fatalf("failed to decode resource details payload: %v", err)
-	}
-	if _, exists := payload["accelerators"]; exists {
-		t.Fatal("expected an unset accelerator map to be omitted")
-	}
-}
-
-func TestResourceDetailsJSONPreservesExplicitZeroAcceleratorQuota(t *testing.T) {
-	resourceDetails := ResourceDetails{
-		Accelerators: map[string]resource.Quantity{
-			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
+func TestResourceDetailsJSONAcceleratorListOmission(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		payload               string
+		expectNilAccelerators bool
+	}{
+		{
+			name:                  "omitted accelerator list",
+			payload:               `{"cpu":"2","memory":"4Gi","storage":"10Gi"}`,
+			expectNilAccelerators: true,
+		},
+		{
+			name:    "empty accelerator list",
+			payload: `{"accelerators":[]}`,
 		},
 	}
 
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			resourceDetails := ResourceDetails{}
+			if err := json.Unmarshal([]byte(tc.payload), &resourceDetails); err != nil {
+				t.Fatalf("failed to decode resource details: %v", err)
+			}
+			if len(resourceDetails.Accelerators) != 0 {
+				t.Fatalf("expected no accelerators, got %v", resourceDetails.Accelerators)
+			}
+			if tc.expectNilAccelerators && resourceDetails.Accelerators != nil {
+				t.Fatalf("expected accelerators to remain nil, got %v", resourceDetails.Accelerators)
+			}
+			if !tc.expectNilAccelerators && resourceDetails.Accelerators == nil {
+				t.Fatal("expected the explicit empty accelerator list to be preserved when decoding")
+			}
+
+			encoded, err := json.Marshal(resourceDetails)
+			if err != nil {
+				t.Fatalf("failed to encode resource details: %v", err)
+			}
+
+			payload := map[string]json.RawMessage{}
+			if err := json.Unmarshal(encoded, &payload); err != nil {
+				t.Fatalf("failed to decode resource details payload: %v", err)
+			}
+			if _, exists := payload["accelerators"]; exists {
+				t.Fatal("expected an unset or empty accelerator list to be omitted")
+			}
+		})
+	}
+}
+
+func TestResourceDetailsJSONAcceleratorRoundTrip(t *testing.T) {
+	input := []byte(`{"accelerators":[{"provider":"kubevirt","resources":{"nvidia.com/GH100_H200_NVL":"0","nvidia.com/A100_80GB":"2"}}]}`)
+
+	resourceDetails := ResourceDetails{}
+	if err := json.Unmarshal(input, &resourceDetails); err != nil {
+		t.Fatalf("failed to decode resource details: %v", err)
+	}
+	if len(resourceDetails.Accelerators) != 1 {
+		t.Fatalf("expected one accelerator provider entry, got %d", len(resourceDetails.Accelerators))
+	}
+
+	accelerators := resourceDetails.Accelerators[0]
+	if accelerators.Provider != kubeVirtAcceleratorProvider {
+		t.Fatalf("expected provider %q, got %q", kubeVirtAcceleratorProvider, accelerators.Provider)
+	}
+	if len(accelerators.Resources) != 2 {
+		t.Fatalf("expected two accelerator resources, got %d", len(accelerators.Resources))
+	}
+	assertQuantityEqual(t, resourceListQuantityPtr(accelerators.Resources, h200ResourceName), "0")
+	assertQuantityEqual(t, resourceListQuantityPtr(accelerators.Resources, a100ResourceName), "2")
+	if _, exists := accelerators.Resources[corev1.ResourceName("kubevirt/"+string(h200ResourceName))]; exists {
+		t.Fatal("provider must not be encoded into the accelerator resource name")
+	}
+
 	encoded, err := json.Marshal(resourceDetails)
 	if err != nil {
 		t.Fatalf("failed to encode resource details: %v", err)
 	}
-
-	decoded := ResourceDetails{}
-	if err := json.Unmarshal(encoded, &decoded); err != nil {
-		t.Fatalf("failed to decode resource details: %v", err)
-	}
-
-	quantity, exists := decoded.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"]
-	if !exists {
-		t.Fatal("expected explicit zero accelerator quota to be preserved")
-	}
-	if !quantity.IsZero() {
-		t.Fatalf("expected explicit zero accelerator quota, got %s", quantity.String())
-	}
+	assertJSONEqual(t, encoded, input)
 }
 
 func TestResourceDetailsIsEmpty(t *testing.T) {
@@ -83,28 +122,30 @@ func TestResourceDetailsIsEmpty(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "empty accelerator map",
+			name: "empty accelerator list",
 			resourceDetails: ResourceDetails{
-				Accelerators: map[string]resource.Quantity{},
+				Accelerators: []AcceleratorQuota{},
 			},
 			expected: true,
 		},
 		{
-			name: "zero accelerator quantity",
+			name: "accelerator-only details retain existing empty semantics",
 			resourceDetails: ResourceDetails{
-				Accelerators: map[string]resource.Quantity{
-					"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("0"),
-				},
+				Accelerators: []AcceleratorQuota{{
+					Provider: kubeVirtAcceleratorProvider,
+					Resources: corev1.ResourceList{
+						h200ResourceName: resource.MustParse("2"),
+					},
+				}},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
-			name: "non-zero accelerator quantity",
+			name: "zero scalar resource quantity",
 			resourceDetails: ResourceDetails{
-				Accelerators: map[string]resource.Quantity{
-					"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
-				},
+				CPU: quantityPtr("0"),
 			},
+			expected: true,
 		},
 		{
 			name: "non-zero scalar resource quantity",
@@ -123,67 +164,124 @@ func TestResourceDetailsIsEmpty(t *testing.T) {
 	}
 }
 
-func TestResourceDetailsAdd(t *testing.T) {
-	memory := resource.MustParse("4Gi")
-	memory.AsDec()
-	a100 := resource.MustParse("1")
-	a100.AsDec()
-
-	resourceDetails := ResourceDetails{
-		CPU: quantityPtr("1"),
-		Accelerators: map[string]resource.Quantity{
-			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
-		},
-	}
-	other := ResourceDetails{
-		CPU:     quantityPtr("2"),
-		Memory:  &memory,
-		Storage: quantityPtr("10Gi"),
-		Accelerators: map[string]resource.Quantity{
-			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("2"),
-			"kubevirt/nvidia.com/A100_80GB":      a100,
-		},
-	}
-
-	resourceDetails.Add(other)
-
-	assertQuantityEqual(t, resourceDetails.CPU, "3")
-	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
-	assertQuantityEqual(t, resourceDetails.Storage, "10Gi")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/GH100_H200_NVL"), "3")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/A100_80GB"), "1")
-
-	// Mutating the source after Add must not mutate the destination.
-	other.Memory.Add(resource.MustParse("1Gi"))
-	otherAccelerator := other.Accelerators["kubevirt/nvidia.com/A100_80GB"]
-	otherAccelerator.Add(resource.MustParse("1"))
-	other.Accelerators["kubevirt/nvidia.com/A100_80GB"] = otherAccelerator
-
-	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
-	assertQuantityEqual(t, acceleratorQuantityPtr(resourceDetails, "kubevirt/nvidia.com/A100_80GB"), "1")
-}
-
 func TestResourceDetailsDeepCopy(t *testing.T) {
+	cpu := resource.MustParse("2")
+	cpu.AsDec()
+	h200 := resource.MustParse("4")
+	h200.AsDec()
 	original := ResourceDetails{
-		Accelerators: map[string]resource.Quantity{
-			"kubevirt/nvidia.com/GH100_H200_NVL": resource.MustParse("1"),
-		},
+		CPU: &cpu,
+		Accelerators: []AcceleratorQuota{{
+			Provider: kubeVirtAcceleratorProvider,
+			Resources: corev1.ResourceList{
+				h200ResourceName: h200,
+			},
+		}},
 	}
 	copied := original.DeepCopy()
 
-	quantity := original.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"]
+	original.CPU.Add(resource.MustParse("1"))
+	original.Accelerators[0].Provider = "changed"
+	quantity := original.Accelerators[0].Resources[h200ResourceName]
 	quantity.Add(resource.MustParse("1"))
-	original.Accelerators["kubevirt/nvidia.com/GH100_H200_NVL"] = quantity
+	original.Accelerators[0].Resources[h200ResourceName] = quantity
+	original.Accelerators[0].Resources[a100ResourceName] = resource.MustParse("1")
+	original.Accelerators = append(original.Accelerators, AcceleratorQuota{Provider: "changed-again"})
 
-	assertQuantityEqual(t, acceleratorQuantityPtr(*copied, "kubevirt/nvidia.com/GH100_H200_NVL"), "1")
+	assertQuantityEqual(t, copied.CPU, "2")
+	if len(copied.Accelerators) != 1 {
+		t.Fatalf("expected one copied accelerator provider entry, got %d", len(copied.Accelerators))
+	}
+	if copied.Accelerators[0].Provider != kubeVirtAcceleratorProvider {
+		t.Fatalf("expected copied provider %q, got %q", kubeVirtAcceleratorProvider, copied.Accelerators[0].Provider)
+	}
+	if len(copied.Accelerators[0].Resources) != 1 {
+		t.Fatalf("expected one copied accelerator resource, got %d", len(copied.Accelerators[0].Resources))
+	}
+	assertQuantityEqual(t, resourceListQuantityPtr(copied.Accelerators[0].Resources, h200ResourceName), "4")
 }
 
-func acceleratorQuantityPtr(resourceDetails ResourceDetails, name string) *resource.Quantity {
-	quantity, ok := resourceDetails.Accelerators[name]
+func TestNewResourceDetailsWithAcceleratorsCopiesInputs(t *testing.T) {
+	cpu := resource.MustParse("2")
+	memory := resource.MustParse("4Gi")
+	storage := resource.MustParse("10Gi")
+	h200 := resource.MustParse("4")
+	for _, quantity := range []*resource.Quantity{&cpu, &memory, &storage, &h200} {
+		quantity.AsDec()
+	}
+
+	accelerators := []AcceleratorQuota{{
+		Provider: kubeVirtAcceleratorProvider,
+		Resources: corev1.ResourceList{
+			h200ResourceName: h200,
+		},
+	}}
+	resourceDetails := NewResourceDetailsWithAccelerators(cpu, memory, storage, accelerators...)
+
+	cpu.Add(resource.MustParse("1"))
+	memory.Add(resource.MustParse("1Gi"))
+	storage.Add(resource.MustParse("1Gi"))
+	accelerators[0].Provider = "changed"
+	quantity := accelerators[0].Resources[h200ResourceName]
+	quantity.Add(resource.MustParse("1"))
+	accelerators[0].Resources[h200ResourceName] = quantity
+	accelerators[0].Resources[a100ResourceName] = resource.MustParse("1")
+	accelerators = append(accelerators, AcceleratorQuota{Provider: "changed-again"})
+
+	assertQuantityEqual(t, resourceDetails.CPU, "2")
+	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
+	assertQuantityEqual(t, resourceDetails.Storage, "10Gi")
+	if len(resourceDetails.Accelerators) != 1 {
+		t.Fatalf("expected one accelerator provider entry, got %d", len(resourceDetails.Accelerators))
+	}
+	if resourceDetails.Accelerators[0].Provider != kubeVirtAcceleratorProvider {
+		t.Fatalf("expected provider %q, got %q", kubeVirtAcceleratorProvider, resourceDetails.Accelerators[0].Provider)
+	}
+	if len(resourceDetails.Accelerators[0].Resources) != 1 {
+		t.Fatalf("expected one accelerator resource, got %d", len(resourceDetails.Accelerators[0].Resources))
+	}
+	assertQuantityEqual(t, resourceListQuantityPtr(resourceDetails.Accelerators[0].Resources, h200ResourceName), "4")
+
+	withoutAccelerators := NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
+	if withoutAccelerators.Accelerators != nil {
+		t.Fatalf("expected backwards-compatible constructor call to leave accelerators nil, got %v", withoutAccelerators.Accelerators)
+	}
+}
+
+func TestNewResourceDetailsRetainsOriginalFunctionSignature(t *testing.T) {
+	var constructor func(resource.Quantity, resource.Quantity, resource.Quantity) *ResourceDetails = NewResourceDetails
+
+	resourceDetails := constructor(resource.MustParse("2"), resource.MustParse("4Gi"), resource.MustParse("10Gi"))
+	assertQuantityEqual(t, resourceDetails.CPU, "2")
+	assertQuantityEqual(t, resourceDetails.Memory, "4Gi")
+	assertQuantityEqual(t, resourceDetails.Storage, "10Gi")
+	if resourceDetails.Accelerators != nil {
+		t.Fatalf("expected original constructor to leave accelerators nil, got %v", resourceDetails.Accelerators)
+	}
+}
+
+func resourceListQuantityPtr(resources corev1.ResourceList, name corev1.ResourceName) *resource.Quantity {
+	quantity, ok := resources[name]
 	if !ok {
 		return nil
 	}
 	return &quantity
+}
+
+func assertJSONEqual(t *testing.T, actual, expected []byte) {
+	t.Helper()
+
+	var actualValue any
+	if err := json.Unmarshal(actual, &actualValue); err != nil {
+		t.Fatalf("failed to decode actual JSON: %v", err)
+	}
+	var expectedValue any
+	if err := json.Unmarshal(expected, &expectedValue); err != nil {
+		t.Fatalf("failed to decode expected JSON: %v", err)
+	}
+	if !reflect.DeepEqual(actualValue, expectedValue) {
+		t.Fatalf("JSON differs:\nactual:   %s\nexpected: %s", actual, expected)
+	}
 }
 
 func assertQuantityEqual(t *testing.T, actual *resource.Quantity, expected string) {
