@@ -206,13 +206,4 @@ done
 
 if [ -n "${NO_PUSH:-}" ]; then
   echodate "Not pushing images because \$NO_PUSH is set."
-elif [ -z "${GITHUB_DISPATCH_TOKEN:-}" ]; then
-  echodate "env var GITHUB_DISPATCH_TOKEN unset, cannot notify GitHub Actions to sign images"
-else
-  echodate "Notifying GitHub Actions that ${KUBERMATIC_EDITION} images are published..."
-  curl -sf -X POST \
-    -H "Authorization: token ${GITHUB_DISPATCH_TOKEN}" \
-    -H "Accept: application/vnd.github+json" \
-    https://api.github.com/repos/kubermatic/kubermatic/dispatches \
-    -d "{\"event_type\":\"images-published-${KUBERMATIC_EDITION}\",\"client_payload\":{\"version\":\"${PRIMARY_TAG}\"}}"
 fi
