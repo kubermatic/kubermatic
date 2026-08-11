@@ -369,6 +369,107 @@ func TestResolveInstanceTypeWithNilMatcher(t *testing.T) {
 	}
 }
 
+func TestResolveInstanceTypeLegacyMatcherUsesMachineControllerOrder(t *testing.T) {
+	const (
+		name      = "legacy-collision"
+		namespace = "tenant-a"
+	)
+
+	client := newTestClient(t,
+		&kvinstancetypev1beta1.VirtualMachineInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 8},
+				Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("32Gi")},
+				GPUs: []kubevirtv1.GPU{
+					{Name: "gpu-1", DeviceName: "nvidia.com/A100"},
+				},
+			},
+		},
+		&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
+				Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
+			},
+		},
+	)
+	matcher := &kubevirtv1.InstancetypeMatcher{Name: name}
+
+	resolved, err := resolveInstanceType(context.Background(), client, namespace, matcher)
+	if err != nil {
+		t.Fatalf("resolveInstanceType() error = %v", err)
+	}
+	if resolved.Source != (InstanceTypeSource{Kind: VirtualMachineInstancetypeKind, Namespace: namespace, Name: name}) {
+		t.Errorf("Source: got %#v, want namespaced instancetype", resolved.Source)
+	}
+	if resolved.Capacity.CPUCores == nil || resolved.Capacity.CPUCores.Value() != 8 {
+		t.Errorf("Resolve CPU: got %v, want namespaced value 8", resolved.Capacity.CPUCores)
+	}
+	assertResourceListEqual(t, resolved.DeviceResources, corev1.ResourceList{
+		"nvidia.com/A100": resource.MustParse("1"),
+	})
+
+	capacity, err := describeInstanceType(context.Background(), client, namespace, matcher)
+	if err != nil {
+		t.Fatalf("describeInstanceType() error = %v", err)
+	}
+	if capacity.CPUCores == nil || capacity.CPUCores.Value() != 2 {
+		t.Errorf("Describe CPU: got %v, want legacy cluster-scoped value 2", capacity.CPUCores)
+	}
+}
+
+func TestResolveInstanceTypeLegacyMatcherUsesOnlyLiveNamespacedObjects(t *testing.T) {
+	const (
+		name      = "standard-2"
+		namespace = "tenant-a"
+	)
+
+	client := newTestClient(t, &kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+			CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 16},
+			Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("64Gi")},
+			GPUs: []kubevirtv1.GPU{
+				{Name: "gpu-1", DeviceName: "nvidia.com/A100"},
+			},
+		},
+	})
+
+	resolved, err := resolveInstanceType(
+		context.Background(),
+		client,
+		namespace,
+		&kubevirtv1.InstancetypeMatcher{Name: name},
+	)
+	if err != nil {
+		t.Fatalf("resolveInstanceType() error = %v", err)
+	}
+	if resolved.Source != (InstanceTypeSource{Kind: VirtualMachineClusterInstancetypeKind, Name: name}) {
+		t.Errorf("Source: got %#v, want live cluster-scoped instancetype", resolved.Source)
+	}
+	assertResourceListEqual(t, resolved.DeviceResources, corev1.ResourceList{
+		"nvidia.com/A100": resource.MustParse("1"),
+	})
+}
+
+func TestResolveInstanceTypeExplicitNamespacedMatcherRequiresLiveObject(t *testing.T) {
+	const (
+		name      = "standard-2"
+		namespace = "tenant-a"
+	)
+
+	client := newTestClient(t)
+	matcher := &kubevirtv1.InstancetypeMatcher{Name: name, Kind: VirtualMachineInstancetypeKind}
+
+	if _, err := resolveInstanceType(context.Background(), client, namespace, matcher); err == nil {
+		t.Fatal("resolveInstanceType() expected an error when the namespaced instancetype is not live")
+	}
+	if _, err := describeInstanceType(context.Background(), client, namespace, matcher); err != nil {
+		t.Fatalf("describeInstanceType() did not preserve embedded-standard lookup: %v", err)
+	}
+}
+
 func TestResolveInstanceTypeRecordsActualSourceForLegacyMatcher(t *testing.T) {
 	testCases := []struct {
 		name       string

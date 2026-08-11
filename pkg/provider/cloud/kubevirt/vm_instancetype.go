@@ -141,11 +141,39 @@ func resolveInstanceType(ctx context.Context, client ctrlruntimeclient.Client, n
 		return nil, fmt.Errorf("VMI instancetype matcher must not be nil")
 	}
 
-	instanceType, err := findInstanceType(ctx, client, namespace, it)
+	instanceType, err := findInstanceTypeForResolution(ctx, client, namespace, it)
 	if err != nil {
 		return nil, err
 	}
 	return resolveInstanceTypeSpec(instanceType.Spec, instanceType.Source)
+}
+
+func findInstanceTypeForResolution(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*instanceTypeSpec, error) {
+	switch it.Kind {
+	case VirtualMachineInstancetypeKind:
+		if instanceType, err := findLiveNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
+		}
+
+	case VirtualMachineClusterInstancetypeKind:
+		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
+		}
+
+	case "":
+		// machine-controller resolves legacy matchers without a kind in namespace scope first.
+		// Keep the accelerator footprint aligned with the instancetype used to provision the VM.
+		if namespace != "" {
+			if instanceType, err := findLiveNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+				return instanceType, err
+			}
+		}
+		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
+		}
+	}
+
+	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
 }
 
 func findInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*instanceTypeSpec, error) {
@@ -204,11 +232,13 @@ func findNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Cl
 			}, nil
 		}
 	}
-	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
-	// from the infra cluster — these are custom instancetypes (e.g. GPU variants)
-	// that aren't part of the embedded Kubermatic standards.
+	return findLiveNamespacedInstanceType(ctx, client, namespace, name)
+}
+
+func findLiveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*instanceTypeSpec, error) {
+	// List namespaced VirtualMachineInstancetype objects from the infrastructure cluster.
 	//
-	// This requires the cluster's infra namespace: a custom instancetype must be resolved
+	// This requires the cluster's infra namespace: a namespaced instancetype must be resolved
 	// against the tenant that owns it, because two tenants may define instancetypes with the
 	// same name but different specs. Without a namespace we cannot do that safely, so we fail
 	// rather than risk feeding another tenant's spec into resource-quota validation.
