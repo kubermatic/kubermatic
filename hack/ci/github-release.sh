@@ -148,6 +148,15 @@ function build_installer() {
   fi
 }
 
+function generate_sbom() {
+  local target="$1"
+  local outFile="$2"
+
+  echodate "Generating SBOM for $target..."
+  syft "$target" -o "spdx-json=$outFile"
+}
+
+
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
@@ -261,8 +270,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     installerBinary="_build/kubermatic-installer.exe"
   fi
   binarySbom="_dist/kubermatic-installer-ce-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
-  echodate "Generating SBOM for $installerBinary..."
-  syft "$installerBinary" -o "spdx-json=$binarySbom"
+  generate_sbom "$installerBinary" "$binarySbom"
 
   echodate "Creating CE archive..."
 
@@ -302,8 +310,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     CHANGELOG.md
 
   sbom="${archive%.tar.gz}.sbom.spdx.json"
-  echodate "Generating SBOM for $archive..."
-  syft "$archive" -o "spdx-json=$sbom"
+  generate_sbom "$archive" "$sbom"
 
   ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 
@@ -315,8 +322,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     installerBinary="_build/kubermatic-installer.exe"
   fi
   binarySbom="_dist/kubermatic-installer-ee-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
-  echodate "Generating SBOM for $installerBinary..."
-  syft "$installerBinary" -o "spdx-json=$binarySbom"
+  generate_sbom "$installerBinary" "$binarySbom"
 
   echodate "Creating EE archive..."
 
@@ -358,8 +364,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     CHANGELOG.md
 
   sbom="${archive%.tar.gz}.sbom.spdx.json"
-  echodate "Generating SBOM for $archive..."
-  syft "$archive" -o "spdx-json=$sbom"
+  generate_sbom "$archive" "$sbom"
 
   ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
 done
