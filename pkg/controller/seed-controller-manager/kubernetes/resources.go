@@ -325,6 +325,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
 		WithDRA(r.features.DynamicResourceAllocation).
+		WithKubeVirtAcceleratorQuota(r.features.KubeVirtAcceleratorQuota).
 		Build(), nil
 }
 

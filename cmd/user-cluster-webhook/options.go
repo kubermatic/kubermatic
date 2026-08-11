@@ -29,14 +29,15 @@ import (
 )
 
 type appOptions struct {
-	seedWebhook            webhook.Options
-	userWebhook            webhook.Options
-	pprof                  flagopts.PProf
-	log                    kubermaticlog.Options
-	caBundle               *certificates.CABundle
-	projectID              string
-	clusterName            string
-	kubeVirtInfraNamespace string
+	seedWebhook              webhook.Options
+	userWebhook              webhook.Options
+	pprof                    flagopts.PProf
+	log                      kubermaticlog.Options
+	caBundle                 *certificates.CABundle
+	projectID                string
+	clusterName              string
+	kubeVirtInfraNamespace   string
+	kubeVirtAcceleratorQuota bool
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -60,6 +61,7 @@ func initApplicationOptions() (appOptions, error) {
 	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
 	flag.StringVar(&clusterName, "cluster-name", "", "Cluster name in which the webhook is running in")
 	flag.StringVar(&kubeVirtInfraNamespace, "kubevirt-infra-namespace", "", "KubeVirt infra-cluster namespace that holds the cluster's namespaced VirtualMachineInstancetypes; empty falls back to an unscoped lookup")
+	flag.BoolVar(&c.kubeVirtAcceleratorQuota, "kubevirt-accelerator-quota", false, "Enable KubeVirt accelerator quota accounting")
 	flag.Parse()
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)

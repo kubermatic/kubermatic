@@ -77,6 +77,7 @@ type userclusterControllerData interface {
 	GetEnvVars() ([]corev1.EnvVar, error)
 	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
 	SupportsFailureDomainZoneAntiAffinity() bool
+	KubeVirtAcceleratorQuotaEnabled() bool
 }
 
 // DeploymentReconciler returns the function to create and update the user cluster controller deployment
@@ -237,6 +238,9 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-kv-infra-kubeconfig", "/etc/kubernetes/kubevirt/infra-kubeconfig")
 				if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
 					args = append(args, "-kv-infra-namespace", data.DC().Spec.Kubevirt.NamespacedMode.Namespace)
+				}
+				if data.KubeVirtAcceleratorQuotaEnabled() {
+					args = append(args, "-kubevirt-accelerator-quota")
 				}
 			}
 

@@ -59,6 +59,7 @@ type webhookData interface {
 	DC() *kubermaticv1.Datacenter
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
+	KubeVirtAcceleratorQuotaEnabled() bool
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
@@ -115,6 +116,9 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 					kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Namespace
 				}
 				args = append(args, fmt.Sprintf("-kubevirt-infra-namespace=%s", kubeVirtInfraNamespace))
+				if data.KubeVirtAcceleratorQuotaEnabled() {
+					args = append(args, "-kubevirt-accelerator-quota")
+				}
 			}
 
 			if data.Cluster().Spec.DebugLog {

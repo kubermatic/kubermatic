@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2026 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package usercluster
+package webhook
 
 import (
 	"encoding/json"
@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kkpresources "k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,12 +55,12 @@ func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			data := newDeploymentTestData(tc.kubeVirt, tc.enabled)
+			data := newWebhookDeploymentTestData(tc.kubeVirt, tc.enabled)
 			_, reconcile := DeploymentReconciler(data)()
 
 			deployment, err := reconcile(&appsv1.Deployment{})
 			if err != nil {
-				t.Fatalf("failed to reconcile user-cluster-controller deployment: %v", err)
+				t.Fatalf("failed to reconcile user-cluster-webhook deployment: %v", err)
 			}
 
 			hasArgument := deploymentContainsArgument(deployment, "-kubevirt-accelerator-quota")
@@ -72,7 +71,7 @@ func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
 	}
 }
 
-func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
+func newWebhookDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
 	cloud := kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
 	datacenter := kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}
 	if kubeVirt {
@@ -88,17 +87,11 @@ func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud:          cloud,
-			ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
-			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				Services: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.16.0/20"}},
-			},
+			Cloud: cloud,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-test",
 			Address: kubermaticv1.ClusterAddress{
-				Port:         6443,
-				ExternalName: "test.example.com",
 				InternalName: "apiserver.cluster-test.svc.cluster.local",
 			},
 		},
@@ -110,7 +103,6 @@ func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources
 		WithSeed(&kubermaticv1.Seed{}).
 		WithKubermaticImage("quay.io/kubermatic/kubermatic").
 		WithVersions(kubermatic.GetFakeVersions()).
-		WithKonnectivityEnabled(true).
 		WithKubeVirtAcceleratorQuota(acceleratorQuotaEnabled).
 		Build()
 }
@@ -141,49 +133,4 @@ func deploymentContainsArgument(deployment *appsv1.Deployment, argument string) 
 	}
 
 	return false
-}
-
-func TestGetLabelArgsValue(t *testing.T) {
-	testCases := []struct {
-		name           string
-		initialLabels  map[string]string
-		expectedLabels map[string]string
-	}{
-		{
-			name:           "Labels get applied",
-			initialLabels:  map[string]string{"foo": "bar"},
-			expectedLabels: map[string]string{"foo": "bar"},
-		},
-		{
-			name:           "Protected labels do not get applied",
-			initialLabels:  map[string]string{"foo": "bar", "project-id": "my-project", "worker-name": "w"},
-			expectedLabels: map[string]string{"foo": "bar"},
-		},
-	}
-
-	for idx := range testCases {
-		tc := testCases[idx]
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			cluster := &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: tc.initialLabels,
-				},
-			}
-			result, err := getLabelsArgValue(cluster)
-			if err != nil {
-				t.Fatalf("error when calling getLabelsArgValue: %v", err)
-			}
-
-			actualLabels := map[string]string{}
-			if err := json.Unmarshal([]byte(result), &actualLabels); err != nil {
-				t.Fatalf("failed to unmarshal result: %v", err)
-			}
-
-			if !diff.SemanticallyEqual(tc.expectedLabels, actualLabels) {
-				t.Fatalf("actual labels do not match expected labels:\n%v", diff.ObjectDiff(tc.expectedLabels, actualLabels))
-			}
-		})
-	}
 }
