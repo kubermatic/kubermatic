@@ -24,6 +24,8 @@ spec:
     matchLabels:
       app: iap
       target: grafana
+
+
 ---
 # Source: iap/templates/secrets.yaml
 apiVersion: v1
@@ -46,6 +48,8 @@ data:
   OAUTH2_PROXY_CLIENT_ID: Z3JhZmFuYQ==
   OAUTH2_PROXY_CLIENT_SECRET: eHh4
   OAUTH2_PROXY_COOKIE_SECRET: eHh4
+
+
 ---
 # Source: iap/templates/configmaps.yaml
 apiVersion: v1
@@ -71,6 +75,10 @@ data:
     pass_user_headers = true
     scope = "groups openid email"
     skip_auth_regex = ["/api/health"]
+    
+
+
+
 ---
 # Source: iap/templates/services.yaml
 apiVersion: v1
@@ -111,6 +119,8 @@ spec:
   selector:
     app: iap
     target: grafana
+
+
 ---
 # Source: iap/templates/deployments.yaml
 apiVersion: apps/v1
@@ -313,6 +323,8 @@ spec:
             weight: 10
       tolerations:
         []
+
+
 ---
 # Source: iap/templates/configmaps.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.

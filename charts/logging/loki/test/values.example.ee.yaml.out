@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "3.6.7"
 automountServiceAccountToken: true
+
 ---
 # Source: loki/charts/loki/templates/config.yaml
 apiVersion: v1
@@ -141,6 +142,7 @@ data:
       retention_period: 720h
     tracing:
       enabled: false
+
 ---
 # Source: loki/charts/loki/templates/runtime-configmap.yaml
 apiVersion: v1
@@ -156,6 +158,7 @@ metadata:
 data:
   runtime-config.yaml: |
     {}
+
 ---
 # Source: loki/charts/loki/templates/backend/clusterrole.yaml
 kind: ClusterRole
@@ -171,6 +174,7 @@ rules:
 - apiGroups: [""] # "" indicates the core API group
   resources: ["configmaps", "secrets"]
   verbs: ["get", "watch", "list"]
+
 ---
 # Source: loki/charts/loki/templates/backend/clusterrolebinding.yaml
 kind: ClusterRoleBinding
@@ -215,6 +219,7 @@ spec:
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/part-of: memberlist
+
 ---
 # Source: loki/charts/loki/templates/single-binary/service-headless.yaml
 apiVersion: v1
@@ -240,6 +245,7 @@ spec:
   selector:
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: loki/charts/loki/templates/single-binary/service.yaml
 apiVersion: v1
@@ -268,6 +274,7 @@ spec:
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: single-binary
+
 ---
 # Source: loki/charts/loki/templates/single-binary/statefulset.yaml
 apiVersion: apps/v1
