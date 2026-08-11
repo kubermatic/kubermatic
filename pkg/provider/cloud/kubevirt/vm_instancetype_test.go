@@ -48,7 +48,7 @@ func TestDescribeInstanceType(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "namespaced user-deployed instancetype with GPU is found",
+			name:      "namespaced user-deployed instancetype with GPU is found without validating the device",
 			namespace: "kkp-dev",
 			objects: []ctrlruntimeclient.Object{
 				&kvinstancetypev1beta1.VirtualMachineInstancetype{
@@ -56,7 +56,7 @@ func TestDescribeInstanceType(t *testing.T) {
 					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
 						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 2},
 						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("8Gi")},
-						GPUs:   []kubevirtv1.GPU{{Name: "A100", DeviceName: "nvidia.com/A100"}},
+						GPUs:   []kubevirtv1.GPU{{Name: "A100", DeviceName: "nv-a100-standard"}},
 					},
 				},
 			},
@@ -189,6 +189,60 @@ func TestDescribeInstanceType(t *testing.T) {
 			// KubeVirt provider, so they must never be set.
 			if got.GPUs != nil {
 				t.Errorf("GPUs: got %v, want nil (GPUs are not counted in capacity)", got.GPUs)
+			}
+		})
+	}
+}
+
+func TestDescribeInstanceTypeDoesNotValidateDeviceResources(t *testing.T) {
+	testCases := []struct {
+		name        string
+		gpus        []kubevirtv1.GPU
+		hostDevices []kubevirtv1.HostDevice
+	}{
+		{
+			name: "GPU",
+			gpus: []kubevirtv1.GPU{{Name: "gpu-1", DeviceName: "unqualified-gpu"}},
+		},
+		{
+			name:        "host device",
+			hostDevices: []kubevirtv1.HostDevice{{Name: "host-device-1"}},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			const (
+				namespace = "tenant-a"
+				name      = "legacy-device-metadata"
+			)
+			client := newTestClient(t, &kvinstancetypev1beta1.VirtualMachineInstancetype{
+				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+				Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+					CPU:         kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+					Memory:      kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("16Gi")},
+					GPUs:        tc.gpus,
+					HostDevices: tc.hostDevices,
+				},
+			})
+			matcher := &kubevirtv1.InstancetypeMatcher{Name: name, Kind: VirtualMachineInstancetypeKind}
+
+			capacity, err := describeInstanceType(context.Background(), client, namespace, matcher)
+			if err != nil {
+				t.Fatalf("describeInstanceType() unexpectedly validated device resources: %v", err)
+			}
+			if capacity.CPUCores == nil || capacity.CPUCores.Value() != 4 {
+				t.Errorf("CPU: got %v, want 4", capacity.CPUCores)
+			}
+			if capacity.Memory == nil || capacity.Memory.Cmp(resource.MustParse("16Gi")) != 0 {
+				t.Errorf("Memory: got %v, want 16Gi", capacity.Memory)
+			}
+			if capacity.GPUs != nil {
+				t.Errorf("GPUs: got %v, want nil", capacity.GPUs)
+			}
+
+			if _, err := resolveInstanceType(context.Background(), client, namespace, matcher); err == nil {
+				t.Fatal("resolveInstanceType() expected an error for invalid device metadata")
 			}
 		})
 	}

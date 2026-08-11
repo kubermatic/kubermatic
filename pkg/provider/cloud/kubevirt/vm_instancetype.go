@@ -41,6 +41,7 @@ const (
 )
 
 // InstanceTypeSource identifies the KubeVirt instancetype used to resolve a VM's resources.
+// It is diagnostic resolution metadata, not an immutable version or infrastructure reservation.
 type InstanceTypeSource struct {
 	Kind      string
 	Namespace string
@@ -55,6 +56,11 @@ type ResolvedInstanceType struct {
 	Capacity        *provider.NodeCapacity
 	DeviceResources corev1.ResourceList
 	Source          InstanceTypeSource
+}
+
+type instanceTypeSpec struct {
+	Spec   kvinstancetypev1beta1.VirtualMachineInstancetypeSpec
+	Source InstanceTypeSource
 }
 
 func instancetypeReconciler(instancetype *kvinstancetypev1beta1.VirtualMachineInstancetype) reconciling.NamedVirtualMachineInstancetypeReconcilerFactory {
@@ -98,10 +104,10 @@ func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter 
 
 // ResolveInstanceType returns the capacity, exact device resource requests, and source
 // identity from the selected VirtualMachine instancetype.
-// namespace is the KubeVirt infra-cluster namespace that holds the cluster's namespaced
-// instancetypes. Resolving a custom (non-standard) namespaced instancetype without it fails,
-// to avoid an unscoped cross-tenant lookup. The embedded Kubermatic standard instancetypes are
-// namespace-independent and still resolve when it is empty.
+//
+// [Alpha]: this function is part of the alpha KubeVirt accelerator quota integration.
+//
+// namespace scopes custom VirtualMachineInstancetype lookup to an infrastructure tenant.
 func ResolveInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*ResolvedInstanceType, error) {
 	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
@@ -111,75 +117,89 @@ func ResolveInstanceType(ctx context.Context, kubeconfig string, namespace strin
 }
 
 // DescribeInstanceType returns only the NodeCapacity from the selected VirtualMachine
-// instancetype. It is kept as a compatibility wrapper for existing callers.
+// instancetype.
 func DescribeInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
-	resolved, err := ResolveInstanceType(ctx, kubeconfig, namespace, it)
+	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return resolved.Capacity, nil
+	return describeInstanceType(ctx, client, namespace, it)
 }
 
 func resolveInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*ResolvedInstanceType, error) {
+	instanceType, err := findInstanceType(ctx, client, namespace, it)
+	if err != nil {
+		return nil, err
+	}
+	return resolveInstanceTypeSpec(instanceType.Spec, instanceType.Source)
+}
+
+func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+	instanceType, err := findInstanceType(ctx, client, namespace, it)
+	if err != nil {
+		return nil, err
+	}
+	return instanceTypeToNodeCapacity(instanceType.Spec)
+}
+
+func findInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*instanceTypeSpec, error) {
 	if it == nil {
 		return nil, fmt.Errorf("VMI instancetype matcher must not be nil")
 	}
 
 	switch it.Kind {
 	case VirtualMachineInstancetypeKind: // namespaced: kubermatic standard or user-deployed custom
-		if resolved, err := resolveNamespacedInstanceType(ctx, client, namespace, it.Name); resolved != nil || err != nil {
-			return resolved, err
+		if instanceType, err := findNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
 		}
 
 	case VirtualMachineClusterInstancetypeKind: // cluster-wide
-		if resolved, err := resolveClusterInstanceType(ctx, client, it.Name); resolved != nil || err != nil {
-			return resolved, err
+		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
 		}
 
 	case "": // kind absent — saved before kind was added to the API; search both types
-		if resolved, err := resolveClusterInstanceType(ctx, client, it.Name); resolved != nil || err != nil {
-			return resolved, err
+		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
 		}
-		if resolved, err := resolveNamespacedInstanceType(ctx, client, namespace, it.Name); resolved != nil || err != nil {
-			return resolved, err
+		if instanceType, err := findNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+			return instanceType, err
 		}
 	}
 	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
 }
 
-func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
-	resolved, err := resolveInstanceType(ctx, client, namespace, it)
-	if err != nil {
-		return nil, err
-	}
-	return resolved.Capacity, nil
-}
-
-func resolveClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*ResolvedInstanceType, error) {
+func findClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*instanceTypeSpec, error) {
 	clusterInstancetypes := kvinstancetypev1beta1.VirtualMachineClusterInstancetypeList{}
 	if err := client.List(ctx, &clusterInstancetypes); err != nil {
 		return nil, err
 	}
 	for _, instancetype := range clusterInstancetypes.Items {
 		if strings.EqualFold(instancetype.Name, name) {
-			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
-				Kind: VirtualMachineClusterInstancetypeKind,
-				Name: instancetype.Name,
-			})
+			return &instanceTypeSpec{
+				Spec: instancetype.Spec,
+				Source: InstanceTypeSource{
+					Kind: VirtualMachineClusterInstancetypeKind,
+					Name: instancetype.Name,
+				},
+			}, nil
 		}
 	}
 	return nil, nil
 }
 
-func resolveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*ResolvedInstanceType, error) {
+func findNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*instanceTypeSpec, error) {
 	standardInstancetypes := GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})
 	for _, instancetype := range standardInstancetypes {
 		if strings.EqualFold(instancetype.Name, name) {
-			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
-				Kind:      VirtualMachineInstancetypeKind,
-				Namespace: namespace,
-				Name:      instancetype.Name,
-			})
+			return &instanceTypeSpec{
+				Spec: instancetype.Spec,
+				Source: InstanceTypeSource{
+					Kind:      VirtualMachineInstancetypeKind,
+					Namespace: namespace,
+					Name:      instancetype.Name,
+				},
+			}, nil
 		}
 	}
 	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
@@ -200,11 +220,14 @@ func resolveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient
 	for i := range namespacedInstancetypes.Items {
 		if strings.EqualFold(namespacedInstancetypes.Items[i].Name, name) {
 			instancetype := &namespacedInstancetypes.Items[i]
-			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
-				Kind:      VirtualMachineInstancetypeKind,
-				Namespace: instancetype.Namespace,
-				Name:      instancetype.Name,
-			})
+			return &instanceTypeSpec{
+				Spec: instancetype.Spec,
+				Source: InstanceTypeSource{
+					Kind:      VirtualMachineInstancetypeKind,
+					Namespace: instancetype.Namespace,
+					Name:      instancetype.Name,
+				},
+			}, nil
 		}
 	}
 	return nil, nil
