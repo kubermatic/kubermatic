@@ -29,9 +29,33 @@ import (
 	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const (
+	VirtualMachineInstancetypeKind        = "VirtualMachineInstancetype"
+	VirtualMachineClusterInstancetypeKind = "VirtualMachineClusterInstancetype"
+)
+
+// InstanceTypeSource identifies the KubeVirt instancetype used to resolve a VM's resources.
+type InstanceTypeSource struct {
+	Kind      string
+	Namespace string
+	Name      string
+}
+
+// ResolvedInstanceType contains the resources and source identity of a KubeVirt instancetype.
+// DeviceResources preserves the exact device-plugin resource names requested by the
+// instancetype. It intentionally remains separate from NodeCapacity.GPUs, which is a flat,
+// provider-independent quantity and cannot represent different device resource names.
+type ResolvedInstanceType struct {
+	Capacity        *provider.NodeCapacity
+	DeviceResources corev1.ResourceList
+	Source          InstanceTypeSource
+}
 
 func instancetypeReconciler(instancetype *kvinstancetypev1beta1.VirtualMachineInstancetype) reconciling.NamedVirtualMachineInstancetypeReconcilerFactory {
 	return func() (string, reconciling.VirtualMachineInstancetypeReconciler) {
@@ -72,60 +96,90 @@ func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter 
 	return instancetypes
 }
 
-// DescribeInstanceType returns the NodeCapacity from the VirtualMachine instancetype.
+// ResolveInstanceType returns the capacity, exact device resource requests, and source
+// identity from the selected VirtualMachine instancetype.
 // namespace is the KubeVirt infra-cluster namespace that holds the cluster's namespaced
 // instancetypes. Resolving a custom (non-standard) namespaced instancetype without it fails,
 // to avoid an unscoped cross-tenant lookup. The embedded Kubermatic standard instancetypes are
 // namespace-independent and still resolve when it is empty.
-func DescribeInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+func ResolveInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*ResolvedInstanceType, error) {
 	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return describeInstanceType(ctx, client, namespace, it)
+	return resolveInstanceType(ctx, client, namespace, it)
 }
 
-func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+// DescribeInstanceType returns only the NodeCapacity from the selected VirtualMachine
+// instancetype. It is kept as a compatibility wrapper for existing callers.
+func DescribeInstanceType(ctx context.Context, kubeconfig string, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+	resolved, err := ResolveInstanceType(ctx, kubeconfig, namespace, it)
+	if err != nil {
+		return nil, err
+	}
+	return resolved.Capacity, nil
+}
+
+func resolveInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*ResolvedInstanceType, error) {
+	if it == nil {
+		return nil, fmt.Errorf("VMI instancetype matcher must not be nil")
+	}
+
 	switch it.Kind {
-	case "VirtualMachineInstancetype": // namespaced: kubermatic standard or user-deployed custom
-		if nodeCap, err := describeNamespacedInstanceType(ctx, client, namespace, it.Name); nodeCap != nil || err != nil {
-			return nodeCap, err
+	case VirtualMachineInstancetypeKind: // namespaced: kubermatic standard or user-deployed custom
+		if resolved, err := resolveNamespacedInstanceType(ctx, client, namespace, it.Name); resolved != nil || err != nil {
+			return resolved, err
 		}
 
-	case "VirtualMachineClusterInstancetype": // cluster-wide
-		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
-			return nodeCap, err
+	case VirtualMachineClusterInstancetypeKind: // cluster-wide
+		if resolved, err := resolveClusterInstanceType(ctx, client, it.Name); resolved != nil || err != nil {
+			return resolved, err
 		}
 
 	case "": // kind absent — saved before kind was added to the API; search both types
-		if nodeCap, err := describeClusterInstanceType(ctx, client, it.Name); nodeCap != nil || err != nil {
-			return nodeCap, err
+		if resolved, err := resolveClusterInstanceType(ctx, client, it.Name); resolved != nil || err != nil {
+			return resolved, err
 		}
-		if nodeCap, err := describeNamespacedInstanceType(ctx, client, namespace, it.Name); nodeCap != nil || err != nil {
-			return nodeCap, err
+		if resolved, err := resolveNamespacedInstanceType(ctx, client, namespace, it.Name); resolved != nil || err != nil {
+			return resolved, err
 		}
 	}
 	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
 }
 
-func describeClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*provider.NodeCapacity, error) {
+func describeInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*provider.NodeCapacity, error) {
+	resolved, err := resolveInstanceType(ctx, client, namespace, it)
+	if err != nil {
+		return nil, err
+	}
+	return resolved.Capacity, nil
+}
+
+func resolveClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*ResolvedInstanceType, error) {
 	clusterInstancetypes := kvinstancetypev1beta1.VirtualMachineClusterInstancetypeList{}
 	if err := client.List(ctx, &clusterInstancetypes); err != nil {
 		return nil, err
 	}
 	for _, instancetype := range clusterInstancetypes.Items {
 		if strings.EqualFold(instancetype.Name, name) {
-			return instanceTypeToNodeCapacity(instancetype.Spec)
+			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
+				Kind: VirtualMachineClusterInstancetypeKind,
+				Name: instancetype.Name,
+			})
 		}
 	}
 	return nil, nil
 }
 
-func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*provider.NodeCapacity, error) {
+func resolveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*ResolvedInstanceType, error) {
 	standardInstancetypes := GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})
 	for _, instancetype := range standardInstancetypes {
 		if strings.EqualFold(instancetype.Name, name) {
-			return instanceTypeToNodeCapacity(instancetype.Spec)
+			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
+				Kind:      VirtualMachineInstancetypeKind,
+				Namespace: namespace,
+				Name:      instancetype.Name,
+			})
 		}
 	}
 	// Fall back to listing user-deployed namespaced VirtualMachineInstancetype objects
@@ -145,13 +199,18 @@ func describeNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 	}
 	for i := range namespacedInstancetypes.Items {
 		if strings.EqualFold(namespacedInstancetypes.Items[i].Name, name) {
-			return instanceTypeToNodeCapacity(namespacedInstancetypes.Items[i].Spec)
+			instancetype := &namespacedInstancetypes.Items[i]
+			return resolveInstanceTypeSpec(instancetype.Spec, InstanceTypeSource{
+				Kind:      VirtualMachineInstancetypeKind,
+				Namespace: instancetype.Namespace,
+				Name:      instancetype.Name,
+			})
 		}
 	}
 	return nil, nil
 }
 
-// instanceTypeToNodeCapacity extracts cpu, mem and gpu resource requests from the kubevirt instancetype.
+// instanceTypeToNodeCapacity extracts CPU and memory requests from the KubeVirt instancetype.
 func instanceTypeToNodeCapacity(it kvinstancetypev1beta1.VirtualMachineInstancetypeSpec) (*provider.NodeCapacity, error) {
 	capacity := provider.NewNodeCapacity()
 
@@ -168,4 +227,55 @@ func instanceTypeToNodeCapacity(it kvinstancetypev1beta1.VirtualMachineInstancet
 		capacity.WithCPUCount(int(cpu.Value()))
 	}
 	return capacity, nil
+}
+
+func resolveInstanceTypeSpec(it kvinstancetypev1beta1.VirtualMachineInstancetypeSpec, source InstanceTypeSource) (*ResolvedInstanceType, error) {
+	capacity, err := instanceTypeToNodeCapacity(it)
+	if err != nil {
+		return nil, err
+	}
+
+	var deviceResources corev1.ResourceList
+	for i, gpu := range it.GPUs {
+		deviceResources, err = addDeviceResource(deviceResources, fmt.Sprintf("spec.gpus[%d].deviceName", i), gpu.DeviceName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for i, hostDevice := range it.HostDevices {
+		deviceResources, err = addDeviceResource(deviceResources, fmt.Sprintf("spec.hostDevices[%d].deviceName", i), hostDevice.DeviceName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &ResolvedInstanceType{
+		Capacity:        capacity,
+		DeviceResources: deviceResources,
+		Source:          source,
+	}, nil
+}
+
+func addDeviceResource(resources corev1.ResourceList, fieldPath, deviceName string) (corev1.ResourceList, error) {
+	// The KubeVirt API version currently used by KKP requires deviceName for both GPUs and
+	// host devices. Future DRA-backed entries need an explicit resolver rather than being
+	// silently omitted from the quota footprint.
+	if deviceName == "" {
+		return nil, fmt.Errorf("%s must not be empty", fieldPath)
+	}
+	if strings.Count(deviceName, "/") != 1 {
+		return nil, fmt.Errorf("%s %q must be a qualified resource name with exactly one '/'", fieldPath, deviceName)
+	}
+	if validationErrors := k8svalidation.IsQualifiedName(deviceName); len(validationErrors) > 0 {
+		return nil, fmt.Errorf("%s %q is not a valid qualified resource name: %s", fieldPath, deviceName, strings.Join(validationErrors, "; "))
+	}
+	if resources == nil {
+		resources = corev1.ResourceList{}
+	}
+
+	resourceName := corev1.ResourceName(deviceName)
+	quantity := resources[resourceName]
+	quantity.Add(*resource.NewQuantity(1, resource.DecimalSI))
+	resources[resourceName] = quantity
+	return resources, nil
 }
