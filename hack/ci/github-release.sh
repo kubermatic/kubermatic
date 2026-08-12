@@ -156,7 +156,6 @@ function generate_sbom() {
   syft "$target" -o "spdx-json=$outFile"
 }
 
-
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
