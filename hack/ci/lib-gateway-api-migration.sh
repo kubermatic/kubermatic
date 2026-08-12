@@ -317,6 +317,23 @@ setup_kkp_migration_environment() {
   write_migration_helm_values "${HELM_VALUES_FILE_UNDER_TEST_HYBRID}" "hybrid" "${KUBERMATIC_VERSION}"
 }
 
+check_kubermatic_version() {
+  local expected_version="$1"
+  local actual_version
+
+  if ! actual_version="$(kubectl --namespace kubermatic get kubermaticconfiguration e2e --output jsonpath='{.status.kubermaticVersion}' 2> /dev/null)"; then
+    echodate "Unable to read the current KubermaticConfiguration version."
+    return 1
+  fi
+
+  if [ "${actual_version}" != "${expected_version}" ]; then
+    echodate "KubermaticConfiguration reports ${actual_version:-<empty>}; waiting for ${expected_version}."
+    return 1
+  fi
+
+  return 0
+}
+
 deploy_kkp_v229() {
   echodate "Step 1: deploying KKP ${KKP_V229_VERSION} (nginx-ingress era)..."
   TEST_NAME="Install KKP ${KKP_V229_VERSION}"
@@ -345,6 +362,8 @@ deploy_kkp_v230_with_gateway_api_flag() {
 
   retry 10 check_all_deployments_ready kubermatic
   retry 10 check_all_deployments_ready envoy-gateway-controller
+  TEST_NAME="Wait for KKP ${KKP_V230_VERSION} status"
+  retry 10 check_kubermatic_version "${KKP_V230_VERSION}"
   echodate "KKP ${KKP_V230_VERSION} installed; Gateway API and nginx-ingress coexist."
 }
 
@@ -360,6 +379,8 @@ deploy_kkp_v230_without_gateway_api_flag() {
 
   retry 10 check_all_deployments_ready kubermatic
   retry 10 check_all_deployments_ready nginx-ingress-controller
+  TEST_NAME="Wait for KKP ${KKP_V230_VERSION} status"
+  retry 10 check_kubermatic_version "${KKP_V230_VERSION}"
   echodate "KKP ${KKP_V230_VERSION} installed; remains on nginx-ingress."
 }
 

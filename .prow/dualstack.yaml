@@ -148,6 +148,9 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: aws
+            # TODO: Re-enable RHEL after the CI RHSM offline token is refreshed.
+            - name: OSNAMES
+              value: ubuntu,flatcar,rockylinux
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
