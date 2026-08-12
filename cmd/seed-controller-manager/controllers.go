@@ -169,6 +169,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
 			DynamicResourceAllocation:    ctrlCtx.runOptions.featureGates.Enabled(features.DynamicResourceAllocation),
+			KubeVirtAcceleratorQuota:     ctrlCtx.runOptions.featureGates.Enabled(features.KubeVirtAcceleratorQuota),
 		},
 		ctrlCtx.versions,
 	)

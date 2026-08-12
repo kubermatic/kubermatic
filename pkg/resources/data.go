@@ -106,6 +106,7 @@ type TemplateData struct {
 	userClusterMLAEnabled                 bool
 	isKonnectivityEnabled                 bool
 	dra                                   bool
+	kubeVirtAcceleratorQuota              bool
 
 	tunnelingAgentIP string
 
@@ -322,6 +323,11 @@ func (td TemplateDataBuilder) Build() *TemplateData {
 
 func (td *TemplateDataBuilder) WithDRA(draEnabled bool) *TemplateDataBuilder {
 	td.data.dra = draEnabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKubeVirtAcceleratorQuota(enabled bool) *TemplateDataBuilder {
+	td.data.kubeVirtAcceleratorQuota = enabled
 	return td
 }
 
@@ -1114,6 +1120,11 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 
 func (d *TemplateData) DRAEnabled() bool {
 	return d.dra
+}
+
+// KubeVirtAcceleratorQuotaEnabled returns whether KubeVirt accelerator quota accounting is enabled.
+func (d *TemplateData) KubeVirtAcceleratorQuotaEnabled() bool {
+	return d.kubeVirtAcceleratorQuota
 }
 
 func expandVariables(input string, vars map[string]string) string {

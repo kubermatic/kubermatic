@@ -112,6 +112,7 @@ type controllerRunOptions struct {
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 	kubeVirtInfraNamespace            string
+	kubeVirtAcceleratorQuota          bool
 
 	clusterBackup clusterBackupOptions
 
@@ -172,6 +173,7 @@ func main() {
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.StringVar(&runOp.kubeVirtInfraNamespace, "kv-infra-namespace", "", "Kubevirt infra namespace where workload will be deployed")
+	flag.BoolVar(&runOp.kubeVirtAcceleratorQuota, "kubevirt-accelerator-quota", false, "Enable KubeVirt accelerator quota accounting")
 	flag.BoolVar(&runOp.kyvernoEnabled, "kyverno-enabled", false, "Enable Kyverno in user cluster.")
 	flag.Parse()
 
