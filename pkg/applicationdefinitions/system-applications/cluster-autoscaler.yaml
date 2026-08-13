@@ -74,6 +74,20 @@ spec:
         - update
         - watch
         - patch
+      # cluster-autoscaler 1.35 and newer always start DRA informers, since
+      # --enable-dynamic-resource-allocation defaults to true and cannot be turned off. Chart 9.46.6
+      # predates that and grants no resource.k8s.io access; upstream added the same rules in chart
+      # 9.54.0, so these can be dropped once the chart is bumped past it.
+      - apiGroups:
+        - resource.k8s.io
+        resources:
+        - deviceclasses
+        - resourceclaims
+        - resourceslices
+        verbs:
+        - get
+        - list
+        - watch
     - apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
       metadata:
