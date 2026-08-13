@@ -43,9 +43,8 @@ jobs:
 
     env:
       DEST_REPO: kubermatic/conformance-ee
-      DEST_WORKFLOW: kkp-release-sync.yml
-      DEST_REF: main
-    
+      DEST_EVENT_TYPE: kkp-release-sync
+
     steps:
       - name: Resolve release context
         id: ctx
@@ -58,7 +57,7 @@ jobs:
           REF_CREATED: ${{ github.event.created }}
         run: |
           REF="${INPUT_REF:-$REF_NAME}"
-          
+
           # Decide from the ref's shape rather than github.ref_type: a manual run
           # is always dispatched from a branch, so ref_type would say "branch"
           # even when the operator asked to sync a tag.
@@ -115,17 +114,24 @@ jobs:
           KKP_SHA: ${{ steps.ctx.outputs.kkp_sha }}
           BRANCH_CREATED: ${{ steps.ctx.outputs.branch_created }}
         run: |
-          gh workflow run "$DEST_WORKFLOW" \
-            --repo "$DEST_REPO" \
-            --ref "$DEST_REF" \
-            --field kkp_minor="$KKP_MINOR" \
-            --field kkp_branch="$KKP_BRANCH" \
-            --field kkp_tag="$KKP_TAG" \
-            --field kkp_sha="$KKP_SHA" \
-            --field branch_created="$BRANCH_CREATED" \
-            --field source_repo="$GITHUB_REPOSITORY"
+          jq -n \
+            --arg kkp_minor      "$KKP_MINOR" \
+            --arg kkp_branch     "$KKP_BRANCH" \
+            --arg kkp_tag        "$KKP_TAG" \
+            --arg kkp_sha        "$KKP_SHA" \
+            --arg branch_created "$BRANCH_CREATED" \
+            --arg source_repo    "$GITHUB_REPOSITORY" \
+            --arg event_type     "$DEST_EVENT_TYPE" \
+            '{
+              event_type: $event_type,
+              client_payload: {
+                $kkp_minor, $kkp_branch, $kkp_tag,
+                $kkp_sha, $branch_created, $source_repo
+              }
+            }' \
+            | gh api --method POST "repos/${DEST_REPO}/dispatches" --input -
 
-          echo "Dispatched ${DEST_REPO} / ${DEST_WORKFLOW} for KKP ${KKP_MINOR}"
+          echo "Dispatched ${DEST_REPO} (${DEST_EVENT_TYPE}) for KKP ${KKP_MINOR}"
 
       - name: Summarize the handover
         if: steps.ctx.outputs.skip == 'false'
