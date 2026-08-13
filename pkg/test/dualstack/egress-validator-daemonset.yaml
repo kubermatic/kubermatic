@@ -30,7 +30,7 @@ spec:
       hostNetwork: false
       containers:
         - name: egress-validator-4-container
-          image: quay.io/kubermatic/util:2.7.0
+          image: quay.io/kubermatic/util:2.8.1
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -81,7 +81,7 @@ spec:
       hostNetwork: false
       containers:
         - name: egress-validator-6-container
-          image: quay.io/kubermatic/util:2.7.0
+          image: quay.io/kubermatic/util:2.8.1
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
