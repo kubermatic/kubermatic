@@ -344,6 +344,7 @@ func main() {
 		runOp.konnectivityKeepaliveTime,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
+		runOp.kubeVirtAcceleratorQuota,
 		runOp.kyvernoEnabled,
 		log,
 	); err != nil {

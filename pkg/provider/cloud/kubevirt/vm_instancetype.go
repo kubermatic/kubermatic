@@ -151,29 +151,51 @@ func resolveInstanceType(ctx context.Context, client ctrlruntimeclient.Client, n
 func findInstanceTypeForResolution(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*instanceTypeSpec, error) {
 	switch it.Kind {
 	case VirtualMachineInstancetypeKind:
-		if instanceType, err := findLiveNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+		if instanceType, err := findLiveNamespacedInstanceTypeExact(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
 			return instanceType, err
 		}
 
 	case VirtualMachineClusterInstancetypeKind:
-		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
-			return instanceType, err
+		instanceType, err := findClusterInstanceTypeExact(ctx, client, it.Name)
+		if err != nil {
+			return nil, err
 		}
+		if instanceType == nil {
+			break
+		}
+
+		// machine-controller versions without exact-kind matching resolve namespaced
+		// instancetypes first. Reject a cross-scope name collision so the footprint
+		// cannot describe a different object from the one used to provision the VM.
+		if namespace != "" {
+			collidingInstanceType, err := findLiveNamespacedInstanceTypeExact(ctx, client, namespace, it.Name)
+			if err != nil {
+				return nil, err
+			}
+			if collidingInstanceType != nil && (hasDeviceEntries(instanceType.Spec) || hasDeviceEntries(collidingInstanceType.Spec)) {
+				return nil, fmt.Errorf("VMI instancetype %q exists as both %s and %s; accelerator accounting requires a unique name across scopes", it.Name, VirtualMachineInstancetypeKind, VirtualMachineClusterInstancetypeKind)
+			}
+		}
+		return instanceType, nil
 
 	case "":
 		// machine-controller resolves legacy matchers without a kind in namespace scope first.
 		// Keep the accelerator footprint aligned with the instancetype used to provision the VM.
 		if namespace != "" {
-			if instanceType, err := findLiveNamespacedInstanceType(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
+			if instanceType, err := findLiveNamespacedInstanceTypeExact(ctx, client, namespace, it.Name); instanceType != nil || err != nil {
 				return instanceType, err
 			}
 		}
-		if instanceType, err := findClusterInstanceType(ctx, client, it.Name); instanceType != nil || err != nil {
+		if instanceType, err := findClusterInstanceTypeExact(ctx, client, it.Name); instanceType != nil || err != nil {
 			return instanceType, err
 		}
 	}
 
 	return nil, fmt.Errorf("VMI instancetype %s of Kind %s not found", it.Name, it.Kind)
+}
+
+func hasDeviceEntries(spec kvinstancetypev1beta1.VirtualMachineInstancetypeSpec) bool {
+	return len(spec.GPUs) > 0 || len(spec.HostDevices) > 0
 }
 
 func findInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace string, it *kubevirtv1.InstancetypeMatcher) (*instanceTypeSpec, error) {
@@ -200,12 +222,22 @@ func findInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name
 }
 
 func findClusterInstanceType(ctx context.Context, client ctrlruntimeclient.Client, name string) (*instanceTypeSpec, error) {
+	return findClusterInstanceTypeWithMatcher(ctx, client, name, strings.EqualFold)
+}
+
+func findClusterInstanceTypeExact(ctx context.Context, client ctrlruntimeclient.Client, name string) (*instanceTypeSpec, error) {
+	return findClusterInstanceTypeWithMatcher(ctx, client, name, func(actual, requested string) bool {
+		return actual == requested
+	})
+}
+
+func findClusterInstanceTypeWithMatcher(ctx context.Context, client ctrlruntimeclient.Client, name string, matches func(string, string) bool) (*instanceTypeSpec, error) {
 	clusterInstancetypes := kvinstancetypev1beta1.VirtualMachineClusterInstancetypeList{}
 	if err := client.List(ctx, &clusterInstancetypes); err != nil {
 		return nil, err
 	}
 	for _, instancetype := range clusterInstancetypes.Items {
-		if strings.EqualFold(instancetype.Name, name) {
+		if matches(instancetype.Name, name) {
 			return &instanceTypeSpec{
 				Spec: instancetype.Spec,
 				Source: InstanceTypeSource{
@@ -236,6 +268,16 @@ func findNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 func findLiveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*instanceTypeSpec, error) {
+	return findLiveNamespacedInstanceTypeWithMatcher(ctx, client, namespace, name, strings.EqualFold)
+}
+
+func findLiveNamespacedInstanceTypeExact(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string) (*instanceTypeSpec, error) {
+	return findLiveNamespacedInstanceTypeWithMatcher(ctx, client, namespace, name, func(actual, requested string) bool {
+		return actual == requested
+	})
+}
+
+func findLiveNamespacedInstanceTypeWithMatcher(ctx context.Context, client ctrlruntimeclient.Client, namespace, name string, matches func(string, string) bool) (*instanceTypeSpec, error) {
 	// List namespaced VirtualMachineInstancetype objects from the infrastructure cluster.
 	//
 	// This requires the cluster's infra namespace: a namespaced instancetype must be resolved
@@ -250,7 +292,7 @@ func findLiveNamespacedInstanceType(ctx context.Context, client ctrlruntimeclien
 		return nil, err
 	}
 	for i := range namespacedInstancetypes.Items {
-		if strings.EqualFold(namespacedInstancetypes.Items[i].Name, name) {
+		if matches(namespacedInstancetypes.Items[i].Name, name) {
 			instancetype := &namespacedInstancetypes.Items[i]
 			return &instanceTypeSpec{
 				Spec: instancetype.Spec,
