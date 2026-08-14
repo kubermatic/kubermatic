@@ -340,7 +340,7 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
-					Image: "quay.io/kubermatic/util:2.7.0",
+					Image: "quay.io/kubermatic/util:2.9.0",
 					Command: []string{
 						"/bin/sh",
 						"-c",

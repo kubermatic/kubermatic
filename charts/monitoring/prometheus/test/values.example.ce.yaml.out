@@ -3500,7 +3500,7 @@ spec:
           mountPath: /etc/prometheus/rules/
           readOnly: false
       - name: backup
-        image: 'quay.io/kubermatic/util:2.7.0'
+        image: 'quay.io/kubermatic/util:2.9.0'
         args:
         - /bin/sh
         - -c
