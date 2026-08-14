@@ -49,6 +49,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/events"
 	clocktesting "k8s.io/utils/clock/testing"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeevent "sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -226,6 +227,88 @@ func TestReconcileActiveAcceleratorAccountingWithoutMachines(t *testing.T) {
 	}
 	if len(got.Status.ResourceUsage.Accelerators) != 0 {
 		t.Fatalf("accelerator usage = %#v, want empty", got.Status.ResourceUsage.Accelerators)
+	}
+}
+
+func TestAcceleratorAccountingContinuesWhenScalarResolutionFails(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, time.August, 14, 10, 0, 0, 0, time.UTC)
+	cluster := generator.GenDefaultCluster()
+	cluster.Spec.Cloud.Kubevirt = &kubermaticv1.KubevirtCloudSpec{}
+	cluster.Status.ResourceUsage = kubermaticv1.NewResourceDetails(
+		resource.MustParse("7"),
+		resource.MustParse("8G"),
+		resource.MustParse("9G"),
+	)
+	resourceQuota := activeAcceleratorAccountingResourceQuota(cluster.Labels[kubermaticv1.ProjectIDLabelKey], nil)
+	machine := providerMachine(t, "machine-a", providerconfig.CloudProviderKubeVirt)
+	setFootprint(t, machine, accelerator.NewKubeVirtFootprint(corev1.ResourceList{
+		"nvidia.com/H200": resource.MustParse("1"),
+	}))
+
+	scheme := fake.NewScheme()
+	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme))
+	seedClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, resourceQuota).Build()
+	userClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(machine).Build()
+	fakeClock := clocktesting.NewFakeClock(now)
+	r := reconciler{
+		log:                   kubermaticlog.Logger,
+		seedClient:            seedClient,
+		userClient:            userClient,
+		clusterName:           cluster.Name,
+		recorder:              &events.FakeRecorder{},
+		controllerVersion:     "v2.99.0-test",
+		acceleratorAccounting: true,
+		clock:                 fakeClock,
+		clusterIsPaused: func(context.Context) (bool, error) {
+			return false, nil
+		},
+	}
+
+	heartbeatResult, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+	if err != nil {
+		t.Fatalf("accelerator heartbeat unexpectedly resolved scalar resources: %v", err)
+	}
+	if heartbeatResult.RequeueAfter != resources.AcceleratorAccountingHeartbeatInterval {
+		t.Fatalf("heartbeat RequeueAfter = %v, want %v", heartbeatResult.RequeueAfter, resources.AcceleratorAccountingHeartbeatInterval)
+	}
+	assertAcceleratorAccountingAndScalarUsage(t, seedClient, cluster.Name, now)
+
+	fakeClock.Step(time.Minute)
+	_, err = r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+		Namespace: metav1.NamespaceSystem,
+		Name:      machine.Name,
+	}})
+	if err == nil {
+		t.Fatal("expected Machine-triggered scalar resource resolution to fail")
+	}
+	assertAcceleratorAccountingAndScalarUsage(t, seedClient, cluster.Name, now.Add(time.Minute))
+}
+
+func assertAcceleratorAccountingAndScalarUsage(t *testing.T, seedClient ctrlruntimeclient.Client, clusterName string, observedAt time.Time) {
+	t.Helper()
+
+	cluster := &kubermaticv1.Cluster{}
+	if err := seedClient.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		t.Fatalf("failed to get cluster: %v", err)
+	}
+	if cluster.Status.AcceleratorAccounting == nil || !cluster.Status.AcceleratorAccounting.Ready {
+		t.Fatalf("accelerator accounting status = %#v, want ready", cluster.Status.AcceleratorAccounting)
+	}
+	if !cluster.Status.AcceleratorAccounting.ObservedAt.Time.Equal(observedAt) {
+		t.Fatalf("ObservedAt = %v, want %v", cluster.Status.AcceleratorAccounting.ObservedAt.Time, observedAt)
+	}
+	if len(cluster.Status.ResourceUsage.Accelerators) != 1 {
+		t.Fatalf("accelerator usage = %#v, want one provider bucket", cluster.Status.ResourceUsage.Accelerators)
+	}
+	h200 := cluster.Status.ResourceUsage.Accelerators[0].Resources["nvidia.com/H200"]
+	if h200.Cmp(resource.MustParse("1")) != 0 {
+		t.Fatalf("H200 usage = %s, want 1", h200.String())
+	}
+	if cluster.Status.ResourceUsage.CPU.Cmp(resource.MustParse("7")) != 0 ||
+		cluster.Status.ResourceUsage.Memory.Cmp(resource.MustParse("8G")) != 0 ||
+		cluster.Status.ResourceUsage.Storage.Cmp(resource.MustParse("9G")) != 0 {
+		t.Fatalf("scalar usage changed during accelerator-only update: %#v", cluster.Status.ResourceUsage)
 	}
 }
 

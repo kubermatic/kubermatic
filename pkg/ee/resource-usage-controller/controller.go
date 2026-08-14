@@ -132,6 +132,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	log := r.log.With("resource", request)
 	log.Debug("reconciling")
+	heartbeatRequest := r.isAcceleratorAccountingHeartbeatRequest(request)
 
 	machines := &clusterv1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
@@ -145,25 +146,59 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
-	var resourceQuota *kubermaticv1.ResourceQuota
+	var (
+		resourceQuota               *kubermaticv1.ResourceQuota
+		acceleratorUsage            []kubermaticv1.AcceleratorQuota
+		acceleratorAccountingStatus *kubermaticv1.ClusterAcceleratorAccountingStatus
+		acceleratorAccountingErr    error
+		updateAcceleratorAccounting bool
+	)
 	if r.acceleratorAccounting {
-		resourceQuota, err = r.activeAcceleratorAccountingResourceQuota(ctx, cluster)
-		if err != nil {
-			return reconcile.Result{}, err
+		resourceQuota, acceleratorAccountingErr = r.activeAcceleratorAccountingResourceQuota(ctx, cluster)
+		if acceleratorAccountingErr == nil {
+			updateAcceleratorAccounting = true
+			if resourceQuota != nil {
+				acceleratorUsage, acceleratorAccountingStatus = r.acceleratorUsageAndStatus(cluster.Name, resourceQuota, machines)
+			}
 		}
 	}
 
-	err = r.reconcile(ctx, cluster, machines, resourceQuota)
+	var (
+		scalarUsage *kubermaticv1.ResourceDetails
+		scalarErr   error
+	)
+	if !heartbeatRequest {
+		scalarUsage, scalarErr = r.calculateScalarResourceUsage(ctx, machines)
+	}
+
+	var updateErr error
+	if scalarUsage != nil || updateAcceleratorAccounting {
+		updateErr = util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+			if c.Status.ResourceUsage == nil {
+				c.Status.ResourceUsage = &kubermaticv1.ResourceDetails{}
+			}
+			if scalarUsage != nil {
+				c.Status.ResourceUsage.CPU = scalarUsage.CPU
+				c.Status.ResourceUsage.Memory = scalarUsage.Memory
+				c.Status.ResourceUsage.Storage = scalarUsage.Storage
+			}
+			if updateAcceleratorAccounting {
+				c.Status.ResourceUsage.Accelerators = acceleratorUsage
+				c.Status.AcceleratorAccounting = acceleratorAccountingStatus
+			}
+		})
+	}
+
+	err = errors.Join(acceleratorAccountingErr, scalarErr, updateErr)
 	if err != nil {
 		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ClusterResourceUsageReconcileFailed", "Reconciling", err.Error())
-		return reconcile.Result{}, err
 	}
 
-	if resourceQuota != nil && r.isAcceleratorAccountingHeartbeatRequest(request) {
-		return reconcile.Result{RequeueAfter: resources.AcceleratorAccountingHeartbeatInterval}, nil
+	result := reconcile.Result{}
+	if resourceQuota != nil && heartbeatRequest {
+		result.RequeueAfter = resources.AcceleratorAccountingHeartbeatInterval
 	}
-
-	return reconcile.Result{}, nil
+	return result, err
 }
 
 func (r *reconciler) isAcceleratorAccountingHeartbeatRequest(request reconcile.Request) bool {
@@ -173,12 +208,12 @@ func (r *reconciler) isAcceleratorAccountingHeartbeatRequest(request reconcile.R
 	return r.acceleratorAccounting && request.Namespace == "" && request.Name == r.clusterName
 }
 
-func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *clusterv1alpha1.MachineList, resourceQuota *kubermaticv1.ResourceQuota) error {
+func (r *reconciler) calculateScalarResourceUsage(ctx context.Context, machines *clusterv1alpha1.MachineList) (*kubermaticv1.ResourceDetails, error) {
 	resourceUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 	for _, machine := range machines.Items {
 		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, r.kubeVirtInfraNamespace, &machine, r.caBundle)
 		if err != nil {
-			return fmt.Errorf("error getting machine resource usage for machine %q: %w", machine.Name, err)
+			return nil, fmt.Errorf("error getting machine resource usage for machine %q: %w", machine.Name, err)
 		}
 
 		resourceUsage.CPU.Add(*resourceDetails.CPU())
@@ -186,15 +221,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		resourceUsage.Storage.Add(*resourceDetails.Storage())
 	}
 
-	var accountingStatus *kubermaticv1.ClusterAcceleratorAccountingStatus
-	if resourceQuota != nil {
-		resourceUsage.Accelerators, accountingStatus = r.acceleratorUsageAndStatus(cluster.Name, resourceQuota, machines)
-	}
-
-	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
-		c.Status.ResourceUsage = resourceUsage
-		c.Status.AcceleratorAccounting = accountingStatus
-	})
+	return resourceUsage, nil
 }
 
 func (r *reconciler) acceleratorUsageAndStatus(clusterName string, resourceQuota *kubermaticv1.ResourceQuota, machines *clusterv1alpha1.MachineList) ([]kubermaticv1.AcceleratorQuota, *kubermaticv1.ClusterAcceleratorAccountingStatus) {

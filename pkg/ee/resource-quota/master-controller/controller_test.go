@@ -46,10 +46,118 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	ctrlruntimeevent "sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const rqName = "resourceQuota"
+
+func TestSeedResourceQuotaChangedPredicate(t *testing.T) {
+	predicate := seedResourceQuotaChangedPredicate()
+	base := genResourceQuota(rqName, *genResourceDetails("1", "2G", "3G"))
+	base.Labels = map[string]string{
+		kubermaticv1.ResourceQuotaSubjectNameLabelKey: "project1",
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+	}
+	base.Status.LocalAcceleratorAccounting = &kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus{
+		ObservedAccountingRevision: "revision-1",
+		ObservedQuotaDigest:        "digest-1",
+		Ready:                      true,
+	}
+
+	tests := []struct {
+		name   string
+		mutate func(*kubermaticv1.ResourceQuota)
+		want   bool
+	}{
+		{
+			name: "unchanged object",
+			want: false,
+		},
+		{
+			name: "master-mirrored global usage",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Status.GlobalUsage = *genResourceDetails("4", "5G", "6G")
+			},
+			want: false,
+		},
+		{
+			name: "master-mirrored global accounting heartbeat",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Status.GlobalAcceleratorAccounting = &kubermaticv1.ResourceQuotaGlobalAcceleratorAccountingStatus{
+					ObservedAccountingRevision: "revision-1",
+					ObservedQuotaDigest:        "digest-1",
+					ObservedAt:                 metav1.Now(),
+					Ready:                      true,
+				}
+			},
+			want: false,
+		},
+		{
+			name: "Seed-owned local usage",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Status.LocalUsage.CPU = quantityPointer("2")
+			},
+			want: true,
+		},
+		{
+			name: "Seed-owned local accounting",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Status.LocalAcceleratorAccounting.ObservedAt = metav1.Now()
+			},
+			want: true,
+		},
+		{
+			name: "subject identity",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Spec.Subject.Name = "project2"
+			},
+			want: true,
+		},
+		{
+			name: "subject label identity",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = "project2"
+			},
+			want: true,
+		},
+		{
+			name: "deletion starts",
+			mutate: func(resourceQuota *kubermaticv1.ResourceQuota) {
+				now := metav1.Now()
+				resourceQuota.DeletionTimestamp = &now
+			},
+			want: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			updated := base.DeepCopy()
+			if tc.mutate != nil {
+				tc.mutate(updated)
+			}
+
+			got := predicate.Update(ctrlruntimeevent.TypedUpdateEvent[*kubermaticv1.ResourceQuota]{
+				ObjectOld: base,
+				ObjectNew: updated,
+			})
+			if got != tc.want {
+				t.Fatalf("Update() = %t, want %t", got, tc.want)
+			}
+		})
+	}
+
+	if !predicate.Create(ctrlruntimeevent.TypedCreateEvent[*kubermaticv1.ResourceQuota]{Object: base}) {
+		t.Fatal("Create() = false, want true")
+	}
+	if !predicate.Delete(ctrlruntimeevent.TypedDeleteEvent[*kubermaticv1.ResourceQuota]{Object: base}) {
+		t.Fatal("Delete() = false, want true")
+	}
+	if predicate.Generic(ctrlruntimeevent.TypedGenericEvent[*kubermaticv1.ResourceQuota]{Object: base}) {
+		t.Fatal("Generic() = true, want false")
+	}
+}
 
 func TestReconcile(t *testing.T) {
 	testCases := []struct {

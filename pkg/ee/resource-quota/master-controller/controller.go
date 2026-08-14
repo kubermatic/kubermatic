@@ -48,8 +48,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -91,12 +93,36 @@ func Add(mgr manager.Manager,
 			seedManager.GetCache(),
 			&kubermaticv1.ResourceQuota{},
 			&handler.TypedEnqueueRequestForObject[*kubermaticv1.ResourceQuota]{},
+			seedResourceQuotaChangedPredicate(),
 		))
 	}
 
 	_, err := bldr.Build(reconciler)
 
 	return err
+}
+
+// seedResourceQuotaChangedPredicate keeps the Seed watch focused on fields owned
+// by the Seed-side accounting controller. Global status is mirrored from the
+// master and must not enqueue the master controller again on every heartbeat.
+func seedResourceQuotaChangedPredicate() predicate.TypedPredicate[*kubermaticv1.ResourceQuota] {
+	return predicate.TypedFuncs[*kubermaticv1.ResourceQuota]{
+		CreateFunc: func(event.TypedCreateEvent[*kubermaticv1.ResourceQuota]) bool { return true },
+		UpdateFunc: func(e event.TypedUpdateEvent[*kubermaticv1.ResourceQuota]) bool {
+			if e.ObjectOld == nil || e.ObjectNew == nil {
+				return false
+			}
+
+			return !k8cequality.Semantic.DeepEqual(e.ObjectOld.Status.LocalUsage, e.ObjectNew.Status.LocalUsage) ||
+				!k8cequality.Semantic.DeepEqual(e.ObjectOld.Status.LocalAcceleratorAccounting, e.ObjectNew.Status.LocalAcceleratorAccounting) ||
+				e.ObjectOld.Spec.Subject != e.ObjectNew.Spec.Subject ||
+				e.ObjectOld.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != e.ObjectNew.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] ||
+				e.ObjectOld.Labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != e.ObjectNew.Labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] ||
+				(e.ObjectOld.DeletionTimestamp == nil) != (e.ObjectNew.DeletionTimestamp == nil)
+		},
+		DeleteFunc:  func(event.TypedDeleteEvent[*kubermaticv1.ResourceQuota]) bool { return true },
+		GenericFunc: func(event.TypedGenericEvent[*kubermaticv1.ResourceQuota]) bool { return false },
+	}
 }
 
 // Reconcile calculates project-wide resource usage and accelerator accounting readiness.
