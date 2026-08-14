@@ -1084,6 +1084,21 @@ const (
 	ClusterBackupNamespaceName      = "velero"
 )
 
+// KubeVirt accelerator accounting is an alpha feature. These constants are part
+// of its provisional contract and may change before the feature graduates.
+const (
+	// AcceleratorAccountingEnabledAnnotation enables accelerator accounting for a project ResourceQuota.
+	AcceleratorAccountingEnabledAnnotation = "accelerators.kubermatic.io/accounting-enabled"
+	// AcceleratorAccountingEnabledAnnotationValue is the only value that enables accelerator accounting.
+	AcceleratorAccountingEnabledAnnotationValue = "true"
+	// AcceleratorAccountingWebhookPath is the dedicated fail-closed ResourceQuota activation path.
+	AcceleratorAccountingWebhookPath = "/validate-resourcequota-accelerator-accounting"
+	// MachineAcceleratorFootprintMutatingWebhookPath is the dedicated Machine footprint mutation endpoint.
+	MachineAcceleratorFootprintMutatingWebhookPath = "/mutate-machine-accelerator-footprint"
+	// MachineAcceleratorFootprintValidatingWebhookPath is the dedicated Machine footprint validation endpoint.
+	MachineAcceleratorFootprintValidatingWebhookPath = "/validate-machine-accelerator-footprint"
+)
+
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
 
 // GetApplicationCacheSize return the application cache size if defined, otherwise fallback to the default size.

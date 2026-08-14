@@ -71,12 +71,12 @@ type userClusterConnectionProvider interface {
 }
 
 type Features struct {
-	VPA                          bool
-	EtcdDataCorruptionChecks     bool
-	KubernetesOIDCAuthentication bool
-	EtcdLauncher                 bool
-	DynamicResourceAllocation    bool
-	KubeVirtAcceleratorQuota     bool
+	VPA                           bool
+	EtcdDataCorruptionChecks      bool
+	KubernetesOIDCAuthentication  bool
+	EtcdLauncher                  bool
+	DynamicResourceAllocation     bool
+	KubeVirtAcceleratorAccounting bool
 }
 
 // Reconciler is a controller which is responsible for managing clusters.
@@ -239,6 +239,13 @@ func Add(
 		handler.EnqueueRequestsFromMapFunc(reconciler.enqueueClustersForOIDCIssuerLoadBalancerService),
 		builder.WithPredicates(oidcIssuerLoadBalancerServicePredicate()),
 	)
+	if reconciler.features.KubeVirtAcceleratorAccounting {
+		bldr.Watches(
+			&kubermaticv1.ResourceQuota{},
+			handler.EnqueueRequestsFromMapFunc(reconciler.enqueueKubeVirtClustersForAcceleratorQuotaResourceQuota),
+			builder.WithPredicates(resourceQuotaAcceleratorAccountingActivationPredicate()),
+		)
+	}
 
 	_, err := bldr.Build(reconciler)
 
@@ -274,6 +281,59 @@ func oidcIssuerLoadBalancerServicePredicate() predicate.Predicate {
 			return false
 		},
 	}
+}
+
+func resourceQuotaAcceleratorAccountingActivationPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return resourceQuotaAcceleratorAccountingActive(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return !resourceQuotaAcceleratorAccountingActive(e.ObjectOld) && resourceQuotaAcceleratorAccountingActive(e.ObjectNew)
+		},
+		DeleteFunc:  func(event.DeleteEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return false },
+	}
+}
+
+func resourceQuotaAcceleratorAccountingActive(obj ctrlruntimeclient.Object) bool {
+	resourceQuota, ok := obj.(*kubermaticv1.ResourceQuota)
+	return ok && acceleratorAccountingActiveForProject(resourceQuota, resourceQuota.Spec.Subject.Name)
+}
+
+// enqueueKubeVirtClustersForAcceleratorQuotaResourceQuota makes activation changes
+// roll out promptly to every KubeVirt cluster belonging to the changed project.
+func (r *Reconciler) enqueueKubeVirtClustersForAcceleratorQuotaResourceQuota(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+	resourceQuota, ok := obj.(*kubermaticv1.ResourceQuota)
+	if !ok || resourceQuota.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind || resourceQuota.Spec.Subject.Name == "" {
+		return nil
+	}
+	projectID := resourceQuota.Spec.Subject.Name
+
+	clusters := &kubermaticv1.ClusterList{}
+	if err := r.List(ctx, clusters, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.ProjectIDLabelKey: projectID,
+	}); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list Clusters for accelerator quota Project %q: %w", projectID, err))
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0, len(clusters.Items))
+	for i := range clusters.Items {
+		cluster := &clusters.Items[i]
+		if cluster.DeletionTimestamp != nil ||
+			cluster.Spec.Cloud.Kubevirt == nil ||
+			cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+			continue
+		}
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+	}
+
+	sort.Slice(requests, func(i, j int) bool {
+		return requests[i].Name < requests[j].Name
+	})
+
+	return requests
 }
 
 // isOIDCIssuerLoadBalancerServiceCandidate only checks cheap Service fields.

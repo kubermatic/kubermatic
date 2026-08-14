@@ -105,10 +105,11 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				fmt.Sprintf("-project-id=%s", projectID),
 				fmt.Sprintf("-cluster-name=%s", data.Cluster().Name),
 			}
+			readinessPort := intstr.FromString("metrics")
 
 			// For KubeVirt clusters, tell the webhook which infra-cluster namespace holds the
-			// cluster's namespaced VirtualMachineInstancetypes so the resource-quota validation
-			// resolves them in the right namespace. Defaults to the cluster's dedicated namespace,
+			// cluster's namespaced VirtualMachineInstancetypes so Machine admission resolves them
+			// in the right namespace. Defaults to the cluster's dedicated namespace,
 			// or the datacenter's single-namespace ("namespaced mode") namespace when enabled.
 			if data.Cluster().Spec.Cloud.Kubevirt != nil {
 				kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
@@ -117,7 +118,7 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				}
 				args = append(args, fmt.Sprintf("-kubevirt-infra-namespace=%s", kubeVirtInfraNamespace))
 				if data.KubeVirtAcceleratorQuotaEnabled() {
-					args = append(args, "-kubevirt-accelerator-quota")
+					readinessPort = intstr.FromInt(userWebhookListenPort)
 				}
 			}
 
@@ -219,7 +220,7 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 						FailureThreshold:    3,
 						ProbeHandler: corev1.ProbeHandler{
 							TCPSocket: &corev1.TCPSocketAction{
-								Port: intstr.Parse("metrics"),
+								Port: readinessPort,
 							},
 						},
 					},

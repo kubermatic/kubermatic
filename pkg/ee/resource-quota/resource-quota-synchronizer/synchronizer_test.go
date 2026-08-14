@@ -31,6 +31,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -130,6 +131,98 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedRQ, rq))
 			}
 		})
+	}
+}
+
+func TestResourceQuotaReconcilerFactoryOnlyMirrorsManagedAnnotations(t *testing.T) {
+	testCases := []struct {
+		name     string
+		master   map[string]string
+		seed     map[string]string
+		expected map[string]string
+	}{
+		{
+			name: "activation is copied without copying unrelated master annotations",
+			master: map[string]string{
+				resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+				"master.example/ignore":                          "value",
+			},
+			seed: map[string]string{
+				resources.AcceleratorAccountingEnabledAnnotation: "stale",
+				"seed.example/keep": "value",
+			},
+			expected: map[string]string{
+				resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+				"seed.example/keep": "value",
+			},
+		},
+		{
+			name:   "activation is removed without removing unrelated seed annotations",
+			master: map[string]string{"master.example/ignore": "value"},
+			seed: map[string]string{
+				resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+				"seed.example/keep": "value",
+			},
+			expected: map[string]string{"seed.example/keep": "value"},
+		},
+		{
+			name: "absent annotations remain absent",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			master := genResourceQuota(rqName, false)
+			master.Annotations = tc.master
+			seed := genResourceQuota(rqName, false)
+			seed.Annotations = tc.seed
+
+			_, reconcileResourceQuota := resourceQuotaReconcilerFactory(master)()
+			result, err := reconcileResourceQuota(seed)
+			if err != nil {
+				t.Fatalf("reconciling ResourceQuota: %v", err)
+			}
+			if !diff.SemanticallyEqual(tc.expected, result.Annotations) {
+				t.Fatalf("annotations differ:\n%v", diff.ObjectDiff(tc.expected, result.Annotations))
+			}
+		})
+	}
+}
+
+func TestReconcilePropagatesActivation(t *testing.T) {
+	ctx := context.Background()
+	masterResourceQuota := genResourceQuota(rqName, false)
+	masterResourceQuota.Annotations = map[string]string{
+		resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+		"master.example/ignore":                          "value",
+	}
+	seedResourceQuota := genResourceQuota(rqName, false)
+	seedResourceQuota.Annotations = map[string]string{"seed.example/keep": "value"}
+
+	masterClient := fake.NewClientBuilder().WithObjects(masterResourceQuota).Build()
+	seedClient := fake.NewClientBuilder().WithObjects(seedResourceQuota).Build()
+	r := &reconciler{
+		log:          kubermaticlog.Logger,
+		recorder:     &events.FakeRecorder{},
+		masterClient: masterClient,
+		seedClients:  map[string]ctrlruntimeclient.Client{"first": seedClient},
+	}
+
+	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: rqName}}
+	if _, err := r.Reconcile(ctx, request); err != nil {
+		t.Fatalf("reconciling failed: %v", err)
+	}
+
+	gotResourceQuota := &kubermaticv1.ResourceQuota{}
+	if err := seedClient.Get(ctx, request.NamespacedName, gotResourceQuota); err != nil {
+		t.Fatalf("getting seed ResourceQuota: %v", err)
+	}
+	expectedResourceQuotaAnnotations := map[string]string{
+		resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+		"seed.example/keep": "value",
+	}
+	if !diff.SemanticallyEqual(expectedResourceQuotaAnnotations, gotResourceQuota.Annotations) {
+		t.Fatalf("ResourceQuota annotations differ:\n%v", diff.ObjectDiff(expectedResourceQuotaAnnotations, gotResourceQuota.Annotations))
 	}
 }
 

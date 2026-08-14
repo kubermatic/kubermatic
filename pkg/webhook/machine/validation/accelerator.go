@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package acceleratorvalidation protects KKP-owned Machine accelerator accounting metadata.
-package acceleratorvalidation
+package validation
 
 import (
 	"context"
@@ -31,19 +30,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// Validator validates the trusted accelerator accounting contract on Machines.
-type Validator struct{}
+// acceleratorValidator validates the trusted accelerator accounting contract on Machines.
+type acceleratorValidator struct{}
 
-// NewValidator returns a Machine accelerator accounting validator.
-func NewValidator() *Validator {
-	return &Validator{}
+// NewAcceleratorValidator returns a Machine accelerator accounting validator.
+func NewAcceleratorValidator() *acceleratorValidator {
+	return &acceleratorValidator{}
 }
 
-var _ admission.Validator[*clusterv1alpha1.Machine] = &Validator{}
+var _ admission.Validator[*clusterv1alpha1.Machine] = &acceleratorValidator{}
 
 // ValidateCreate ensures that only the KKP-generated KubeVirt footprint is stored under the
 // reserved accelerator annotation prefix.
-func (v *Validator) ValidateCreate(_ context.Context, machine *clusterv1alpha1.Machine) (admission.Warnings, error) {
+func (v *acceleratorValidator) ValidateCreate(_ context.Context, machine *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	config, err := providerconfig.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec while validating accelerator footprint: %w", err)
@@ -79,9 +78,9 @@ func (v *Validator) ValidateCreate(_ context.Context, machine *clusterv1alpha1.M
 	return nil, nil
 }
 
-// ValidateUpdate keeps the footprint and its source Machine intent immutable. This check remains
-// authoritative even when machine-controller's one-shot spec-mutation bypass annotation is used.
-func (v *Validator) ValidateUpdate(_ context.Context, oldMachine, newMachine *clusterv1alpha1.Machine) (admission.Warnings, error) {
+// ValidateUpdate keeps the footprint and its source Machine intent immutable, except for
+// machine-controller's one-time migration from the removed providerConfig field.
+func (v *acceleratorValidator) ValidateUpdate(_ context.Context, oldMachine, newMachine *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	oldReserved := reservedAnnotations(oldMachine.Annotations)
 	newReserved := reservedAnnotations(newMachine.Annotations)
 	if !maps.Equal(oldReserved, newReserved) {
@@ -89,6 +88,9 @@ func (v *Validator) ValidateUpdate(_ context.Context, oldMachine, newMachine *cl
 	}
 
 	if apiequality.Semantic.DeepEqual(oldMachine.Spec.ProviderSpec, newMachine.Spec.ProviderSpec) {
+		return nil, nil
+	}
+	if isLegacyProviderConfigMigration(oldMachine, newMachine, oldReserved, newReserved) {
 		return nil, nil
 	}
 
@@ -103,7 +105,31 @@ func (v *Validator) ValidateUpdate(_ context.Context, oldMachine, newMachine *cl
 	return nil, nil
 }
 
-func (v *Validator) ValidateDelete(_ context.Context, _ *clusterv1alpha1.Machine) (admission.Warnings, error) {
+func isLegacyProviderConfigMigration(oldMachine, newMachine *clusterv1alpha1.Machine, oldReserved, newReserved map[string]string) bool {
+	if len(oldReserved) != 0 || len(newReserved) != 0 {
+		return false
+	}
+
+	oldProviderSpec := oldMachine.Spec.ProviderSpec
+	if oldProviderSpec.Value != nil || oldProviderSpec.ValueFrom != nil {
+		return false
+	}
+
+	newProviderSpec := newMachine.Spec.ProviderSpec
+	if newProviderSpec.Value == nil || len(newProviderSpec.Value.Raw) == 0 || newProviderSpec.ValueFrom != nil {
+		return false
+	}
+
+	// machine-controller validates its one-shot providerConfig migration bypass in a
+	// mutating webhook and removes the annotation before validating webhooks run. The
+	// empty-to-valid ProviderSpec transition is therefore the remaining migration shape.
+	// It does not add a footprint; accounting readiness continues to classify the Machine
+	// as legacy until it is recreated through CREATE admission.
+	_, err := providerconfig.GetConfig(newProviderSpec)
+	return err == nil
+}
+
+func (v *acceleratorValidator) ValidateDelete(_ context.Context, _ *clusterv1alpha1.Machine) (admission.Warnings, error) {
 	return nil, nil
 }
 

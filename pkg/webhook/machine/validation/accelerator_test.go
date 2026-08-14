@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package acceleratorvalidation
+package validation
 
 import (
 	"context"
@@ -103,7 +103,7 @@ func TestValidateCreate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			machine := tc.machine(t)
 			machine.Annotations = tc.annotations
-			_, err := NewValidator().ValidateCreate(context.Background(), machine)
+			_, err := NewAcceleratorValidator().ValidateCreate(context.Background(), machine)
 			assertErrorContains(t, err, tc.errorString)
 		})
 	}
@@ -181,16 +181,25 @@ func TestValidateUpdateProtectsFootprintAndProviderSpec(t *testing.T) {
 			errorString: "spec.providerSpec is immutable for accelerator accounting",
 		},
 		{
-			name: "legacy KubeVirt Machine cannot change providerSpec through bypass",
-			oldMachine: func(t *testing.T) *clusterv1alpha1.Machine {
-				return kubeVirtMachine(t, "h200-v1")
+			name: "legacy providerConfig migration to KubeVirt ProviderSpec is allowed after bypass consumption",
+			oldMachine: func(*testing.T) *clusterv1alpha1.Machine {
+				return &clusterv1alpha1.Machine{
+					ObjectMeta: metav1.ObjectMeta{Name: "worker", Namespace: metav1.NamespaceSystem},
+				}
 			},
 			mutate: func(t *testing.T, machine *clusterv1alpha1.Machine) {
-				machine.Spec.ProviderSpec = kubeVirtMachine(t, "h200-v2").Spec.ProviderSpec
-				if machine.Annotations == nil {
-					machine.Annotations = map[string]string{}
+				machine.Spec.ProviderSpec = kubeVirtMachine(t, "h200-v1").Spec.ProviderSpec
+			},
+		},
+		{
+			name: "legacy providerConfig migration to malformed ProviderSpec is rejected",
+			oldMachine: func(*testing.T) *clusterv1alpha1.Machine {
+				return &clusterv1alpha1.Machine{
+					ObjectMeta: metav1.ObjectMeta{Name: "worker", Namespace: metav1.NamespaceSystem},
 				}
-				machine.Annotations["kubermatic.io/bypass-no-spec-mutation-requirement"] = "true"
+			},
+			mutate: func(_ *testing.T, machine *clusterv1alpha1.Machine) {
+				machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: []byte(`not-json`)}
 			},
 			errorString: "spec.providerSpec is immutable for accelerator accounting",
 		},
@@ -230,7 +239,7 @@ func TestValidateUpdateProtectsFootprintAndProviderSpec(t *testing.T) {
 			newMachine := oldMachine.DeepCopy()
 			tc.mutate(t, newMachine)
 
-			_, err := NewValidator().ValidateUpdate(context.Background(), oldMachine, newMachine)
+			_, err := NewAcceleratorValidator().ValidateUpdate(context.Background(), oldMachine, newMachine)
 			assertErrorContains(t, err, tc.errorString)
 		})
 	}

@@ -40,8 +40,8 @@ func TestValidatingWebhookConfigurationOperations(t *testing.T) {
 
 func TestAcceleratorMutatingWebhookConfiguration(t *testing.T) {
 	name, reconciler := AcceleratorMutatingWebhookConfigurationReconciler(testCertificate(), "cluster-abcd")()
-	if name != AcceleratorMutatingWebhookConfigurationName {
-		t.Fatalf("name = %q, want %q", name, AcceleratorMutatingWebhookConfigurationName)
+	if name != AcceleratorAdmissionWebhookName {
+		t.Fatalf("name = %q, want %q", name, AcceleratorAdmissionWebhookName)
 	}
 	configuration, err := reconciler(&admissionregistrationv1.MutatingWebhookConfiguration{})
 	if err != nil {
@@ -71,8 +71,8 @@ func TestAcceleratorMutatingWebhookConfiguration(t *testing.T) {
 
 func TestAcceleratorValidatingWebhookConfiguration(t *testing.T) {
 	name, reconciler := AcceleratorValidatingWebhookConfigurationReconciler(testCertificate(), "cluster-abcd")()
-	if name != AcceleratorValidatingWebhookConfigurationName {
-		t.Fatalf("name = %q, want %q", name, AcceleratorValidatingWebhookConfigurationName)
+	if name != AcceleratorAdmissionWebhookName {
+		t.Fatalf("name = %q, want %q", name, AcceleratorAdmissionWebhookName)
 	}
 	configuration, err := reconciler(&admissionregistrationv1.ValidatingWebhookConfiguration{})
 	if err != nil {
@@ -92,8 +92,9 @@ func TestAcceleratorValidatingWebhookConfiguration(t *testing.T) {
 	if hook.FailurePolicy == nil || *hook.FailurePolicy != admissionregistrationv1.Fail {
 		t.Fatalf("failurePolicy = %v, want Fail", hook.FailurePolicy)
 	}
-	if len(hook.Rules) != 1 || !slices.Equal(hook.Rules[0].Operations, []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update}) {
-		t.Fatalf("rules = %#v, want Machine CREATE and UPDATE", hook.Rules)
+	wantOperations := []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update}
+	if len(hook.Rules) != 1 || !slices.Equal(hook.Rules[0].Operations, wantOperations) {
+		t.Fatalf("rules = %#v, want operations %v", hook.Rules, wantOperations)
 	}
 }
 

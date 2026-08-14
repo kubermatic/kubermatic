@@ -33,10 +33,6 @@ const (
 	AnnotationPrefix = "accelerators.kubermatic.io/"
 	// FootprintAnnotationKey stores the trusted accelerator accounting footprint on a Machine.
 	FootprintAnnotationKey = AnnotationPrefix + "footprint"
-	// MutatingWebhookPath is the dedicated Machine footprint mutation endpoint.
-	MutatingWebhookPath = "/mutate-machine-accelerator-footprint"
-	// ValidatingWebhookPath is the dedicated Machine footprint validation endpoint.
-	ValidatingWebhookPath = "/validate-machine-accelerator-footprint"
 
 	// SchemaVersionV1Alpha1 is the first version of the footprint annotation payload schema.
 	SchemaVersionV1Alpha1 = "v1alpha1"

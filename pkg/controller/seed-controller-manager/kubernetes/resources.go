@@ -290,6 +290,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
+	kubeVirtAcceleratorQuotaEnabled, err := r.kubeVirtAcceleratorQuotaEnabledForCluster(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine KubeVirt accelerator quota activation: %w", err)
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -325,8 +330,54 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
 		WithDRA(r.features.DynamicResourceAllocation).
-		WithKubeVirtAcceleratorQuota(r.features.KubeVirtAcceleratorQuota).
+		WithKubeVirtAcceleratorQuota(kubeVirtAcceleratorQuotaEnabled).
 		Build(), nil
+}
+
+// kubeVirtAcceleratorQuotaEnabledForCluster reads the synchronized, admin-owned
+// project ResourceQuota. The central ResourceQuota webhook uses the global gate
+// to authorize first activation; later gate changes do not deactivate an
+// already accepted project.
+func (r *Reconciler) kubeVirtAcceleratorQuotaEnabledForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
+	if !r.features.KubeVirtAcceleratorAccounting || cluster.Spec.Cloud.Kubevirt == nil {
+		return false, nil
+	}
+
+	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if projectID == "" {
+		return false, nil
+	}
+
+	resourceQuotas := &kubermaticv1.ResourceQuotaList{}
+	if err := r.List(ctx, resourceQuotas, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectID,
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+	}); err != nil {
+		return false, fmt.Errorf("failed to list ResourceQuotas for Project %q: %w", projectID, err)
+	}
+
+	// Labels make the cache lookup efficient, but the subject is authoritative.
+	// Ignore forged, stale, duplicate, or malformed candidates so optional
+	// accelerator activation cannot block general cluster reconciliation.
+	for i := range resourceQuotas.Items {
+		resourceQuota := &resourceQuotas.Items[i]
+		if acceleratorAccountingActiveForProject(resourceQuota, projectID) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func acceleratorAccountingActiveForProject(resourceQuota *kubermaticv1.ResourceQuota, projectID string) bool {
+	return resourceQuota != nil &&
+		projectID != "" &&
+		resourceQuota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind &&
+		resourceQuota.Spec.Subject.Name == projectID &&
+		resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] == projectID &&
+		resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] == kubermaticv1.ProjectSubjectKind &&
+		resourceQuota.DeletionTimestamp.IsZero() &&
+		resourceQuota.Annotations[resources.AcceleratorAccountingEnabledAnnotation] == resources.AcceleratorAccountingEnabledAnnotationValue
 }
 
 // reconcileClusterNamespace will ensure that the cluster namespace is

@@ -20,7 +20,6 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/machine/accelerator"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
@@ -34,10 +33,8 @@ import (
 
 const (
 	machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
-	// AcceleratorMutatingWebhookConfigurationName is the KKP-owned Machine footprint webhook configuration.
-	AcceleratorMutatingWebhookConfigurationName = "kubermatic-machine-accelerator-footprint"
-	// AcceleratorValidatingWebhookConfigurationName protects the KKP-owned Machine footprint contract.
-	AcceleratorValidatingWebhookConfigurationName = "kubermatic-machine-accelerator-footprint-validation"
+	// AcceleratorAdmissionWebhookName is the name of the validating and mutating Machine footprint webhooks.
+	AcceleratorAdmissionWebhookName = "kubermatic-machine-accelerator-footprint"
 )
 
 // ValidatingWebhookConfigurationReconciler returns the ValidatingWebhookConfiguration for the machine CRD.
@@ -54,6 +51,7 @@ func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 				namespace,
 				resources.UserClusterWebhookUserListenPort,
 			)
+
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "machines.cluster.k8c.io", // this should be a FQDN
@@ -76,7 +74,9 @@ func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 								Resources:   []string{"machines"},
 								Scope:       &scope,
 							},
-							Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+							},
 						},
 					},
 				},
@@ -89,7 +89,7 @@ func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 // AcceleratorValidatingWebhookConfigurationReconciler returns the Machine footprint validation webhook configuration.
 func AcceleratorValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
-		return AcceleratorValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+		return AcceleratorAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
@@ -99,7 +99,7 @@ func AcceleratorValidatingWebhookConfigurationReconciler(caCert *x509.Certificat
 				resources.UserClusterWebhookServiceName,
 				namespace,
 				resources.UserClusterWebhookUserListenPort,
-				accelerator.ValidatingWebhookPath,
+				resources.MachineAcceleratorFootprintValidatingWebhookPath,
 			)
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{{
@@ -134,9 +134,10 @@ func AcceleratorValidatingWebhookConfigurationReconciler(caCert *x509.Certificat
 // AcceleratorMutatingWebhookConfigurationReconciler returns the feature-gated Machine footprint webhook configuration.
 func AcceleratorMutatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
-		return AcceleratorMutatingWebhookConfigurationName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+		return AcceleratorAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
+			// Re-run after later Machine mutators so the footprint describes the final provider spec.
 			reinvocationPolicy := admissionregistrationv1.IfNeededReinvocationPolicy
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
@@ -145,7 +146,7 @@ func AcceleratorMutatingWebhookConfigurationReconciler(caCert *x509.Certificate,
 				resources.UserClusterWebhookServiceName,
 				namespace,
 				resources.UserClusterWebhookUserListenPort,
-				accelerator.MutatingWebhookPath,
+				resources.MachineAcceleratorFootprintMutatingWebhookPath,
 			)
 
 			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{{

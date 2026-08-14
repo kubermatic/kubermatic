@@ -225,6 +225,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileAcceleratorFootprintAdmission(ctx, data); err != nil {
+		return err
+	}
+
 	if r.networkPolices {
 		if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
 			return err
@@ -657,13 +661,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
 		creators = append(creators, machinecontroller.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
 	}
-	acceleratorAdmissionActive, err := r.acceleratorFootprintAdmissionActive(ctx, data)
-	if err != nil {
-		return err
-	}
-	if acceleratorAdmissionActive {
-		creators = append(creators, machine.AcceleratorMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
-	}
 
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
@@ -683,14 +680,6 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
 		creators = append(creators, machine.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
-	}
-
-	acceleratorAdmissionActive, err := r.acceleratorFootprintAdmissionActive(ctx, data)
-	if err != nil {
-		return err
-	}
-	if acceleratorAdmissionActive {
-		creators = append(creators, machine.AcceleratorValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
 	}
 
 	if r.opaIntegration {
@@ -714,6 +703,41 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	return nil
 }
 
+// reconcileAcceleratorFootprintAdmission reconciles the mutating configuration before the
+// validating configuration. Kubernetes observes the two configuration kinds independently,
+// so project activation requires the documented operational rollout procedure.
+func (r *reconciler) reconcileAcceleratorFootprintAdmission(ctx context.Context, data reconcileData) error {
+	active, err := r.acceleratorFootprintAdmissionActive(ctx, data)
+	if err != nil {
+		return err
+	}
+	if !active {
+		return nil
+	}
+
+	if err := r.reconcileAcceleratorMutatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to reconcile Machine accelerator footprint mutation: %w", err)
+	}
+	if err := r.reconcileAcceleratorValidatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to install Machine accelerator footprint CREATE and UPDATE validation: %w", err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileAcceleratorValidatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileValidatingWebhookConfigurations(ctx,
+		[]reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
+func (r *reconciler) reconcileAcceleratorMutatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileMutatingWebhookConfigurations(ctx,
+		[]reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
 // acceleratorFootprintAdmissionActive makes activation sticky. Once either footprint webhook
 // exists, both remain reconciled so disabling the gate cannot make persisted footprints mutable.
 func (r *reconciler) acceleratorFootprintAdmissionActive(ctx context.Context, data reconcileData) (bool, error) {
@@ -725,8 +749,8 @@ func (r *reconciler) acceleratorFootprintAdmissionActive(ctx context.Context, da
 	}
 
 	objects := []ctrlruntimeclient.Object{
-		&admissionregistrationv1.MutatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorMutatingWebhookConfigurationName}},
-		&admissionregistrationv1.ValidatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorValidatingWebhookConfigurationName}},
+		&admissionregistrationv1.MutatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
 	}
 	for _, object := range objects {
 		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(object), object); err == nil {

@@ -40,6 +40,10 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
+func acceleratorAccountingSupported() bool {
+	return true
+}
+
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
