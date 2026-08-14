@@ -19,6 +19,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -171,9 +172,33 @@ func validateEnabledAcceleratorAccountingUpdate(oldQuota, newQuota *kubermaticv1
 	if !hasMatchingSubjectLabels(newQuota) {
 		return fmt.Errorf("ResourceQuota must retain subject labels matching its project while accelerator accounting is enabled")
 	}
-	if len(newQuota.Spec.Quota.Accelerators) != 0 {
-		return fmt.Errorf("ResourceQuota accelerator limits cannot be configured until accelerator accounting readiness and enforcement are implemented")
+	return validateAcceleratorQuotaTransition(oldQuota, newQuota, time.Now())
+}
+
+func validateAcceleratorQuotaTransition(oldQuota, newQuota *kubermaticv1.ResourceQuota, now time.Time) error {
+	oldAccelerators := oldQuota.Spec.Quota.Accelerators
+	newAccelerators := newQuota.Spec.Quota.Accelerators
+	if kubermaticv1.AcceleratorQuotasEqual(oldAccelerators, newAccelerators) {
+		return nil
 	}
+
+	// Removing every accelerator limit is the recovery path and must remain
+	// available even while accounting is blocked or stale.
+	if len(newAccelerators) == 0 {
+		return nil
+	}
+
+	accounting := oldQuota.Status.GlobalAcceleratorAccounting
+	if accounting == nil || !accounting.Ready || accounting.ActivationPhase != kubermaticv1.AcceleratorAccountingPhaseReady {
+		return fmt.Errorf("ResourceQuota accelerator limits cannot change until accelerator accounting is ready for the current limits")
+	}
+	if accounting.ObservedAccountingRevision == "" || accounting.ObservedQuotaDigest != kubermaticv1.AcceleratorQuotaDigestFor(oldAccelerators) {
+		return fmt.Errorf("ResourceQuota accelerator limits cannot change because accounting does not match the current quota revision and digest")
+	}
+	if accounting.ObservedAt.IsZero() || !accounting.ObservedAt.Add(resources.AcceleratorAccountingHeartbeatTimeout).After(now) {
+		return fmt.Errorf("ResourceQuota accelerator limits cannot change because accounting readiness is stale")
+	}
+
 	return nil
 }
 

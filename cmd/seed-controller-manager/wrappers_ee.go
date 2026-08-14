@@ -49,7 +49,7 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 }
 
 func setupControllers(ctrlCtx *controllerContext) error {
-	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount); err != nil {
+	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount, ctrlCtx.versions.GitVersion); err != nil {
 		return fmt.Errorf("failed to create resource quota controller: %w", err)
 	}
 

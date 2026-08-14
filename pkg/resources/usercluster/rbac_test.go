@@ -36,6 +36,22 @@ func TestClusterRoleAllowsPolicyBindingStatusPatches(t *testing.T) {
 	}
 }
 
+func TestClusterRoleAllowsReadingResourceQuotas(t *testing.T) {
+	t.Parallel()
+
+	_, reconciler := ClusterRole()()
+	role, err := reconciler(&rbacv1.ClusterRole{})
+	if err != nil {
+		t.Fatalf("failed to reconcile ClusterRole: %v", err)
+	}
+
+	for _, verb := range []string{"get", "list", "watch"} {
+		if !hasRule(role.Rules, "kubermatic.k8c.io", "resourcequotas", verb) {
+			t.Errorf("ClusterRole does not allow %s on ResourceQuotas", verb)
+		}
+	}
+}
+
 func hasRule(rules []rbacv1.PolicyRule, apiGroup, resource, verb string) bool {
 	for _, rule := range rules {
 		if contains(rule.APIGroups, apiGroup) && contains(rule.Resources, resource) && (contains(rule.Verbs, verb) || contains(rule.Verbs, "*")) {

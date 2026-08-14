@@ -136,6 +136,98 @@ spec:
             status:
               description: Status holds the current state of the resource quota.
               properties:
+                globalAcceleratorAccounting:
+                  description: |-
+                    GlobalAcceleratorAccounting contains the master-owned project-wide accelerator
+                    accounting state. It is synchronized from the master to every Seed copy.
+                  properties:
+                    activationPhase:
+                      description: ActivationPhase describes the current project-wide accelerator accounting state.
+                      enum:
+                        - Activating
+                        - Ready
+                        - Blocked
+                      type: string
+                    blockers:
+                      description: Blockers contains actionable reasons why project-wide accounting is not ready.
+                      items:
+                        description: |-
+                          AcceleratorAccountingBlocker describes an actionable reason why accelerator accounting
+                          is not ready. SeedName and ClusterName identify the affected scope when applicable.
+                        properties:
+                          clusterName:
+                            description: ClusterName identifies the affected user cluster when the blocker is cluster-specific.
+                            type: string
+                          count:
+                            description: Count is the number of affected objects when the blocker represents an aggregate.
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          message:
+                            description: Message contains human-readable details about the blocker.
+                            type: string
+                          seedName:
+                            description: SeedName identifies the affected Seed when the blocker is Seed-specific.
+                            type: string
+                          type:
+                            description: Type identifies the class of blocker.
+                            enum:
+                              - LegacyMachines
+                              - InvalidFootprints
+                              - UnsupportedFootprintSchema
+                              - IncompatibleControllerVersion
+                              - StaleHeartbeat
+                              - NewCluster
+                              - UnreachableSeed
+                              - MissingReport
+                              - RevisionMismatch
+                              - QuotaDigestMismatch
+                            type: string
+                        required:
+                          - type
+                        type: object
+                      type: array
+                    legacyMachinesWithoutFootprint:
+                      description: |-
+                        LegacyMachinesWithoutFootprint is the project-wide number of Machines that predate
+                        trusted footprint capture.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    machinesWithInvalidFootprint:
+                      description: |-
+                        MachinesWithInvalidFootprint is the project-wide number of Machines whose footprint
+                        cannot be accounted.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    observedAccountingRevision:
+                      description: |-
+                        ObservedAccountingRevision is the authoritative master-issued current accounting
+                        revision. Despite the Observed prefix, child reporters must attest to this exact value.
+                      type: string
+                    observedAt:
+                      description: ObservedAt is the oldest heartbeat among the Seed attestations included in this state.
+                      format: date-time
+                      type: string
+                    observedQuotaDigest:
+                      description: |-
+                        ObservedQuotaDigest is the authoritative canonical digest of the current accelerator
+                        quota. Despite the Observed prefix, child reporters must attest to this exact value.
+                      type: string
+                    ready:
+                      description: |-
+                        Ready is true when every configured Seed has provided a compatible, fresh attestation
+                        for ObservedAccountingRevision and ObservedQuotaDigest and no blocker remains.
+                      type: boolean
+                  required:
+                    - activationPhase
+                    - legacyMachinesWithoutFootprint
+                    - machinesWithInvalidFootprint
+                    - observedAccountingRevision
+                    - observedQuotaDigest
+                    - ready
+                  type: object
                 globalUsage:
                   description: GlobalUsage is holds the current usage of resources for all seeds.
                   properties:
@@ -198,6 +290,82 @@ spec:
                       description: Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
+                  type: object
+                localAcceleratorAccounting:
+                  description: |-
+                    LocalAcceleratorAccounting contains the Seed-owned accelerator accounting
+                    attestation for this ResourceQuota. It is not synchronized from the master.
+                  properties:
+                    blockers:
+                      description: Blockers contains actionable reasons why this Seed-local attestation is not ready.
+                      items:
+                        description: |-
+                          AcceleratorAccountingBlocker describes an actionable reason why accelerator accounting
+                          is not ready. SeedName and ClusterName identify the affected scope when applicable.
+                        properties:
+                          clusterName:
+                            description: ClusterName identifies the affected user cluster when the blocker is cluster-specific.
+                            type: string
+                          count:
+                            description: Count is the number of affected objects when the blocker represents an aggregate.
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          message:
+                            description: Message contains human-readable details about the blocker.
+                            type: string
+                          seedName:
+                            description: SeedName identifies the affected Seed when the blocker is Seed-specific.
+                            type: string
+                          type:
+                            description: Type identifies the class of blocker.
+                            enum:
+                              - LegacyMachines
+                              - InvalidFootprints
+                              - UnsupportedFootprintSchema
+                              - IncompatibleControllerVersion
+                              - StaleHeartbeat
+                              - NewCluster
+                              - UnreachableSeed
+                              - MissingReport
+                              - RevisionMismatch
+                              - QuotaDigestMismatch
+                            type: string
+                        required:
+                          - type
+                        type: object
+                      type: array
+                    legacyMachinesWithoutFootprint:
+                      description: LegacyMachinesWithoutFootprint is the number of Machines that predate trusted footprint capture.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    machinesWithInvalidFootprint:
+                      description: MachinesWithInvalidFootprint is the number of Machines whose footprint cannot be accounted.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    observedAccountingRevision:
+                      description: ObservedAccountingRevision is the master-issued accounting revision this Seed observed.
+                      type: string
+                    observedAt:
+                      description: ObservedAt is the oldest heartbeat among the cluster attestations included in this report.
+                      format: date-time
+                      type: string
+                    observedQuotaDigest:
+                      description: ObservedQuotaDigest is the canonical accelerator quota digest this Seed observed.
+                      type: string
+                    ready:
+                      description: |-
+                        Ready is true when every relevant cluster has provided a compatible, fresh attestation
+                        for ObservedAccountingRevision and ObservedQuotaDigest and no blocker remains.
+                      type: boolean
+                  required:
+                    - legacyMachinesWithoutFootprint
+                    - machinesWithInvalidFootprint
+                    - observedAccountingRevision
+                    - observedQuotaDigest
+                    - ready
                   type: object
                 localUsage:
                   description: LocalUsage is holds the current usage of resources for the local seed.

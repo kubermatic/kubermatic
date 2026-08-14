@@ -17,6 +17,7 @@ limitations under the License.
 package accelerator
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -136,6 +137,13 @@ func TestDecodeRejectsInvalidFootprints(t *testing.T) {
 				t.Fatalf("Decode() error = %q, want substring %q", err, tc.errorString)
 			}
 		})
+	}
+}
+
+func TestDecodeIdentifiesUnsupportedSchema(t *testing.T) {
+	_, err := Decode(`{"schemaVersion":"v2","provider":"kubevirt","resources":{}}`)
+	if !errors.Is(err, ErrUnsupportedSchemaVersion) {
+		t.Fatalf("Decode() error = %v, want ErrUnsupportedSchemaVersion", err)
 	}
 }
 
