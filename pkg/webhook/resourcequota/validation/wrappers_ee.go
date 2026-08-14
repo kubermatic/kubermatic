@@ -20,12 +20,23 @@ package validation
 
 import (
 	"context"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	resourcequotadefaultcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/default-quota-controller"
 	eeresourcequotavalidation "k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func acceleratorAccountingSupported() bool { return true }
+
+func validateAcceleratorAccountingResourceQuota(quota *kubermaticv1.ResourceQuota) error {
+	if quota.Labels[resourcequotadefaultcontroller.DefaultProjectResourceQuotaKey] == resourcequotadefaultcontroller.DefaultProjectResourceQuotaValue {
+		return fmt.Errorf("default-managed ResourceQuota %q cannot activate accelerator accounting; remove label %q before activation", quota.Name, resourcequotadefaultcontroller.DefaultProjectResourceQuotaKey)
+	}
+	return nil
+}
 
 func validateCreate(ctx context.Context,
 	obj *kubermaticv1.ResourceQuota,

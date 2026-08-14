@@ -238,6 +238,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		common.KubermaticConfigurationAdmissionWebhookName(config),
 		common.GroupProjectBindingAdmissionWebhookName,
 		common.ResourceQuotaAdmissionWebhookName,
+		common.ResourceQuotaAcceleratorAccountingAdmissionWebhookName,
 		common.PolicyTemplateAdmissionWebhookName,
 	}
 
@@ -699,6 +700,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.UserValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
+		kubermatic.ResourceQuotaAcceleratorAccountingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, config, r.Client),

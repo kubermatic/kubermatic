@@ -29,6 +29,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
@@ -198,9 +199,16 @@ func main() {
 	// /////////////////////////////////////////
 	// setup Resource Quota webhooks
 
-	quotaValidator := resourcequotavalidation.NewValidator(mgr.GetClient())
+	quotaValidator := resourcequotavalidation.NewValidator(mgr.GetClient(), options.featureGates)
 	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ResourceQuota{}).WithValidator(quotaValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup resource quota validation webhook", zap.Error(err))
+	}
+	accountingValidator := resourcequotavalidation.NewAcceleratorAccountingValidator(mgr.GetClient(), options.featureGates)
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ResourceQuota{}).
+		WithValidator(accountingValidator).
+		WithValidatorCustomPath(resources.AcceleratorAccountingWebhookPath).
+		Complete(); err != nil {
+		log.Fatalw("Failed to setup ResourceQuota accelerator accounting validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

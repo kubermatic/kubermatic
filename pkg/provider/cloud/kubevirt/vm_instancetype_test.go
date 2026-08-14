@@ -18,6 +18,7 @@ package kubevirt
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -260,7 +261,7 @@ func TestResolveInstanceTypeDeviceResourcesAndSource(t *testing.T) {
 		wantMemory      resource.Quantity
 	}{
 		{
-			name: "cluster-scoped host devices are counted and the explicit kind wins a same-name collision",
+			name: "cluster-scoped host devices are counted",
 			objects: []ctrlruntimeclient.Object{
 				&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
 					ObjectMeta: metav1.ObjectMeta{Name: "h200-two-gpu"},
@@ -271,13 +272,6 @@ func TestResolveInstanceTypeDeviceResourcesAndSource(t *testing.T) {
 							{Name: "gpu-1", DeviceName: "nvidia.com/GH100_H200_NVL"},
 							{Name: "gpu-2", DeviceName: "nvidia.com/GH100_H200_NVL"},
 						},
-					},
-				},
-				&kvinstancetypev1beta1.VirtualMachineInstancetype{
-					ObjectMeta: metav1.ObjectMeta{Name: "h200-two-gpu", Namespace: "tenant-a"},
-					Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
-						CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
-						Memory: kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse("16Gi")},
 					},
 				},
 			},
@@ -360,6 +354,103 @@ func TestResolveInstanceTypeDeviceResourcesAndSource(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestResolveInstanceTypeRejectsExplicitClusterScopeCollision(t *testing.T) {
+	const (
+		name      = "h200-two-gpu"
+		namespace = "tenant-a"
+	)
+	client := newTestClient(t,
+		&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 32},
+				Memory: resourceMemory("128Gi"),
+				HostDevices: []kubevirtv1.HostDevice{{
+					Name:       "gpu-1",
+					DeviceName: "nvidia.com/H200",
+				}},
+			},
+		},
+		&kvinstancetypev1beta1.VirtualMachineInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+				Memory: resourceMemory("16Gi"),
+			},
+		},
+	)
+
+	_, err := resolveInstanceType(context.Background(), client, namespace, &kubevirtv1.InstancetypeMatcher{
+		Name: name,
+		Kind: VirtualMachineClusterInstancetypeKind,
+	})
+	if err == nil {
+		t.Fatal("resolveInstanceType() expected a cross-scope collision error")
+	}
+	if !strings.Contains(err.Error(), "requires a unique name across scopes") {
+		t.Fatalf("resolveInstanceType() error = %q, want collision explanation", err)
+	}
+}
+
+func TestResolveInstanceTypeAllowsCPUOnlyCrossScopeCollision(t *testing.T) {
+	const (
+		name      = "standard-4"
+		namespace = "tenant-a"
+	)
+	client := newTestClient(t,
+		&kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+				Memory: resourceMemory("16Gi"),
+			},
+		},
+		&kvinstancetypev1beta1.VirtualMachineInstancetype{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+			Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+				CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+				Memory: resourceMemory("16Gi"),
+			},
+		},
+	)
+
+	resolved, err := resolveInstanceType(context.Background(), client, namespace, &kubevirtv1.InstancetypeMatcher{
+		Name: name,
+		Kind: VirtualMachineClusterInstancetypeKind,
+	})
+	if err != nil {
+		t.Fatalf("resolveInstanceType() error = %v", err)
+	}
+	if resolved.Source.Kind != VirtualMachineClusterInstancetypeKind {
+		t.Fatalf("source kind = %q, want %q", resolved.Source.Kind, VirtualMachineClusterInstancetypeKind)
+	}
+	if len(resolved.DeviceResources) != 0 {
+		t.Fatalf("device resources = %#v, want empty", resolved.DeviceResources)
+	}
+}
+
+func TestResolveInstanceTypeRequiresExactName(t *testing.T) {
+	client := newTestClient(t, &kvinstancetypev1beta1.VirtualMachineClusterInstancetype{
+		ObjectMeta: metav1.ObjectMeta{Name: "h200-worker"},
+		Spec: kvinstancetypev1beta1.VirtualMachineInstancetypeSpec{
+			CPU:    kvinstancetypev1beta1.CPUInstancetype{Guest: 4},
+			Memory: resourceMemory("16Gi"),
+		},
+	})
+
+	_, err := resolveInstanceType(context.Background(), client, "tenant-a", &kubevirtv1.InstancetypeMatcher{
+		Name: "H200-worker",
+		Kind: VirtualMachineClusterInstancetypeKind,
+	})
+	if err == nil {
+		t.Fatal("resolveInstanceType() expected an error for a case-mismatched name")
+	}
+}
+
+func resourceMemory(value string) kvinstancetypev1beta1.MemoryInstancetype {
+	return kvinstancetypev1beta1.MemoryInstancetype{Guest: resource.MustParse(value)}
 }
 
 func TestResolveInstanceTypeWithNilMatcher(t *testing.T) {

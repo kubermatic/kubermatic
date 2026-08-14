@@ -225,6 +225,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileAcceleratorFootprintAdmission(ctx, data); err != nil {
+		return err
+	}
+
 	if r.networkPolices {
 		if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
 			return err
@@ -697,6 +701,66 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
 	}
 	return nil
+}
+
+// reconcileAcceleratorFootprintAdmission reconciles the mutating configuration before the
+// validating configuration. Kubernetes observes the two configuration kinds independently,
+// so project activation requires the documented operational rollout procedure.
+func (r *reconciler) reconcileAcceleratorFootprintAdmission(ctx context.Context, data reconcileData) error {
+	active, err := r.acceleratorFootprintAdmissionActive(ctx, data)
+	if err != nil {
+		return err
+	}
+	if !active {
+		return nil
+	}
+
+	if err := r.reconcileAcceleratorMutatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to reconcile Machine accelerator footprint mutation: %w", err)
+	}
+	if err := r.reconcileAcceleratorValidatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to install Machine accelerator footprint CREATE and UPDATE validation: %w", err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileAcceleratorValidatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileValidatingWebhookConfigurations(ctx,
+		[]reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
+func (r *reconciler) reconcileAcceleratorMutatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileMutatingWebhookConfigurations(ctx,
+		[]reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
+// acceleratorFootprintAdmissionActive makes activation sticky. Once either footprint webhook
+// exists, both remain reconciled so disabling the gate cannot make persisted footprints mutable.
+func (r *reconciler) acceleratorFootprintAdmissionActive(ctx context.Context, data reconcileData) (bool, error) {
+	if data.cloudProviderName != string(kubermaticv1.KubevirtCloudProvider) {
+		return false, nil
+	}
+	if r.kubeVirtAcceleratorQuota {
+		return true, nil
+	}
+
+	objects := []ctrlruntimeclient.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
+	}
+	for _, object := range objects {
+		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(object), object); err == nil {
+			return true, nil
+		} else if !apierrors.IsNotFound(err) {
+			return false, fmt.Errorf("failed to determine KubeVirt accelerator footprint admission state: %w", err)
+		}
+	}
+
+	return false, nil
 }
 
 func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) error {

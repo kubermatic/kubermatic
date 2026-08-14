@@ -17,8 +17,6 @@ limitations under the License.
 package webhook
 
 import (
-	"encoding/json"
-	"slices"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -26,46 +24,54 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
-	testCases := []struct {
-		name         string
-		kubeVirt     bool
-		enabled      bool
-		wantArgument bool
+func TestUserAdmissionReadinessProbe(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		kubeVirt bool
+		active   bool
+		wantPort intstr.IntOrString
 	}{
 		{
-			name:     "disabled",
+			name:     "inactive KubeVirt project keeps existing metrics readiness",
 			kubeVirt: true,
+			wantPort: intstr.FromString("metrics"),
 		},
 		{
-			name:         "enabled",
-			kubeVirt:     true,
-			enabled:      true,
-			wantArgument: true,
+			name:     "active KubeVirt project waits for user admission",
+			kubeVirt: true,
+			active:   true,
+			wantPort: intstr.FromInt(userWebhookListenPort),
 		},
 		{
-			name:    "not rendered for another provider",
-			enabled: true,
+			name:     "non-KubeVirt cluster remains unchanged",
+			active:   true,
+			wantPort: intstr.FromString("metrics"),
 		},
-	}
-
-	for _, tc := range testCases {
+	} {
 		t.Run(tc.name, func(t *testing.T) {
-			data := newWebhookDeploymentTestData(tc.kubeVirt, tc.enabled)
-			_, reconcile := DeploymentReconciler(data)()
-
-			deployment, err := reconcile(&appsv1.Deployment{})
+			data := newWebhookDeploymentTestData(tc.kubeVirt, tc.active)
+			_, reconciler := DeploymentReconciler(data)()
+			deployment, err := reconciler(&appsv1.Deployment{})
 			if err != nil {
-				t.Fatalf("failed to reconcile user-cluster-webhook deployment: %v", err)
+				t.Fatalf("failed to reconcile Deployment: %v", err)
 			}
 
-			hasArgument := deploymentContainsArgument(deployment, "-kubevirt-accelerator-quota")
-			if hasArgument != tc.wantArgument {
-				t.Fatalf("expected accelerator quota argument present=%t, got %t", tc.wantArgument, hasArgument)
+			container := deployment.Spec.Template.Spec.Containers[0]
+			if container.ReadinessProbe == nil || container.ReadinessProbe.TCPSocket == nil {
+				t.Fatalf("readiness probe = %#v, want TCP probe", container.ReadinessProbe)
+			}
+			if got := container.ReadinessProbe.TCPSocket.Port; got != tc.wantPort {
+				t.Fatalf("readiness probe port = %#v, want %#v", got, tc.wantPort)
+			}
+			if len(container.Ports) != 2 {
+				t.Fatalf("container ports = %#v, want existing admission and metrics ports only", container.Ports)
+			}
+			if container.Ports[0].Name != "admission" || container.Ports[1].Name != "metrics" {
+				t.Fatalf("container ports = %#v, want existing admission and metrics ports only", container.Ports)
 			}
 		})
 	}
@@ -105,32 +111,4 @@ func newWebhookDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpre
 		WithVersions(kubermatic.GetFakeVersions()).
 		WithKubeVirtAcceleratorQuota(acceleratorQuotaEnabled).
 		Build()
-}
-
-func deploymentContainsArgument(deployment *appsv1.Deployment, argument string) bool {
-	for _, containers := range [][]corev1.Container{
-		deployment.Spec.Template.Spec.InitContainers,
-		deployment.Spec.Template.Spec.Containers,
-	} {
-		for _, container := range containers {
-			if slices.Contains(container.Args, argument) {
-				return true
-			}
-
-			for i := 1; i < len(container.Args); i++ {
-				if container.Args[i-1] != "-command" {
-					continue
-				}
-
-				wrappedCommand := struct {
-					Args []string `json:"args"`
-				}{}
-				if err := json.Unmarshal([]byte(container.Args[i]), &wrappedCommand); err == nil && slices.Contains(wrappedCommand.Args, argument) {
-					return true
-				}
-			}
-		}
-	}
-
-	return false
 }

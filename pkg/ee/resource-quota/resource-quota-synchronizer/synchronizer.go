@@ -33,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +48,7 @@ const (
 	// This controller syncs the ResourceQuotas from the master cluster to the seed clusters.
 	ControllerName = "kkp-resource-quota-synchronizer"
 
-	// cleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
+	// cleanupFinalizer indicates that synced ResourceQuotas on Seed clusters need cleanup.
 	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
 )
 
@@ -88,9 +89,36 @@ func resourceQuotaReconcilerFactory(rq *kubermaticv1.ResourceQuota) reconciling.
 			c.Name = rq.Name
 			c.Labels = rq.Labels
 			c.Spec = rq.Spec
+			reconcileManagedAnnotation(c, rq, resources.AcceleratorAccountingEnabledAnnotation)
 			return c, nil
 		}
 	}
+}
+
+// reconcileManagedAnnotation mirrors one controller-owned annotation without replacing
+// seed-local annotations. Removing the annotation from the source removes only that key.
+func reconcileManagedAnnotation(target, source metav1.Object, key string) {
+	value, enabled := source.GetAnnotations()[key]
+	annotations := target.GetAnnotations()
+
+	if enabled {
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations[key] = value
+		target.SetAnnotations(annotations)
+		return
+	}
+
+	if _, exists := annotations[key]; !exists {
+		return
+	}
+
+	delete(annotations, key)
+	if len(annotations) == 0 {
+		annotations = nil
+	}
+	target.SetAnnotations(annotations)
 }
 
 // Reconcile reconciles the resource quotas in the master cluster and syncs them to all seeds.
