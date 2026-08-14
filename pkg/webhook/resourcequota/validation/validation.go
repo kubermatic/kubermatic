@@ -133,30 +133,7 @@ func (v *validator) validateAccountingUpdate(ctx context.Context, oldQuota, newQ
 
 	if oldHasAnnotation {
 		if oldValue == resources.AcceleratorAccountingEnabledAnnotationValue {
-			if !newHasAnnotation || newValue != resources.AcceleratorAccountingEnabledAnnotationValue {
-				return fmt.Errorf("ResourceQuota annotation %q is immutable once accelerator accounting is enabled", resources.AcceleratorAccountingEnabledAnnotation)
-			}
-			if err := validateAcceleratorAccountingResourceQuota(newQuota); err != nil {
-				return err
-			}
-			oldOwner := metav1.GetControllerOf(oldQuota)
-			newOwner := metav1.GetControllerOf(newQuota)
-			if !sameOwnerReference(oldOwner, newOwner) {
-				return fmt.Errorf("ResourceQuota must retain its project controller owner reference while accelerator accounting is enabled")
-			}
-			if oldQuota.Spec.Subject != newQuota.Spec.Subject {
-				return fmt.Errorf("ResourceQuota project subject is immutable while accelerator accounting is enabled")
-			}
-			if newOwner == nil || newOwner.Name != newQuota.Spec.Subject.Name || newOwner.Kind != kubermaticv1.ProjectKindName {
-				return fmt.Errorf("ResourceQuota must retain a controller owner reference matching its project subject while accelerator accounting is enabled")
-			}
-			if !hasMatchingSubjectLabels(newQuota) {
-				return fmt.Errorf("ResourceQuota must retain subject labels matching its project while accelerator accounting is enabled")
-			}
-			if len(newQuota.Spec.Quota.Accelerators) != 0 {
-				return fmt.Errorf("ResourceQuota accelerator limits cannot be configured until accelerator accounting readiness and enforcement are implemented")
-			}
-			return nil
+			return validateEnabledAcceleratorAccountingUpdate(oldQuota, newQuota, newValue, newHasAnnotation)
 		}
 
 		// The webhook never permits creating a non-canonical value. Still allow such a
@@ -170,6 +147,37 @@ func (v *validator) validateAccountingUpdate(ctx context.Context, oldQuota, newQ
 	if !newHasAnnotation {
 		return nil
 	}
+	return v.validateAcceleratorAccountingActivation(ctx, oldQuota, newQuota, newValue)
+}
+
+func validateEnabledAcceleratorAccountingUpdate(oldQuota, newQuota *kubermaticv1.ResourceQuota, newValue string, newHasAnnotation bool) error {
+	if !newHasAnnotation || newValue != resources.AcceleratorAccountingEnabledAnnotationValue {
+		return fmt.Errorf("ResourceQuota annotation %q is immutable once accelerator accounting is enabled", resources.AcceleratorAccountingEnabledAnnotation)
+	}
+	if err := validateAcceleratorAccountingResourceQuota(newQuota); err != nil {
+		return err
+	}
+	oldOwner := metav1.GetControllerOf(oldQuota)
+	newOwner := metav1.GetControllerOf(newQuota)
+	if !sameOwnerReference(oldOwner, newOwner) {
+		return fmt.Errorf("ResourceQuota must retain its project controller owner reference while accelerator accounting is enabled")
+	}
+	if oldQuota.Spec.Subject != newQuota.Spec.Subject {
+		return fmt.Errorf("ResourceQuota project subject is immutable while accelerator accounting is enabled")
+	}
+	if newOwner == nil || newOwner.Name != newQuota.Spec.Subject.Name || newOwner.Kind != kubermaticv1.ProjectKindName {
+		return fmt.Errorf("ResourceQuota must retain a controller owner reference matching its project subject while accelerator accounting is enabled")
+	}
+	if !hasMatchingSubjectLabels(newQuota) {
+		return fmt.Errorf("ResourceQuota must retain subject labels matching its project while accelerator accounting is enabled")
+	}
+	if len(newQuota.Spec.Quota.Accelerators) != 0 {
+		return fmt.Errorf("ResourceQuota accelerator limits cannot be configured until accelerator accounting readiness and enforcement are implemented")
+	}
+	return nil
+}
+
+func (v *validator) validateAcceleratorAccountingActivation(ctx context.Context, oldQuota, newQuota *kubermaticv1.ResourceQuota, newValue string) error {
 	if newValue != resources.AcceleratorAccountingEnabledAnnotationValue {
 		return fmt.Errorf("ResourceQuota annotation %q must have the exact value %q", resources.AcceleratorAccountingEnabledAnnotation, resources.AcceleratorAccountingEnabledAnnotationValue)
 	}
