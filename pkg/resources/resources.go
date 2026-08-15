@@ -1097,6 +1097,10 @@ const (
 	MachineAcceleratorFootprintMutatingWebhookPath = "/mutate-machine-accelerator-footprint"
 	// MachineAcceleratorFootprintValidatingWebhookPath is the dedicated Machine footprint validation endpoint.
 	MachineAcceleratorFootprintValidatingWebhookPath = "/validate-machine-accelerator-footprint"
+	// AcceleratorAccountingHeartbeatInterval controls how often accounting participants refresh their report.
+	AcceleratorAccountingHeartbeatInterval = time.Minute
+	// AcceleratorAccountingHeartbeatTimeout is the maximum age accepted for an accounting report.
+	AcceleratorAccountingHeartbeatTimeout = 5 * time.Minute
 )
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")

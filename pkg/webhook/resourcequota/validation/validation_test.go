@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -313,11 +314,11 @@ func TestEnabledAccountingAnnotationIsImmutable(t *testing.T) {
 			errorContains: "project subject is immutable",
 		},
 		{
-			name: "accelerator limits remain unavailable in the capture-only release",
+			name: "accelerator limits require current readiness",
 			mutate: func(quota *kubermaticv1.ResourceQuota) {
 				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
 			},
-			errorContains: "readiness and enforcement are implemented",
+			errorContains: "until accelerator accounting is ready",
 		},
 		{
 			name: "annotation cannot be removed",
@@ -362,6 +363,124 @@ func TestEnabledAccountingAnnotationIsImmutable(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestEnabledAccountingAcceleratorQuotaTransitions(t *testing.T) {
+	oldQuota := testResourceQuota(testProject())
+	oldQuota.Annotations = map[string]string{
+		resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+	}
+
+	tests := []struct {
+		name          string
+		prepareOld    func(*kubermaticv1.ResourceQuota)
+		mutateNew     func(*kubermaticv1.ResourceQuota)
+		errorContains string
+	}{
+		{
+			name: "first non-empty limits are accepted after empty accounting is ready",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				setReadyGlobalAcceleratorAccounting(quota, metav1.Now())
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+			},
+		},
+		{
+			name: "accelerator change is accepted after current limits are ready",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+				setReadyGlobalAcceleratorAccounting(quota, metav1.Now())
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators[0].Resources["nvidia.com/GH100_H200_NVL"] = resource.MustParse("3")
+			},
+		},
+		{
+			name: "unchanged accelerator limits allow scalar edits while blocked",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				cpu := resource.MustParse("12")
+				quota.Spec.Quota.CPU = &cpu
+			},
+		},
+		{
+			name: "remove all is always available as recovery",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = nil
+			},
+		},
+		{
+			name: "blocked accounting rejects non-empty transition",
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+			},
+			errorContains: "until accelerator accounting is ready",
+		},
+		{
+			name: "stale accounting rejects non-empty transition",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				setReadyGlobalAcceleratorAccounting(quota, metav1.NewTime(time.Now().Add(-resources.AcceleratorAccountingHeartbeatTimeout-time.Second)))
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+			},
+			errorContains: "readiness is stale",
+		},
+		{
+			name: "digest mismatch serializes transitions",
+			prepareOld: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators = testAcceleratorQuota()
+				setReadyGlobalAcceleratorAccounting(quota, metav1.Now())
+				quota.Status.GlobalAcceleratorAccounting.ObservedQuotaDigest = "sha256:previous"
+			},
+			mutateNew: func(quota *kubermaticv1.ResourceQuota) {
+				quota.Spec.Quota.Accelerators[0].Resources["nvidia.com/GH100_H200_NVL"] = resource.MustParse("3")
+			},
+			errorContains: "does not match the current quota revision and digest",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			old := oldQuota.DeepCopy()
+			if tc.prepareOld != nil {
+				tc.prepareOld(old)
+			}
+			updated := old.DeepCopy()
+			if tc.mutateNew != nil {
+				tc.mutateNew(updated)
+			}
+
+			for _, route := range accountingValidatorRoutes(fake.NewClientBuilder().Build(), nil) {
+				t.Run(route.name, func(t *testing.T) {
+					_, err := route.validator.ValidateUpdate(context.Background(), old, updated)
+					if tc.errorContains == "" {
+						if err != nil {
+							t.Fatalf("expected update to succeed, got %v", err)
+						}
+						return
+					}
+					assertErrorContains(t, err, tc.errorContains)
+				})
+			}
+		})
+	}
+}
+
+func setReadyGlobalAcceleratorAccounting(quota *kubermaticv1.ResourceQuota, observedAt metav1.Time) {
+	quota.Status.GlobalAcceleratorAccounting = &kubermaticv1.ResourceQuotaGlobalAcceleratorAccountingStatus{
+		ActivationPhase:            kubermaticv1.AcceleratorAccountingPhaseReady,
+		ObservedAccountingRevision: "revision-1",
+		ObservedQuotaDigest:        kubermaticv1.AcceleratorQuotaDigestFor(quota.Spec.Quota.Accelerators),
+		ObservedAt:                 observedAt,
+		Ready:                      true,
 	}
 }
 

@@ -19,6 +19,7 @@ package accelerator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -27,6 +28,10 @@ import (
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	kjson "sigs.k8s.io/json"
 )
+
+// ErrUnsupportedSchemaVersion identifies a footprint written with a schema this
+// version of KKP cannot account for.
+var ErrUnsupportedSchemaVersion = errors.New("unsupported accelerator footprint schemaVersion")
 
 const (
 	// AnnotationPrefix is reserved for KKP-owned Machine accelerator accounting metadata.
@@ -106,7 +111,7 @@ func IsReservedAnnotationKey(key string) bool {
 
 func validate(footprint Footprint) error {
 	if footprint.SchemaVersion != SchemaVersionV1Alpha1 {
-		return fmt.Errorf("unsupported accelerator footprint schemaVersion %q", footprint.SchemaVersion)
+		return fmt.Errorf("%w %q", ErrUnsupportedSchemaVersion, footprint.SchemaVersion)
 	}
 	if footprint.Provider != ProviderKubeVirt {
 		return fmt.Errorf("unsupported accelerator footprint provider %q", footprint.Provider)

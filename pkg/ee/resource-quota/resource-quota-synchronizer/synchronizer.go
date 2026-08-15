@@ -161,8 +161,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, reso
 
 		// ensure status
 		globalUsage := resourceQuota.Status.GlobalUsage.DeepCopy()
+		globalAcceleratorAccounting := resourceQuota.Status.GlobalAcceleratorAccounting.DeepCopy()
 		return util.UpdateResourceQuotaStatus(ctx, seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 			rq.Status.GlobalUsage = *globalUsage
+			rq.Status.GlobalAcceleratorAccounting = globalAcceleratorAccounting
 		})
 	})
 }

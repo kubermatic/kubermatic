@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -226,6 +227,64 @@ func TestReconcilePropagatesActivation(t *testing.T) {
 	}
 }
 
+func TestReconcileSynchronizesOnlyMasterOwnedAcceleratorStatus(t *testing.T) {
+	ctx := context.Background()
+	observedAt := metav1.NewTime(time.Date(2026, 8, 14, 12, 0, 0, 0, time.UTC))
+	masterResourceQuota := genResourceQuota(rqName, false)
+	masterResourceQuota.Status.GlobalUsage.Accelerators = acceleratorUsage("nvidia.com/current", "3")
+	masterResourceQuota.Status.GlobalAcceleratorAccounting = &kubermaticv1.ResourceQuotaGlobalAcceleratorAccountingStatus{
+		ActivationPhase:            kubermaticv1.AcceleratorAccountingPhaseReady,
+		ObservedAccountingRevision: "master-revision",
+		ObservedQuotaDigest:        "sha256:master",
+		ObservedAt:                 observedAt,
+		Ready:                      true,
+	}
+	seedResourceQuota := genResourceQuota(rqName, false)
+	seedResourceQuota.Status.GlobalUsage.Accelerators = acceleratorUsage("nvidia.com/stale", "9")
+	seedResourceQuota.Status.GlobalAcceleratorAccounting = &kubermaticv1.ResourceQuotaGlobalAcceleratorAccountingStatus{
+		ObservedAccountingRevision: "stale-global-revision",
+	}
+	seedResourceQuota.Status.LocalAcceleratorAccounting = &kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus{
+		ObservedAccountingRevision: "seed-local-revision",
+		ObservedQuotaDigest:        "sha256:seed-local",
+		ObservedAt:                 observedAt,
+		Ready:                      false,
+		Blockers: []kubermaticv1.AcceleratorAccountingBlocker{{
+			Type:        kubermaticv1.AcceleratorAccountingBlockerTypeLegacyMachines,
+			ClusterName: "cluster-a",
+			Count:       2,
+		}},
+	}
+	expectedLocal := seedResourceQuota.Status.LocalAcceleratorAccounting.DeepCopy()
+
+	masterClient := fake.NewClientBuilder().WithObjects(masterResourceQuota).Build()
+	seedClient := fake.NewClientBuilder().WithObjects(seedResourceQuota).Build()
+	r := &reconciler{
+		log:          kubermaticlog.Logger,
+		recorder:     &events.FakeRecorder{},
+		masterClient: masterClient,
+		seedClients:  map[string]ctrlruntimeclient.Client{"first": seedClient},
+	}
+
+	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: rqName}}
+	if _, err := r.Reconcile(ctx, request); err != nil {
+		t.Fatalf("reconciling failed: %v", err)
+	}
+	got := &kubermaticv1.ResourceQuota{}
+	if err := seedClient.Get(ctx, request.NamespacedName, got); err != nil {
+		t.Fatalf("getting Seed ResourceQuota: %v", err)
+	}
+	if !diff.SemanticallyEqual(masterResourceQuota.Status.GlobalUsage, got.Status.GlobalUsage) {
+		t.Fatalf("global usage differs:\n%v", diff.ObjectDiff(masterResourceQuota.Status.GlobalUsage, got.Status.GlobalUsage))
+	}
+	if !diff.SemanticallyEqual(masterResourceQuota.Status.GlobalAcceleratorAccounting, got.Status.GlobalAcceleratorAccounting) {
+		t.Fatalf("global accounting differs:\n%v", diff.ObjectDiff(masterResourceQuota.Status.GlobalAcceleratorAccounting, got.Status.GlobalAcceleratorAccounting))
+	}
+	if !diff.SemanticallyEqual(expectedLocal, got.Status.LocalAcceleratorAccounting) {
+		t.Fatalf("Seed-local accounting was overwritten:\n%v", diff.ObjectDiff(expectedLocal, got.Status.LocalAcceleratorAccounting))
+	}
+}
+
 func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 	cpu := resource.MustParse("5")
 	mem := resource.MustParse("5G")
@@ -268,4 +327,13 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 	}
 
 	return rq
+}
+
+func acceleratorUsage(name, count string) []kubermaticv1.AcceleratorQuota {
+	return []kubermaticv1.AcceleratorQuota{{
+		Provider: "kubevirt",
+		Resources: corev1.ResourceList{
+			corev1.ResourceName(name): resource.MustParse(count),
+		},
+	}}
 }
