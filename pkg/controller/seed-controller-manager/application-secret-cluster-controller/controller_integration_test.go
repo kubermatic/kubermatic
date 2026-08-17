@@ -276,23 +276,23 @@ func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T, ctx context.Contex
 	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func expectSecretSync(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterNamespace string, expectedSecert *corev1.Secret) {
+func expectSecretSync(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterNamespace string, expectedSecret *corev1.Secret) {
 	syncedSecret := &corev1.Secret{}
 	var err error
 	if !utils.WaitFor(ctx, interval, timeout, func() bool {
-		if err = client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: expectedSecert.Name}, syncedSecret); err != nil {
+		if err = client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: expectedSecret.Name}, syncedSecret); err != nil {
 			return false
 		}
-		if !diff.DeepEqual(expectedSecert.Data, syncedSecret.Data) {
-			err = fmt.Errorf("secret data differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Data, syncedSecret.Data))
+		if !diff.DeepEqual(expectedSecret.Data, syncedSecret.Data) {
+			err = fmt.Errorf("secret data differs from expected:\n%s", diff.ObjectDiff(expectedSecret.Data, syncedSecret.Data))
 			return false
 		}
-		if !diff.DeepEqual(expectedSecert.Labels, syncedSecret.Labels) {
-			err = fmt.Errorf("secret Labels differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Labels, syncedSecret.Labels))
+		if !diff.DeepEqual(expectedSecret.Labels, syncedSecret.Labels) {
+			err = fmt.Errorf("secret Labels differs from expected:\n%s", diff.ObjectDiff(expectedSecret.Labels, syncedSecret.Labels))
 			return false
 		}
-		if !diff.DeepEqual(expectedSecert.Annotations, syncedSecret.Annotations) {
-			err = fmt.Errorf("secret Annotations differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Annotations, syncedSecret.Annotations))
+		if !diff.DeepEqual(expectedSecret.Annotations, syncedSecret.Annotations) {
+			err = fmt.Errorf("secret Annotations differs from expected:\n%s", diff.ObjectDiff(expectedSecret.Annotations, syncedSecret.Annotations))
 			return false
 		}
 		return true

@@ -80,7 +80,7 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 				t.Fatal(err)
 			}
 			if cluster.Spec.Features != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] != test.expectedEtcdLauncher {
-				t.Errorf("expected clsuter flag to be %v , got %v instead", test.expectedEtcdLauncher, cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher])
+				t.Errorf("expected cluster flag to be %v , got %v instead", test.expectedEtcdLauncher, cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher])
 			}
 		})
 	}
