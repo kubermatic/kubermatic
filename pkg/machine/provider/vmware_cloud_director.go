@@ -115,13 +115,9 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 			config.VApp.Value = cluster.Spec.Cloud.VMwareCloudDirector.VApp
 		}
 
-		if config.Network.Value == "" {
-			if len(cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks) > 0 {
-				// As a default, we attach the first network to the VMs.
-				config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks[0]
-			} else if cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork != "" {
-				config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork
-			}
+		if config.Network.Value == "" && len(cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks) > 0 {
+			// As a default, we attach the first network to the VMs.
+			config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks[0]
 		}
 	}
 
