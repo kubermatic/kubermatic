@@ -179,6 +179,9 @@ linters:
         text: "SA1019: .*VMNetName is deprecated"
       - linters:
           - staticcheck
+        text: "SA1019: .*Ingress\\.ClassName is deprecated"
+      - linters:
+          - staticcheck
         text: "SA1019: registry.GetOverwriteFunc is deprecated"
       - linters:
           - staticcheck

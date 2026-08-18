@@ -257,12 +257,13 @@ spec:
       kind: ClusterIssuer
       # Name is the name of resource being referenced
       name: ""
-    # ClassName is the Ingress resource's class name, used for selecting the appropriate
-    # ingress controller.
+    # Deprecated: ClassName is the Ingress resource's class name, used for selecting the appropriate
+    # ingress controller. Gateway API is enforced as of KKP 2.31 and the operator no longer
+    # creates Ingress resources. This field is ignored.
     className: nginx
-    # Disable will prevent an Ingress from being created at all. This is mostly useful
-    # during testing. If the Ingress is disabled, the CertificateIssuer setting can also
-    # be left empty, as no Certificate resource will be created.
+    # Deprecated: Disable will prevent an Ingress from being created at all. This was mostly
+    # useful during testing. Gateway API is enforced as of KKP 2.31 and the operator no longer
+    # creates Ingress resources. This field is ignored.
     disable: false
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
