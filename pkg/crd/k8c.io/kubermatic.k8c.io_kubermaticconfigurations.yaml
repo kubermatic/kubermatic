@@ -1757,14 +1757,15 @@ spec:
                       x-kubernetes-map-type: atomic
                     className:
                       description: |-
-                        ClassName is the Ingress resource's class name, used for selecting the appropriate
-                        ingress controller.
+                        Deprecated: ClassName is the Ingress resource's class name, used for selecting the appropriate
+                        ingress controller. Gateway API is enforced as of KKP 2.31 and the operator no longer
+                        creates Ingress resources. This field is ignored.
                       type: string
                     disable:
                       description: |-
-                        Disable will prevent an Ingress from being created at all. This is mostly useful
-                        during testing. If the Ingress is disabled, the CertificateIssuer setting can also
-                        be left empty, as no Certificate resource will be created.
+                        Deprecated: Disable will prevent an Ingress from being created at all. This was mostly
+                        useful during testing. Gateway API is enforced as of KKP 2.31 and the operator no longer
+                        creates Ingress resources. This field is ignored.
                       type: boolean
                     domain:
                       description: |-
