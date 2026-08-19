@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 ### and Helm chart dependencies (charts/*/Chart.lock), for internal
 ### supply-chain visibility. Not a CRA-required artifact.
 ###
-### Usage: hack/generate-sourcecode-sbom.sh <release-name> <output-dir>
+### Usage: hack/generate-source-sbom.sh <release-name> <output-dir>
 
 set -euo pipefail
 
@@ -30,7 +30,7 @@ OUTPUT_DIR="${2:?output directory is required}"
 
 mkdir -p "$OUTPUT_DIR"
 
-outFile="$OUTPUT_DIR/kubermatic-sourcecode-$RELEASE_NAME.sbom.spdx.json"
+outFile="$OUTPUT_DIR/kubermatic-$RELEASE_NAME.sbom.spdx.json"
 goSbom="$(mktemp)"
 chartDeps="$(mktemp)"
 

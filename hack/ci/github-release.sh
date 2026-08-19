@@ -88,7 +88,7 @@ function create_release {
 }
 
 # upload an archive from a file
-function upload_archive {
+function upload_asset {
   local file="$1"
   local contentType="application/gzip"
   if [[ "$file" == *.zip ]]; then
@@ -169,12 +169,12 @@ function ship_archive() {
 
   if ! $DRY_RUN; then
     echodate "Uploading $buildTarget archive..."
-    upload_archive "$archive"
+    upload_asset "$archive"
     rm -- "$archive"
 
     for sbom in "${sboms[@]}"; do
       echodate "Uploading $(basename "$sbom")..."
-      upload_archive "$sbom"
+      upload_asset "$sbom"
       rm -- "$sbom"
     done
   fi
@@ -240,12 +240,12 @@ set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
 
-sourceSbom="_dist/kubermatic-sourcecode-$RELEASE_NAME.sbom.spdx.json"
-./hack/generate-sourcecode-sbom.sh "$RELEASE_NAME" _dist
+sourceSbom="_dist/kubermatic-$RELEASE_NAME.sbom.spdx.json"
+./hack/generate-source-sbom.sh "$RELEASE_NAME" _dist
 
 if ! $DRY_RUN; then
   echodate "Uploading source code SBOM..."
-  upload_archive "$sourceSbom"
+  upload_asset "$sourceSbom"
   rm -- "$sourceSbom"
 fi
 

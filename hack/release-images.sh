@@ -75,7 +75,7 @@ attach_image_sbom() {
 
   local repo="${imageRef%:*}"
   local digest
-  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -r '.digest')"
+  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -er '.digest')"
   local ref="$repo@$digest"
   local key="$ref:$(basename "$sbomFile")"
 
@@ -85,7 +85,7 @@ attach_image_sbom() {
   fi
 
   echodate "Attaching SBOM $(basename "$sbomFile") to $ref..."
-  oras attach --artifact-type application/vnd.spdx+json \
+  oras attach --artifact-type application/spdx+json \
     "$ref" "$sbomFile:application/spdx+json"
 
   ATTACHED_REFS[$key]=1
@@ -227,17 +227,17 @@ for TAG in $ALL_TAGS; do
 
     docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
     for arch in $ARCHITECTURES; do
-      attach_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$TAG" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+      attach_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
     done
 
     docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
     for arch in $ARCHITECTURES; do
-      attach_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$TAG" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+      attach_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
     done
 
     docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
     for arch in $ARCHITECTURES; do
-      attach_image_sbom "$DOCKER_REPO/network-interface-manager:$TAG" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+      attach_image_sbom "$DOCKER_REPO/network-interface-manager:$TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
     done
   fi
 done
