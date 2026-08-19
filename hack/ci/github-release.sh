@@ -308,10 +308,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  sbom="${archive%.tar.gz}.sbom.spdx.json"
-  generate_sbom "$archive" "$sbom"
-
-  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
+  ship_archive "$archive" "$buildTarget" "$binarySbom"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
@@ -362,10 +359,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  sbom="${archive%.tar.gz}.sbom.spdx.json"
-  generate_sbom "$archive" "$sbom"
-
-  ship_archive "$archive" "$buildTarget" "$sbom" "$binarySbom"
+  ship_archive "$archive" "$buildTarget" "$binarySbom"
 done
 
 echodate "Done."
