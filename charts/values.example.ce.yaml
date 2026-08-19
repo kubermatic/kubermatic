@@ -23,33 +23,15 @@ httpRoute:
   gatewayNamespace: kubermatic
   # configure your base domain, under which the Kubermatic dashboard shall be available
   domain: "kkp.example.com"
+  # request timeout for the Dex HTTPRoute; 3600s supports long-running
+  # dashboard sessions such as the web terminal. Matches the chart default.
+  timeout: 3600s
 
 dex:
   ingress:
-    # Gateway API (HTTPRoute) handles routing as of KKP 2.31, so the upstream Dex Ingress
-    # is disabled. The settings below are retained for reference / non-Gateway setups.
+    # Gateway API (HTTPRoute) handles routing as of KKP 2.31; the upstream
+    # Dex Ingress stays disabled.
     enabled: false
-    # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
-    # If you want to deploy your own certificate without relying on cert-manager
-    # uncomment the next line and remove subsequent certIssuer configuration.
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-staging
-      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
-      nginx.ingress.kubernetes.io/proxy-body-size: "25m"
-    # configure your base domain, under which the Kubermatic dashboard shall be available
-    hosts:
-      # Required: host must be set; usually this is the same
-      # host as is used for the KKP Dashboard, but it can be
-      # any other domain.
-      - host: "kkp.example.com"
-        paths:
-          - path: /dex
-            pathType: ImplementationSpecific
-    tls:
-      - secretName: dex-tls
-        hosts:
-          # Required: must include at least the host chosen above.
-          - "kkp.example.com"
   config:
     issuer: "https://kkp.example.com/dex"
     expiry:
@@ -113,7 +95,7 @@ dex:
         # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
         secret: <a-random-key>
         RedirectURIs:
-          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
+          # ensure the URLs below use the httpRoute.domain configured above
           - https://kkp.example.com/api/v1/kubeconfig
           - https://kkp.example.com/api/v2/kubeconfig/secret
           - https://kkp.example.com/api/v2/dashboard/login
