@@ -21,8 +21,8 @@ spec:
   ingress:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
-    # this domain must match what you configured as dex.ingress.hosts[0].host
-    # in the values.yaml
+    # this domain must match the httpRoute.domain configured in the
+    # values.yaml
     domain: kkp.example.com
     certificateIssuer:
       # APIGroup is the group for the resource being referenced.
@@ -35,7 +35,27 @@ spec:
       # For generating a certificate signed by a trusted root authority replace
       # with "letsencrypt-prod".
       name: "letsencrypt-staging"
-    className: nginx
+
+    # Gateway API (Envoy Gateway) is the enforced ingress path as of KKP 2.31.
+    # The operator creates the Gateway and HTTPRoutes; these settings tune it.
+    # gateway:
+    #   # GatewayClass to use, defaults to kubermatic-envoy-gateway.
+    #   className: kubermatic-envoy-gateway
+    #   # Attach KKP HTTPRoutes to a user-managed Gateway instead of the
+    #   # operator-managed one. Mutually exclusive with className,
+    #   # infrastructureAnnotations, tls and certificateIssuer (the default
+    #   # class value kubermatic-envoy-gateway is tolerated alongside it).
+    #   externalGateway:
+    #     name: platform-gateway
+    #     namespace: networking
+    #   # Annotations propagated to the Gateway infrastructure, e.g. for
+    #   # cloud load balancer settings.
+    #   infrastructureAnnotations: {}
+    #   # Reference an existing TLS Secret for the default HTTPS listener
+    #   # instead of issuing via cert-manager.
+    #   tls:
+    #     secretRef:
+    #       name: my-tls-secret
 
   # These secret keys configure the way components communicate with Dex.
   auth:
