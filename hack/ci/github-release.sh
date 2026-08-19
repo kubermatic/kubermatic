@@ -240,13 +240,13 @@ set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
 
-sourceSbom="_dist/kubermatic-$RELEASE_NAME.sbom.spdx.json"
-./hack/generate-source-sbom.sh "$RELEASE_NAME" _dist
+helmChartSbom="_dist/kubermatic-helmchart-$RELEASE_NAME.sbom.spdx.json"
+./hack/generate-helmchart-sbom.sh "$RELEASE_NAME" _dist
 
 if ! $DRY_RUN; then
-  echodate "Uploading source code SBOM..."
-  upload_asset "$sourceSbom"
-  rm -- "$sourceSbom"
+  echodate "Uploading helm charts SBOM..."
+  upload_asset "$helmChartSbom"
+  rm -- "$helmChartSbom"
 fi
 
 # CRDs since KKP 2.21 are not directly put into the charts/ directory

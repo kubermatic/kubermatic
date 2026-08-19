@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### Generates a source-tree SBOM covering this repository's Go modules
-### and Helm chart dependencies (charts/*/Chart.lock), for internal
-### supply-chain visibility. Not a CRA-required artifact.
+### Generates an SBOM covering this repository's Helm chart dependencies (charts/*/Chart.lock),
+### for supply-chain-security visibility.
 ###
-### Usage: hack/generate-source-sbom.sh <release-name> <output-dir>
+### Usage: hack/generate-helmchart-sbom.sh <release-name> <output-dir>
 
 set -euo pipefail
 
@@ -30,20 +29,28 @@ OUTPUT_DIR="${2:?output directory is required}"
 
 mkdir -p "$OUTPUT_DIR"
 
-outFile="$OUTPUT_DIR/kubermatic-$RELEASE_NAME.sbom.spdx.json"
-goSbom="$(mktemp)"
+outFile="$OUTPUT_DIR/kubermatic-helmchart-$RELEASE_NAME.sbom.spdx.json"
 chartDeps="$(mktemp)"
 
-echodate "Generating source SBOM for Go modules..."
-syft . \
-  --source-name kubermatic \
-  --source-version "$RELEASE_NAME" \
-  --exclude './_build/**' \
-  --exclude './_dist/**' \
-  --exclude './_cache/**' \
-  --exclude './_artifacts/**' \
-  --exclude './.git/**' \
-  -o "spdx-json=$goSbom"
+echodate "Building base SPDX document skeleton..."
+baseSbom="$(mktemp)"
+jq -n \
+  --arg name "kubermatic-$RELEASE_NAME" \
+  --arg namespace "https://github.com/kubermatic/kubermatic/spdxdocs/kubermatic-$RELEASE_NAME" \
+  --arg created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{
+    "spdxVersion": "SPDX-2.3",
+    "dataLicense": "CC0-1.0",
+    "SPDXID": "SPDXRef-DOCUMENT",
+    "name": $name,
+    "documentNamespace": $namespace,
+    "creationInfo": {
+      "created": $created,
+      "creators": ["Tool: hack/generate-helmchart-sbom.sh"]
+    },
+    "packages": [],
+    "relationships": []
+  }' > "$baseSbom"
 
 echodate "Extracting Helm chart dependencies from charts/*/Chart.lock..."
 echo '[]' > "$chartDeps"
@@ -82,7 +89,7 @@ for chartLock in charts/*/Chart.lock; do
   mv "$chartDeps.tmp" "$chartDeps"
 done
 
-echodate "Merging Go packages with Helm chart packages and relationships into $outFile..."
+echodate "Writing Helm chart packages and relationships into $outFile..."
 jq --slurpfile deps "$chartDeps" '
   ($deps[0] | to_entries) as $indexed
   | (
@@ -104,8 +111,8 @@ jq --slurpfile deps "$chartDeps" '
     ) as $newRelationships
   | .packages += $newPackages
   | .relationships += $newRelationships
-' "$goSbom" > "$outFile"
+' "$baseSbom" > "$outFile"
 
-rm -f "$goSbom" "$chartDeps"
+rm -f "$baseSbom" "$chartDeps"
 
-echodate "Source SBOM written to $outFile"
+echodate "Helm chart SBOM written to $outFile"
