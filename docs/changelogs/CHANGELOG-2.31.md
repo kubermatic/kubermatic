@@ -35,6 +35,40 @@ This release contains changes that require additional attention, please read the
 - Add support for Kubernetes patch releases v1.35.7/v1.34.10 ([#16166](https://github.com/kubermatic/kubermatic/pull/16166))
 - Drop support for Kubernetes v1.32 ([#15832](https://github.com/kubermatic/kubermatic/pull/15832))
 
+#### Supported Versions
+
+- v1.36.3
+- v1.35.7
+- v1.35.6
+- v1.35.5
+- v1.35.4
+- v1.35.3
+- v1.35.2
+- v1.35.1
+- v1.35.0
+- v1.34.10
+- v1.34.9
+- v1.34.8
+- v1.34.7
+- v1.34.6
+- v1.34.5
+- v1.34.4
+- v1.34.3
+- v1.34.2
+- v1.34.1
+- v1.33.13
+- v1.33.12
+- v1.33.11
+- v1.33.10
+- v1.33.9
+- v1.33.8
+- v1.33.7
+- v1.33.6
+- v1.33.5
+- v1.33.3
+- v1.33.2
+- v1.33.0
+
 ### Cloud Providers
 
 #### Azure
