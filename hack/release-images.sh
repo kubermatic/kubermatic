@@ -46,6 +46,14 @@ fi
 cd $(dirname "$0")/..
 source hack/lib.sh
 
+# both are provided by the CI build image; checking upfront means a missing
+# binary fails here instead of after an hour of building, with images already pushed
+for tool in syft oras; do
+  if ! command -v "$tool" > /dev/null; then
+    fatal "$tool is required to generate and attach image SBOMs, but was not found in \$PATH."
+  fi
+done
+
 mkdir -p _dist/images
 
 export ALL_TAGS=$@
