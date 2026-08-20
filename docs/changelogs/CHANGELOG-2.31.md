@@ -129,7 +129,6 @@ This release contains changes that require additional attention, please read the
 - Update KubeLB CCM to v1.4.3 ([#16132](https://github.com/kubermatic/kubermatic/pull/16132))
 - Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 - Update AIKit and MetalLB application catalog entries with their current documentation and source URLs ([#15668](https://github.com/kubermatic/kubermatic/pull/15668))
-- Update KubeLB to v1.4.1 ([#15849](https://github.com/kubermatic/kubermatic/pull/15849))
 - Update containerd version to v2.0.3 from v2.0.2 ([#15747](https://github.com/kubermatic/kubermatic/pull/15747))
 - Update gpu-operator application to v26.3.0 ([#15739](https://github.com/kubermatic/kubermatic/pull/15739))
 - Update the kubectl image tag to `1.33.4` to fix container startup failures referenced in Velero charts ([#15643](https://github.com/kubermatic/kubermatic/pull/15643))
