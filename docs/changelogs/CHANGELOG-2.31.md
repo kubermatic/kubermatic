@@ -119,7 +119,7 @@ This release contains changes that require additional attention, please read the
 
 ### Updates
 
-- Update machine-controller to v1.66.2 ([#16279](https://github.com/kubermatic/kubermatic/pull/16279))
+- Update machine-controller to [v1.66.2](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.2) ([#16279](https://github.com/kubermatic/kubermatic/pull/16279))
 - Update operating-system-manager to v1.11.3 ([#16282](https://github.com/kubermatic/kubermatic/pull/16282))
 - Update the Cluster Autoscaler Helm chart to 9.59.0 ([#16253](https://github.com/kubermatic/kubermatic/pull/16253))
 - Update util image version to 2.9.0 ([#16258](https://github.com/kubermatic/kubermatic/pull/16258))
