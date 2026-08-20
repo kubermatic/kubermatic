@@ -217,7 +217,7 @@ This release contains changes that require additional attention, please read the
 #### Updates
 
 - Update Go version to v1.26.5 ([#8252](https://github.com/kubermatic/dashboard/pull/8252))
-- Update kubeone package to v1.12.3 ([#7964](https://github.com/kubermatic/dashboard/pull/7964))
+- Update KubeOne package to v1.12.3 ([#7964](https://github.com/kubermatic/dashboard/pull/7964))
 - Update Angular dependencies to version 21 ([#8052](https://github.com/kubermatic/dashboard/pull/8052))
 
 #### Cleanups
