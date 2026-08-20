@@ -92,7 +92,7 @@ This release contains changes that require additional attention, please read the
 ### Bugfixes
 
 - The Cluster Autoscaler application now grants the read access to resource.k8s.io that cluster-autoscaler 1.35 and newer require ([#16251](https://github.com/kubermatic/kubermatic/pull/16251))
-- Kubermatic-installer now passes --force-conflicts to Helm 4 only for releases that Helm applies server-side, fixing deploy failures on releases that were originally installed with Helm 3 ([#16210](https://github.com/kubermatic/kubermatic/pull/16210))
+- Kubermatic-installer now passes `--force-conflicts` to Helm 4 only for releases that Helm applies server-side, fixing deploy failures on releases that were originally installed with Helm 3 ([#16210](https://github.com/kubermatic/kubermatic/pull/16210))
 - Fix a bug where multiple GroupProjectBindings with the same group and project could be created. The admission webhook now rejects duplicate bindings at creation time and prevents an existing binding from being updated into a conflicting group/project pair ([#16162](https://github.com/kubermatic/kubermatic/pull/16162))
 - Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
 - Kubermatic-installer now enables server-side apply with conflict forcing when running with Helm 4, fixing `deploy` failures caused by field-ownership conflicts (for example on the dockercfg Secret). With Helm 4 the deprecated `--atomic` flag is replaced by `--rollback-on-failure` ([#16138](https://github.com/kubermatic/kubermatic/pull/16138))
