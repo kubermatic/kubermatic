@@ -30,6 +30,7 @@ This release contains changes that require additional attention, please read the
 
 ### Supported Kubernetes Versions
 
+- Add support for Kubernetes v1.36 ([#15986](https://github.com/kubermatic/kubermatic/pull/15986))
 - Add support for Kubernetes v1.36.3 and updated the default Kubernetes version to v1.35.7 ([#16237](https://github.com/kubermatic/kubermatic/pull/16237))
 - Add support for Kubernetes patch releases 1.35.6/1.34.9/1.33.13 ([#15992](https://github.com/kubermatic/kubermatic/pull/15992))
 - Add support for Kubernetes patch releases v1.35.7/v1.34.10 ([#16166](https://github.com/kubermatic/kubermatic/pull/16166))
