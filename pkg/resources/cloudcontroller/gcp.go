@@ -186,7 +186,7 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 func getGCPInitContainer(data *resources.TemplateData) corev1.Container {
 	return corev1.Container{
 		Name:    "decode-sa",
-		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.7.0")),
+		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.8.1")),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
