@@ -64,7 +64,7 @@ This release contains changes that require additional attention, please read the
 
 #### OpenStack
 
-- Add enableImageDiscovery option to OpenStack settings for listing project-scoped images in the dashboard ([#16082](https://github.com/kubermatic/kubermatic/pull/16082))
+- Add `enableImageDiscovery` option to OpenStack settings for listing project scoped images in the dashboard ([#16082](https://github.com/kubermatic/kubermatic/pull/16082))
 
 #### vSphere
 
