@@ -40,19 +40,8 @@ This release contains changes that require additional attention, please read the
 
 - v1.36.3
 - v1.35.7
-- v1.35.6
-- v1.35.5
-- v1.35.4
-- v1.35.3
 - v1.34.10
-- v1.34.9
-- v1.34.8
-- v1.34.7
-- v1.34.6
 - v1.33.13
-- v1.33.12
-- v1.33.11
-- v1.33.10
 
 ### Cloud Providers
 
