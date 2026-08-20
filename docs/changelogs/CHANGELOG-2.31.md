@@ -44,31 +44,15 @@ This release contains changes that require additional attention, please read the
 - v1.35.5
 - v1.35.4
 - v1.35.3
-- v1.35.2
-- v1.35.1
-- v1.35.0
 - v1.34.10
 - v1.34.9
 - v1.34.8
 - v1.34.7
 - v1.34.6
-- v1.34.5
-- v1.34.4
-- v1.34.3
-- v1.34.2
-- v1.34.1
 - v1.33.13
 - v1.33.12
 - v1.33.11
 - v1.33.10
-- v1.33.9
-- v1.33.8
-- v1.33.7
-- v1.33.6
-- v1.33.5
-- v1.33.3
-- v1.33.2
-- v1.33.0
 
 ### Cloud Providers
 
@@ -150,44 +134,22 @@ This release contains changes that require additional attention, please read the
 - Update operating-system-manager to v1.11.3 ([#16282](https://github.com/kubermatic/kubermatic/pull/16282))
 - Update the Cluster Autoscaler Helm chart to 9.59.0 ([#16253](https://github.com/kubermatic/kubermatic/pull/16253))
 - Update util image version to 2.9.0 ([#16258](https://github.com/kubermatic/kubermatic/pull/16258))
-- Update OSM version to [v1.11.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.1) ([#16245](https://github.com/kubermatic/kubermatic/pull/16245))
-- Update operating-system-manager to v1.11.0 ([#16237](https://github.com/kubermatic/kubermatic/pull/16237))
 - Update Go version to v1.26.5 to include upstream security fixes ([#16185](https://github.com/kubermatic/kubermatic/pull/16185))
 - Update the d3fk/s3cmd image to a current digest built on Alpine 3.24, resolving 62 CVEs inherited from the previously used end-of-life Alpine 3.17 base ([#16194](https://github.com/kubermatic/kubermatic/pull/16194))
-- Update machine-controller to [v1.66.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.1) ([#16179](https://github.com/kubermatic/kubermatic/pull/16179))
 - Update web-terminal image version to0.13.0 ([#16029](https://github.com/kubermatic/kubermatic/pull/16029))
-- Update machine controller to v1.66.0 ([#16145](https://github.com/kubermatic/kubermatic/pull/16145))
 - Update KubeLB CCM to v1.4.3 ([#16132](https://github.com/kubermatic/kubermatic/pull/16132))
 - Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 - Update AIKit and MetalLB application catalog entries with their current documentation and source URLs ([#15668](https://github.com/kubermatic/kubermatic/pull/15668))
-- Update machine-controller to v1.65.3 ([#16022](https://github.com/kubermatic/kubermatic/pull/16022))
-- Update OSM to v1.10.7 ([#16020](https://github.com/kubermatic/kubermatic/pull/16020))
-- Update Go version to 1.26.4 ([#15981](https://github.com/kubermatic/kubermatic/pull/15981))
-- Update the default Cilium CNI version to 1.18.10 and added Cilium 1.17.16 and 1.18.10 as supported CNI versions ([#15961](https://github.com/kubermatic/kubermatic/pull/15961))
-- Update Machine Controller to v1.65.2 ([#15926](https://github.com/kubermatic/kubermatic/pull/15926))
-- Update Operating System Manager to v1.10.6 ([#15919](https://github.com/kubermatic/kubermatic/pull/15919))
-- Update Operating System Manager to v1.10.5 ([#15847](https://github.com/kubermatic/kubermatic/pull/15847))
 - Update KubeLB to v1.4.1 ([#15849](https://github.com/kubermatic/kubermatic/pull/15849))
-- Update KubeLB CCM version to 1.3.10 ([#15806](https://github.com/kubermatic/kubermatic/pull/15806))
-- Update OSM version to [v1.10.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.4) ([#15767](https://github.com/kubermatic/kubermatic/pull/15767))
-- Update KubeLB version to 1.3.9 ([#15762](https://github.com/kubermatic/kubermatic/pull/15762))
 - Update containerd version to v2.0.3 from v2.0.2 ([#15747](https://github.com/kubermatic/kubermatic/pull/15747))
 - Update gpu-operator application to v26.3.0 ([#15739](https://github.com/kubermatic/kubermatic/pull/15739))
-- Update OSM version to [v1.10.3](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.3) ([#15678](https://github.com/kubermatic/kubermatic/pull/15678))
 - Update the kubectl image tag to `1.33.4` to fix container startup failures referenced in Velero charts ([#15643](https://github.com/kubermatic/kubermatic/pull/15643))
-- Update KubeLB to v1.3.7 ([#15664](https://github.com/kubermatic/kubermatic/pull/15664))
-- Update OSM to v1.10.2 ([#15656](https://github.com/kubermatic/kubermatic/pull/15656))
-- Update OSM to v1.10.1 ([#15597](https://github.com/kubermatic/kubermatic/pull/15597))
 - Update application-catalog-manager ([#15593](https://github.com/kubermatic/kubermatic/pull/15593))
-- Update cert-manager to v1.19.4 ([#15580](https://github.com/kubermatic/kubermatic/pull/15580))
-- Update to KubeLB v1.3.5 ([#15588](https://github.com/kubermatic/kubermatic/pull/15588))
 - The metering version is upgraded to v1.4.1, adding persistent storage usage to the JSON cluster report ([#16268](https://github.com/kubermatic/kubermatic/pull/16268))
 - The MLA minio chart is updated to 5.4.0 ([#16125](https://github.com/kubermatic/kubermatic/pull/16125))
 - Add NVIDIA GPU Operator v26.3.3 to the application catalog ([#16281](https://github.com/kubermatic/kubermatic/pull/16281))
-- The metering version is upgraded to v1.4.0 ([#16199](https://github.com/kubermatic/kubermatic/pull/16199))
 - The cert-manager chart shipped with KKP is bumped to v1.20.3 ([#16124](https://github.com/kubermatic/kubermatic/pull/16124))
 - Add support for Cilium 1.19.4 and made it the default Cilium version for new user clusters ([#15976](https://github.com/kubermatic/kubermatic/pull/15976))
-- Add Cilium 1.18.8 and 1.17.14 ([#15720](https://github.com/kubermatic/kubermatic/pull/15720))
 - Set Canal default version to v3.31 ([#15721](https://github.com/kubermatic/kubermatic/pull/15721))
 - The Seed MLA Loki chart has been upgraded to version v7.0.0 ([#15879](https://github.com/kubermatic/kubermatic/pull/15879))
 - User-cluster MLA grafana is upgraded to latest available version (v13.0.1) ([#15906](https://github.com/kubermatic/kubermatic/pull/15906))
@@ -266,7 +228,6 @@ This release contains changes that require additional attention, please read the
 #### Updates
 
 - Update Go version to v1.26.5 ([#8252](https://github.com/kubermatic/dashboard/pull/8252))
-- Update Go version to 1.26.4 ([#8121](https://github.com/kubermatic/dashboard/pull/8121))
 - Update kubeone package to v1.12.3 ([#7964](https://github.com/kubermatic/dashboard/pull/7964))
 - Update Angular dependencies to version 21 ([#8052](https://github.com/kubermatic/dashboard/pull/8052))
 
