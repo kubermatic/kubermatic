@@ -11,6 +11,15 @@
 - [v2.29.8](#v2298)
 - [v2.29.9](#v2299)
 - [v2.29.10](#v22910)
+- [v2.29.11](#v22911)
+
+## v2.29.11
+
+**GitHub release: [v2.29.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.11)**
+
+### Updates
+
+- Update machine-controller to v1.64.4 ([#16278](https://github.com/kubermatic/kubermatic/pull/16278))
 
 ## v2.29.10
 
