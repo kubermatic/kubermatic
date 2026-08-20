@@ -88,6 +88,7 @@ This release contains changes that require additional attention, please read the
 - Envoy-gateway-controller: The envoyProxy image configuration now supports separate repository and tag fields for easier image mirroring. The legacy single-string format continues to work for backward compatibility ([#15595](https://github.com/kubermatic/kubermatic/pull/15595))
 - Add ApplicationInstallation Prometheus metrics ([#15937](https://github.com/kubermatic/kubermatic/pull/15937))
 - Introduced a new `--separate-seed` flag to the `deploy seed` command, enabling the deployment of either the Ingress Controller or the Envoy Gateway when operating with a separate seed setup ([#15578](https://github.com/kubermatic/kubermatic/pull/15578))
+- Release artifacts (kubermatic-installer binaries and container images) now ship with SBOMs (Software Bill of Materials) in SPDX-JSON format for enhanced supply-chain transparency. A separate SBOM covering Helm chart dependencies is also generated for repository-wide supply-chain visibility ([#16174](https://github.com/kubermatic/kubermatic/pull/16174))
 
 ### Bugfixes
 
