@@ -7,6 +7,27 @@
 - [v2.30.4](#v2304)
 - [v2.30.5](#v2305)
 - [v2.30.6](#v2306)
+- [v2.30.7](#v2307)
+
+## v2.30.7
+
+**GitHub release: [v2.30.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.7)**
+
+### Bugfixes
+
+- The Cluster Autoscaler application now grants the read access to resource.k8s.io that cluster-autoscaler 1.35 and newer require ([#16251](https://github.com/kubermatic/kubermatic/pull/16251))
+- Kubermatic-installer now passes --force-conflicts to Helm 4 only for releases that Helm applies server-side, fixing deploy failures on releases that were originally installed with Helm 3 ([#16210](https://github.com/kubermatic/kubermatic/pull/16210))
+
+### Chores
+
+- The metering version is upgraded to v1.4.1, adding persistent storage usage to the JSON cluster report ([#16270](https://github.com/kubermatic/kubermatic/pull/16270))
+
+### Updates
+
+- Update operating-system-manager to v1.10.8 ([#16283](https://github.com/kubermatic/kubermatic/pull/16283))
+- Update machine-controller to v1.65.6 ([#16277](https://github.com/kubermatic/kubermatic/pull/16277))
+- Update the Azure cloud-controller-manager, cloud-node-manager, and the Azure Disk and Azure File CSI drivers to their latest upstream versions per supported Kubernetes minor. The controller-manager and node-manager images now come from the maintained mcr.microsoft.com/oss/v2 registry path (the previous /oss path was frozen at v1.34.3), clearing the base-image CVEs those stale images carried. Kubernetes 1.35 clusters now receive matching 1.35 controller-manager and node-manager images instead of 1.34 ones ([#16216](https://github.com/kubermatic/kubermatic/pull/16216))
+- Update the d3fk/s3cmd image to a current digest built on Alpine 3.24, resolving 62 CVEs inherited from the previously used end-of-life Alpine 3.17 base ([#16194](https://github.com/kubermatic/kubermatic/pull/16194))
 
 ## v2.30.6
 
