@@ -144,7 +144,7 @@ This release contains changes that require additional attention, please read the
 - User-cluster MLA grafana is upgraded to latest available version (v13.0.1) ([#15906](https://github.com/kubermatic/kubermatic/pull/15906))
 - The kubermatic-installer supports Helm 4 now in addition to Helm 3 ([#15902](https://github.com/kubermatic/kubermatic/pull/15902))
 - By default the metallb app uses frr 10.4.1 now which fixes a bug that affected installations on AWS ([#15615](https://github.com/kubermatic/kubermatic/pull/15615))
-- Canal v3.30 and v3.31 now pull Calico images from quay.io instead of docker.io to avoid Docker Hub rate limits that could block cluster bootstrap ([#15620](https://github.com/kubermatic/kubermatic/pull/15620))
+- Canal v3.30 and v3.31 now pull Calico images from `quay.io` instead of `docker.io` to avoid Docker Hub rate limits that could block cluster bootstrap ([#15620](https://github.com/kubermatic/kubermatic/pull/15620))
 - Add improvements for the handling of Kyverno PolicyBindings and generated Kyverno resources when PolicyTemplates are deleted, Kyverno is disabled, or clusters are deleted ([#16034](https://github.com/kubermatic/kubermatic/pull/16034))
 - Remove opened from issue type for cis bench workflow ([#16080](https://github.com/kubermatic/kubermatic/pull/16080))
 - Skip deployment for github actions workflow ([#16077](https://github.com/kubermatic/kubermatic/pull/16077))
