@@ -49,10 +49,6 @@ This release contains changes that require additional attention, please read the
 - Add support for configuring an existing TLS Secret for the operator-managed default Gateway via `spec.ingress.gateway.tls.secretRef`. Hostname-based Gateway listeners synced from watched `HTTPRoute`s now also work in manual TLS mode by reusing the configured certificate references. When using manual TLS, the provided certificate must cover all served hostnames, including MLA/IAP hostnames ([#15732](https://github.com/kubermatic/kubermatic/pull/15732))
 - Add `spec.ingress.gateway.infrastructureAnnotations` to `KubermaticConfiguration` to configure `Gateway.spec.infrastructure.annotations` on the operator managed Gateway ([#15725](https://github.com/kubermatic/kubermatic/pull/15725))
 
-### Code Blocks Required By The Pr Template. The Prow Plugins Detect The Missing Blocks And Apply Blocking Labels (`do Not Merge/docs Needed`, `do Not Merge/test Issue Needed`, `do Not Merge/release Note Label Needed`). This Pr Adds A `.github/dependabot.yml` That Pre Labels Dependabot Prs With The "resolved" Variants Of Those Labels, Following The Same Pattern Used By The `kubermatic/dashboard` Repo.
-
-- **Which issue(s) this PR fixes**: Fixes # **What type of PR is this?** /kind chore **Special notes for your reviewer**: None. **Does this PR introduce a user-facing change? Then add your Release Note here**: ([#15701](https://github.com/kubermatic/kubermatic/pull/15701))
-
 ### Bugfixes
 
 - The Cluster Autoscaler application now grants the read access to resource.k8s.io that cluster-autoscaler 1.35 and newer require ([#16251](https://github.com/kubermatic/kubermatic/pull/16251))
