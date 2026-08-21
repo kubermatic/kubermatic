@@ -163,6 +163,11 @@ couple of test Presets and Users and then runs the IPAM e2e tests.
 This script is used as a postsubmit job and updates the dev master
 cluster after every commit to main.
 
+## run-kyverno-e2e-tests.sh
+
+This script sets up a local KKP installation in kind and runs the
+Kyverno integration e2e test against an AWS user cluster.
+
 ## run-mla-e2e-tests.sh
 
 This script sets up a local KKP installation in kind, deploys a
@@ -273,4 +278,3 @@ are valid Prometheus rules.
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
-
