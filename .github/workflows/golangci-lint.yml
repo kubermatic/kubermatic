@@ -1,0 +1,22 @@
+name: golangci-lint
+on:
+  pull_request:
+
+env:
+  KUBERMATIC_EDITION: ee
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
