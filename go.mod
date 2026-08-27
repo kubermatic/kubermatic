@@ -38,7 +38,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.42.3
 	github.com/aws/smithy-go v1.27.6
 	github.com/cert-manager/cert-manager v1.15.4
-	github.com/cilium/cilium v1.19.4
+	github.com/cilium/cilium v1.19.7
 	github.com/containerd/containerd/v2 v2.3.3
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.1.1
@@ -114,7 +114,7 @@ require (
 	k8s.io/kubectl v0.36.2
 	k8s.io/metrics v0.36.2
 	k8s.io/test-infra v0.0.0-20250329100633-7758a586d30c
-	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2
+	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	kubevirt.io/api v1.3.1
 	kubevirt.io/containerized-data-importer-api v1.60.3
 	sigs.k8s.io/controller-runtime v0.24.1
