@@ -86,7 +86,7 @@ func getBaremetalResourceRequirements(ctx context.Context, userClient ctrlruntim
 
 	details, err := getBaremetalResourceDetailsFromCluster(ctx, client, spec.HardwareRef)
 	if err != nil {
-		// Hardware not found / unreachable cluster / unparseable attributes.
+		// Hardware not found / unreachable cluster / unparsable attributes.
 		return getZeroResourceDetails(), nil
 	}
 
