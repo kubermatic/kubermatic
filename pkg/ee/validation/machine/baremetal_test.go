@@ -61,7 +61,7 @@ func TestResourceDetailsFromHardware(t *testing.T) {
 	testCases := []struct {
 		name          string
 		hardware      *unstructured.Unstructured
-		expectCpu     string // expected quantity string ("" means expect 0 / not asserted)
+		expectCPU     string // expected quantity string ("" means expect 0 / not asserted)
 		expectMem     string
 		expectStorage string
 		expectErr     bool
@@ -69,7 +69,7 @@ func TestResourceDetailsFromHardware(t *testing.T) {
 		{
 			name:          "hardware with full agent-attributes",
 			hardware:      hardwareObject("hw1", "default", `{"cpu":{"totalCores":8},"memory":{"total":"96Gi"},"blockDevices":[{"size":"4Ti"},{"size":"512Gi"}]}`),
-			expectCpu:     "8",
+			expectCPU:     "8",
 			expectMem:     "96Gi",
 			expectStorage: "4608Gi", // 4Ti + 512Gi, normalized
 			expectErr:     false,
@@ -77,7 +77,7 @@ func TestResourceDetailsFromHardware(t *testing.T) {
 		{
 			name:          "hardware with no annotation",
 			hardware:      hardwareObject("hw2", "default", ""),
-			expectCpu:     "0",
+			expectCPU:     "0",
 			expectMem:     "0",
 			expectStorage: "0",
 			expectErr:     true,
@@ -85,7 +85,7 @@ func TestResourceDetailsFromHardware(t *testing.T) {
 		{
 			name:          "hardware with malformed annotation",
 			hardware:      hardwareObject("hw3", "default", `{not valid json`),
-			expectCpu:     "0",
+			expectCPU:     "0",
 			expectMem:     "0",
 			expectStorage: "0",
 			expectErr:     true,
@@ -105,9 +105,9 @@ func TestResourceDetailsFromHardware(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if tc.expectCpu != "" {
-				if got := details.CPU().String(); got != tc.expectCpu {
-					t.Errorf("CPU: got %q, want %q", got, tc.expectCpu)
+			if tc.expectCPU != "" {
+				if got := details.CPU().String(); got != tc.expectCPU {
+					t.Errorf("CPU: got %q, want %q", got, tc.expectCPU)
 				}
 			}
 			if tc.expectMem != "" {
@@ -157,7 +157,7 @@ func TestGetBaremetalResourceDetailsFromCluster(t *testing.T) {
 		name      string
 		objects   []*unstructured.Unstructured
 		ref       types.NamespacedName
-		expectCpu string
+		expectCPU string
 		expectErr bool
 	}{
 		{
@@ -166,7 +166,7 @@ func TestGetBaremetalResourceDetailsFromCluster(t *testing.T) {
 				hardwareObject("hw1", "default", `{"cpu":{"totalCores":8},"memory":{"total":"96Gi"},"blockDevices":[{"size":"4Ti"}]}`),
 			},
 			ref:       types.NamespacedName{Namespace: "default", Name: "hw1"},
-			expectCpu: "8",
+			expectCPU: "8",
 			expectErr: false,
 		},
 		{
@@ -195,9 +195,9 @@ func TestGetBaremetalResourceDetailsFromCluster(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if tc.expectCpu != "" {
-				if got := details.CPU().String(); got != tc.expectCpu {
-					t.Errorf("CPU: got %q, want %q", got, tc.expectCpu)
+			if tc.expectCPU != "" {
+				if got := details.CPU().String(); got != tc.expectCPU {
+					t.Errorf("CPU: got %q, want %q", got, tc.expectCPU)
 				}
 			}
 		})
