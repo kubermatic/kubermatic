@@ -177,7 +177,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: backupConfig.Spec.Cluster.Name}, cluster); err != nil {
-		return reconcile.Result{}, err
+		if !apierrors.IsNotFound(err) {
+			return reconcile.Result{}, err
+		}
+		// Cluster is already gone. If this backupConfig is also being deleted, clear stale
+		// backup entries and remove the finalizer so the namespace can be garbage-collected.
+		if backupConfig.DeletionTimestamp != nil {
+			return reconcile.Result{}, r.finalizeOrphanedBackupConfig(ctx, backupConfig)
+		}
+		return reconcile.Result{}, nil
 	}
 
 	if cluster.Status.NamespaceName == "" {
@@ -803,6 +811,18 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 	err := kuberneteshelper.TryRemoveFinalizer(ctx, r, backupConfig, DeleteAllBackupsFinalizer)
 
 	return nil, err
+}
+
+// finalizeOrphanedBackupConfig removes stale backup status entries and the finalizer from an
+// EtcdBackupConfig whose owning Cluster CR no longer exists. Without this, the finalizer would
+// block namespace cleanup indefinitely.
+func (r *Reconciler) finalizeOrphanedBackupConfig(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig) error {
+	old := backupConfig.DeepCopy()
+	backupConfig.Status.CurrentBackups = nil
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(old)); err != nil {
+		return fmt.Errorf("failed to clear stale backup status: %w", err)
+	}
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, backupConfig, DeleteAllBackupsFinalizer)
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
