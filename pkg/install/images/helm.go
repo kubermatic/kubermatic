@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 
@@ -35,7 +36,14 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string, registryPrefix string, kubeVersion string) ([]string, error) {
+// helmDepBuildMu serializes BuildChartDependencies across concurrent chart
+// renders. helm writes registered repositories to a single shared file
+// (~/.config/helm/repositories.yaml); concurrent `helm repo add` calls race on
+// it and can corrupt or lose entries. The dependency download and template
+// render themselves write to per-chart directories and stay concurrent.
+var helmDepBuildMu sync.Mutex
+
+func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string, registryPrefix string, kubeVersion string, concurrency int) (*Collection, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
@@ -45,19 +53,94 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 		return nil, fmt.Errorf("failed to find Helm charts: %w", err)
 	}
 
-	images := []string{}
-	for _, chartPath := range chartPaths {
-		chartImages, err := GetImagesForHelmChart(log, config, helmClient, chartPath, valuesFile, registryPrefix, kubeVersion)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get images for Helm chart: %w", err)
-		}
-		images = append(images, chartImages...)
+	// findHelmCharts returns sorted paths, so the per-chart results stay
+	// deterministic regardless of worker scheduling.
+	type chartResult struct {
+		chartPath string
+		images    []string
 	}
 
-	return images, nil
+	if concurrency < 1 {
+		concurrency = 1
+	}
+
+	jobs := make(chan string)
+	results := make(chan chartResult)
+	errCh := make(chan error, 1)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	workerCount := concurrency
+	if workerCount > len(chartPaths) {
+		workerCount = len(chartPaths)
+	}
+	for range workerCount {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for chartPath := range jobs {
+				// a sibling worker hit an error; stop pulling new work
+				if ctx.Err() != nil {
+					return
+				}
+
+				chartImages, err := GetImagesForHelmChart(log, config, helmClient, chartPath, valuesFile, registryPrefix, kubeVersion, &helmDepBuildMu)
+				if err != nil {
+					select {
+					case errCh <- fmt.Errorf("failed to get images for Helm chart %q: %w", filepath.Base(chartPath), err):
+					default:
+					}
+					cancel()
+					return
+				}
+
+				results <- chartResult{chartPath: chartPath, images: chartImages}
+			}
+		}()
+	}
+
+	go func() {
+		defer close(jobs)
+		for _, chartPath := range chartPaths {
+			if ctx.Err() != nil {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case jobs <- chartPath:
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	collected := make(map[string][]string, len(chartPaths))
+	for res := range results {
+		collected[res.chartPath] = res.images
+	}
+
+	select {
+	case err := <-errCh:
+		return nil, err
+	default:
+	}
+
+	collection := NewCollection()
+	// iterate in the original sorted order for deterministic output
+	for _, chartPath := range chartPaths {
+		collection.InsertAll(collected[chartPath], RefTypeImage, "chart:"+filepath.Base(chartPath))
+	}
+
+	return collection, nil
 }
 
-func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartPath string, valuesFile string, registryPrefix string, kubeVersion string) ([]string, error) {
+func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartPath string, valuesFile string, registryPrefix string, kubeVersion string, depBuildMu *sync.Mutex) ([]string, error) {
 	images := []string{}
 	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
 
@@ -83,7 +166,18 @@ func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.Kubermat
 	}
 	if chartFI.IsDir() {
 		chartLog.Debug("Fetching chart dependencies…")
-		if err := helmClient.BuildChartDependencies(chartPath, nil); err != nil {
+		// BuildChartDependencies runs `helm repo add` which mutates the shared
+		// repositories.yaml; serialize it across concurrent renders when a mutex
+		// is provided. The dependency download and template render that follow
+		// are per-chart and stay concurrent.
+		if depBuildMu != nil {
+			depBuildMu.Lock()
+		}
+		err := helmClient.BuildChartDependencies(chartPath, nil)
+		if depBuildMu != nil {
+			depBuildMu.Unlock()
+		}
+		if err != nil {
 			return nil, fmt.Errorf("failed to download chart dependencies: %w", err)
 		}
 	}

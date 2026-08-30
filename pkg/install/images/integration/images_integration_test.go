@@ -67,11 +67,11 @@ func TestProcessImagesFromHelmChartsAndSystemAppsAndDefaultApps(t *testing.T) {
 	}
 
 	var containerImages []string
-	chartImages, err := images.GetImagesForHelmCharts(context.Background(), log, config, helmClient, "../../../../charts/monitoring", "", "", "")
+	chartImages, err := images.GetImagesForHelmCharts(context.Background(), log, config, helmClient, "../../../../charts/monitoring", "", "", "", 1)
 	if err != nil {
 		t.Errorf("error calling GetImagesForHelmCharts: %v", err)
 	}
-	containerImages = append(containerImages, chartImages...)
+	containerImages = append(containerImages, chartImages.RefList()...)
 
 	appImages, err := images.GetImagesFromSystemApplicationDefinitions(log, config, helmClient, helmCommandTimeout, "")
 	if err != nil {
