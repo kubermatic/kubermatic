@@ -163,12 +163,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
-	// a zero or negative duration would make machine-controller skip eviction
-	// immediately on every machine deletion, force-deleting nodes while
-	// ignoring PodDisruptionBudgets
-	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
-	}
+	allErrs = append(allErrs, validateMachineControllerSettings(spec, parentFieldPath)...)
 
 	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
@@ -1419,6 +1414,20 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 	}
 
 	return nil
+}
+
+// validateMachineControllerSettings guards the machineController component
+// overrides. A zero or negative duration would make machine-controller skip
+// eviction immediately on every machine deletion, force-deleting nodes while
+// ignoring PodDisruptionBudgets.
+func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
+	}
+
+	return allErrs
 }
 
 // ValidateEventRateLimitConfig validates the EventRateLimitConfig settings.
