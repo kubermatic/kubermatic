@@ -69,10 +69,15 @@ type Addon struct {
 
 func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
-		client:      client,
-		log:         log,
-		versions:    kubermatic.GetFakeVersions(),
-		spec:        &kubermaticv1.ClusterSpec{},
+		client:   client,
+		log:      log,
+		versions: kubermatic.GetFakeVersions(),
+		spec: &kubermaticv1.ClusterSpec{
+			// kubernetes-dashboard is unmaintained upstream, do not waste CI resources on it
+			KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
+				Enabled: false,
+			},
+		},
 		annotations: map[string]string{},
 		labels:      map[string]string{},
 		ownerEmail:  "e2e@test.kubermatic.com",
