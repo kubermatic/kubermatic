@@ -2826,6 +2826,12 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        skipEvictionAfter:
+                          description: |-
+                            SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
+                            deletion is stuck longer than this duration, eviction is skipped and the node is
+                            force-deleted. Defaults to the machine-controller binary's built-in 2h when unset.
+                          type: string
                         tolerations:
                           description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
