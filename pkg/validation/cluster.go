@@ -163,6 +163,13 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
+	// a zero or negative duration would make machine-controller skip eviction
+	// immediately on every machine deletion, force-deleting nodes while
+	// ignoring PodDisruptionBudgets
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
+	}
+
 	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
