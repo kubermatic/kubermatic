@@ -150,7 +150,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 					Name:    resources.MachineControllerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(data.Cluster().Spec.Features),
+					Args:    getFlags(data.Cluster().Spec.Features, overrides),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -221,7 +221,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 	}
 }
 
-func getFlags(features map[string]bool) []string {
+func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControllerSettings) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-health-probe-address", "0.0.0.0:8085",
@@ -233,6 +233,10 @@ func getFlags(features map[string]bool) []string {
 	externalCloudProvider := features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
 		flags = append(flags, "-node-external-cloud-provider")
+	}
+
+	if overrides != nil && overrides.SkipEvictionAfter != nil {
+		flags = append(flags, "-skip-eviction-after", overrides.SkipEvictionAfter.Duration.String())
 	}
 
 	return flags

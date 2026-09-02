@@ -188,6 +188,10 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 		return err
 	}
 
+	if err := validateDefaultComponentSettings(subject); err != nil {
+		return err
+	}
+
 	if err := validateEtcdBackupConfiguration(ctx, seedClient, subject); err != nil {
 		return err
 	}
@@ -207,6 +211,17 @@ func validateDefaultAPIServerAllowedIPRanges(ctx context.Context, seed *kubermat
 			}
 		}
 	}
+	return nil
+}
+
+// validateDefaultComponentSettings guards the seed-level defaults that the cluster
+// mutating webhook copies into every Cluster spec; an invalid value here would
+// make all cluster creation and updates on this seed fail admission.
+func validateDefaultComponentSettings(seed *kubermaticv1.Seed) error {
+	if mc := seed.Spec.DefaultComponentSettings.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
+		return fmt.Errorf("spec.defaultComponentSettings.machineController.skipEvictionAfter must be a positive duration")
+	}
+
 	return nil
 }
 
