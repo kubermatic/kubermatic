@@ -801,3 +801,65 @@ func TestValidateNodePortProxyEnvoyConnectionSettings(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateDefaultComponentSettings(t *testing.T) {
+	testCases := []struct {
+		name              string
+		machineController *kubermaticv1.MachineControllerSettings
+		wantError         string
+	}{
+		{
+			name: "accepts unset machineController",
+		},
+		{
+			name:              "accepts empty machineController block",
+			machineController: &kubermaticv1.MachineControllerSettings{},
+		},
+		{
+			name: "accepts positive duration",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: &metav1.Duration{Duration: 4 * time.Hour},
+			},
+		},
+		{
+			name: "rejects zero duration",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: &metav1.Duration{},
+			},
+			wantError: "skipEvictionAfter",
+		},
+		{
+			name: "rejects negative duration",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: &metav1.Duration{Duration: -time.Hour},
+			},
+			wantError: "skipEvictionAfter",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						MachineController: tc.machineController,
+					},
+				},
+			}
+
+			err := validateDefaultComponentSettings(seed)
+			if tc.wantError == "" && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if tc.wantError != "" {
+				if err == nil {
+					t.Fatalf("expected an error containing %q but got nil", tc.wantError)
+				}
+				if !strings.Contains(err.Error(), tc.wantError) {
+					t.Fatalf("expected error to contain %q, got %q", tc.wantError, err.Error())
+				}
+			}
+		})
+	}
+}
