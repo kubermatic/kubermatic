@@ -57,7 +57,7 @@ require (
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.14
 	github.com/kyverno/kyverno v1.17.2
-	github.com/minio/minio-go/v7 v7.0.94
+	github.com/minio/minio-go/v7 v7.0.97
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/onsi/ginkgo v1.16.5
@@ -74,7 +74,7 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/vishvananda/netlink v1.3.2-0.20260109214200-c6faf428e8f8
-	github.com/vmware-tanzu/velero v1.17.1
+	github.com/vmware-tanzu/velero v1.18.2
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.49.0
 	go.anx.io/go-anxcloud v0.7.8
@@ -311,11 +311,11 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/go-plugin v1.6.0 // indirect
+	github.com/hashicorp/go-plugin v1.7.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/hashicorp/yamux v0.1.1 // indirect
+	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/in-toto/attestation v1.2.0 // indirect
 	github.com/in-toto/in-toto-golang v0.11.0 // indirect
@@ -330,9 +330,10 @@ require (
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.4.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/kyverno/api v0.0.1-alpha.2.0.20260129144402-7b64bcf2b1f7 // indirect
 	github.com/kyverno/kyverno-json v0.0.4-0.20240730143747-aade3d42fc0e // indirect
@@ -352,11 +353,10 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/miekg/pkcs11 v1.1.2 // indirect
-	github.com/minio/crc64nvme v1.0.1 // indirect
+	github.com/minio/crc64nvme v1.1.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
@@ -368,7 +368,7 @@ require (
 	github.com/mozillazg/docker-credential-acr-helper v0.4.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
-	github.com/oklog/run v1.0.0 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/oleiade/reflections v1.1.0 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
@@ -384,7 +384,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.2.0 // indirect
-	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
+	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
