@@ -49,33 +49,11 @@ tweaked by setting a number of environment variables, most importantly:
 Whenever this is changed, run the optional `pre-kubermatic-simulate-github-release`
 job to (mostly) ensure that the changes will work.
 
-## lint-mirror-application-charts.sh
+## lib-gateway-api-migration.sh
 
-Lints hack/mirror-application-charts.sh by sourcing it and asserting
-CHART_URLS and CHART_VERSIONS have identical key sets.
-
-Catches the most common contributor mistake: adding a chart to one
-array but forgetting the other. Also serves as a smoke test that
-mirror-application-charts.sh remains sourceable (which the post-submit
-detection wrapper relies on).
-
-## mirror-new-application-charts.sh
-
-Detects newly added charts and version bumps in hack/mirror-application-charts.sh
-and mirrors them to the OCI registry.
-
-Runs as a Prow post-submit job when mirror-application-charts.sh changes.
-Detects two types of changes:
-  1. New chart entries added to CHART_URLS / CHART_VERSIONS
-  2. Version bumps in CHART_VERSIONS for existing charts
-Then calls mirror-application-charts.sh for each affected chart.
-
-Detection works by sourcing the current and previous (HEAD~1) versions of
-mirror-application-charts.sh in a subshell. This relies only on the file
-being valid bash with the two associative arrays - no formatting assumptions.
-
-Environment variables:
-* `DRY_RUN=true` - skip actual mirroring, only print charts that would be mirrored
+Helpers shared by run-gateway-api-migration-e2e.sh (Case 1) and
+run-gateway-api-migration-case2-e2e.sh (Case 2). All functions assume the
+working directory is the repository root and that hack/lib.sh is sourced.
 
 ## release-images.sh
 
@@ -151,7 +129,32 @@ from the start (fresh install) and runs the Gateway API e2e tests.
 
 ## run-gateway-api-migration-e2e.sh
 
-This script tests the migration from nginx-ingress-controller to Gateway API.
+Upgrade-path E2E that exercises --clean-nginx-lb after a real 2.29 -> 2.30 -> 2.31
+upgrade sequence. Two cases run sequentially against fresh kind clusters:
+
+  Case 1 (2.30 already on Gateway API):
+    1. Install KKP v2.29.x (nginx-ingress era).
+    2. Upgrade to KKP v2.30.x with --migrate-gateway-api.
+    3. Re-run the installer without --migrate-gateway-api (no-op flag).
+    4. Re-run the installer with --clean-nginx-lb to tear down nginx.
+
+  Case 2 (2.30 stays on nginx, late migrator):
+    1. Install KKP v2.29.x.
+    2. Upgrade to KKP v2.30.x WITHOUT --migrate-gateway-api (stay on nginx).
+    3. Run the installer without --migrate-gateway-api.
+    4. Run the installer without --migrate-gateway-api again (idempotency).
+    5. Run the installer with --clean-nginx-lb.
+
+  Case 3 (late DNS flipper, --skip-ingress-cleanup staging):
+    1. Install KKP v2.30.x with nginx-ingress (no --migrate-gateway-api).
+    2. Run PR installer with --skip-ingress-cleanup — Gateway API stands up alongside nginx and legacy Ingresses stay.
+    3. Verify legacy Ingress objects are still present.
+    4. Verify PR installer rejects --skip-ingress-cleanup + --clean-nginx-lb combined.
+    5. Run PR installer without flags — Ingresses removed.
+    6. Run PR installer with --clean-nginx-lb — nginx-ingress-controller release gone.
+
+After each case the script verifies the nginx-ingress-controller release, namespace,
+and legacy Ingress objects are gone, and that Gateway API resources are healthy.
 
 ## run-ipam-e2e-tests.sh
 
@@ -180,6 +183,10 @@ Operator. The presubmit job for this script is currently not used.
 
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the OPA e2e tests.
+
+## run-user-ssh-key-agent-e2e-tests.sh
+
+TBD
 
 ## run-user-ssh-key-agent-tests.sh
 
