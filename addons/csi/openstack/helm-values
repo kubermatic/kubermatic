@@ -16,13 +16,8 @@ storageClass:
   enabled: false
 
 csi:
-  # Override sidecar image tags pinned by the chart; they lag upstream releases
-  # and accumulate known CVEs (see https://github.com/kubermatic/kubermatic/issues/16192).
-  # The chart's csi-snapshotter default is not just stale but a regression: v8.4.0 ships
-  # more CRITICAL/HIGH findings than the v8.3.0 it replaced, while v8.6.0 rebased onto
-  # Debian 13 and drops most of them (measurements in kubermatic/kubeone#4193).
-  # csi-provisioner and csi-resizer are intentionally not overridden: the chart already
-  # ships the latest release of their respective majors (v5.x / v1.x).
+  # Override sidecar image tags pinned by the chart to pick up CVE fixes
+  # (https://github.com/kubermatic/kubermatic/issues/16192).
   attacher:
     image:
       tag: v4.12.0
