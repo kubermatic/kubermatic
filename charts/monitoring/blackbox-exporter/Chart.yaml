@@ -15,7 +15,7 @@
 apiVersion: v2
 name: blackbox-exporter
 version: 9.9.9-dev
-appVersion: v0.25.0
+appVersion: v0.28.0
 description: Deploys the Prometheus Blackbox Exporter
 keywords:
   - kubermatic
@@ -31,5 +31,5 @@ maintainers:
 dependencies:
   - name: prometheus-blackbox-exporter
     repository: https://prometheus-community.github.io/helm-charts
-    version: 9.2.0
+    version: 11.16.0
     alias: blackbox-exporter
