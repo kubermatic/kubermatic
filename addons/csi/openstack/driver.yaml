@@ -442,7 +442,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.10.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.12.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-attacher
           resources: {}
@@ -477,7 +477,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.4.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.6.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-snapshotter
           resources: {}
@@ -508,7 +508,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.17.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.19.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
@@ -619,7 +619,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.15.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0" }}'
           imagePullPolicy: IfNotPresent
           name: node-driver-registrar
           resources: {}
@@ -634,7 +634,7 @@ spec:
         - args:
             - -v=2
             - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.17.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.19.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
