@@ -948,12 +948,15 @@ const (
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// MLAMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (grafana-agent) client certificates.
+	// MLAMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (Grafana Alloy) client certificates.
 	MLAMonitoringAgentCertificatesSecretName = "monitoring-agent-certificates"
-	MLAMonitoringAgentCertificateCommonName  = "grafana-agent"
-	MLAMonitoringAgentClientKeySecretKey     = "client.key"
-	MLAMonitoringAgentClientCertSecretKey    = "client.crt"
-	MLAMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
+	// MLAMonitoringAgentCertificateCommonName is kept as "grafana-agent" on purpose: the MLA gateway
+	// only verifies the client certificate against the CA and derives the tenant from the injected
+	// X-Scope-OrgID header, so renaming the CN would only churn certificates on existing clusters.
+	MLAMonitoringAgentCertificateCommonName = "grafana-agent"
+	MLAMonitoringAgentClientKeySecretKey    = "client.key"
+	MLAMonitoringAgentClientCertSecretKey   = "client.crt"
+	MLAMonitoringAgentClientCertMountPath   = "/etc/ssl/mla"
 
 	// MLALoggingAgentCertificatesSecretName is the name for the secret containing the Logging Agent client certificates.
 	MLALoggingAgentCertificatesSecretName = "logging-agent-certificates"
