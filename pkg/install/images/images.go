@@ -54,6 +54,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	mlamonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -484,6 +485,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
+	deploymentReconcilers = append(deploymentReconcilers, mlamonitoringagent.DeploymentReconciler(nil, nil, templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
