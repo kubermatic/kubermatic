@@ -1669,10 +1669,10 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8c.io/kubeone v1.12.3 h1:b+dmLJDsofUiDHzyUmR512wXnF5LDDI1KpHsS/BTbrY=
 k8c.io/kubeone v1.12.3/go.mod h1:saB47KgCNP2028b/ZHZlNal1p7xHqmVfc3LSj+WOW/A=
-k8c.io/machine-controller/sdk v1.65.6 h1:mdNbdtRKGDwx7ojHkyN9CqGcW1ex4QbAlEN665r9QYI=
-k8c.io/machine-controller/sdk v1.65.6/go.mod h1:/5eWTMcfa7mTQUQoqziaalViiHSVzqzy3fXjejT1qLg=
-k8c.io/operating-system-manager v1.10.8 h1:8SxZe/UkTTAXcarXxuFALElws2L+0FX77MQTl+nFyoI=
-k8c.io/operating-system-manager v1.10.8/go.mod h1:zb4iLxfuEpwObHf8vhGpdoP3MQfn+2WHgr3gKGdRE6E=
+k8c.io/machine-controller/sdk v1.65.7 h1:XQh+wieW1nC2mheicj/K42acdgGF7MvHgU6em2Aia+M=
+k8c.io/machine-controller/sdk v1.65.7/go.mod h1:/5eWTMcfa7mTQUQoqziaalViiHSVzqzy3fXjejT1qLg=
+k8c.io/operating-system-manager v1.10.9 h1:JSy6KzJktF3O3obQ0/rku8XydBCqLKvekvex6iohkDs=
+k8c.io/operating-system-manager v1.10.9/go.mod h1:qD6tOKHgL5r8ckyI2rnwFU98Db/8BWYMsKhMnjVvoy0=
 k8c.io/reconciler v0.5.0 h1:BHpelg1UfI/7oBFctqOq8sX6qzflXpl3SlvHe7e8wak=
 k8c.io/reconciler v0.5.0/go.mod h1:pT1+SVcVXJQeBJhpJBXQ5XW64QnKKeYTnVlQf0dGE0k=
 k8s.io/api v0.23.3/go.mod h1:w258XdGyvCmnBj/vGzQMj6kzdufJZVUwEM1U2fRJwSQ=
