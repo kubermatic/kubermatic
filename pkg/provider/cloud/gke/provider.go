@@ -409,7 +409,9 @@ func getCredentials(ctx context.Context, serviceAccount string) (*google.Credent
 	if err != nil {
 		return nil, fmt.Errorf("failed unmarshalling service account: %w", err)
 	}
-	return google.CredentialsFromJSON(ctx, b, container.CloudPlatformScope)
+	return google.CredentialsFromJSONWithTypeAndParams(ctx, b, google.ServiceAccount, google.CredentialsParams{
+		Scopes: []string{container.CloudPlatformScope},
+	})
 }
 
 func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
