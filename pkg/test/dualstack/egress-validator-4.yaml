@@ -17,7 +17,7 @@ spec:
   containers:
     - name: egress-validator-4-container
       ports: []
-      image: quay.io/kubermatic/util:2.8.1
+      image: quay.io/kubermatic/util:2.10.0
       imagePullPolicy: IfNotPresent
       command:
         - /bin/sh
