@@ -41,6 +41,14 @@ import (
 
 // getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
 func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (images []string, err error) {
+	// The tenant proxy runs in the user cluster. Its images are passed to the
+	// CCM as arguments and are not discoverable by inspecting the CCM PodSpec.
+	proxyImages, err := kubelb.GetTenantProxyImages(templateData.RewriteImage)
+	if err != nil {
+		return nil, err
+	}
+	images = append(images, proxyImages.Envoy, proxyImages.ShutdownManager)
+
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelb.DeploymentReconciler(templateData),
 		velero.DeploymentReconciler(templateData),

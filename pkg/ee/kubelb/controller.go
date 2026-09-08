@@ -320,6 +320,7 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 
 	crdReconciler := []kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory{
 		kubelbuserclusterresources.SyncSecretCRDReconciler(),
+		kubelbuserclusterresources.TenantWAFPolicyCRDReconciler(),
 	}
 
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, crdReconciler, "", userClusterClient); err != nil {
