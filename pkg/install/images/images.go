@@ -690,6 +690,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).
+		WithKubeLBImageRepository(config.Spec.UserCluster.KubeLB.ImageRepository).
+		WithKubeLBImageTag(config.Spec.UserCluster.KubeLB.ImageTag).
 		WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 		WithDnatControllerImage(defaulting.DefaultDNATControllerImage).
 		WithNetworkIntfMgrImage(defaulting.DefaultNetworkInterfaceManagerImage).

@@ -61,5 +61,10 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 				Name: SyncSecretCRDName,
 			},
 		},
+		&apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: TenantWAFPolicyCRDName,
+			},
+		},
 	}
 }

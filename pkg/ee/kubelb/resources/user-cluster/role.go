@@ -87,8 +87,35 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 				r.Rules = []rbacv1.PolicyRule{
 					{
 						APIGroups: []string{""},
-						Resources: []string{"nodes"},
+						Resources: []string{"nodes", "pods"},
 						Verbs:     []string{"get", "list", "watch"},
+					},
+					{
+						APIGroups: []string{""},
+						Resources: []string{"serviceaccounts"},
+						Verbs:     []string{"create", "delete", "get", "list", "watch"},
+					},
+					{
+						APIGroups: []string{"rbac.authorization.k8s.io"},
+						Resources: []string{"clusterroles", "clusterrolebindings"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					// The tenant proxy controller requires these resources even when
+					// Gateway API and secret synchronization are disabled.
+					{
+						APIGroups: []string{""},
+						Resources: []string{"secrets", "configmaps"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"daemonsets", "deployments"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					{
+						APIGroups: []string{"networking.k8s.io"},
+						Resources: []string{"networkpolicies"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
 					},
 					{
 						APIGroups: []string{""},
@@ -101,9 +128,29 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 						Verbs:     []string{"get", "patch", "update"},
 					},
 					{
+						APIGroups: []string{"scheduling.k8s.io"},
+						Resources: []string{"priorityclasses"},
+						Verbs:     []string{"get", "list", "watch"},
+					},
+					{
+						APIGroups: []string{"events.k8s.io"},
+						Resources: []string{"events"},
+						Verbs:     []string{"create", "patch"},
+					},
+					{
 						APIGroups: []string{"kubelb.k8c.io"},
 						Resources: []string{"syncsecrets"},
 						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					{
+						APIGroups: []string{"kubelb.k8c.io"},
+						Resources: []string{"tenantwafpolicies"},
+						Verbs:     []string{"get", "list", "watch", "patch", "update"},
+					},
+					{
+						APIGroups: []string{"kubelb.k8c.io"},
+						Resources: []string{"tenantwafpolicies/status"},
+						Verbs:     []string{"get", "patch", "update"},
 					},
 					{
 						APIGroups: []string{"networking.k8s.io"},
@@ -120,12 +167,17 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 				if dc.Spec.KubeLB != nil && dc.Spec.KubeLB.EnableSecretSynchronizer {
 					r.Rules = append(r.Rules, rbacv1.PolicyRule{
 						APIGroups: []string{""},
-						Resources: []string{"secrets"},
-						Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
+						Resources: []string{"secrets/finalizers"},
+						Verbs:     []string{"get", "patch", "update"},
 					})
 				}
 
 				if cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.EnableGatewayAPI != nil && *cluster.Spec.KubeLB.EnableGatewayAPI {
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"gateway.networking.k8s.io"},
+						Resources: []string{"referencegrants", "gatewayclasses"},
+						Verbs:     []string{"get", "list", "watch"},
+					})
 					r.Rules = append(r.Rules, rbacv1.PolicyRule{
 						APIGroups: []string{"gateway.networking.k8s.io"},
 						Resources: []string{"gateways", "grpcroutes", "httproutes", "tcproutes", "udproutes", "tlsroutes"},
