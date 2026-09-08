@@ -230,6 +230,9 @@ products:
     source: https://github.com/grafana/alloy
     occurrences:
       - helmChart: { directory: charts/logging/alloy }
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent
+          constant: tag
 
   - name: MinIO
     source: https://github.com/minio/minio
@@ -267,9 +270,6 @@ products:
       - goConstant:
           package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent
           constant: imageTag
-      - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent
-          constant: tag
 
   - name: Helm Exporter
     source: https://github.com/sstarcher/helm-exporter
