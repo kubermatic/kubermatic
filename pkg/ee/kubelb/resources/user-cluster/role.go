@@ -56,7 +56,7 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 					},
 				},
 				{
-					APIGroups: []string{"events.k8s.io"},
+					APIGroups: []string{"", "events.k8s.io"},
 					Resources: []string{"events"},
 					Verbs: []string{
 						"create",

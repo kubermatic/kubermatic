@@ -35,6 +35,26 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+func TestKubeSystemRoleAllowsLeaderElectionEvents(t *testing.T) {
+	t.Parallel()
+
+	_, reconcile := KubeSystemRoleReconciler()()
+	role, err := reconcile(&rbacv1.Role{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, apiGroup := range []string{"", "events.k8s.io"} {
+		for _, verb := range []string{"create", "patch"} {
+			allowed := slices.ContainsFunc(role.Rules, func(rule rbacv1.PolicyRule) bool {
+				return slices.Contains(rule.APIGroups, apiGroup) && slices.Contains(rule.Resources, "events") && slices.Contains(rule.Verbs, verb) && len(rule.ResourceNames) == 0
+			})
+			if !allowed {
+				t.Errorf("leader election cannot %s events in API group %q", verb, apiGroup)
+			}
+		}
+	}
+}
+
 // The v1.5 proxy and WAF controllers start independently of Gateway API and
 // secret synchronization. Their informer and reconciliation permissions must
 // therefore be present with every combination of those feature switches.
@@ -62,6 +82,7 @@ func TestClusterRoleControllerPermissions(t *testing.T) {
 		{"", "services", crud},
 		{"", "services/status", status},
 		{"scheduling.k8s.io", "priorityclasses", read},
+		{"", "events", nil}, // Legacy leader-election events only need the kube-system Role.
 		{"events.k8s.io", "events", []string{"create", "patch"}},
 		{"kubelb.k8c.io", "syncsecrets", crud},
 		{"kubelb.k8c.io", "tenantwafpolicies", []string{"get", "list", "patch", "update", "watch"}},
