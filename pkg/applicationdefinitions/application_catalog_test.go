@@ -19,6 +19,9 @@ package applicationdefinitions
 import (
 	"testing"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
+
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
@@ -278,5 +281,18 @@ func TestReconcileWithKubermaticConfig(t *testing.T) {
 		if v.Template.Source.Helm.Credentials == nil {
 			t.Fatal("expected Helm credentials to be set from config")
 		}
+	}
+}
+
+func testLogger(t *testing.T) *zap.SugaredLogger {
+	return zaptest.NewLogger(t).Sugar()
+}
+
+func TestSystemApplicationDefinitionReconcilerFactories_ValidEmbedded(t *testing.T) {
+	config := &kubermaticv1.KubermaticConfiguration{}
+
+	_, err := SystemApplicationDefinitionReconcilerFactories(testLogger(t), config, false)
+	if err != nil {
+		t.Fatalf("expected embedded system ApplicationDefinitions to be valid, got error: %v", err)
 	}
 }
