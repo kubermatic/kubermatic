@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2026 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -25,13 +25,39 @@
 package resources
 
 import (
+	"fmt"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
-func ResourcesForDeletion(name string) []ctrlruntimeclient.Object {
+// Tenant builds only the fields KKP applies to a management-cluster Tenant.
+func Tenant(cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtension) (*unstructured.Unstructured, error) {
 	tenant := &unstructured.Unstructured{}
 	tenant.SetGroupVersionKind(KubelbTenantGVK)
-	tenant.SetName(name)
-	return []ctrlruntimeclient.Object{tenant}
+	tenant.SetName(cluster.Name)
+	tenant.SetLabels(map[string]string{
+		TenantClusterNameLabelKey:         cluster.Name,
+		TenantClusterExternalNameLabelKey: cluster.Status.Address.ExternalName,
+		TenantProjectIDLabelKey:           cluster.Labels[kubermaticv1.ProjectIDLabelKey],
+	})
+
+	if defaultTenantSpec != nil {
+		raw, err := json.Marshal(defaultTenantSpec)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode project default tenant spec: %w", err)
+		}
+		var spec map[string]any
+		if err := json.Unmarshal(raw, &spec); err != nil {
+			return nil, fmt.Errorf("failed to decode project default tenant spec: %w", err)
+		}
+		if len(spec) > 0 {
+			tenant.Object["spec"] = spec
+		}
+	}
+
+	return tenant, nil
 }
