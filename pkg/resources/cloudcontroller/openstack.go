@@ -28,6 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -75,6 +76,20 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 					Args:         getOSFlags(data),
 					Env:          getEnvVars(),
 					VolumeMounts: getVolumeMounts(true),
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(10258),
+								Scheme: corev1.URISchemeHTTPS,
+							},
+						},
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
+						InitialDelaySeconds: 20,
+						PeriodSeconds:       10,
+						TimeoutSeconds:      5,
+					},
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser: ptr.To[int64](1001),
 					},
@@ -101,6 +116,8 @@ func getOSFlags(data *resources.TemplateData) []string {
 		"--v=1",
 		"--cloud-config=/etc/kubernetes/cloud/config",
 		"--cloud-provider=openstack",
+		// Expose secure port for metrics/health like Azure/GCP CCM
+		"--secure-port=10258",
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
