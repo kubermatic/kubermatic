@@ -5,6 +5,18 @@ SyncSecret CRD and TenantWAFPolicy CRD in the user cluster. The CRDs are sourced
 from the KubeLB EE v1.5.0 CCM chart. In mTLS mode, the tenant proxy runs in the
 user cluster's `kube-system` namespace.
 
+## Project defaults
+
+Changes to `Project.spec.defaultTenantSpec` are applied to existing KubeLB
+Tenants as well as new ones. KKP manages these defaults with Server-Side Apply;
+removing a default removes fields owned only by KKP. Management-side settings
+owned by other field managers are preserved. Conflicting edits to the same
+field are reported as reconciliation errors and must be resolved by the
+administrator; KKP does not force ownership.
+
+Existing ownership from `seed-controller-manager` is migrated for the Tenant
+spec and KKP labels. Tenants created by other tools retain their field ownership.
+
 ## Images
 
 The xDS writer uses the configured CCM image. Envoy and shutdown-manager image

@@ -106,6 +106,10 @@ echodate "Running integration tests..."
 # * Extracting the dirname as the `go test` command doesn't play well with individual files as args
 # * Prefixing them with `./` as that's needed by `go test` as well
 for file in $(grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ | xargs dirname | sort -u); do
+  if [[ "${KUBERMATIC_EDITION:-ce}" == "ce" && "$file" == pkg/ee/* ]]; then
+    continue
+  fi
+
   echodate "Testing package ${file}..."
 
   if [[ "$file" =~ .*vsphere.* ]] && provider_disabled vsphere; then
