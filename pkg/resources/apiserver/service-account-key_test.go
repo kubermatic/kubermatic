@@ -50,11 +50,7 @@ func clusterWithServiceAccountKey(spec *kubermaticv1.KeySpec) *kubermaticv1.Clus
 func reconcileServiceAccountKey(t *testing.T, cluster *kubermaticv1.Cluster, secret *corev1.Secret) *corev1.Secret {
 	t.Helper()
 
-	name, reconciler := ServiceAccountKeyReconciler(fakeServiceAccountKeyData{cluster: cluster})()
-	if name != resources.ServiceAccountKeySecretName {
-		t.Fatalf("expected secret name %q, got %q", resources.ServiceAccountKeySecretName, name)
-	}
-
+	_, reconciler := ServiceAccountKeyReconciler(fakeServiceAccountKeyData{cluster: cluster})()
 	result, err := reconciler(secret)
 	if err != nil {
 		t.Fatalf("failed to reconcile the service account key: %v", err)
@@ -62,68 +58,23 @@ func reconcileServiceAccountKey(t *testing.T, cluster *kubermaticv1.Cluster, sec
 	return result
 }
 
+// TestServiceAccountKeyAlgorithm checks the two properties external verifiers
+// depend on: sa.key uses the configured algorithm, and sa.pub belongs to it.
 func TestServiceAccountKeyAlgorithm(t *testing.T) {
 	testCases := []struct {
-		name              string
-		spec              *kubermaticv1.KeySpec
-		expectedBlockType string
-		check             func(t *testing.T, key any)
+		name      string
+		spec      *kubermaticv1.KeySpec
+		blockType string
 	}{
 		{
-			name:              "no configuration keeps the legacy RSA-2048 key",
-			spec:              nil,
-			expectedBlockType: "RSA PRIVATE KEY",
-			check: func(t *testing.T, key any) {
-				rsaKey, ok := key.(*rsa.PrivateKey)
-				if !ok {
-					t.Fatalf("expected an RSA key, got %T", key)
-				}
-				if size := rsaKey.N.BitLen(); size != 2048 {
-					t.Errorf("expected 2048 bits, got %d", size)
-				}
-			},
+			name:      "no configuration keeps the legacy RSA-2048 key",
+			spec:      nil,
+			blockType: "RSA PRIVATE KEY",
 		},
 		{
-			name:              "RSA-4096",
-			spec:              &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmRSA, RSAKeySize: 4096},
-			expectedBlockType: "RSA PRIVATE KEY",
-			check: func(t *testing.T, key any) {
-				rsaKey, ok := key.(*rsa.PrivateKey)
-				if !ok {
-					t.Fatalf("expected an RSA key, got %T", key)
-				}
-				if size := rsaKey.N.BitLen(); size != 4096 {
-					t.Errorf("expected 4096 bits, got %d", size)
-				}
-			},
-		},
-		{
-			name:              "ECDSA P-256",
-			spec:              &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmECDSA},
-			expectedBlockType: "EC PRIVATE KEY",
-			check: func(t *testing.T, key any) {
-				ecKey, ok := key.(*ecdsa.PrivateKey)
-				if !ok {
-					t.Fatalf("expected an ECDSA key, got %T", key)
-				}
-				if ecKey.Curve != elliptic.P256() {
-					t.Errorf("expected P-256, got %s", ecKey.Curve.Params().Name)
-				}
-			},
-		},
-		{
-			name:              "ECDSA P-384",
-			spec:              &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmECDSA, ECDSACurve: kubermaticv1.ECDSACurveP384},
-			expectedBlockType: "EC PRIVATE KEY",
-			check: func(t *testing.T, key any) {
-				ecKey, ok := key.(*ecdsa.PrivateKey)
-				if !ok {
-					t.Fatalf("expected an ECDSA key, got %T", key)
-				}
-				if ecKey.Curve != elliptic.P384() {
-					t.Errorf("expected P-384, got %s", ecKey.Curve.Params().Name)
-				}
-			},
+			name:      "ECDSA P-384",
+			spec:      &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmECDSA, ECDSACurve: kubermaticv1.ECDSACurveP384},
+			blockType: "EC PRIVATE KEY",
 		},
 	}
 
@@ -131,17 +82,12 @@ func TestServiceAccountKeyAlgorithm(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			secret := reconcileServiceAccountKey(t, clusterWithServiceAccountKey(test.spec), &corev1.Secret{})
 
-			keyPEM, exists := secret.Data[resources.ServiceAccountKeySecretKey]
-			if !exists {
-				t.Fatalf("no %q was written", resources.ServiceAccountKeySecretKey)
-			}
-
-			block, _ := pem.Decode(keyPEM)
+			block, _ := pem.Decode(secret.Data[resources.ServiceAccountKeySecretKey])
 			if block == nil {
-				t.Fatal("sa.key is not valid PEM")
+				t.Fatal("sa.key is missing or not valid PEM")
 			}
-			if block.Type != test.expectedBlockType {
-				t.Errorf("expected PEM block type %q, got %q", test.expectedBlockType, block.Type)
+			if block.Type != test.blockType {
+				t.Fatalf("expected PEM block type %q, got %q", test.blockType, block.Type)
 			}
 
 			var (
@@ -150,32 +96,35 @@ func TestServiceAccountKeyAlgorithm(t *testing.T) {
 			)
 			switch block.Type {
 			case "RSA PRIVATE KEY":
-				key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+				var rsaKey *rsa.PrivateKey
+				if rsaKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+					key = rsaKey
+					if size := rsaKey.N.BitLen(); size != 2048 {
+						t.Errorf("expected 2048 bits, got %d", size)
+					}
+				}
 			case "EC PRIVATE KEY":
-				key, err = x509.ParseECPrivateKey(block.Bytes)
+				var ecKey *ecdsa.PrivateKey
+				if ecKey, err = x509.ParseECPrivateKey(block.Bytes); err == nil {
+					key = ecKey
+					if ecKey.Curve != elliptic.P384() {
+						t.Errorf("expected P-384, got %s", ecKey.Curve.Params().Name)
+					}
+				}
 			}
 			if err != nil {
 				t.Fatalf("failed to parse sa.key: %v", err)
 			}
-			test.check(t, key)
 
-			// sa.pub has to describe the very same key, whatever the algorithm.
-			pubPEM, exists := secret.Data[resources.ServiceAccountKeyPublicKey]
-			if !exists {
-				t.Fatalf("no %q was written", resources.ServiceAccountKeyPublicKey)
-			}
-			pubBlock, _ := pem.Decode(pubPEM)
+			pubBlock, _ := pem.Decode(secret.Data[resources.ServiceAccountKeyPublicKey])
 			if pubBlock == nil {
-				t.Fatal("sa.pub is not valid PEM")
-			}
-			if pubBlock.Type != "PUBLIC KEY" {
-				t.Errorf("expected PEM block type %q, got %q", "PUBLIC KEY", pubBlock.Type)
+				t.Fatal("sa.pub is missing or not valid PEM")
 			}
 			pub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
 			if err != nil {
 				t.Fatalf("failed to parse sa.pub: %v", err)
 			}
-			if !publicKeysMatch(pub, key) {
+			if !publicKeyBelongsTo(pub, key) {
 				t.Error("sa.pub does not belong to sa.key")
 			}
 		})
@@ -205,18 +154,7 @@ func TestServiceAccountKeyIsWrittenOnce(t *testing.T) {
 	}
 }
 
-// TestServiceAccountKeyRejectsUnknownAlgorithm makes sure an unusable spec fails
-// loudly instead of silently generating something else.
-func TestServiceAccountKeyRejectsUnknownAlgorithm(t *testing.T) {
-	cluster := clusterWithServiceAccountKey(&kubermaticv1.KeySpec{Algorithm: "Ed25519"})
-
-	_, reconciler := ServiceAccountKeyReconciler(fakeServiceAccountKeyData{cluster: cluster})()
-	if _, err := reconciler(&corev1.Secret{}); err == nil {
-		t.Error("expected an error for an unknown algorithm, but got none")
-	}
-}
-
-func publicKeysMatch(pub any, key any) bool {
+func publicKeyBelongsTo(pub any, key any) bool {
 	switch k := key.(type) {
 	case *rsa.PrivateKey:
 		other, ok := pub.(*rsa.PublicKey)

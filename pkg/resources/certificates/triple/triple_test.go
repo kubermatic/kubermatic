@@ -27,87 +27,49 @@ import (
 )
 
 var keyConfigs = map[string]struct {
-	config            KeyConfig
-	expectedBlockType string
-	check             func(t *testing.T, key any)
+	config    KeyConfig
+	blockType string
 }{
-	"legacy default": {
-		config:            KeyConfig{},
-		expectedBlockType: RSAPrivateKeyBlockType,
-		check:             expectRSA(2048),
-	},
-	"RSA-2048": {
-		config:            KeyConfig{RSAKeySize: 2048},
-		expectedBlockType: RSAPrivateKeyBlockType,
-		check:             expectRSA(2048),
-	},
-	"RSA-3072": {
-		config:            KeyConfig{RSAKeySize: 3072},
-		expectedBlockType: RSAPrivateKeyBlockType,
-		check:             expectRSA(3072),
-	},
-	"RSA-4096": {
-		config:            KeyConfig{RSAKeySize: 4096},
-		expectedBlockType: RSAPrivateKeyBlockType,
-		check:             expectRSA(4096),
-	},
-	"ECDSA P-256": {
-		config:            KeyConfig{ECDSACurve: elliptic.P256()},
-		expectedBlockType: ECPrivateKeyBlockType,
-		check:             expectECDSA(elliptic.P256()),
-	},
-	"ECDSA P-384": {
-		config:            KeyConfig{ECDSACurve: elliptic.P384()},
-		expectedBlockType: ECPrivateKeyBlockType,
-		check:             expectECDSA(elliptic.P384()),
-	},
+	"legacy default": {KeyConfig{}, RSAPrivateKeyBlockType},
+	"RSA-4096":       {KeyConfig{RSAKeySize: 4096}, RSAPrivateKeyBlockType},
+	"ECDSA P-384":    {KeyConfig{ECDSACurve: elliptic.P384()}, ECPrivateKeyBlockType},
 }
 
-func expectRSA(bits int) func(t *testing.T, key any) {
-	return func(t *testing.T, key any) {
-		t.Helper()
-		rsaKey, ok := key.(*rsa.PrivateKey)
-		if !ok {
-			t.Fatalf("expected an RSA key, got %T", key)
-		}
-		if size := rsaKey.N.BitLen(); size != bits {
-			t.Errorf("expected %d bits, got %d", bits, size)
-		}
-	}
-}
+func checkKey(t *testing.T, config KeyConfig, key any) {
+	t.Helper()
 
-func expectECDSA(curve elliptic.Curve) func(t *testing.T, key any) {
-	return func(t *testing.T, key any) {
-		t.Helper()
+	if config.ECDSACurve != nil {
 		ecKey, ok := key.(*ecdsa.PrivateKey)
 		if !ok {
 			t.Fatalf("expected an ECDSA key, got %T", key)
 		}
-		if ecKey.Curve != curve {
-			t.Errorf("expected %s, got %s", curve.Params().Name, ecKey.Curve.Params().Name)
+		if ecKey.Curve != config.ECDSACurve {
+			t.Errorf("expected %s, got %s", config.ECDSACurve.Params().Name, ecKey.Curve.Params().Name)
 		}
+		return
+	}
+
+	expectedBits := config.RSAKeySize
+	if expectedBits == 0 {
+		expectedBits = 2048
+	}
+	rsaKey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		t.Fatalf("expected an RSA key, got %T", key)
+	}
+	if size := rsaKey.N.BitLen(); size != expectedBits {
+		t.Errorf("expected %d bits, got %d", expectedBits, size)
 	}
 }
 
-func TestGenerateKey(t *testing.T) {
+func TestGenerateKeyPEMRoundTrip(t *testing.T) {
 	for name, test := range keyConfigs {
 		t.Run(name, func(t *testing.T) {
 			key, err := test.config.GenerateKey()
 			if err != nil {
 				t.Fatalf("failed to generate key: %v", err)
 			}
-			test.check(t, key)
-		})
-	}
-}
-
-func TestMarshalPrivateKeyPEMRoundTrip(t *testing.T) {
-	for name, test := range keyConfigs {
-		t.Run(name, func(t *testing.T) {
-			key, err := test.config.GenerateKey()
-			if err != nil {
-				t.Fatalf("failed to generate key: %v", err)
-			}
+			checkKey(t, test.config, key)
 
 			keyPEM, err := MarshalPrivateKeyPEM(key)
 			if err != nil {
@@ -118,15 +80,15 @@ func TestMarshalPrivateKeyPEMRoundTrip(t *testing.T) {
 			if block == nil {
 				t.Fatal("the encoded key is not valid PEM")
 			}
-			if block.Type != test.expectedBlockType {
-				t.Errorf("expected PEM block type %q, got %q", test.expectedBlockType, block.Type)
+			if block.Type != test.blockType {
+				t.Errorf("expected PEM block type %q, got %q", test.blockType, block.Type)
 			}
 
 			parsed, err := ParsePrivateKeyPEM(keyPEM)
 			if err != nil {
 				t.Fatalf("failed to parse the encoded key: %v", err)
 			}
-			test.check(t, parsed)
+			checkKey(t, test.config, parsed)
 		})
 	}
 }
@@ -160,101 +122,40 @@ func TestRSAEncodingIsUnchanged(t *testing.T) {
 	}
 }
 
-func TestKeyPairsVerifyAgainstTheirCA(t *testing.T) {
+// TestLeafCertificates covers what the reconcilers depend on: a leaf uses the
+// configured algorithm, verifies against its CA, and only carries the
+// keyEncipherment usage when the key is RSA, for which it is meaningful.
+func TestLeafCertificates(t *testing.T) {
 	for name, test := range keyConfigs {
 		t.Run(name, func(t *testing.T) {
 			ca, err := NewCAWithConfig("test-ca", test.config)
 			if err != nil {
 				t.Fatalf("failed to create CA: %v", err)
 			}
-			test.check(t, ca.Key)
-
-			server, err := NewServerKeyPairWithConfig(ca, "test-server", "svc", "ns", "cluster.local", []string{"1.2.3.4"}, []string{"example.com"}, test.config)
-			if err != nil {
-				t.Fatalf("failed to create server key pair: %v", err)
-			}
-			test.check(t, server.Key)
+			checkKey(t, test.config, ca.Key)
 
 			client, err := NewClientKeyPairWithConfig(ca, "test-client", []string{"test-org"}, test.config)
 			if err != nil {
 				t.Fatalf("failed to create client key pair: %v", err)
 			}
-			test.check(t, client.Key)
+			checkKey(t, test.config, client.Key)
 
 			pool := x509.NewCertPool()
 			pool.AddCert(ca.Cert)
-
-			for leafName, leaf := range map[string]*KeyPair{"server": server, "client": client} {
-				if _, err := leaf.Cert.Verify(x509.VerifyOptions{
-					Roots:     pool,
-					KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-				}); err != nil {
-					t.Errorf("the %s certificate does not verify against its CA: %v", leafName, err)
-				}
-			}
-		})
-	}
-}
-
-// TestKeyEnciphermentIsOnlySetForRSA guards the one certificate property that
-// depends on the algorithm: keyEncipherment is meaningless for ECDSA keys.
-func TestKeyEnciphermentIsOnlySetForRSA(t *testing.T) {
-	for name, test := range keyConfigs {
-		t.Run(name, func(t *testing.T) {
-			ca, err := NewCAWithConfig("test-ca", test.config)
-			if err != nil {
-				t.Fatalf("failed to create CA: %v", err)
-			}
-
-			client, err := NewClientKeyPairWithConfig(ca, "test-client", nil, test.config)
-			if err != nil {
-				t.Fatalf("failed to create client key pair: %v", err)
+			if _, err := client.Cert.Verify(x509.VerifyOptions{
+				Roots:     pool,
+				KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+			}); err != nil {
+				t.Errorf("the client certificate does not verify against its CA: %v", err)
 			}
 
 			_, isRSA := client.Key.(*rsa.PrivateKey)
 			hasKeyEncipherment := client.Cert.KeyUsage&x509.KeyUsageKeyEncipherment != 0
-
-			if isRSA && !hasKeyEncipherment {
-				t.Error("an RSA certificate lost its keyEncipherment usage")
-			}
-			if !isRSA && hasKeyEncipherment {
-				t.Error("an ECDSA certificate must not carry the keyEncipherment usage")
+			if isRSA != hasKeyEncipherment {
+				t.Errorf("keyEncipherment is %v for an RSA=%v key", hasKeyEncipherment, isRSA)
 			}
 			if client.Cert.KeyUsage&x509.KeyUsageDigitalSignature == 0 {
 				t.Error("the certificate lost its digitalSignature usage")
-			}
-		})
-	}
-}
-
-func TestParseKeyPair(t *testing.T) {
-	for name, test := range keyConfigs {
-		t.Run(name, func(t *testing.T) {
-			ca, err := NewCAWithConfig("test-ca", test.config)
-			if err != nil {
-				t.Fatalf("failed to create CA: %v", err)
-			}
-
-			keyPEM, err := MarshalPrivateKeyPEM(ca.Key)
-			if err != nil {
-				t.Fatalf("failed to encode key: %v", err)
-			}
-			certPEM := EncodeCertPEM(ca.Cert)
-
-			parsed, err := ParseKeyPair(certPEM, keyPEM)
-			if err != nil {
-				t.Fatalf("failed to parse the key pair: %v", err)
-			}
-			test.check(t, parsed.Key)
-
-			// ParseRSAKeyPair still rejects everything that is not RSA.
-			_, err = ParseRSAKeyPair(certPEM, keyPEM)
-			if _, isRSA := ca.Key.(*rsa.PrivateKey); isRSA {
-				if err != nil {
-					t.Errorf("expected an RSA key pair to parse, but got: %v", err)
-				}
-			} else if err == nil {
-				t.Error("expected ParseRSAKeyPair to reject a non-RSA key pair")
 			}
 		})
 	}

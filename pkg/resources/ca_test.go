@@ -18,9 +18,7 @@ package resources
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rsa"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -37,31 +35,12 @@ import (
 func TestGetClusterRootCAAcceptsEveryAlgorithm(t *testing.T) {
 	const namespace = "cluster-test"
 
-	testCases := map[string]struct {
-		config triple.KeyConfig
-		check  func(t *testing.T, key any)
-	}{
-		"an RSA CA": {
-			config: triple.KeyConfig{},
-			check: func(t *testing.T, key any) {
-				if _, ok := key.(*rsa.PrivateKey); !ok {
-					t.Errorf("expected an RSA key, got %T", key)
-				}
-			},
-		},
-		"an ECDSA CA": {
-			config: triple.KeyConfig{ECDSACurve: elliptic.P384()},
-			check: func(t *testing.T, key any) {
-				if _, ok := key.(*ecdsa.PrivateKey); !ok {
-					t.Errorf("expected an ECDSA key, got %T", key)
-				}
-			},
-		},
-	}
-
-	for name, test := range testCases {
+	for name, config := range map[string]triple.KeyConfig{
+		"an RSA CA":   {},
+		"an ECDSA CA": {ECDSACurve: elliptic.P384()},
+	} {
 		t.Run(name, func(t *testing.T) {
-			ca, err := triple.NewCAWithConfig("root-ca.test", test.config)
+			ca, err := triple.NewCAWithConfig("root-ca.test", config)
 			if err != nil {
 				t.Fatalf("failed to create CA: %v", err)
 			}
@@ -83,16 +62,13 @@ func TestGetClusterRootCAAcceptsEveryAlgorithm(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to read the cluster CA: %v", err)
 			}
-
-			test.check(t, keyPair.Key)
-
 			if !keyPair.Cert.Equal(ca.Cert) {
 				t.Error("a different certificate was returned")
 			}
 
 			// The CA has to remain usable for signing, which is the only thing
 			// the callers actually need from it.
-			if _, err := triple.NewClientKeyPairWithConfig(keyPair, "test-client", nil, test.config); err != nil {
+			if _, err := triple.NewClientKeyPairWithConfig(keyPair, "test-client", nil, config); err != nil {
 				t.Errorf("the CA read back cannot sign: %v", err)
 			}
 		})

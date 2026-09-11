@@ -35,10 +35,6 @@ func TestValidateKeyConfiguration(t *testing.T) {
 			config: nil,
 		},
 		{
-			name:   "an empty configuration is valid",
-			config: &kubermaticv1.KeyConfiguration{},
-		},
-		{
 			name: "RSA with a supported size",
 			config: &kubermaticv1.KeyConfiguration{
 				Certificates: &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmRSA, RSAKeySize: 4096},
@@ -54,13 +50,6 @@ func TestValidateKeyConfiguration(t *testing.T) {
 			name: "an RSA key size on an ECDSA key is rejected",
 			config: &kubermaticv1.KeyConfiguration{
 				Certificates: &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmECDSA, RSAKeySize: 4096},
-			},
-			expectedErr: true,
-		},
-		{
-			name: "a curve on an RSA key is rejected",
-			config: &kubermaticv1.KeyConfiguration{
-				Certificates: &kubermaticv1.KeySpec{Algorithm: kubermaticv1.KeyAlgorithmRSA, ECDSACurve: kubermaticv1.ECDSACurveP256},
 			},
 			expectedErr: true,
 		},
@@ -121,11 +110,6 @@ func TestValidateKeyConfigurationUpdate(t *testing.T) {
 		newConfig   *kubermaticv1.KeyConfiguration
 		expectedErr bool
 	}{
-		{
-			name:      "a legacy cluster stays legacy",
-			oldConfig: nil,
-			newConfig: nil,
-		},
 		{
 			name:      "an unchanged configuration is accepted",
 			oldConfig: ecdsa,

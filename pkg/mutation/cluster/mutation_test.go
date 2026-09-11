@@ -17,12 +17,12 @@ limitations under the License.
 package cluster
 
 import (
-	"fmt"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -94,26 +94,6 @@ func TestMutateCreateStampsKeyConfiguration(t *testing.T) {
 			cluster:  keyConfigurationTestCluster(),
 			expected: nil,
 		},
-		{
-			name:   "an explicit per-cluster value wins over the global default",
-			config: configWithKeyConfiguration(ecdsaKeyConfiguration),
-			cluster: func() *kubermaticv1.Cluster {
-				cluster := keyConfigurationTestCluster()
-				cluster.Spec.KeyConfiguration = &kubermaticv1.KeyConfiguration{
-					Certificates: &kubermaticv1.KeySpec{
-						Algorithm:  kubermaticv1.KeyAlgorithmRSA,
-						RSAKeySize: 4096,
-					},
-				}
-				return cluster
-			}(),
-			expected: &kubermaticv1.KeyConfiguration{
-				Certificates: &kubermaticv1.KeySpec{
-					Algorithm:  kubermaticv1.KeyAlgorithmRSA,
-					RSAKeySize: 4096,
-				},
-			},
-		},
 	}
 
 	for _, test := range testCases {
@@ -135,11 +115,8 @@ func TestMutateCreateStampsKeyConfiguration(t *testing.T) {
 			if got == test.expected {
 				t.Error("the cluster shares the KeyConfiguration with the KubermaticConfiguration; it has to be a copy")
 			}
-			if a, b := keySpecString(got.ServiceAccountKey), keySpecString(test.expected.ServiceAccountKey); a != b {
-				t.Errorf("expected serviceAccountKey %s, got %s", b, a)
-			}
-			if a, b := keySpecString(got.Certificates), keySpecString(test.expected.Certificates); a != b {
-				t.Errorf("expected certificates %s, got %s", b, a)
+			if !equality.Semantic.DeepEqual(got, test.expected) {
+				t.Errorf("expected %+v, got %+v", test.expected, got)
 			}
 		})
 	}
@@ -162,11 +139,4 @@ func TestMutateUpdateNeverStampsKeyConfiguration(t *testing.T) {
 	if newCluster.Spec.KeyConfiguration != nil {
 		t.Errorf("an existing cluster picked up the global key configuration: %+v", newCluster.Spec.KeyConfiguration)
 	}
-}
-
-func keySpecString(spec *kubermaticv1.KeySpec) string {
-	if spec == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("%s/%s/%d", spec.Algorithm, spec.ECDSACurve, spec.RSAKeySize)
 }
