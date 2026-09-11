@@ -18,7 +18,8 @@ updates:
     directory: "/"
     target-branch: main
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     labels:
       - dependencies
       - release-note-none
@@ -30,7 +31,8 @@ updates:
     directory: "/"
     target-branch: release/v2.31
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
@@ -44,7 +46,8 @@ updates:
     directory: "/"
     target-branch: release/v2.30
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
@@ -58,7 +61,8 @@ updates:
     directory: "/"
     target-branch: release/v2.29
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
@@ -72,7 +76,8 @@ updates:
     directory: "/sdk"
     target-branch: main
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     labels:
       - dependencies
       - release-note-none
@@ -84,7 +89,8 @@ updates:
     directory: "/sdk"
     target-branch: release/v2.31
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
@@ -98,7 +104,8 @@ updates:
     directory: "/sdk"
     target-branch: release/v2.30
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
@@ -112,7 +119,8 @@ updates:
     directory: "/sdk"
     target-branch: release/v2.29
     schedule:
-      interval: daily
+      interval: weekly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "go"
     labels:
