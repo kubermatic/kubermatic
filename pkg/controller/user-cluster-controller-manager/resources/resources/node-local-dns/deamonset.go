@@ -84,6 +84,23 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 					Operator: corev1.TolerationOpExists,
 				},
 			}
+			ds.Spec.Template.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/os",
+										Operator: corev1.NodeSelectorOpNotIn,
+										Values:   []string{"windows"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
 
 			hostPathType := corev1.HostPathFileOrCreate
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
