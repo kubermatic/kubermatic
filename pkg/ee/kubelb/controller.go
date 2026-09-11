@@ -55,6 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	kubernetesjson "k8s.io/apimachinery/pkg/util/json"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -240,60 +241,72 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	// Create/update required resources in kubeLB management cluster.
-	if err := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster, project.Spec.DefaultTenantSpec); err != nil {
-		return nil, err
+	return r.reconcileKubeLBResources(ctx, kubeLBManagementClient, kubeLBManagementKubeConfig, cluster, datacenter, project.Spec.DefaultTenantSpec)
+}
+
+func (r *reconciler) reconcileKubeLBResources(ctx context.Context, kubeLBManagementClient ctrlruntimeclient.Client, kubeLBManagementKubeConfig []byte, cluster *kubermaticv1.Cluster, datacenter kubermaticv1.Datacenter, defaultTenantSpec *runtime.RawExtension) (*reconcile.Result, error) {
+	// Register new Tenants before waiting for their credentials. For an existing
+	// live Tenant, a defaults error must not block CCM maintenance.
+	existingUsable, tenantErr := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster, defaultTenantSpec)
+	if tenantErr != nil && !existingUsable {
+		return nil, tenantErr
 	}
 
 	// Create/update required resources in user cluster.
 	if err := r.createOrUpdateKubeLBUserClusterResources(ctx, cluster, datacenter); err != nil {
-		return nil, err
+		return nil, kerrors.NewAggregate([]error{tenantErr, err})
 	}
 
 	// Create/update required resources in user cluster namespace in seed.
-	return r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, kubeLBManagementKubeConfig, datacenter)
+	result, err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, kubeLBManagementKubeConfig, datacenter)
+	return result, kerrors.NewAggregate([]error{tenantErr, err})
 }
 
-func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtension) error {
-	tenant, err := kubelbclusterresources.Tenant(cluster, defaultTenantSpec)
-	if err != nil {
-		return err
-	}
-
+// createOrUpdateKubeLBManagementClusterResources reports whether an existing,
+// nonterminating Tenant permits CCM maintenance when updating its defaults fails.
+func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtension) (bool, error) {
 	existing := &unstructured.Unstructured{}
 	existing.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), existing); err != nil {
+	existing.SetName(cluster.Name)
+	existingUsable := false
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(existing), existing); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get tenant %q: %w", tenant.GetName(), err)
+			return false, fmt.Errorf("failed to get tenant %q: %w", cluster.Name, err)
 		}
 	} else {
 		if !existing.GetDeletionTimestamp().IsZero() {
-			return fmt.Errorf("tenant %q is still terminating", tenant.GetName())
+			return false, fmt.Errorf("tenant %q is still terminating", cluster.Name)
 		}
+		existingUsable = true
+	}
 
-		// Older KKP versions created Tenants with Update field ownership. Move
-		// only KKP's fields to the apply manager so updates and removals work
-		// without taking ownership from management-cluster administrators.
-		patch, err := kubelbclusterresources.TenantManagedFieldsMigrationPatch(existing, ControllerName)
+	tenant, err := kubelbclusterresources.Tenant(cluster, defaultTenantSpec)
+	if err != nil {
+		return existingUsable, err
+	}
+	if existingUsable {
+		// Adopt legacy ownership only for fields explicitly desired now.
+		// Omitted legacy fields may be API defaults and must be preserved.
+		patch, err := kubelbclusterresources.TenantManagedFieldsMigrationPatch(existing, tenant, ControllerName)
 		if err != nil {
-			return fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
+			return true, fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
 		}
 		if patch != nil {
 			if err := client.Patch(ctx, existing, ctrlruntimeclient.RawPatch(types.JSONPatchType, patch)); err != nil {
-				return fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
+				return true, fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
 			}
 		}
 	}
 
 	// Standard Create/Update reconcilers do not detect field ownership conflicts.
-	// Apply only project defaults and KKP labels. Omitted fields previously
-	// owned by KKP are removed; other managers' fields remain untouched. A
+	// Apply only project defaults and KKP labels. Omitted fields owned only
+	// by this apply manager are removed; other managers' fields remain. A
 	// conflicting administrator edit is reported through the reconciliation
 	// condition instead of being overwritten with ForceOwnership.
 	if err := client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(tenant), ctrlruntimeclient.FieldOwner(ControllerName)); err != nil {
-		return fmt.Errorf("failed to apply project defaults to tenant %q: %w", tenant.GetName(), err)
+		return existingUsable, fmt.Errorf("failed to apply project defaults to tenant %q: %w", tenant.GetName(), err)
 	}
-	return nil
+	return existingUsable, nil
 }
 
 func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, dc kubermaticv1.Datacenter) error {

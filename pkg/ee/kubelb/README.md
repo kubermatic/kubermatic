@@ -7,15 +7,19 @@ user cluster's `kube-system` namespace.
 
 ## Project defaults
 
-Changes to `Project.spec.defaultTenantSpec` are applied to existing KubeLB
-Tenants as well as new ones. KKP manages these defaults with Server-Side Apply;
-removing a default removes fields owned only by KKP. Management-side settings
-owned by other field managers are preserved. Conflicting edits to the same
-field are reported as reconciliation errors and must be resolved by the
-administrator; KKP does not force ownership.
+Changes to `Project.spec.defaultTenantSpec` are applied to new and existing
+KubeLB Tenants with Server-Side Apply. Removing a previously adopted default
+removes fields owned only by KKP. Other managers' settings are preserved;
+conflicts are reported as reconciliation errors without forcing ownership.
+Conflicts on active Tenants do not stop CCM maintenance.
 
-Existing ownership from `seed-controller-manager` is migrated for the Tenant
-spec and KKP labels. Tenants created by other tools retain their field ownership.
+Legacy ownership from `seed-controller-manager` is adopted only for KKP labels
+and fields explicitly set in the current project defaults. Omitted legacy fields
+are retained because their original configuration is unknown. Once a field is
+adopted, subsequent removal from the project defaults works normally.
+
+Custom management-cluster credentials must allow `patch` on
+`tenants.kubelb.k8c.io`.
 
 ## Images
 

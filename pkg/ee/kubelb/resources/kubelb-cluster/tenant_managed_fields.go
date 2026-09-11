@@ -31,15 +31,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"
+	"sigs.k8s.io/structured-merge-diff/v6/value"
 )
 
 const legacyTenantFieldManager = "seed-controller-manager"
 
-// TenantManagedFieldsMigrationPatch transfers the fields still owned by KKP's
-// create-only reconciler to its apply manager. Applying without this transfer
-// would leave the old update manager as a co-owner, blocking later changes and
-// removals. Fields already changed by another manager are not transferred.
-func TenantManagedFieldsMigrationPatch(existing *unstructured.Unstructured, fieldManager string) ([]byte, error) {
+// TenantManagedFieldsMigrationPatch transfers legacy KKP ownership only for
+// fields explicitly included in the desired Tenant. Create ownership also
+// includes API defaults, so omitted legacy fields must remain with their old
+// owner: their original source cannot be recovered from managedFields.
+// Fields already owned by another manager are not transferred.
+func TenantManagedFieldsMigrationPatch(existing, desired *unstructured.Unstructured, fieldManager string) ([]byte, error) {
 	apiVersion := KubelbTenantGVK.GroupVersion().String()
 	entries := existing.GetManagedFields()
 	migrated := make([]metav1.ManagedFieldsEntry, 0, len(entries)+1)
@@ -58,7 +60,7 @@ func TenantManagedFieldsMigrationPatch(existing *unstructured.Unstructured, fiel
 		remaining := fieldpath.NewSet()
 		owned := fieldpath.NewSet()
 		fields.Iterate(func(path fieldpath.Path) {
-			if isKKPTenantField(path) {
+			if isKKPTenantField(path) && tenantFieldIsSpecified(desired.Object, path) {
 				owned.Insert(path)
 			} else {
 				remaining.Insert(path)
@@ -156,4 +158,48 @@ func isKKPTenantField(path fieldpath.Path) bool {
 	default:
 		return false
 	}
+}
+
+// tenantFieldIsSpecified follows the API server's recorded ownership path in
+// the desired object. Associative list entries are matched by their keys, not
+// position, so adopting one GatewayClass mapping preserves omitted mappings.
+func tenantFieldIsSpecified(object any, path fieldpath.Path) bool {
+	if len(path) == 0 {
+		return true
+	}
+	element := path[0]
+	switch {
+	case element.FieldName != nil:
+		fields, ok := object.(map[string]any)
+		if !ok {
+			return false
+		}
+		child, found := fields[*element.FieldName]
+		return found && tenantFieldIsSpecified(child, path[1:])
+	case element.Key != nil:
+		items, ok := object.([]any)
+		if !ok {
+			return false
+		}
+		for _, item := range items {
+			fields, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			matches := true
+			for _, key := range *element.Key {
+				field, found := fields[key.Name]
+				if !found || !value.Equals(value.NewValueInterface(field), key.Value) {
+					matches = false
+					break
+				}
+			}
+			if matches && tenantFieldIsSpecified(item, path[1:]) {
+				return true
+			}
+		}
+	}
+	// Tenant list fields are atomic or keyed maps. Preserve any ownership
+	// using other selectors instead of guessing how to adopt it.
+	return false
 }
