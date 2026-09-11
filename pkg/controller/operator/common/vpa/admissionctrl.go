@@ -216,7 +216,12 @@ func AdmissionControllerServingCertReconciler() reconciling.NamedSecretReconcile
 				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
-			se.Data[AdmissionControllerServingCertKeyName] = triple.EncodePrivateKeyPEM(key)
+			keyPEM, err := triple.MarshalPrivateKeyPEM(key)
+			if err != nil {
+				return nil, fmt.Errorf("unable to encode the server private key: %w", err)
+			}
+
+			se.Data[AdmissionControllerServingCertKeyName] = keyPEM
 			se.Data[AdmissionControllerServingCertName] = triple.EncodeCertPEM(cert)
 			se.Data[AdmissionControllerServingCertCAName] = triple.EncodeCertPEM(ca.Cert)
 

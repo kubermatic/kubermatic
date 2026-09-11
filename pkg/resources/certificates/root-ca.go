@@ -31,7 +31,7 @@ import (
 )
 
 // GetCAReconciler returns a function to create a secret containing a CA with the specified name.
-func GetCAReconciler(commonName string) reconciling.SecretReconciler {
+func GetCAReconciler(commonName string, keyConfig triple.KeyConfig) reconciling.SecretReconciler {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		if se.Data == nil {
 			se.Data = map[string][]byte{}
@@ -51,12 +51,17 @@ func GetCAReconciler(commonName string) reconciling.SecretReconciler {
 			return se, nil
 		}
 
-		caKp, err := triple.NewCA(commonName)
+		caKp, err := triple.NewCAWithConfig(commonName, keyConfig)
 		if err != nil {
-			return nil, fmt.Errorf("unable to create a new CA: %w", err)
+			return nil, fmt.Errorf("unable to create a new %s CA: %w", keyConfig, err)
 		}
 
-		se.Data[resources.CAKeySecretKey] = triple.EncodePrivateKeyPEM(caKp.Key)
+		keyPEM, err := triple.MarshalPrivateKeyPEM(caKp.Key)
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode the CA key: %w", err)
+		}
+
+		se.Data[resources.CAKeySecretKey] = keyPEM
 		se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(caKp.Cert)
 
 		return se, nil
@@ -70,13 +75,28 @@ type caReconcilerData interface {
 // RootCAReconciler returns a function to create a secret with the root ca.
 func RootCAReconciler(data caReconcilerData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.CASecretName, GetCAReconciler(fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
+		return resources.CASecretName, clusterCAReconciler(data, fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
 	}
 }
 
 // FrontProxyCAReconciler returns a function to create a secret with front proxy ca.
-func FrontProxyCAReconciler() reconciling.NamedSecretReconcilerFactory {
+func FrontProxyCAReconciler(data caReconcilerData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.FrontProxyCASecretName, GetCAReconciler("front-proxy-ca")
+		return resources.FrontProxyCASecretName, clusterCAReconciler(data, "front-proxy-ca")
+	}
+}
+
+// clusterCAReconciler resolves the key configuration that was frozen into the
+// cluster when it was created. The lookup happens inside the reconciler so that
+// an unusable configuration surfaces as a reconcile error instead of a panic
+// while the reconciler list is being built.
+func clusterCAReconciler(data caReconcilerData, commonName string) reconciling.SecretReconciler {
+	return func(se *corev1.Secret) (*corev1.Secret, error) {
+		keyConfig, err := CertificateKeyConfig(data.Cluster())
+		if err != nil {
+			return nil, err
+		}
+
+		return GetCAReconciler(commonName, keyConfig)(se)
 	}
 }

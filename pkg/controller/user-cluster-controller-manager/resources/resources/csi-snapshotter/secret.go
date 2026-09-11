@@ -28,7 +28,7 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-func TLSServingCertificateReconciler(webhookName string, ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
+func TLSServingCertificateReconciler(webhookName string, ca *triple.KeyPair, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.CSISnapshotWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -55,18 +55,29 @@ func TLSServingCertificateReconciler(webhookName string, ca *triple.KeyPair) rec
 				}
 			}
 
-			newKP, err := triple.NewServerKeyPair(ca,
+			keyConfig, err := getKeyConfig()
+			if err != nil {
+				return nil, err
+			}
+
+			newKP, err := triple.NewServerKeyPairWithConfig(ca,
 				commonName,
 				webhookName,
 				metav1.NamespaceSystem,
 				"",
 				nil,
-				[]string{commonName})
+				[]string{commonName},
+				keyConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.CSIWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.CSIWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
+			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
+			}
+
+			se.Data[resources.CSIWebhookServingCertKeyKeyName] = keyPEM
 			return se, nil
 		}
 	}
