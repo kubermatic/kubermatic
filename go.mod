@@ -37,7 +37,7 @@ require (
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.16.9
 	github.com/containerd/containerd v1.7.27
-	github.com/digitalocean/godo v1.142.0
+	github.com/digitalocean/godo v1.206.0
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
 	github.com/envoyproxy/go-control-plane v0.14.0
