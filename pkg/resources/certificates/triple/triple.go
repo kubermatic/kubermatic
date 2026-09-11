@@ -44,15 +44,26 @@ const (
 	ECPrivateKeyBlockType = "EC PRIVATE KEY"
 	PrivateKeyBlockType   = "PRIVATE KEY"
 	CertificateBlockType  = "CERTIFICATE"
+	// PublicKeyBlockType is a possible value for pem.Block.Type.
+	PublicKeyBlockType = "PUBLIC KEY"
 )
 
+// KeyPair is a certificate and the private key it was issued for. The key is
+// kept as a crypto.Signer so that RSA and ECDSA material can be handled without
+// distinguishing between them anywhere but at generation and encoding time.
 type KeyPair struct {
-	Key  *rsa.PrivateKey
+	Key  crypto.Signer
 	Cert *x509.Certificate
 }
 
+// NewCA creates a CA with the legacy RSA-2048 key.
 func NewCA(name string) (*KeyPair, error) {
-	key, err := newPrivateKey()
+	return NewCAWithConfig(name, KeyConfig{})
+}
+
+// NewCAWithConfig creates a CA whose key follows the given configuration.
+func NewCAWithConfig(name string, keyConfig KeyConfig) (*KeyPair, error) {
+	key, err := keyConfig.GenerateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a private key for a new CA: %w", err)
 	}
@@ -72,8 +83,15 @@ func NewCA(name string) (*KeyPair, error) {
 	}, nil
 }
 
+// NewServerKeyPair creates a serving certificate with the legacy RSA-2048 key.
 func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) (*KeyPair, error) {
-	key, err := newPrivateKey()
+	return NewServerKeyPairWithConfig(ca, commonName, svcName, svcNamespace, dnsDomain, ips, hostnames, KeyConfig{})
+}
+
+// NewServerKeyPairWithConfig creates a serving certificate whose key follows the
+// given configuration.
+func NewServerKeyPairWithConfig(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string, keyConfig KeyConfig) (*KeyPair, error) {
+	key, err := keyConfig.GenerateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a server private key: %w", err)
 	}
@@ -112,8 +130,15 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 	}, nil
 }
 
+// NewClientKeyPair creates a client certificate with the legacy RSA-2048 key.
 func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*KeyPair, error) {
-	key, err := newPrivateKey()
+	return NewClientKeyPairWithConfig(ca, commonName, organizations, KeyConfig{})
+}
+
+// NewClientKeyPairWithConfig creates a client certificate whose key follows the
+// given configuration.
+func NewClientKeyPairWithConfig(ca *KeyPair, commonName string, organizations []string, keyConfig KeyConfig) (*KeyPair, error) {
+	key, err := keyConfig.GenerateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a client private key: %w", err)
 	}
@@ -132,11 +157,6 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 		Key:  key,
 		Cert: cert,
 	}, nil
-}
-
-// newPrivateKey creates an RSA private key.
-func newPrivateKey() (*rsa.PrivateKey, error) {
-	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
 // newSignedCert creates a signed certificate using the given CA certificate and key.
@@ -162,8 +182,14 @@ func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
 		NotAfter:     time.Now().Add(duration365d).UTC(),
-		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  cfg.Usages,
+	}
+
+	// keyEncipherment only applies to keys that can be used for encryption, which
+	// rules out ECDSA. RSA certificates keep the usage they have always had.
+	if _, isRSA := key.Public().(*rsa.PublicKey); isRSA {
+		certTmpl.KeyUsage |= x509.KeyUsageKeyEncipherment
 	}
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
 	if err != nil {
@@ -172,7 +198,9 @@ func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 	return x509.ParseCertificate(certDERBytes)
 }
 
-func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
+// ParseKeyPair parses a PEM-encoded certificate and private key of any supported
+// algorithm.
+func ParseKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	certs, err := certutil.ParseCertsPEM(certPEM)
 	if err != nil {
 		return nil, fmt.Errorf("certificate is not valid PEM: %w", err)
@@ -187,12 +215,27 @@ func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 		return nil, fmt.Errorf("private key is not valid PEM: %w", err)
 	}
 
-	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
-	if !isRSAKey {
+	signer, isSigner := key.(crypto.Signer)
+	if !isSigner {
+		return nil, fmt.Errorf("private key of type %T cannot be used to sign", key)
+	}
+
+	return &KeyPair{Cert: certs[0], Key: signer}, nil
+}
+
+// ParseRSAKeyPair is ParseKeyPair for callers that cannot handle anything but an
+// RSA key.
+func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
+	keyPair, err := ParseKeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, isRSAKey := keyPair.Key.(*rsa.PrivateKey); !isRSAKey {
 		return nil, errors.New("private key is not a RSA key")
 	}
 
-	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
+	return keyPair, nil
 }
 
 // EncodeCertPEM returns PEM-encoded certificate data.
@@ -200,15 +243,6 @@ func EncodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{
 		Type:  certificateBlockType,
 		Bytes: cert.Raw,
-	}
-	return pem.EncodeToMemory(&block)
-}
-
-// EncodePrivateKeyPEM returns PEM-encoded private key data.
-func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
-	block := pem.Block{
-		Type:  RSAPrivateKeyBlockType,
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}
 	return pem.EncodeToMemory(&block)
 }
@@ -308,8 +342,14 @@ func NewSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
 		NotAfter:     time.Now().Add(duration365d).UTC(),
-		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  cfg.Usages,
+	}
+
+	// keyEncipherment only applies to keys that can be used for encryption, which
+	// rules out ECDSA. RSA certificates keep the usage they have always had.
+	if _, isRSA := key.Public().(*rsa.PublicKey); isRSA {
+		certTmpl.KeyUsage |= x509.KeyUsageKeyEncipherment
 	}
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
 	if err != nil {

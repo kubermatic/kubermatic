@@ -35,7 +35,7 @@ cert-file = "/etc/webhook/cert.pem"
 key-file = "/etc/webhook/key.pem"
 `, resources.CSIMigrationWebhookPort)
 
-func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
+func TLSServingCertificateReconciler(ca *triple.KeyPair, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.CSIMigrationWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -62,19 +62,30 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecret
 				}
 			}
 
-			newKP, err := triple.NewServerKeyPair(ca,
+			keyConfig, err := getKeyConfig()
+			if err != nil {
+				return nil, err
+			}
+
+			newKP, err := triple.NewServerKeyPairWithConfig(ca,
 				commonName,
 				resources.CSIMigrationWebhookName,
 				metav1.NamespaceSystem,
 				"",
 				nil,
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
-				[]string{commonName})
+				[]string{commonName},
+				keyConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.CSIWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.CSIWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
+			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
+			}
+
+			se.Data[resources.CSIWebhookServingCertKeyKeyName] = keyPEM
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 			se.Data[resources.CSIMigrationWebhookConfig] = []byte(webhookConfig)
