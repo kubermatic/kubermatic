@@ -16,9 +16,105 @@ version: 2
 updates:
   - package-ecosystem: gomod
     directory: "/"
+    target-branch: main
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: daily
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.31
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.30
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.29
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/sdk"
+    target-branch: main
+    schedule:
+      interval: daily
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/sdk"
+    target-branch: release/v2.31
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/sdk"
+    target-branch: release/v2.30
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  - package-ecosystem: gomod
+    directory: "/sdk"
+    target-branch: release/v2.29
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "go"
     labels:
       - dependencies
       - release-note-none
