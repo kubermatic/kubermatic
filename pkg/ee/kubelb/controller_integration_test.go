@@ -26,6 +26,7 @@ package kubelbcontroller
 
 import (
 	"context"
+	encodingjson "encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -101,7 +102,8 @@ func TestProjectWatchPropagatesTenantDefaultsIntegration(t *testing.T) {
 			if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKey{Name: cluster.Labels[kubermaticv1.ProjectIDLabelKey]}, project); err != nil {
 				return reconcile.Result{}, err
 			}
-			return reconcile.Result{}, tenantReconciler.createOrUpdateKubeLBManagementClusterResources(ctx, client, cluster, project.Spec.DefaultTenantSpec)
+			_, err := tenantReconciler.createOrUpdateKubeLBManagementClusterResources(ctx, client, cluster, project.Spec.DefaultTenantSpec)
+			return reconcile.Result{}, err
 		}))
 	if err != nil {
 		t.Fatalf("create target controller: %v", err)
@@ -208,12 +210,14 @@ func TestTenantProjectDefaultsIntegration(t *testing.T) {
 	fixture := newTenantIntegrationFixture(t)
 	t.Run("update and remove project fields while preserving administrator settings", fixture.updateAndRemoveDefaults)
 	t.Run("administrator override conflicts without partially applying defaults", fixture.administratorConflict)
-	t.Run("legacy KKP fields migrate and removed defaults are deleted", fixture.legacyMigration)
+	t.Run("legacy fields are preserved until explicitly adopted", fixture.legacyMigration)
+	t.Run("legacy GatewayClass mappings retain omitted entries and fields", fixture.legacyGatewayClassMappings)
 	t.Run("legacy administrator edit survives ownership migration", fixture.legacyAdministratorEdit)
 	t.Run("migration cannot overwrite concurrent field ownership changes", fixture.concurrentMigration)
 	t.Run("unknown previous owner is not migrated", fixture.unknownOwner)
 	t.Run("invalid defaults leave existing Tenant unchanged", fixture.invalidDefaults)
 	t.Run("Tenant pending deletion is not updated", fixture.deletingTenant)
+	t.Run("legacy API defaults survive changed and removed schema defaults", fixture.legacyDefaultProvenance)
 }
 
 type tenantIntegrationFixture struct {
@@ -238,7 +242,11 @@ func newTenantIntegrationFixture(t *testing.T) *tenantIntegrationFixture {
 			t.Errorf("stop API server: %v", err)
 		}
 	})
-	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+	scheme := runtime.NewScheme()
+	if err := apiextensionsv1.AddToScheme(scheme); err != nil {
+		t.Fatalf("register CRDs: %v", err)
+	}
+	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme})
 	if err != nil {
 		t.Fatalf("create client: %v", err)
 	}
@@ -266,7 +274,7 @@ func (f *tenantIntegrationFixture) get(t *testing.T, cluster *kubermaticv1.Clust
 
 func (f *tenantIntegrationFixture) reconcile(t *testing.T, cluster *kubermaticv1.Cluster, raw string) {
 	t.Helper()
-	if err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(raw)}); err != nil {
+	if _, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(raw)}); err != nil {
 		t.Fatalf("reconcile Tenant: %v", err)
 	}
 }
@@ -345,7 +353,7 @@ func (f *tenantIntegrationFixture) updateAndRemoveDefaults(t *testing.T) {
 	assertIntegrationManagerMetadata(t, tenant)
 
 	for _, defaults := range []*runtime.RawExtension{nil, {}, {Raw: []byte(`{}`)}, {Raw: []byte(`null`)}} {
-		if err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, defaults); err != nil {
+		if _, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, defaults); err != nil {
 			t.Fatalf("clear project defaults: %v", err)
 		}
 		tenant = f.get(t, cluster)
@@ -364,7 +372,10 @@ func (f *tenantIntegrationFixture) administratorConflict(t *testing.T) {
 	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-project"},"loadBalancer":{"limit":5}}`)
 	f.applyAdmin(t, cluster, `{"gatewayAPI":{"class":"eg-admin"}}`, true)
 	before := f.get(t, cluster)
-	err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-new"},"loadBalancer":{"limit":10}}`)})
+	existingUsable, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-new"},"loadBalancer":{"limit":10}}`)})
+	if !existingUsable {
+		t.Error("existing Tenant must remain usable after an apply conflict")
+	}
 	if !apierrors.IsConflict(err) {
 		t.Fatalf("expected field ownership conflict, got %v", err)
 	}
@@ -396,20 +407,197 @@ func (f *tenantIntegrationFixture) legacyMigration(t *testing.T) {
 	assertIntegrationTenantSpec(t, tenant, `{
 		"allowedDomains":["**"],
 		"gatewayAPI":{"class":"eg-new"},
-		"timeouts":{"connect":"10s","idleConnection":"1h"},
-		"defaultAnnotations":{"service":{"admin":"keep"}}
+		"timeouts":{"connect":"10s","request":"30s","idleConnection":"1h"},
+		"defaultAnnotations":{"service":{"project":"old","remove":"old","admin":"keep"}}
 	}`)
 	assertIntegrationManagerMetadata(t, tenant)
 	if tenant.GetLabels()["kubermatic.k8c.io/cluster-external-name"] != "test.example.com" {
 		t.Error("legacy cluster label was not updated")
 	}
-	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-later"}}`)
+
+	// A later Project update can adopt an initially omitted legacy field.
+	// Removing it subsequently then follows normal apply ownership semantics.
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-later"},"timeouts":{"request":"45s"},"defaultAnnotations":{"service":{"project":"new"}}}`)
 	assertIntegrationTenantSpec(t, f.get(t, cluster), `{
 		"allowedDomains":["**"],
 		"gatewayAPI":{"class":"eg-later"},
-		"timeouts":{"idleConnection":"1h"},
-		"defaultAnnotations":{"service":{"admin":"keep"}}
+		"timeouts":{"request":"45s","idleConnection":"1h"},
+		"defaultAnnotations":{"service":{"project":"new","remove":"old","admin":"keep"}}
 	}`)
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-final"}}`)
+	assertIntegrationTenantSpec(t, f.get(t, cluster), `{
+		"allowedDomains":["**"],
+		"gatewayAPI":{"class":"eg-final"},
+		"timeouts":{"idleConnection":"1h"},
+		"defaultAnnotations":{"service":{"remove":"old","admin":"keep"}}
+	}`)
+}
+
+func (f *tenantIntegrationFixture) legacyGatewayClassMappings(t *testing.T) {
+	// Model a future mapping field that KKP does not include in its desired
+	// configuration. The structural schema still tracks that field separately.
+	crd := f.tenantCRD(t)
+	original := crd.Spec.DeepCopy()
+	spec := crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+	gateway := spec.Properties["gatewayAPI"]
+	mappings := gateway.Properties["classMappings"]
+	mappings.Items.Schema.Properties["description"] = apiextensionsv1.JSONSchemaProps{Type: "string"}
+	if err := f.client.Update(f.ctx, crd); err != nil {
+		t.Fatalf("extend mapping schema: %v", err)
+	}
+	t.Cleanup(func() {
+		current := f.tenantCRD(t)
+		current.Spec = *original
+		if err := f.client.Update(f.ctx, current); err != nil {
+			t.Errorf("restore mapping schema: %v", err)
+		}
+	})
+	f.waitForTenantSchema(t,
+		`{"gatewayAPI":{"classMappings":[{"source":"probe","target":"eg-probe","description":"keep"}]}}`,
+		`{"allowedDomains":["**"],"gatewayAPI":{"classMappings":[{"source":"probe","target":"eg-probe","description":"keep"}]}}`)
+
+	cluster := f.newCluster()
+	tenant := integrationTenant(cluster.Name, integrationTenantSpec(t, `{
+		"gatewayAPI":{"classMappings":[
+			{"source":"public","target":"eg-old","description":"keep-public"},
+			{"source":"internal","target":"eg-internal","description":"keep-internal"}
+		]}
+	}`))
+	if err := f.client.Create(f.ctx, tenant, ctrlruntimeclient.FieldOwner("seed-controller-manager")); err != nil {
+		t.Fatalf("create legacy Tenant mappings: %v", err)
+	}
+	f.reconcile(t, cluster, `{"gatewayAPI":{"classMappings":[{"source":"public","target":"eg-new"}]}}`)
+	tenant = f.get(t, cluster)
+	assertIntegrationTenantSpec(t, tenant, `{
+		"allowedDomains":["**"],
+		"gatewayAPI":{"classMappings":[
+			{"source":"public","target":"eg-new","description":"keep-public"},
+			{"source":"internal","target":"eg-internal","description":"keep-internal"}
+		]}
+	}`)
+	assertIntegrationTenantFieldOwner(t, tenant, ControllerName, true, "f:spec", "f:gatewayAPI", "f:classMappings", `k:{"source":"public"}`, "f:target")
+	for _, path := range [][]string{
+		{"f:spec", "f:gatewayAPI", "f:classMappings", `k:{"source":"public"}`, "f:description"},
+		{"f:spec", "f:gatewayAPI", "f:classMappings", `k:{"source":"internal"}`, "f:target"},
+	} {
+		assertIntegrationTenantFieldOwner(t, tenant, "seed-controller-manager", true, path...)
+		assertIntegrationTenantFieldOwner(t, tenant, ControllerName, false, path...)
+	}
+}
+
+func (f *tenantIntegrationFixture) legacyDefaultProvenance(t *testing.T) {
+	original := f.tenantCRD(t).Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"].Properties["allowedDomains"].Default
+	t.Cleanup(func() { f.setTenantDefault(t, original) })
+	cases := []struct {
+		name         string
+		defaultValue *apiextensionsv1.JSON
+		cluster      *kubermaticv1.Cluster
+	}{
+		{name: "changed default", defaultValue: &apiextensionsv1.JSON{Raw: []byte(`["*.current.example"]`)}, cluster: f.newCluster()},
+		{name: "removed default", cluster: f.newCluster()},
+	}
+	// Both Tenants were created under the original schema. Their Update manager
+	// owns API defaults as well as the fields explicitly supplied by old KKP.
+	for _, tc := range cases {
+		tenant := integrationTenant(tc.cluster.Name, integrationTenantSpec(t, `{"gatewayAPI":{"class":"eg-old"}}`))
+		if err := f.client.Create(f.ctx, tenant, ctrlruntimeclient.FieldOwner("seed-controller-manager")); err != nil {
+			t.Fatalf("create legacy Tenant: %v", err)
+		}
+		assertIntegrationTenantFieldOwner(t, tenant, "seed-controller-manager", true, "f:spec", "f:allowedDomains")
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f.setTenantDefault(t, tc.defaultValue)
+			for _, class := range []string{"eg-new", "eg-later"} {
+				f.reconcile(t, tc.cluster, fmt.Sprintf(`{"gatewayAPI":{"class":%q}}`, class))
+				tenant := f.get(t, tc.cluster)
+				assertIntegrationTenantSpec(t, tenant, fmt.Sprintf(`{"allowedDomains":["**"],"gatewayAPI":{"class":%q}}`, class))
+				assertIntegrationTenantFieldOwner(t, tenant, "seed-controller-manager", true, "f:spec", "f:allowedDomains")
+				assertIntegrationTenantFieldOwner(t, tenant, ControllerName, false, "f:spec", "f:allowedDomains")
+			}
+
+			// Only an explicit Project value adopts the field. Later omission can
+			// then remove it and let the currently installed schema default apply.
+			f.reconcile(t, tc.cluster, `{"gatewayAPI":{"class":"eg-later"},"allowedDomains":["*.project.example"]}`)
+			tenant := f.get(t, tc.cluster)
+			assertIntegrationTenantSpec(t, tenant, `{"allowedDomains":["*.project.example"],"gatewayAPI":{"class":"eg-later"}}`)
+			assertIntegrationTenantFieldOwner(t, tenant, ControllerName, true, "f:spec", "f:allowedDomains")
+			assertIntegrationTenantFieldOwner(t, tenant, "seed-controller-manager", false, "f:spec", "f:allowedDomains")
+			f.reconcile(t, tc.cluster, `{"gatewayAPI":{"class":"eg-final"}}`)
+			expected := `{"gatewayAPI":{"class":"eg-final"}}`
+			if tc.defaultValue != nil {
+				expected = fmt.Sprintf(`{"gatewayAPI":{"class":"eg-final"},"allowedDomains":%s}`, tc.defaultValue.Raw)
+			}
+			assertIntegrationTenantSpec(t, f.get(t, tc.cluster), expected)
+		})
+	}
+}
+
+func (f *tenantIntegrationFixture) tenantCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
+	t.Helper()
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	if err := f.client.Get(f.ctx, ctrlruntimeclient.ObjectKey{Name: "tenants.kubelb.k8c.io"}, crd); err != nil {
+		t.Fatalf("get Tenant CRD: %v", err)
+	}
+	return crd
+}
+
+func (f *tenantIntegrationFixture) setTenantDefault(t *testing.T, value *apiextensionsv1.JSON) {
+	t.Helper()
+	crd := f.tenantCRD(t)
+	spec := crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+	allowedDomains := spec.Properties["allowedDomains"]
+	allowedDomains.Default = value
+	spec.Properties["allowedDomains"] = allowedDomains
+	if err := f.client.Update(f.ctx, crd); err != nil {
+		t.Fatalf("update Tenant schema default: %v", err)
+	}
+	expected := `{"gatewayAPI":{"class":"eg-probe"}}`
+	if value != nil {
+		expected = fmt.Sprintf(`{"gatewayAPI":{"class":"eg-probe"},"allowedDomains":%s}`, value.Raw)
+	}
+	f.waitForTenantSchema(t, `{"gatewayAPI":{"class":"eg-probe"}}`, expected)
+}
+
+func (f *tenantIntegrationFixture) waitForTenantSchema(t *testing.T, probeSpec, expectedSpec string) {
+	t.Helper()
+	expected := integrationTenantSpec(t, expectedSpec)
+	err := wait.PollUntilContextTimeout(f.ctx, 100*time.Millisecond, 15*time.Second, true, func(ctx context.Context) (bool, error) {
+		probe := integrationTenant(f.newCluster().Name, integrationTenantSpec(t, probeSpec))
+		if err := f.client.Create(ctx, probe); err != nil {
+			return false, err
+		}
+		if err := f.client.Delete(ctx, probe); err != nil {
+			return false, err
+		}
+		actual, _, err := unstructured.NestedMap(probe.Object, "spec")
+		return reflect.DeepEqual(actual, expected), err
+	})
+	if err != nil {
+		t.Fatalf("wait for updated Tenant schema: %v", err)
+	}
+}
+
+func assertIntegrationTenantFieldOwner(t *testing.T, tenant *unstructured.Unstructured, manager string, want bool, path ...string) {
+	t.Helper()
+	owned := false
+	for _, entry := range tenant.GetManagedFields() {
+		if entry.Manager != manager || entry.FieldsV1 == nil || entry.Subresource != "" {
+			continue
+		}
+		fields := map[string]interface{}{}
+		if err := encodingjson.NewDecoder(entry.FieldsV1.GetRawReader()).Decode(&fields); err != nil {
+			t.Fatalf("decode field ownership: %v", err)
+		}
+		_, found, err := unstructured.NestedFieldNoCopy(fields, path...)
+		if err != nil {
+			t.Fatalf("read field ownership: %v", err)
+		}
+		owned = owned || found
+	}
+	if owned != want {
+		t.Errorf("manager %q ownership of %v: got %t, want %t", manager, path, owned, want)
+	}
 }
 
 func (f *tenantIntegrationFixture) legacyAdministratorEdit(t *testing.T) {
@@ -421,7 +609,7 @@ func (f *tenantIntegrationFixture) legacyAdministratorEdit(t *testing.T) {
 	if err := f.client.Patch(f.ctx, tenant, ctrlruntimeclient.RawPatch(types.MergePatchType, []byte(`{"spec":{"gatewayAPI":{"class":"eg-admin"}}}`)), ctrlruntimeclient.FieldOwner("tenant-admin")); err != nil {
 		t.Fatalf("edit legacy Tenant: %v", err)
 	}
-	err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-project"},"loadBalancer":{"limit":10}}`)})
+	_, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-project"},"loadBalancer":{"limit":10}}`)})
 	if !apierrors.IsConflict(err) {
 		t.Fatalf("expected conflict with the administrator's legacy edit, got %v", err)
 	}
@@ -434,7 +622,8 @@ func (f *tenantIntegrationFixture) concurrentMigration(t *testing.T) {
 	if err := f.client.Create(f.ctx, tenant, ctrlruntimeclient.FieldOwner("seed-controller-manager")); err != nil {
 		t.Fatalf("create legacy Tenant: %v", err)
 	}
-	migration, err := kubelbclusterresources.TenantManagedFieldsMigrationPatch(tenant, ControllerName)
+	desired := integrationTenant(cluster.Name, integrationTenantSpec(t, `{"gatewayAPI":{"class":"eg-project"}}`))
+	migration, err := kubelbclusterresources.TenantManagedFieldsMigrationPatch(tenant, desired, ControllerName)
 	if err != nil || migration == nil {
 		t.Fatalf("prepare ownership migration: patch=%s error=%v", migration, err)
 	}
@@ -457,7 +646,7 @@ func (f *tenantIntegrationFixture) unknownOwner(t *testing.T) {
 		t.Fatalf("create externally managed Tenant: %v", err)
 	}
 	before := f.get(t, cluster)
-	err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-project"}}`)})
+	_, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-project"}}`)})
 	if !apierrors.IsConflict(err) {
 		t.Fatalf("expected existing owner conflict, got %v", err)
 	}
@@ -472,7 +661,10 @@ func (f *tenantIntegrationFixture) invalidDefaults(t *testing.T) {
 	for _, raw := range []string{`{`, `[]`, `"text"`, `true`, `42`, `{"unknownSetting":true}`, `{"loadBalancer":{"limit":"invalid"}}`} {
 		t.Run(raw, func(t *testing.T) {
 			before := f.get(t, cluster)
-			err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(raw)})
+			existingUsable, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(raw)})
+			if !existingUsable {
+				t.Error("existing Tenant must remain usable after invalid defaults")
+			}
 			if err == nil {
 				t.Fatal("expected invalid defaults to be rejected")
 			}
@@ -495,8 +687,12 @@ func (f *tenantIntegrationFixture) deletingTenant(t *testing.T) {
 	if before.GetDeletionTimestamp().IsZero() {
 		t.Fatal("Tenant should be pending finalization")
 	}
-	if err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-new"}}`)}); err == nil {
+	existingUsable, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg-new"}}`)})
+	if err == nil {
 		t.Fatal("expected reconciliation of a deleting Tenant to fail")
+	}
+	if existingUsable {
+		t.Error("a terminating Tenant must not be considered usable")
 	}
 	if !reflect.DeepEqual(before.Object, f.get(t, cluster).Object) {
 		t.Error("reconciliation changed a Tenant pending deletion")
@@ -540,7 +736,7 @@ func assertIntegrationTenantSpec(t *testing.T, tenant *unstructured.Unstructured
 			bySource := map[string]interface{}{}
 			for _, entry := range mappings {
 				mapping := entry.(map[string]interface{})
-				bySource[mapping["source"].(string)] = mapping["target"]
+				bySource[mapping["source"].(string)] = mapping
 			}
 			if err := unstructured.SetNestedMap(spec, bySource, "gatewayAPI", "classMappings"); err != nil {
 				t.Fatalf("normalize GatewayClass mappings: %v", err)

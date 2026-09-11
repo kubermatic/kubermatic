@@ -65,20 +65,23 @@ func TestTenantManagedFieldsMigrationPatch(t *testing.T) {
 	manager := entry("kubelb", metav1.ManagedFieldsOperationUpdate, `{"f:metadata":{"f:finalizers":{}},"f:spec":{"f:allowedDomains":{}}}`)
 
 	tests := []struct {
-		name    string
-		entries []metav1.ManagedFieldsEntry
-		want    []metav1.ManagedFieldsEntry
+		name        string
+		desiredSpec string
+		entries     []metav1.ManagedFieldsEntry
+		want        []metav1.ManagedFieldsEntry
 	}{
 		{name: "no ownership"},
 		{name: "unknown and unrelated ownership", entries: []metav1.ManagedFieldsEntry{admin, manager, otherVersion, status, legacyApply, unknownFieldsType, otherApplyVersion}},
 		{name: "legacy metadata outside KKP labels", entries: []metav1.ManagedFieldsEntry{legacy(`{"f:metadata":{"f:annotations":{"f:example.com/note":{}},"f:labels":{".":{},"f:example.com/label":{}},"f:finalizers":{}}}`)}},
 		{
-			name:    "create apply owner from legacy spec and all KKP labels",
-			entries: []metav1.ManagedFieldsEntry{legacy(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{},"f:kubermatic.k8c.io/cluster-external-name":{},"f:kubermatic.k8c.io/cluster-project-id":{}}},"f:spec":{".":{},"f:gatewayAPI":{"f:class":{}},"f:waf":{"f:enableTenantPolicies":{}}}}`)},
-			want:    []metav1.ManagedFieldsEntry{applied(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{},"f:kubermatic.k8c.io/cluster-external-name":{},"f:kubermatic.k8c.io/cluster-project-id":{}}},"f:spec":{".":{},"f:gatewayAPI":{"f:class":{}},"f:waf":{"f:enableTenantPolicies":{}}}}`)},
+			name:        "create apply owner from explicit defaults and all KKP labels",
+			desiredSpec: `{"gatewayAPI":{"class":"eg-project"},"waf":{"enableTenantPolicies":false}}`,
+			entries:     []metav1.ManagedFieldsEntry{legacy(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{},"f:kubermatic.k8c.io/cluster-external-name":{},"f:kubermatic.k8c.io/cluster-project-id":{}}},"f:spec":{".":{},"f:gatewayAPI":{"f:class":{}},"f:waf":{"f:enableTenantPolicies":{}}}}`)},
+			want:        []metav1.ManagedFieldsEntry{applied(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{},"f:kubermatic.k8c.io/cluster-external-name":{},"f:kubermatic.k8c.io/cluster-project-id":{}}},"f:spec":{".":{},"f:gatewayAPI":{"f:class":{}},"f:waf":{"f:enableTenantPolicies":{}}}}`)},
 		},
 		{
-			name: "preserve unrelated legacy fields and all other owners",
+			name:        "preserve unrelated legacy fields and all other owners",
+			desiredSpec: `{"loadBalancer":{"limit":0}}`,
 			entries: []metav1.ManagedFieldsEntry{
 				legacy(`{"f:metadata":{"f:annotations":{"f:example.com/note":{}},"f:labels":{".":{},"f:example.com/label":{},"f:kubermatic.k8c.io/cluster-name":{}},"f:finalizers":{}},"f:spec":{"f:loadBalancer":{"f:limit":{}}},"f:status":{"f:phase":{}}}`),
 				admin, manager, otherVersion, status, legacyApply, unknownFieldsType, appliedStatus,
@@ -90,7 +93,8 @@ func TestTenantManagedFieldsMigrationPatch(t *testing.T) {
 			},
 		},
 		{
-			name: "union mapping entries with existing apply owner",
+			name:        "union mapping entries with existing apply owner",
+			desiredSpec: `{"gatewayAPI":{"classMappings":[{"source":"public","target":"eg-public"}]}}`,
 			entries: []metav1.ManagedFieldsEntry{
 				legacy(`{"f:spec":{"f:gatewayAPI":{"f:classMappings":{"k:{\"source\":\"public\"}":{".":{},"f:source":{},"f:target":{}}}}}}`),
 				applied(`{"f:spec":{"f:gatewayAPI":{"f:classMappings":{"k:{\"source\":\"internal\"}":{".":{},"f:source":{},"f:target":{}}}},"f:waf":{"f:enableTenantPolicies":{}}}}`),
@@ -100,9 +104,53 @@ func TestTenantManagedFieldsMigrationPatch(t *testing.T) {
 			},
 		},
 		{
-			name:    "legacy and apply co-ownership becomes sole KKP workflow",
-			entries: []metav1.ManagedFieldsEntry{legacy(`{"f:spec":{"f:ingress":{"f:class":{}}}}`), applied(`{"f:spec":{"f:ingress":{"f:class":{}}}}`)},
-			want:    []metav1.ManagedFieldsEntry{applied(`{"f:spec":{"f:ingress":{"f:class":{}}}}`)},
+			name:        "legacy and apply co-ownership becomes sole KKP workflow",
+			desiredSpec: `{"ingress":{"class":""}}`,
+			entries:     []metav1.ManagedFieldsEntry{legacy(`{"f:spec":{"f:ingress":{"f:class":{}}}}`), applied(`{"f:spec":{"f:ingress":{"f:class":{}}}}`)},
+			want:        []metav1.ManagedFieldsEntry{applied(`{"f:spec":{"f:ingress":{"f:class":{}}}}`)},
+		},
+		{
+			name:        "retain ambiguous legacy defaults and omitted sibling fields",
+			desiredSpec: `{"timeouts":{"connect":"10s"}}`,
+			entries:     []metav1.ManagedFieldsEntry{legacy(`{"f:spec":{".":{},"f:allowedDomains":{},"f:timeouts":{".":{},"f:connect":{},"f:request":{}}}}`)},
+			want: []metav1.ManagedFieldsEntry{
+				legacy(`{"f:spec":{"f:allowedDomains":{},"f:timeouts":{"f:request":{}}}}`),
+				applied(`{"f:spec":{".":{},"f:timeouts":{".":{},"f:connect":{}}}}`),
+			},
+		},
+		{
+			name:    "no project defaults preserves all legacy spec ownership",
+			entries: []metav1.ManagedFieldsEntry{legacy(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{}}},"f:spec":{".":{},"f:allowedDomains":{},"f:ingress":{"f:class":{}}}}`)},
+			want: []metav1.ManagedFieldsEntry{
+				legacy(`{"f:spec":{".":{},"f:allowedDomains":{},"f:ingress":{"f:class":{}}}}`),
+				applied(`{"f:metadata":{"f:labels":{"f:kubermatic.k8c.io/cluster-name":{}}}}`),
+			},
+		},
+		{
+			name:        "explicit empty atomic list adopts its legacy ownership",
+			desiredSpec: `{"allowedDomains":[]}`,
+			entries:     []metav1.ManagedFieldsEntry{legacy(`{"f:spec":{"f:allowedDomains":{}}}`)},
+			want:        []metav1.ManagedFieldsEntry{applied(`{"f:spec":{"f:allowedDomains":{}}}`)},
+		},
+		{
+			name:        "explicit null adopts its legacy field without adopting siblings",
+			desiredSpec: `{"timeouts":{"connect":null}}`,
+			entries:     []metav1.ManagedFieldsEntry{legacy(`{"f:spec":{"f:timeouts":{"f:connect":{},"f:request":{}}}}`)},
+			want: []metav1.ManagedFieldsEntry{
+				legacy(`{"f:spec":{"f:timeouts":{"f:request":{}}}}`),
+				applied(`{"f:spec":{"f:timeouts":{"f:connect":{}}}}`),
+			},
+		},
+		{
+			name:        "match mapping by source while preserving omitted entry and child",
+			desiredSpec: `{"gatewayAPI":{"classMappings":[{"source":"new","target":"eg-new"},{"source":"public","target":"eg-public"}]}}`,
+			entries: []metav1.ManagedFieldsEntry{
+				legacy(`{"f:spec":{"f:gatewayAPI":{"f:classMappings":{"k:{\"source\":\"internal\"}":{".":{},"f:source":{},"f:target":{}},"k:{\"source\":\"public\"}":{".":{},"f:source":{},"f:target":{},"f:extra":{}}}}}}`),
+			},
+			want: []metav1.ManagedFieldsEntry{
+				legacy(`{"f:spec":{"f:gatewayAPI":{"f:classMappings":{"k:{\"source\":\"internal\"}":{".":{},"f:source":{},"f:target":{}},"k:{\"source\":\"public\"}":{"f:extra":{}}}}}}`),
+				applied(`{"f:spec":{"f:gatewayAPI":{"f:classMappings":{"k:{\"source\":\"public\"}":{".":{},"f:source":{},"f:target":{}}}}}}`),
+			},
 		},
 	}
 	for _, tc := range tests {
@@ -113,12 +161,17 @@ func TestTenantManagedFieldsMigrationPatch(t *testing.T) {
 			existing.SetResourceVersion("42")
 			existing.SetManagedFields(tc.entries)
 			before := existing.DeepCopy()
-			patch, err := TenantManagedFieldsMigrationPatch(existing, testTenantFieldManager)
+			desired := tenantMigrationDesired(t, tc.desiredSpec)
+			desiredBefore := desired.DeepCopy()
+			patch, err := TenantManagedFieldsMigrationPatch(existing, desired, testTenantFieldManager)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(existing, before) {
 				t.Fatal("migration mutated its input")
+			}
+			if !reflect.DeepEqual(desired, desiredBefore) {
+				t.Fatal("migration mutated the desired Tenant")
 			}
 			if tc.want == nil {
 				if patch != nil {
@@ -163,7 +216,7 @@ func TestTenantManagedFieldsMigrationPatch(t *testing.T) {
 				t.Fatalf("ownership mismatch:\ngot  %s\nwant %s", gotJSON, wantJSON)
 			}
 			existing.SetManagedFields(got)
-			second, err := TenantManagedFieldsMigrationPatch(existing, testTenantFieldManager)
+			second, err := TenantManagedFieldsMigrationPatch(existing, desired, testTenantFieldManager)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -192,7 +245,7 @@ func TestTenantManagedFieldsMigrationPatchErrors(t *testing.T) {
 				Manager: legacyTenantFieldManager, Operation: metav1.ManagedFieldsOperationUpdate,
 				APIVersion: existing.GetAPIVersion(), FieldsType: "FieldsV1", FieldsV1: metav1.NewFieldsV1(tc.fields),
 			}})
-			patch, err := TenantManagedFieldsMigrationPatch(existing, testTenantFieldManager)
+			patch, err := TenantManagedFieldsMigrationPatch(existing, tenantMigrationDesired(t, `{"ingress":{"class":"eg-project"}}`), testTenantFieldManager)
 			if err == nil || patch != nil {
 				t.Fatalf("expected error without patch, got %s, %v", patch, err)
 			}
@@ -215,11 +268,31 @@ func TestTenantManagedFieldsMigrationPatchRejectsUnknownApplyVersion(t *testing.
 			FieldsV1: metav1.NewFieldsV1(`{"f:spec":{"f:loadBalancer":{"f:limit":{}}}}`)},
 	})
 	before := existing.DeepCopy()
-	patch, err := TenantManagedFieldsMigrationPatch(existing, testTenantFieldManager)
+	patch, err := TenantManagedFieldsMigrationPatch(existing, tenantMigrationDesired(t, `{"ingress":{"class":"eg-project"}}`), testTenantFieldManager)
 	if err == nil || patch != nil {
 		t.Fatalf("expected error without patch, got %s, %v", patch, err)
 	}
 	if !reflect.DeepEqual(existing, before) {
 		t.Fatal("migration mutated its input")
 	}
+}
+
+func tenantMigrationDesired(t *testing.T, spec string) *unstructured.Unstructured {
+	t.Helper()
+	desired := &unstructured.Unstructured{}
+	desired.SetGroupVersionKind(KubelbTenantGVK)
+	desired.SetName("test-cluster")
+	desired.SetLabels(map[string]string{
+		TenantClusterNameLabelKey:         "test-cluster",
+		TenantClusterExternalNameLabelKey: "test.example.com",
+		TenantProjectIDLabelKey:           "test-project",
+	})
+	if spec != "" {
+		var fields map[string]any
+		if err := json.Unmarshal([]byte(spec), &fields); err != nil {
+			t.Fatal(err)
+		}
+		desired.Object["spec"] = fields
+	}
+	return desired
 }
