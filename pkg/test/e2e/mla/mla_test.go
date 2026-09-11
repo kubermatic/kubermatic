@@ -132,6 +132,15 @@ func TestMLAIntegration(t *testing.T) {
 	}
 	defer cleanupMetricsProbe(context.Background(), logger, testJig)
 
+	// deployed early for the same reason as the metrics probe: the logging
+	// agent needs time to discover the pod and ship its first lines before
+	// verifyLogsRoundTrip asserts on them near the end of the run.
+	logger.Info("Deploying the logs probe workload into the user cluster...")
+	if err := deployLogsProbe(ctx, logger, testJig); err != nil {
+		t.Fatalf("failed to deploy logs probe workload: %v", err)
+	}
+	defer cleanupLogsProbe(context.Background(), logger, testJig)
+
 	logger.Info("Waiting for project to get Grafana org annotation...")
 	p := &kubermaticv1.Project{}
 	orgID := ""
@@ -212,6 +221,10 @@ func TestMLAIntegration(t *testing.T) {
 
 	if err := verifyMetricsRoundTrip(ctx, logger, probe, testJig, cluster); err != nil {
 		t.Errorf("failed to verify metrics round trip: %v", err)
+	}
+
+	if err := verifyLogsRoundTrip(ctx, logger, probe, testJig); err != nil {
+		t.Errorf("failed to verify logs round trip: %v", err)
 	}
 
 	logger.Info("Disabling MLA...")
@@ -1278,6 +1291,63 @@ func verifyMetricsRoundTrip(ctx context.Context, log *zap.SugaredLogger, probe *
 	return nil
 }
 
+// verifyLogsRoundTrip proves the user-cluster logging agent works end to end:
+// the logs probe pod's marker line must travel agent -> mla-gateway -> Loki and
+// be readable through the gateway read path. Until this check, the only Loki
+// write the suite exercises is a synthetic curl push that bypasses the agent,
+// so a bump that crashloops ds/mla-logging-agent still passed the suite.
+func verifyLogsRoundTrip(ctx context.Context, log *zap.SugaredLogger, probe *gatewayProbe, testJig *jig.TestJig) error {
+	log.Info("Verifying the logs round trip through Loki...")
+
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	// without a healthy agent nothing is shipped, so check it first to get a
+	// precise error instead of an opaque query timeout
+	if err := utils.WaitForDaemonSetReady(ctx, clusterClient, log, resources.UserClusterMLANamespace, resources.MLALoggingAgentDaemonSetName, 5*time.Minute); err != nil {
+		return fmt.Errorf("logging agent DaemonSet did not get ready: %w", err)
+	}
+
+	// the probe has been emitting since it was deployed early in the run, so a
+	// one-minute window behind now always contains marker lines
+	readCmd := curlGet(lokiQueryRangeURL(gatewayReadAddr(probe.Namespace), logsProbeJob, time.Now()))
+
+	lastBody := ""
+
+	queryErr := wait.Poll(ctx, 5*time.Second, 6*time.Minute, func(ctx context.Context) (error, error) {
+		stdout, _, execErr := probe.Exec(ctx, gatewayProbeContainer, readCmd...)
+		if execErr != nil {
+			return execErr, nil
+		}
+
+		lastBody = stdout
+
+		response, err := parseLokiQueryResponse(stdout)
+		if err != nil {
+			return err, nil
+		}
+
+		if len(response.Data.Result) == 0 {
+			return errors.New("stream not visible in Loki yet"), nil
+		}
+
+		if !strings.Contains(stdout, logsProbeMarker) {
+			return fmt.Errorf("stream found but marker %q missing (response: %q)", logsProbeMarker, stdout), nil
+		}
+
+		return nil, nil
+	})
+	if queryErr != nil {
+		return fmt.Errorf("job %q not queryable through the gateway read path (last response: %q): %w", logsProbeJob, lastBody, queryErr)
+	}
+
+	log.Info("Logs round trip verified.")
+
+	return nil
+}
+
 // isTLSRejection reports whether an exec error looks like curl refusing at the
 // TLS layer: exit 35 (SSL connect error) when the handshake is rejected
 // outright, exit 56 (recv failure) when nginx completes the TLS 1.3 handshake
@@ -1384,6 +1454,17 @@ const (
 	// metricsProbeMetric is the series the probe pod serves and the test queries
 	// back out of Cortex.
 	metricsProbeMetric = "mla_e2e_probe_total"
+
+	logsProbePodName = "mla-logs-probe"
+	logsProbeImage   = "docker.io/library/busybox:1.36"
+
+	// logsProbeMarker is the fixed line the logs probe emits every few seconds;
+	// its presence in Loki is the logging-agent round trip.
+	logsProbeMarker = "mla-logs-probe-marker"
+
+	// logsProbeJob is the stream label the logging agent's relabel pipeline
+	// derives from the pod's namespace and app.kubernetes.io/name labels.
+	logsProbeJob = metav1.NamespaceDefault + "/" + logsProbePodName
 )
 
 // newMetricsProbePod returns an agnhost "porter" pod, which serves the content of
@@ -1434,6 +1515,69 @@ func newMetricsProbePod(ns, runID string) *corev1.Pod {
 			},
 			TerminationGracePeriodSeconds: ptr.To[int64](0),
 		},
+	}
+}
+
+// newLogsProbePod returns a busybox pod that emits the marker line every few
+// seconds. The app.kubernetes.io/name label is what the logging agent's
+// discovery relabeling keys off; without it the pod is invisible to the agent.
+func newLogsProbePod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      logsProbePodName,
+			Namespace: metav1.NamespaceDefault,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": logsProbePodName,
+			},
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyAlways,
+			Containers: []corev1.Container{
+				{
+					Name:  logsProbePodName,
+					Image: logsProbeImage,
+					Command: []string{
+						"sh", "-c",
+						fmt.Sprintf(`while true; do echo "%s"; sleep 5; done`, logsProbeMarker),
+					},
+					ImagePullPolicy: corev1.PullIfNotPresent,
+				},
+			},
+		},
+	}
+}
+
+// deployLogsProbe creates the log source in the user cluster.
+func deployLogsProbe(ctx context.Context, log *zap.SugaredLogger, testJig *jig.TestJig) error {
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	// best-effort removal of leftovers from a previous aborted run.
+	_ = clusterClient.Delete(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: logsProbePodName, Namespace: metav1.NamespaceDefault}})
+
+	if err := clusterClient.Create(ctx, newLogsProbePod()); err != nil {
+		return fmt.Errorf("failed to create logs probe pod: %w", err)
+	}
+
+	if !utils.CheckPodsRunningReady(ctx, clusterClient, log, metav1.NamespaceDefault, []string{logsProbePodName}, 5*time.Minute) {
+		return errors.New("timeout occurred while waiting for logs probe pod readiness")
+	}
+
+	return nil
+}
+
+func cleanupLogsProbe(ctx context.Context, log *zap.SugaredLogger, testJig *jig.TestJig) {
+	clusterClient, err := testJig.ClusterJig.ClusterClient(ctx)
+	if err != nil {
+		log.Warnw("Failed to clean up logs probe pod", zap.Error(err))
+		return
+	}
+
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: logsProbePodName, Namespace: metav1.NamespaceDefault}}
+	if err := clusterClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
+		log.Warnw("Failed to clean up logs probe pod", zap.Error(err))
 	}
 }
 
