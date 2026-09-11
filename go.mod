@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.24.9
+go 1.25.0
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -80,10 +80,10 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.21
 	go.etcd.io/etcd/etcdutl/v3 v3.5.21
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.55.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.35.0
-	golang.org/x/tools v0.36.0
+	golang.org/x/sys v0.47.0
+	golang.org/x/tools v0.49.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/api v0.233.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0
@@ -469,11 +469,11 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/mod v0.27.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/mod v0.39.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
