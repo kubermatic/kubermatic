@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.25.14
+go 1.26.2
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -54,7 +54,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gophercloud/gophercloud v1.14.1
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
-	github.com/jackpal/gateway v1.0.14
+	github.com/jackpal/gateway v1.2.0
 	github.com/kubermatic/grafanasdk v0.9.13
 	github.com/kyverno/kyverno v1.15.3
 	github.com/minio/minio-go/v7 v7.0.94
@@ -423,7 +423,6 @@ require (
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tchap/go-patricia/v2 v2.3.2 // indirect
