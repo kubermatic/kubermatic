@@ -128,7 +128,7 @@ require (
 	k8c.io/application-catalog-manager v0.0.0-00010101000000-000000000000
 	k8c.io/kubermatic/sdk/v2 v2.28.1
 	k8s.io/pod-security-admission v0.34.1
-	sigs.k8s.io/gateway-api v1.5.1
+	sigs.k8s.io/gateway-api v1.6.2
 )
 
 require (
@@ -500,7 +500,7 @@ require (
 	k8s.io/component-base v0.36.3 // indirect
 	k8s.io/component-helpers v0.36.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20260408192533-25e2208e0dc3 // indirect
-	k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199 // indirect
+	k8s.io/kube-openapi v0.0.0-20260501160325-927ab1f70cd6 // indirect
 	k8s.io/kube-proxy v0.33.4 // indirect
 	k8s.io/kubelet v0.33.4 // indirect
 	k8s.io/streaming v0.36.3 // indirect
