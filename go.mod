@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.24.9
+go 1.26.0
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -82,7 +82,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.35.0
+	golang.org/x/sys v0.48.0
 	golang.org/x/tools v0.36.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/api v0.233.0
