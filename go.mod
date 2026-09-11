@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.24.9
+go 1.25.0
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -42,7 +42,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/envoyproxy/go-control-plane v0.14.0
 	github.com/envoyproxy/go-control-plane/envoy v1.36.0
-	github.com/go-git/go-git/v5 v5.16.2
+	github.com/go-git/go-git/v5 v5.19.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-test/deep v1.1.1
 	github.com/gobuffalo/flect v1.0.3
@@ -80,10 +80,10 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.21
 	go.etcd.io/etcd/etcdutl/v3 v3.5.21
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.53.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.35.0
-	golang.org/x/tools v0.36.0
+	golang.org/x/sys v0.46.0
+	golang.org/x/tools v0.47.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/api v0.233.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0
@@ -210,7 +210,7 @@ require (
 	github.com/cilium/proxy v0.0.0-20250305113347-723568176820 // indirect
 	github.com/clarketm/json v1.13.4 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/cloudflare/circl v1.6.1 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
@@ -223,7 +223,7 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect
-	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
+	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
@@ -255,7 +255,7 @@ require (
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.6.2 // indirect
+	github.com/go-git/go-billy/v5 v5.9.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
@@ -323,7 +323,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
+	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -371,7 +371,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.2.0 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
-	github.com/pjbgf/sha1cd v0.3.2 // indirect
+	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
@@ -468,15 +468,13 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/mod v0.27.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
+	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
+	golang.org/x/text v0.39.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
-	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
-	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250728155136-f173205681a0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
