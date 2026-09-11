@@ -104,14 +104,14 @@ require (
 	k8s.io/apiextensions-apiserver v0.36.2
 	k8s.io/apimachinery v0.36.3
 	k8s.io/apiserver v0.36.2
-	k8s.io/autoscaler/vertical-pod-autoscaler v1.7.0
+	k8s.io/autoscaler/vertical-pod-autoscaler v1.7.1
 	k8s.io/cli-runtime v0.36.2
 	k8s.io/client-go v0.36.3
-	k8s.io/code-generator v0.36.2
+	k8s.io/code-generator v0.36.3
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kube-aggregator v0.36.2
 	k8s.io/kubectl v0.36.2
-	k8s.io/metrics v0.36.2
+	k8s.io/metrics v0.36.3
 	k8s.io/test-infra v0.0.0-20250329100633-7758a586d30c
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	kubevirt.io/api v1.3.1
@@ -510,5 +510,5 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.21.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/release-utils v0.12.4 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.4.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
 )
