@@ -114,8 +114,8 @@ require (
 	k8s.io/metrics v0.36.2
 	k8s.io/test-infra v0.0.0-20250329100633-7758a586d30c
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
-	kubevirt.io/api v1.3.1
-	kubevirt.io/containerized-data-importer-api v1.60.3
+	kubevirt.io/api v1.9.0
+	kubevirt.io/containerized-data-importer-api v1.64.0
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/controller-tools v0.21.0
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
