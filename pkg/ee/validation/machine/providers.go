@@ -98,6 +98,12 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	switch config.CloudProvider {
 	case providerconfig.CloudProviderFake, providerconfig.CloudProviderExternal:
 		quotaUsage, err = getFakeQuotaRequest(config)
+	case providerconfig.CloudProviderBaremetal:
+		// Baremetal machines have no cloud-API resource usage to compute; the fixed
+		// hardware is provisioned out-of-band via Tinkerbell. Read the CPU/memory/storage
+		// from the backing Tinkerbell Hardware object best-effort, degrading to zero when
+		// the hardware is not yet available so machine creation is never blocked.
+		quotaUsage, err = getBaremetalResourceRequirements(ctx, userClient, config)
 	case providerconfig.CloudProviderAWS:
 		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
 	case providerconfig.CloudProviderGoogle:
@@ -127,6 +133,10 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	}
 
 	return quotaUsage, err
+}
+
+func getZeroResourceDetails() *ResourceDetails {
+	return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 }
 
 func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
