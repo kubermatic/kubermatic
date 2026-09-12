@@ -51,6 +51,8 @@ export DASHBOARD_GIT_TAG="${DASHBOARD_GIT_TAG:-$GIT_TAG}"
 # point to GIT_TAG
 export RELEASE_NAME="${RELEASE_NAME:-$GIT_TAG}"
 
+export CHECKSUMS_FILE="_dist/checksums.txt"
+
 # utility function setting some curl default values for calling the github API
 # first argument is the URL, the rest of the arguments is used as curl
 # arguments.
@@ -95,6 +97,8 @@ function upload_asset {
     contentType="application/zip"
   elif [[ "$file" == *.json ]]; then
     contentType="application/json"
+  elif [[ "$file" == *.txt ]]; then
+    contentType="text/plain"
   fi
   res=$(github_cli \
     "https://uploads.github.com/repos/$GIT_REPO/releases/$releaseID/assets?name=$(basename "$file")" \
@@ -156,6 +160,41 @@ function generate_sbom() {
   syft "$target" -o "spdx-json=$outFile"
 }
 
+# keyless-signs a release artifact, producing a Sigstore bundle
+# (signature + certificate + Rekor proof) next to it
+function sign_blob() {
+  local file="$1"
+
+  ensure_sigstore_token
+
+  echodate "Signing $(basename "$file")..."
+  cosign sign-blob --yes --bundle "$file.sigstore.json" "$file"
+}
+
+function record_checksum() {
+  local file="$1"
+  local checksums
+  checksums="$(realpath "$CHECKSUMS_FILE")"
+
+  (
+    cd "$(dirname "$file")"
+    sha256sum "$(basename "$file")" >> "$checksums"
+  )
+}
+
+# signs, checksums and uploads a release artifact, removing it afterwards
+function ship_asset() {
+  local file="$1"
+
+  sign_blob "$file"
+  record_checksum "$file"
+
+  echodate "Uploading $(basename "$file")..."
+  upload_asset "$file"
+  upload_asset "$file.sigstore.json"
+  rm -- "$file" "$file.sigstore.json"
+}
+
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
@@ -168,14 +207,11 @@ function ship_archive() {
   fi
 
   if ! $DRY_RUN; then
-    echodate "Uploading $buildTarget archive..."
-    upload_asset "$archive"
-    rm -- "$archive"
+    echodate "Shipping $buildTarget archive..."
+    ship_asset "$archive"
 
     for sbom in "${sboms[@]}"; do
-      echodate "Uploading $(basename "$sbom")..."
-      upload_asset "$sbom"
-      rm -- "$sbom"
+      ship_asset "$sbom"
     done
   fi
 }
@@ -208,6 +244,8 @@ echodate "Pre-Release  : $prerelease"
 
 if $DRY_RUN; then
   echodate "This is a dry-run, no actual communication with GitHub happens."
+else
+  ensure_sigstore_token
 fi
 
 export KUBERMATICDOCKERTAG="$GIT_TAG"
@@ -239,14 +277,14 @@ fi
 set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
+rm -f "$CHECKSUMS_FILE"
 
 helmChartSbom="_dist/kubermatic-helmchart-$RELEASE_NAME.sbom.spdx.json"
 ./hack/generate-helmchart-sbom.sh "$RELEASE_NAME" _dist
 
 if ! $DRY_RUN; then
-  echodate "Uploading helm charts SBOM..."
-  upload_asset "$helmChartSbom"
-  rm -- "$helmChartSbom"
+  echodate "Shipping helm charts SBOM..."
+  ship_asset "$helmChartSbom"
 fi
 
 # CRDs since KKP 2.21 are not directly put into the charts/ directory
@@ -361,5 +399,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
 
   ship_archive "$archive" "$buildTarget" "$binarySbom"
 done
+
+if ! $DRY_RUN; then
+  sign_blob "$CHECKSUMS_FILE"
+
+  echodate "Uploading checksums..."
+  upload_asset "$CHECKSUMS_FILE"
+  upload_asset "$CHECKSUMS_FILE.sigstore.json"
+  rm -- "$CHECKSUMS_FILE" "$CHECKSUMS_FILE.sigstore.json"
+fi
 
 echodate "Done."
