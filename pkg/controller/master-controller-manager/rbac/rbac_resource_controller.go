@@ -30,8 +30,23 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// resourcePredicates returns the predicates the rbac controllers should apply
+// for a given projectResource. The resource's user-supplied predicate is always
+// included; when the resource specifies a namespace, an additional predicate
+// scopes the controller to objects in that namespace so cluster-wide watches
+// don't reconcile unrelated resources (e.g. Secrets matching the
+// `credential` name prefix in third-party namespaces, kubermatic/kubermatic#11292).
+func resourcePredicates(resource projectResource) []predicate.Predicate {
+	preds := []predicate.Predicate{predicateutil.Factory(resource.predicate)}
+	if resource.namespace != "" {
+		preds = append(preds, predicateutil.ByNamespace(resource.namespace))
+	}
+	return preds
+}
 
 type resourcesController struct {
 	log              *zap.SugaredLogger
@@ -69,7 +84,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		// Create a new controller
 		_, err := builder.ControllerManagedBy(mgr).
 			Named("rbac_generator_resources").
-			For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+			For(clonedObject, builder.WithPredicates(resourcePredicates(resource)...)).
 			Build(mc)
 		if err != nil {
 			return nil, err
@@ -103,7 +118,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			// Create a new controller
 			_, err := builder.ControllerManagedBy(seedManager).
 				Named(fmt.Sprintf("rbac_generator_resources_%s", seedName)).
-				For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+				For(clonedObject, builder.WithPredicates(resourcePredicates(resource)...)).
 				Build(c)
 			if err != nil {
 				return nil, err
