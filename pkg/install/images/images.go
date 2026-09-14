@@ -54,6 +54,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	mlaloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
 	mlamonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
@@ -514,6 +515,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		kubermaticVersions,
 		templateData.RewriteImage,
 	))
+	daemonsetReconcilers = append(daemonsetReconcilers, mlaloggingagent.DaemonSetReconciler(nil, templateData.RewriteImage))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(templateData.Cluster(), net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
 

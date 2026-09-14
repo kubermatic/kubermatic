@@ -1,6 +1,48 @@
 # Kubermatic 2.31
 
+- [v2.31.1](#v2311)
 - [v2.31.0](#v2310)
+
+## v2.31.1
+
+**GitHub release: [v2.31.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.1)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.36.4/v1.35.8/v1.34.11 and set the default Kubernetes version to v1.35.8 ([#16293](https://github.com/kubermatic/kubermatic/pull/16293))
+
+#### Supported Versions
+
+- v1.36.4
+- v1.35.8
+- v1.34.11
+
+### Cloud Providers
+
+#### OpenStack
+
+- Update OpenStack Cinder CSI sidecar images (csi-attacher v4.12.0, csi-snapshotter v8.6.0, livenessprobe v2.19.0, csi-node-driver-registrar v2.17.0) to address known CVEs ([#16328](https://github.com/kubermatic/kubermatic/pull/16328))
+
+### Bugfixes
+
+- Migrate the user cluster MLA monitoring agent from the end-of-life grafana/agent v0.29.0 image to grafana/alloy v1.19.2 ([#16334](https://github.com/kubermatic/kubermatic/pull/16334))
+- Fix hardcoded datasource references in the mla-components Grafana dashboard by using a `$datasource` variable, and drop the unused Loki datasource ([#16313](https://github.com/kubermatic/kubermatic/pull/16313))
+
+### Updates
+
+- Update machine-controller to [v1.66.3](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.3) and operating-system-manager to [v1.11.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.4) ([#16350](https://github.com/kubermatic/kubermatic/pull/16350))
+- Add KubeLB CCM v1.5.0 support with updated permissions, CRDs and tenant proxy configuration ([#16336](https://github.com/kubermatic/kubermatic/pull/16336))
+- Add Cilium versions v1.18.13/v1.19.7 and set the default Cilium version to v1.19.7 ([#16311](https://github.com/kubermatic/kubermatic/pull/16311))
+- Update the utility container image to 2.10.0 across all charts and controllers ([#16337](https://github.com/kubermatic/kubermatic/pull/16337))
+- Update web-terminal image version to v1.13.1 ([#16294](https://github.com/kubermatic/kubermatic/pull/16294))
+- Update Go version to v1.26.7 ([#16284](https://github.com/kubermatic/kubermatic/pull/16284))
+
+### Dashboard and API
+
+#### Updates
+
+- Update web-terminal image to v1.13.1 ([#8272](https://github.com/kubermatic/dashboard/pull/8272))
+- Update chrome-headless image to v1.10.0 and Go to v1.26.7 ([#8270](https://github.com/kubermatic/dashboard/pull/8270))
 
 ## v2.31.0
 
