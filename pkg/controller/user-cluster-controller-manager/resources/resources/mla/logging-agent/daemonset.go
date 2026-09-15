@@ -34,7 +34,7 @@ import (
 
 const (
 	imageName     = "grafana/alloy"
-	imageTag      = "v1.9.2"
+	imageTag      = "v1.19.2"
 	appName       = "mla-logging-agent"
 	containerName = "grafana-alloy"
 
@@ -96,7 +96,7 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, imageTag))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, imageTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"run",

@@ -5,6 +5,25 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: mla
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-backup.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -20,6 +39,9 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -50,6 +72,11 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-monitoring.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -65,6 +92,22 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-storage.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -80,6 +123,9 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-usermla.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.

@@ -27,7 +27,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -66,7 +66,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -104,7 +104,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -140,7 +140,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -148,6 +148,9 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: aws
+            # TODO: Re-enable RHEL after the CI RHSM offline token is refreshed.
+            - name: OSNAMES
+              value: ubuntu,flatcar,rockylinux
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -176,7 +179,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -212,7 +215,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -248,7 +251,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -284,7 +287,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -320,7 +323,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -356,7 +359,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -392,7 +395,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -428,7 +431,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -464,7 +467,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:

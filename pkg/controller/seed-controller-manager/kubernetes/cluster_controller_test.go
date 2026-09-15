@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +35,78 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func TestEnqueueKubeVirtClustersForAcceleratorQuotaResourceQuota(t *testing.T) {
+	deletingCluster := kubeVirtCluster("deleting", "project-a")
+	deletionTimestamp := metav1.NewTime(time.Now())
+	deletingCluster.DeletionTimestamp = &deletionTimestamp
+	deletingCluster.Finalizers = []string{"test-finalizer"}
+	otherWorkerCluster := kubeVirtCluster("other-worker", "project-a")
+	otherWorkerCluster.Labels[kubermaticv1.WorkerNameLabelKey] = "other-worker"
+
+	r := &Reconciler{Client: fake.NewClientBuilder().WithObjects(
+		kubeVirtCluster("cluster-b", "project-a"),
+		kubeVirtCluster("cluster-a", "project-a"),
+		kubeVirtCluster("other-project", "project-b"),
+		awsCluster("aws", "project-a"),
+		deletingCluster,
+		otherWorkerCluster,
+	).Build()}
+
+	got := r.enqueueKubeVirtClustersForAcceleratorQuotaResourceQuota(
+		context.Background(),
+		projectResourceQuota("quota-a", "project-a", resources.AcceleratorAccountingEnabledAnnotationValue),
+	)
+
+	require.Equal(t, []reconcile.Request{
+		{NamespacedName: types.NamespacedName{Name: "cluster-a"}},
+		{NamespacedName: types.NamespacedName{Name: "cluster-b"}},
+	}, got)
+}
+
+func TestResourceQuotaAcceleratorAccountingActivationPredicate(t *testing.T) {
+	pred := resourceQuotaAcceleratorAccountingActivationPredicate()
+	inactive := projectResourceQuota("quota-a", "project-a", "")
+	active := inactive.DeepCopy()
+	active.Annotations = map[string]string{
+		resources.AcceleratorAccountingEnabledAnnotation: resources.AcceleratorAccountingEnabledAnnotationValue,
+	}
+	deletingActive := active.DeepCopy()
+	now := metav1.Now()
+	deletingActive.DeletionTimestamp = &now
+	deletingActive.Finalizers = []string{"test.kubermatic.io/cleanup"}
+
+	require.False(t, pred.Create(event.CreateEvent{Object: inactive}))
+	require.True(t, pred.Create(event.CreateEvent{Object: active}))
+	require.False(t, pred.Create(event.CreateEvent{Object: deletingActive}))
+	require.True(t, pred.Update(event.UpdateEvent{ObjectOld: inactive, ObjectNew: active}))
+	require.False(t, pred.Update(event.UpdateEvent{ObjectOld: active, ObjectNew: active.DeepCopy()}))
+
+	changedSubjectNameLabel := active.DeepCopy()
+	changedSubjectNameLabel.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = "project-b"
+	require.True(t, pred.Update(event.UpdateEvent{ObjectOld: changedSubjectNameLabel, ObjectNew: active}))
+
+	changedSubjectKindLabel := active.DeepCopy()
+	changedSubjectKindLabel.Labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] = "other"
+	require.True(t, pred.Update(event.UpdateEvent{ObjectOld: changedSubjectKindLabel, ObjectNew: active}))
+
+	changedSubjectName := active.DeepCopy()
+	changedSubjectName.Spec.Subject.Name = "project-b"
+	require.True(t, pred.Update(event.UpdateEvent{ObjectOld: changedSubjectName, ObjectNew: active}))
+
+	changedSubjectKind := active.DeepCopy()
+	changedSubjectKind.Spec.Subject.Kind = "other"
+	require.True(t, pred.Update(event.UpdateEvent{ObjectOld: changedSubjectKind, ObjectNew: active}))
+	require.False(t, pred.Update(event.UpdateEvent{ObjectOld: active, ObjectNew: deletingActive}))
+
+	unrelatedMetadataChange := active.DeepCopy()
+	unrelatedMetadataChange.Annotations["example.com/unrelated"] = "value"
+	require.False(t, pred.Update(event.UpdateEvent{ObjectOld: active, ObjectNew: unrelatedMetadataChange}))
+
+	require.False(t, pred.Delete(event.DeleteEvent{Object: active}))
+	require.False(t, pred.Delete(event.DeleteEvent{Object: deletingActive}))
+	require.False(t, pred.Delete(event.DeleteEvent{Object: inactive}))
+}
 
 func TestOIDCIssuerLoadBalancerServicePredicate(t *testing.T) {
 	predicate := oidcIssuerLoadBalancerServicePredicate()

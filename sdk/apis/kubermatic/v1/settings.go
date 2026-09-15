@@ -91,6 +91,13 @@ type SettingSpec struct {
 	// option is disabled in the dashboard.
 	DisabledAuditWebhookBackendDCs []string `json:"disabledAuditWebhookBackendDCs,omitempty"`
 
+	// AdminGroups is the list of OIDC group names whose members are automatically
+	// granted KKP administrator privileges. Matching against the user's groups
+	// (populated at login) is exact and case-sensitive. Removing a group demotes
+	// only users whose admin status was granted via these groups. EE-version only.
+	// +optional
+	AdminGroups []string `json:"adminGroups,omitempty"`
+
 	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit           int64 `json:"userProjectsLimit"`
 	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
@@ -259,7 +266,10 @@ type MachineDeploymentOptions struct {
 // DefaultProjectResourceQuota contains the default resource quota which will be set for all
 // projects that do not have a custom quota already set.
 type DefaultProjectResourceQuota struct {
-	// Quota specifies the default CPU, Memory and Storage quantities for all the projects.
+	// Quota specifies the default CPU, memory, and storage quantities for all projects.
+	// Accelerator quotas must be configured explicitly on project ResourceQuota objects.
+	//
+	// +kubebuilder:validation:XValidation:rule="!has(self.accelerators) || self.accelerators.size() == 0",message="accelerator quotas are not supported in default project resource quotas"
 	Quota ResourceDetails `json:"quota,omitempty"`
 }
 

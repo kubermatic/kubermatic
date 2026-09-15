@@ -237,6 +237,7 @@ spec:
   # FeatureGates are used to optionally enable certain features.
   featureGates:
     EtcdLauncher: true
+    HTTPRouteGatewaySync: true
   # ImagePullSecret is used to authenticate against Docker registries.
   imagePullSecret: ""
   # Ingress contains settings for making the API and UI accessible remotely.
@@ -256,12 +257,13 @@ spec:
       kind: ClusterIssuer
       # Name is the name of resource being referenced
       name: ""
-    # ClassName is the Ingress resource's class name, used for selecting the appropriate
-    # ingress controller.
+    # Deprecated: ClassName is the Ingress resource's class name, used for selecting the appropriate
+    # ingress controller. Gateway API is enforced as of KKP 2.31 and the operator no longer
+    # creates Ingress resources. This field is ignored.
     className: nginx
-    # Disable will prevent an Ingress from being created at all. This is mostly useful
-    # during testing. If the Ingress is disabled, the CertificateIssuer setting can also
-    # be left empty, as no Certificate resource will be created.
+    # Deprecated: Disable will prevent an Ingress from being created at all. This was mostly
+    # useful during testing. Gateway API is enforced as of KKP 2.31 and the operator no longer
+    # creates Ingress resources. This field is ignored.
     disable: false
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
@@ -372,7 +374,7 @@ spec:
     backupDeleteContainer: |2
 
       name: delete-container
-      image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
+      image: d3fk/s3cmd@sha256:426f98fdc8a2c7d7a879eb0da57131e6eec4d239881448f23946216fe801b614
       command:
       - /bin/sh
       - -c
@@ -408,7 +410,7 @@ spec:
     backupStoreContainer: |2
 
       name: store-container
-      image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
+      image: d3fk/s3cmd@sha256:426f98fdc8a2c7d7a879eb0da57131e6eec4d239881448f23946216fe801b614
       command:
       - /bin/sh
       - -c
@@ -718,7 +720,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.34.9
+    default: v1.35.8
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -780,6 +782,10 @@ spec:
         to: 1.35.*
       - from: 1.35.*
         to: 1.35.*
+      - from: 1.35.*
+        to: 1.36.*
+      - from: 1.36.*
+        to: 1.36.*
     # Versions lists the available versions.
     versions:
       - v1.33.0
@@ -803,6 +809,8 @@ spec:
       - v1.34.7
       - v1.34.8
       - v1.34.9
+      - v1.34.10
+      - v1.34.11
       - v1.35.0
       - v1.35.1
       - v1.35.2
@@ -810,6 +818,10 @@ spec:
       - v1.35.4
       - v1.35.5
       - v1.35.6
+      - v1.35.7
+      - v1.35.8
+      - v1.36.3
+      - v1.36.4
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

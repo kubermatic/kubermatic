@@ -188,7 +188,7 @@ const (
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
 	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 	// WEBTerminalImage is the name of the image used for the web terminal tool pod.
-	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.12.0"
+	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.13.1"
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
@@ -955,12 +955,15 @@ const (
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// MLAMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (grafana-agent) client certificates.
+	// MLAMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (Grafana Alloy) client certificates.
 	MLAMonitoringAgentCertificatesSecretName = "monitoring-agent-certificates"
-	MLAMonitoringAgentCertificateCommonName  = "grafana-agent"
-	MLAMonitoringAgentClientKeySecretKey     = "client.key"
-	MLAMonitoringAgentClientCertSecretKey    = "client.crt"
-	MLAMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
+	// MLAMonitoringAgentCertificateCommonName is kept as "grafana-agent" on purpose: the MLA gateway
+	// only verifies the client certificate against the CA and derives the tenant from the injected
+	// X-Scope-OrgID header, so renaming the CN would only churn certificates on existing clusters.
+	MLAMonitoringAgentCertificateCommonName = "grafana-agent"
+	MLAMonitoringAgentClientKeySecretKey    = "client.key"
+	MLAMonitoringAgentClientCertSecretKey   = "client.crt"
+	MLAMonitoringAgentClientCertMountPath   = "/etc/ssl/mla"
 
 	// MLALoggingAgentCertificatesSecretName is the name for the secret containing the Logging Agent client certificates.
 	MLALoggingAgentCertificatesSecretName = "logging-agent-certificates"
@@ -1082,6 +1085,25 @@ const (
 	ClusterBackupUsername           = "velero"
 	ClusterBackupServiceAccountName = "velero"
 	ClusterBackupNamespaceName      = "velero"
+)
+
+// KubeVirt accelerator accounting is an alpha feature. These constants are part
+// of its provisional contract and may change before the feature graduates.
+const (
+	// AcceleratorAccountingEnabledAnnotation enables accelerator accounting for a project ResourceQuota.
+	AcceleratorAccountingEnabledAnnotation = "accelerators.kubermatic.io/accounting-enabled"
+	// AcceleratorAccountingEnabledAnnotationValue is the only value that enables accelerator accounting.
+	AcceleratorAccountingEnabledAnnotationValue = "true"
+	// AcceleratorAccountingWebhookPath is the dedicated fail-closed ResourceQuota activation path.
+	AcceleratorAccountingWebhookPath = "/validate-resourcequota-accelerator-accounting"
+	// MachineAcceleratorFootprintMutatingWebhookPath is the dedicated Machine footprint mutation endpoint.
+	MachineAcceleratorFootprintMutatingWebhookPath = "/mutate-machine-accelerator-footprint"
+	// MachineAcceleratorFootprintValidatingWebhookPath is the dedicated Machine footprint validation endpoint.
+	MachineAcceleratorFootprintValidatingWebhookPath = "/validate-machine-accelerator-footprint"
+	// AcceleratorAccountingHeartbeatInterval controls how often accounting participants refresh their report.
+	AcceleratorAccountingHeartbeatInterval = time.Minute
+	// AcceleratorAccountingHeartbeatTimeout is the maximum age accepted for an accounting report.
+	AcceleratorAccountingHeartbeatTimeout = 5 * time.Minute
 )
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
@@ -1764,14 +1786,17 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
 func GetDefaultProxyMode(provider kubermaticv1.ProviderType, clusterVersion semver.Semver) string {
-	// default to nftables for Kubernetes 1.35+ as iptables is deprecated and will be removed in Kubernetes 1.36
-	if clusterVersion.Semver() != nil && clusterVersion.Semver().Minor() >= 35 {
-		return NFTablesProxyMode
-	}
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		// Hetzner LoadBalancer traffic also times out under nftables mode,
+		// so keep Hetzner on iptables regardless of Kubernetes version until
+		// nftables is verified to work correctly.
 		return IPTablesProxyMode
+	}
+	// default to nftables for Kubernetes 1.35+ as IPVS is deprecated and will be removed in Kubernetes 1.36
+	if clusterVersion.Semver() != nil && clusterVersion.Semver().Minor() >= 35 {
+		return NFTablesProxyMode
 	}
 	return IPVSProxyMode
 }

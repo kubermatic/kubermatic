@@ -82,6 +82,9 @@ const (
 
 	// ResourceQuotaAdmissionWebhookName is the name of the validating and mutating webhook for ResourceQuotas.
 	ResourceQuotaAdmissionWebhookName = "kubermatic-resourcequotas"
+	// ResourceQuotaAcceleratorAccountingAdmissionWebhookName is the dedicated validating webhook
+	// that protects project accelerator-accounting activation across rolling upgrades.
+	ResourceQuotaAcceleratorAccountingAdmissionWebhookName = "kubermatic-resourcequotas-accelerator-accounting"
 
 	// ExternalClusterAdmissionWebhookName is the name of the mutating webhook for ExternalClusters.
 	ExternalClusterAdmissionWebhookName = "kubermatic-externalclusters"

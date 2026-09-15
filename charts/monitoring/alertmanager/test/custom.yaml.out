@@ -17,6 +17,7 @@ spec:
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/instance: release-name
   minAvailable: 1
+
 ---
 # Source: alertmanager/charts/alertmanager/templates/serviceaccount.yaml
 apiVersion: v1
@@ -31,6 +32,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   namespace: default
 automountServiceAccountToken: true
+
 ---
 # Source: alertmanager/charts/alertmanager/templates/configmap.yaml
 apiVersion: v1
@@ -94,6 +96,7 @@ data:
     templates:
     - /etc/alertmanager/*.tmpl
     - /etc/alertmanager/templates/*.tmpl
+
 ---
 # Source: alertmanager/templates/template.yaml
 # Copyright 2025 The Kubermatic Kubernetes Platform contributors.
@@ -210,6 +213,7 @@ spec:
   selector:
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: alertmanager/charts/alertmanager/templates/statefulset.yaml
 apiVersion: apps/v1

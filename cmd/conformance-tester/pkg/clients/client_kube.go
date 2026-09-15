@@ -187,6 +187,10 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
 	cluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(c.opts.KonnectivityEnabled) //nolint:staticcheck
+	// kubernetes-dashboard is unmaintained upstream, do not waste CI resources on it
+	cluster.Spec.KubernetesDashboard = &kubermaticv1.KubernetesDashboard{
+		Enabled: false,
+	}
 
 	if c.opts.DualStackEnabled {
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack

@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/version: "13.0.1-security-01"
   name: release-name-grafana
   namespace: default
+
 ---
 # Source: grafana/charts/grafana/templates/configmap.yaml
 apiVersion: v1
@@ -70,25 +71,7 @@ data:
         path: /var/lib/grafana/dashboards/kubermatic
       org_id: 1
       type: file
-  download_dashboards.sh: |
-    #!/usr/bin/env sh
-    set -euf
-    mkdir -p /var/lib/grafana/dashboards/default
-    mkdir -p /var/lib/grafana/dashboards/kubernetes
-    mkdir -p /var/lib/grafana/dashboards/kubermatic
----
-# Source: grafana/charts/grafana/templates/dashboards-json-configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: release-name-grafana-dashboards-default
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-12.3.3
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
-    dashboard-provider: default
+
 ---
 # Source: grafana/templates/kkp-kubernetes.yaml
 # Copyright 2023 The Kubermatic Kubernetes Platform contributors.
@@ -3690,6 +3673,9 @@ data:
       "version": 1,
       "weekStart": ""
     }
+    
+
+
 ---
 # Source: grafana/templates/kubernetes-overview.yaml
 # Copyright 2023 The Kubermatic Kubernetes Platform contributors.
@@ -5815,6 +5801,7 @@ data:
       "uid": "bYgZIB7nk",
       "version": 7
     }
+    
 ---
 # Source: grafana/charts/grafana/templates/clusterrole.yaml
 kind: ClusterRole
@@ -5827,6 +5814,7 @@ metadata:
     app.kubernetes.io/version: "13.0.1-security-01"
   name: release-name-grafana-clusterrole
 rules: []
+
 ---
 # Source: grafana/charts/grafana/templates/clusterrolebinding.yaml
 kind: ClusterRoleBinding
@@ -5846,6 +5834,7 @@ roleRef:
   kind: ClusterRole
   name: release-name-grafana-clusterrole
   apiGroup: rbac.authorization.k8s.io
+
 ---
 # Source: grafana/charts/grafana/templates/headless-service.yaml
 apiVersion: v1
@@ -5868,6 +5857,7 @@ spec:
   - name: gossip-tcp
     port: 9094
     targetPort: gossip-tcp
+
 ---
 # Source: grafana/charts/grafana/templates/service.yaml
 apiVersion: v1
@@ -5890,6 +5880,7 @@ spec:
   selector:
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: grafana/charts/grafana/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -5917,8 +5908,8 @@ spec:
         app.kubernetes.io/instance: release-name
         app.kubernetes.io/version: "13.0.1-security-01"
       annotations:
-        checksum/config: 988fdd5555d69b7e3bae93988d9b28c58aee391ec152e44f4660d3ae87d00bca
-        checksum/dashboards-json-config: 3fe8b907d75ec97de1cadf9d62845e1cb0218f73ac8138acc1a0a5ddf0508d01
+        checksum/config: 17d307c359dd4f4a24217c0e34582949680d0b684af67c70603ec211796292dd
+        checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         kubectl.kubernetes.io/default-container: grafana
     spec:
@@ -5952,25 +5943,6 @@ spec:
             - 472:472
             - /var/lib/grafana
           volumeMounts:
-            - name: storage
-              mountPath: "/var/lib/grafana"
-        - name: download-dashboards
-          image: "docker.io/curlimages/curl:8.20.0"
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh"]
-          args: [ "-c", "mkdir -p /var/lib/grafana/dashboards/default && /bin/sh -x /etc/grafana/download_dashboards.sh" ]
-          env:
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - name: config
-              mountPath: "/etc/grafana/download_dashboards.sh"
-              subPath: download_dashboards.sh
             - name: storage
               mountPath: "/var/lib/grafana"
       enableServiceLinks: true
@@ -6054,9 +6026,6 @@ spec:
         - name: config
           configMap:
             name: release-name-grafana
-        - name: dashboards-default
-          configMap:
-            name: release-name-grafana-dashboards-default
         - name: dashboards-kubermatic
           configMap:
             name: grafana-dashboards-mla-kkp-kubernetes

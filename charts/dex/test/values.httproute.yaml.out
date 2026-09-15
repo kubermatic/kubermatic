@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
+
 ---
 # Source: dex/charts/dex/templates/secret.yaml
 apiVersion: v1
@@ -27,6 +28,7 @@ metadata:
 type: Opaque
 data:
   config.yaml: "ZXhwaXJ5OgogIGlkVG9rZW5zOiAyNGgKICBzaWduaW5nS2V5czogNmgKZnJvbnRlbmQ6CiAgZGlyOiAvc3J2L2RleC93ZWIKICBpc3N1ZXI6IGRleAogIGxvZ29VUkw6IHRoZW1lL2xvZ28uc3ZnCiAgdGhlbWU6IGxpZ2h0Cmlzc3VlcjogaHR0cHM6Ly88ZGV4IGhvc3Q+L2RleApvYXV0aDI6CiAgcmVzcG9uc2VUeXBlczoKICAtIGNvZGUKICAtIHRva2VuCiAgLSBpZF90b2tlbgogIHNraXBBcHByb3ZhbFNjcmVlbjogdHJ1ZQpzdG9yYWdlOgogIGNvbmZpZzoKICAgIGluQ2x1c3RlcjogdHJ1ZQogIHR5cGU6IGt1YmVybmV0ZXM="
+
 ---
 # Source: dex/templates/theme.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -90,6 +92,7 @@ subjects:
 - kind: ServiceAccount
   namespace: default
   name: release-name-dex
+
 ---
 # Source: dex/charts/dex/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -157,6 +160,7 @@ spec:
   selector:
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: dex/charts/dex/templates/deployment.yaml
 apiVersion: apps/v1
@@ -251,6 +255,7 @@ spec:
                   app.kubernetes.io/name: dex
               topologyKey: kubernetes.io/hostname
             weight: 10
+
 ---
 # Source: dex/templates/httproute.yaml
 # Copyright 2026 The Kubermatic Kubernetes Platform contributors.

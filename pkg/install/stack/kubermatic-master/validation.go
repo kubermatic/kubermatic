@@ -274,10 +274,8 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 			failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 		}
 
-		if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
-			failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
-			failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
-		}
+		failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
+		failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
 	}
 
 	return failures

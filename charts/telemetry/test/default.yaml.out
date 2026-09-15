@@ -19,6 +19,7 @@ kind: ServiceAccount
 metadata:
   name: release-name-agent-sa
   namespace:  default
+
 ---
 # Source: telemetry/templates/secret.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -43,6 +44,7 @@ metadata:
 type: Opaque
 data:
   uuid: ZmFrZS11dWlkLWhlcmU=
+
 ---
 # Source: telemetry/templates/kubermatic-role.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -81,6 +83,7 @@ rules:
   - usersshkeys
   verbs:
   - list
+
 ---
 # Source: telemetry/templates/kubernetes-role.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -110,6 +113,7 @@ rules:
   - get
   - list
   - watch
+
 ---
 # Source: telemetry/templates/kubermatic-rolebinding.yml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -138,6 +142,7 @@ subjects:
   - kind: ServiceAccount
     name: release-name-agent-sa
     namespace: default
+
 ---
 # Source: telemetry/templates/kubernetes-rolebinding.yml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -166,6 +171,7 @@ subjects:
   - kind: ServiceAccount
     name: release-name-agent-sa
     namespace: default
+
 ---
 # Source: telemetry/templates/cronjob.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.

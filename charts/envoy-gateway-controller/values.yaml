@@ -62,7 +62,7 @@ envoyProxy:
       # 2. String format (legacy): image as a single string "repo:tag"
       image:
         repository: "envoyproxy/envoy"
-        tag: "distroless-v1.36.3"
+        tag: "distroless-v1.38.3"
       resources:
         requests:
           cpu: 50m
@@ -191,6 +191,24 @@ clientTrafficPolicy:
 # gateway configures the Envoy Gateway controller (control plane).
 # These values are passed to the upstream gateway-helm chart.
 gateway:
+  # Since Envoy Gateway 1.8 the upstream chart keeps its CRDs in a "crds" subchart, which bundles
+  # the Envoy Gateway CRDs, the Gateway API CRDs and the Gateway API "safe-upgrades"
+  # ValidatingAdmissionPolicy together behind a single toggle.
+  crds:
+    # Keep the subchart enabled. Our own crd/ directory only carries the Gateway API CRDs, so
+    # disabling it would leave EnvoyProxy, BackendTrafficPolicy and ClientTrafficPolicy missing
+    # and the templates in this chart would fail to apply.
+    enabled: true
+
+    gatewayAPI:
+      # The Gateway API CRD lifecycle in the master/seed belongs to kubermatic-installer
+      # (pkg/install/stack/common/envoygateway.go), which reconciles the bundle in crd/ on every
+      # run. The upstream policy rejects any CRD write whose gateway.networking.k8s.io/bundle-version
+      # is below the bundle the policy shipped with, so leaving it enabled would make Helm arm a
+      # trap that fails the installer's own CRD update on the next run.
+      safeUpgradePolicy:
+        enabled: false
+
   deployment:
     # Number of control plane replicas.
     replicas: 1

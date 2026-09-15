@@ -103,7 +103,7 @@ spec:
         vsphere:
           cluster: vSAN Cluster
           datacenter: Hamburg
-          datastore: Datastore0-truenas
+          datastore: vsan
           endpoint: https://10.10.0.100
           allowInsecure: true
           ipv6Enabled: true

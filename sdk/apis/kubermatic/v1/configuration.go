@@ -484,16 +484,17 @@ type KubermaticIngressConfiguration struct {
 	// a disabled Ingress, this must always be a valid hostname.
 	Domain string `json:"domain"`
 
-	// ClassName is the Ingress resource's class name, used for selecting the appropriate
-	// ingress controller.
+	// Deprecated: ClassName is the Ingress resource's class name, used for selecting the appropriate
+	// ingress controller. Gateway API is enforced as of KKP 2.31 and the operator no longer
+	// creates Ingress resources. This field is ignored.
 	ClassName string `json:"className,omitempty"`
 
 	// NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
 	NamespaceOverride string `json:"namespaceOverride,omitempty"`
 
-	// Disable will prevent an Ingress from being created at all. This is mostly useful
-	// during testing. If the Ingress is disabled, the CertificateIssuer setting can also
-	// be left empty, as no Certificate resource will be created.
+	// Deprecated: Disable will prevent an Ingress from being created at all. This was mostly
+	// useful during testing. Gateway API is enforced as of KKP 2.31 and the operator no longer
+	// creates Ingress resources. This field is ignored.
 	Disable bool `json:"disable,omitempty"`
 
 	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)

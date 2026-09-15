@@ -83,19 +83,6 @@ httpRoute:
 			wantExternal:  true,
 		},
 		{
-			name: "Gateway API migration disabled ignores external Gateway signal",
-			values: `
-migrateGatewayAPI: false
-httpRoute:
-  externalGateway: true
-  gatewayName: seed-gateway
-  gatewayNamespace: seed-ingress
-`,
-			wantName:      "kubermatic",
-			wantNamespace: "kubermatic",
-			wantExternal:  false,
-		},
-		{
 			name: "empty Gateway values deploy bundled seed Gateway controller",
 			values: `
 migrateGatewayAPI: true

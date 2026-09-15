@@ -43,6 +43,10 @@ const (
 	controllerName = "kkp-user-project-binding-controller"
 
 	userProjectBindingEmailKey = ".spec.userEmail"
+
+	// userResolvedAnnotation is set on a UserProjectBinding once its referenced
+	// User has been found at least once.
+	userResolvedAnnotation = "userprojectbinding.kubermatic.k8c.io/user-resolved"
 )
 
 // reconcileSyncProjectBinding reconciles UserProjectBinding objects.
@@ -113,6 +117,11 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 	user, err := r.getUserForBinding(ctx, projectBinding)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
+			if projectBinding.Annotations[userResolvedAnnotation] != "true" {
+				log.Debug("user for binding not found yet, binding is pending")
+				return nil
+			}
+
 			if err := r.removeFinalizerFromBinding(ctx, projectBinding); err != nil {
 				return fmt.Errorf("failed to remove finalizer from orphaned binding %s: %w", projectBinding.Name, err)
 			}
@@ -123,6 +132,10 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 		}
 
 		return fmt.Errorf("failed to get user from binding: %w", err)
+	}
+
+	if err := r.markUserResolved(ctx, projectBinding); err != nil {
+		return fmt.Errorf("failed to mark binding %s as resolved: %w", projectBinding.Name, err)
 	}
 
 	if projectBinding.DeletionTimestamp != nil {
@@ -189,6 +202,24 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx contex
 	}
 
 	return r.removeFinalizerFromBinding(ctx, projectBinding)
+}
+
+// markUserResolved records that this binding's User has been found, so that a
+// later NotFound for the same binding can be recognized as orphaned rather
+// than pending.
+func (r *reconcileSyncProjectBinding) markUserResolved(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
+	if projectBinding.Annotations[userResolvedAnnotation] == "true" {
+		return nil
+	}
+
+	oldBinding := projectBinding.DeepCopy()
+
+	if projectBinding.Annotations == nil {
+		projectBinding.Annotations = map[string]string{}
+	}
+	projectBinding.Annotations[userResolvedAnnotation] = "true"
+
+	return r.Patch(ctx, projectBinding, ctrlruntimeclient.MergeFrom(oldBinding))
 }
 
 func (r *reconcileSyncProjectBinding) addFinalizerToBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {

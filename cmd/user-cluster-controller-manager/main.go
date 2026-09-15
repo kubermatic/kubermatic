@@ -112,6 +112,7 @@ type controllerRunOptions struct {
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 	kubeVirtInfraNamespace            string
+	kubeVirtAcceleratorQuota          bool
 
 	clusterBackup clusterBackupOptions
 
@@ -172,6 +173,7 @@ func main() {
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.StringVar(&runOp.kubeVirtInfraNamespace, "kv-infra-namespace", "", "Kubevirt infra namespace where workload will be deployed")
+	flag.BoolVar(&runOp.kubeVirtAcceleratorQuota, "kubevirt-accelerator-quota", false, "Enable KubeVirt accelerator quota accounting")
 	flag.BoolVar(&runOp.kyvernoEnabled, "kyverno-enabled", false, "Enable Kyverno in user cluster.")
 	flag.Parse()
 
@@ -342,6 +344,7 @@ func main() {
 		runOp.konnectivityKeepaliveTime,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
+		runOp.kubeVirtAcceleratorQuota,
 		runOp.kyvernoEnabled,
 		log,
 	); err != nil {
@@ -441,7 +444,7 @@ func main() {
 		kvInfraNamespace = runOp.kubeVirtInfraNamespace
 	}
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kyvernoEnabled); err != nil {
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kubeVirtAcceleratorQuota, runOp.kyvernoEnabled); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 

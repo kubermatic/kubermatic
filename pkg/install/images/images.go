@@ -54,6 +54,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	mlaloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
+	mlamonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -484,6 +486,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
+	deploymentReconcilers = append(deploymentReconcilers, mlamonitoringagent.DeploymentReconciler(nil, nil, templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
@@ -512,6 +515,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		kubermaticVersions,
 		templateData.RewriteImage,
 	))
+	daemonsetReconcilers = append(daemonsetReconcilers, mlaloggingagent.DaemonSetReconciler(nil, templateData.RewriteImage))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(templateData.Cluster(), net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
 
@@ -690,6 +694,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).
+		WithKubeLBImageRepository(config.Spec.UserCluster.KubeLB.ImageRepository).
+		WithKubeLBImageTag(config.Spec.UserCluster.KubeLB.ImageTag).
 		WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 		WithDnatControllerImage(defaulting.DefaultDNATControllerImage).
 		WithNetworkIntfMgrImage(defaulting.DefaultNetworkInterfaceManagerImage).

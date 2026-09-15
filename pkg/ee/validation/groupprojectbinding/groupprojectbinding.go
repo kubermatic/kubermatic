@@ -25,15 +25,57 @@
 package groupprojectbinding
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ValidateUpdate(oldGroupProjectBinding *kubermaticv1.GroupProjectBinding, newGroupProjectBinding *kubermaticv1.GroupProjectBinding) error {
+func ValidateCreate(ctx context.Context, binding *kubermaticv1.GroupProjectBinding, client ctrlruntimeclient.Client) error {
+	duplicate, err := hasDuplicateGroupProjectBinding(ctx, client, binding, binding.Name)
+	if err != nil {
+		return err
+	}
+	if duplicate {
+		return fmt.Errorf("group %q is already bound to project %q", binding.Spec.Group, binding.Spec.ProjectID)
+	}
+
+	return nil
+}
+
+func ValidateUpdate(ctx context.Context, oldGroupProjectBinding *kubermaticv1.GroupProjectBinding, newGroupProjectBinding *kubermaticv1.GroupProjectBinding, client ctrlruntimeclient.Client) error {
 	if oldGroupProjectBinding.Spec.ProjectID != newGroupProjectBinding.Spec.ProjectID {
 		return errors.New("attribute \"projectID\" cannot be updated for existing GroupProjectBinding resource")
 	}
 
+	duplicate, err := hasDuplicateGroupProjectBinding(ctx, client, newGroupProjectBinding, newGroupProjectBinding.Name)
+	if err != nil {
+		return err
+	}
+	if duplicate {
+		return fmt.Errorf("group %q is already bound to project %q", newGroupProjectBinding.Spec.Group, newGroupProjectBinding.Spec.ProjectID)
+	}
+
 	return nil
+}
+
+func hasDuplicateGroupProjectBinding(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding, excludeName string) (bool, error) {
+	existingBindings := &kubermaticv1.GroupProjectBindingList{}
+	if err := client.List(ctx, existingBindings); err != nil {
+		return false, fmt.Errorf("failed to list GroupProjectBindings: %w", err)
+	}
+
+	for _, existing := range existingBindings.Items {
+		if existing.Name == excludeName {
+			continue
+		}
+		if existing.Spec.Group == binding.Spec.Group && existing.Spec.ProjectID == binding.Spec.ProjectID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

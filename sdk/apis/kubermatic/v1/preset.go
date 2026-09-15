@@ -400,7 +400,12 @@ type Kubevirt struct {
 	VPCName string `json:"vpcName,omitempty"`
 
 	// SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+	//
+	// Deprecated: use Subnets instead.
 	SubnetName string `json:"subnetName,omitempty"`
+
+	// Subnets is a list of subnet names, smaller segmented portions of a larger network, like a Virtual Private Cloud (VPC).
+	Subnets []string `json:"subnets,omitempty"`
 }
 
 func (s Kubevirt) IsValid() bool {

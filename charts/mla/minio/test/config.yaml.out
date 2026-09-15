@@ -4,6 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "minio-sa"
+
 ---
 # Source: minio/charts/minio/templates/configmap.yaml
 apiVersion: v1
@@ -409,6 +410,10 @@ data:
     # Try connecting to MinIO instance
     scheme=http
     connectToMinio $scheme
+    
+    
+    
+
 ---
 # Source: minio/charts/minio/templates/pvc.yaml
 apiVersion: v1
@@ -427,6 +432,7 @@ spec:
     requests:
       storage: "50Gi"
   storageClassName: "kubermatic-fast"
+
 ---
 # Source: minio/charts/minio/templates/console-service.yaml
 apiVersion: v1
@@ -448,6 +454,7 @@ spec:
   selector:
     app: minio
     release: release-name
+
 ---
 # Source: minio/charts/minio/templates/service.yaml
 apiVersion: v1
@@ -470,6 +477,7 @@ spec:
   selector:
     app: minio
     release: release-name
+
 ---
 # Source: minio/charts/minio/templates/deployment.yaml
 apiVersion: apps/v1
@@ -625,3 +633,4 @@ spec:
           resources:
             requests:
               memory: 128Mi
+

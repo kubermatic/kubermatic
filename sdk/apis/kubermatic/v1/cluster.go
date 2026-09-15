@@ -734,6 +734,49 @@ type ClusterStatus struct {
 
 	// ResourceUsage shows the current usage of resources for the cluster.
 	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
+
+	// AcceleratorAccounting contains this cluster's accelerator footprint usage and
+	// readiness attestation. It is set only for relevant KubeVirt clusters in projects
+	// with accelerator accounting activated.
+	// +optional
+	AcceleratorAccounting *ClusterAcceleratorAccountingStatus `json:"acceleratorAccounting,omitempty"`
+}
+
+// ClusterAcceleratorAccountingStatus contains one KubeVirt cluster's accelerator
+// footprint capability, liveness, and readiness attestation.
+type ClusterAcceleratorAccountingStatus struct {
+	// ObservedAccountingRevision is the master-issued accounting revision this cluster observed.
+	ObservedAccountingRevision AcceleratorAccountingRevision `json:"observedAccountingRevision"`
+
+	// ObservedQuotaDigest is the canonical accelerator quota digest this cluster observed.
+	ObservedQuotaDigest AcceleratorQuotaDigest `json:"observedQuotaDigest"`
+
+	// FootprintSchemaVersion is the Machine footprint schema this controller can account.
+	FootprintSchemaVersion string `json:"footprintSchemaVersion"`
+
+	// ControllerVersion identifies the reporting controller implementation.
+	ControllerVersion string `json:"controllerVersion"`
+
+	// ObservedAt is the heartbeat time at which this cluster report was produced.
+	// +optional
+	ObservedAt metav1.Time `json:"observedAt,omitempty"`
+
+	// MachinesWithoutFootprint is the number of legacy Machines that predate trusted
+	// footprint capture.
+	// +kubebuilder:validation:Minimum=0
+	MachinesWithoutFootprint int32 `json:"machinesWithoutFootprint"`
+
+	// MachinesWithInvalidFootprint is the number of Machines whose footprint cannot be accounted.
+	// +kubebuilder:validation:Minimum=0
+	MachinesWithInvalidFootprint int32 `json:"machinesWithInvalidFootprint"`
+
+	// Ready is true when all Machines have a valid supported footprint and this report
+	// observes the current accounting revision and quota digest.
+	Ready bool `json:"ready"`
+
+	// Blockers contains actionable reasons why this cluster report is not ready.
+	// +optional
+	Blockers []AcceleratorAccountingBlocker `json:"blockers,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -947,7 +990,7 @@ type ComponentSettings struct {
 	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
-	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
@@ -988,6 +1031,14 @@ type OSMControllerSettings struct {
 type ControllerSettings struct {
 	DeploymentSettings     `json:",inline"`
 	LeaderElectionSettings `json:"leaderElection,omitempty"`
+}
+
+type MachineControllerSettings struct {
+	DeploymentSettings `json:",inline"`
+	// SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
+	// deletion is stuck longer than this duration, eviction is skipped and the node is
+	// force-deleted. Defaults to the machine-controller binary's built-in 2h when unset.
+	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
 }
 
 type DeploymentSettings struct {

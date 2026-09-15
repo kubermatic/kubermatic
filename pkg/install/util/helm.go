@@ -120,6 +120,11 @@ func DeployHelmChart(
 		return err
 	}
 
+	// Note that the installer's own --force (the `force` argument above) selects the
+	// re-install branch in the switch above and must never be forwarded to helm as
+	// --force: Helm 4 marks its --force mutually exclusive with --force-conflicts,
+	// which the helm client emits for server-side releases, so passing both would
+	// make every such deploy fail before it starts.
 	flags := []string{}
 	if atomic {
 		flags = append(flags, "--atomic")

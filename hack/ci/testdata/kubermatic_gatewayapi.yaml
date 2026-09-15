@@ -26,6 +26,8 @@ spec:
     domain: '__KUBERMATIC_DOMAIN__'
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   auth:
+    issuerClientSecret: 'kubermatic-static-client-secret'
+    issuerCookieKey: 'kubermatic-static-cookie-key-1234'
     serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
   userCluster:
     apiserverReplicas: 1

@@ -39,7 +39,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -75,18 +74,26 @@ type DeployOptions struct {
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
-	MigrateNginx               bool
-	// MigrateGatewayAPI instructs kubermatic-installer to deploy envoy-gateway-controller
-	// chart instead of nginx-ingress-controller.
-	// For more details, see the documentation, as ingress based components like Dex may require
-	// manual further configurations.
+	// MigrateNginx binds the --migrate-upstream-nginx-ingress flag.
 	//
-	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	// Deprecated: As of KKP 2.31 nginx-ingress-controller has been removed in favour of
+	// Gateway API; this field is no longer read and is retained only so the flag still
+	// parses for backwards compatibility.
+	MigrateNginx bool
+	// MigrateGatewayAPI binds the --migrate-gateway-api flag.
+	//
+	// Deprecated: As of KKP 2.31 Gateway API is the enforced default; this field is no
+	// longer read and is retained only so the flag still parses for backwards compatibility.
 	MigrateGatewayAPI bool
-	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
-	// When false (default), old resources are cleaned up automatically during migration.
-	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	// SkipIngressCleanup binds the --skip-ingress-cleanup flag. When set, the
+	// installer leaves the pre-existing nginx-ingress Ingress objects in place so
+	// nginx can keep serving traffic while the operator flips DNS to the new Envoy
+	// Gateway. Cleanup is then expected to happen on a deliberate later run once DNS
+	// has been confirmed on the new Gateway. Cannot be combined with CleanNginxLB.
 	SkipIngressCleanup bool
+	// CleanNginxLB controls cleanup of the legacy nginx-ingress-controller Helm release
+	// after Gateway API has taken over.
+	CleanNginxLB bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -155,9 +162,10 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "enable the migration from nginx-ingress-controller to Gateway API. See the documentation for more details.")
-	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "skip cleanup of old Ingress or Gateway API resources during migration (cleanup happens by default)")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "DEPRECATED: This flag is no-op. nginx-ingress-controller has been removed in favour of Gateway API.")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "DEPRECATED: This flag is no-op. Gateway API is now the default and always enabled.")
+	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "skip removal of pre-existing nginx-ingress Ingress objects during the 2.30 → 2.31 migration. Set this on the initial 2.31 run if DNS still points at the nginx LoadBalancer, then re-run without the flag once DNS has been flipped to the new Envoy Gateway. Cannot be combined with --clean-nginx-lb.")
+	cmd.PersistentFlags().BoolVar(&opt.CleanNginxLB, "clean-nginx-lb", false, "uninstall the legacy nginx-ingress-controller Helm release after Gateway API is healthy. When not set, nginx is left in place and a warning is logged.")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
@@ -167,7 +175,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 
 	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
-	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
+	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, envoy-gateway-controller, dex)")
 
 	return cmd
 }
@@ -191,6 +199,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 
 		logger.WithFields(fields).Info("🚀 Initializing installer…")
 
+		if opt.SkipIngressCleanup && opt.CleanNginxLB {
+			return errors.New("--skip-ingress-cleanup cannot be combined with --clean-nginx-lb: removing the nginx-ingress LoadBalancer while keeping the legacy Ingress objects that point at it is contradictory. Run the installer first with --skip-ingress-cleanup to stage DNS, then re-run without --skip-ingress-cleanup (optionally with --clean-nginx-lb) once DNS is flipped to the new Envoy Gateway")
+		}
+
 		// load config files
 		if len(opt.Kubeconfig) == 0 {
 			return errors.New("no kubeconfig (--kubeconfig or $KUBECONFIG) given")
@@ -205,10 +217,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		helmValues, err := loadHelmValues(opt.HelmValues)
 		if err != nil {
 			return fmt.Errorf("failed to load Helm values: %w", err)
-		}
-
-		if err := validateGatewayAPIMigrationFlags(opt, helmValues); err != nil {
-			return err
 		}
 
 		deployOptions := stack.DeployOptions{
@@ -236,8 +244,9 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
-			MigrateToGatewayAPI:                opt.MigrateGatewayAPI,
+			MigrateToGatewayAPI:                true,
 			SkipIngressCleanup:                 opt.SkipIngressCleanup,
+			CleanNginxLB:                       opt.CleanNginxLB,
 		}
 
 		// prepare Kubernetes and Helm clients
@@ -368,19 +377,6 @@ func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (helm.Client, er
 	}
 
 	return helmClient, nil
-}
-
-func validateGatewayAPIMigrationFlags(opt *DeployOptions, helmValues *yamled.Document) error {
-	if !opt.MigrateGatewayAPI {
-		return nil
-	}
-
-	migrateGatewayAPIInValues, _ := helmValues.GetBool(yamled.Path{"migrateGatewayAPI"})
-	if migrateGatewayAPIInValues {
-		return nil
-	}
-
-	return errors.New("--migrate-gateway-api requires the migrateGatewayAPI Helm value to be set to true")
 }
 
 func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptions) (stack.Stack, error) {

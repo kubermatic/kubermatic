@@ -10,6 +10,56 @@
 - [v2.29.7](#v2297)
 - [v2.29.8](#v2298)
 - [v2.29.9](#v2299)
+- [v2.29.10](#v22910)
+- [v2.29.11](#v22911)
+
+## v2.29.11
+
+**GitHub release: [v2.29.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.11)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.11 ([#16301](https://github.com/kubermatic/kubermatic/pull/16301))
+
+#### Supported Versions
+
+- v1.34.11
+
+### Cloud Providers
+
+#### OpenStack
+
+- Update OpenStack Cinder CSI sidecar images (csi-attacher v4.12.0, csi-snapshotter v8.6.0, livenessprobe v2.19.0, csi-node-driver-registrar v2.17.0) to address known CVEs ([#16333](https://github.com/kubermatic/kubermatic/pull/16333))
+
+### Updates
+
+- Update machine-controller to [v1.64.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.5) ([#16349](https://github.com/kubermatic/kubermatic/pull/16349))
+- Update machine-controller to [v1.64.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.4) ([#16278](https://github.com/kubermatic/kubermatic/pull/16278))
+- Update the utility container image to 2.10.0 across all charts and controllers ([#16341](https://github.com/kubermatic/kubermatic/pull/16341))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Hide cluster backup options in Community Edition, where the feature is not supported ([#8255](https://github.com/kubermatic/dashboard/pull/8255))
+
+## v2.29.10
+
+**GitHub release: [v2.29.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.10)**
+
+### Bugfixes
+
+- Fix a bug where multiple GroupProjectBindings with the same group and project could be created. The admission webhook now rejects duplicate bindings at creation time and prevents  an existing binding from being updated into a conflicting group/project pair ([#16162](https://github.com/kubermatic/kubermatic/pull/16162))
+- Fix nodeport-proxy-envoy Prometheus annotations to include the standard `prometheus.io/path` metrics path annotation ([#16092](https://github.com/kubermatic/kubermatic/pull/16092))
+- Fix the kubevirt-network-controller emitting spurious "invalid NetworkPolicy" warning events and potentially panicking when reconciling cluster-isolation NetworkPolicies in default-deny mode before the cluster's apiserver address or DNS configuration were available ([#16074](https://github.com/kubermatic/kubermatic/pull/16074))
+- Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
+- Fix KubeLB option precedence so enforced datacenters always show the option regardless of the enabled flag ([#8174](https://github.com/kubermatic/dashboard/pull/8174))
+
+### Updates
+
+- Add support for k8s patch release v1.34.10 ([#16167](https://github.com/kubermatic/kubermatic/pull/16167))
+- Update machine-controller to v1.64.3 ([#16176](https://github.com/kubermatic/kubermatic/pull/16176))
+- Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 
 ## v2.29.9
 

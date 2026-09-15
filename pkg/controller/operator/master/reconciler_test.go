@@ -130,9 +130,8 @@ func TestReconcileGatewayAPIResourcesSwitchesToExternalGateway(t *testing.T) {
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
@@ -254,10 +253,9 @@ func TestReconcileGatewayAPIResourcesRecordsMissingExternalGateway(t *testing.T)
 		Build()
 	recorder := events.NewFakeRecorder(10)
 	r := &Reconciler{
-		Client:            client,
-		recorder:          recorder,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client:   client,
+		recorder: recorder,
+		scheme:   scheme,
 	}
 
 	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
@@ -384,9 +382,8 @@ func TestReconcileGatewayAPIResourcesKeepsManagedGatewayWhileOtherHTTPRoutesRefe
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
@@ -543,9 +540,8 @@ func TestReconcileGatewayAPIResourcesKeepsManagedGatewayWhileLabeledHTTPRouteRej
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
@@ -643,9 +639,8 @@ func TestReconcileGatewayAPIResourcesKeepsManagedGatewayWhenExternalRouteRejecte
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	result, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar())
@@ -709,9 +704,8 @@ func TestReconcileGatewayAPIResourcesRejectsExternalDefaultManagedGateway(t *tes
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err == nil {
@@ -766,9 +760,8 @@ func TestReconcileGatewayAPIResourcesAllowsUnownedExternalDefaultGateway(t *test
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
@@ -837,9 +830,8 @@ func TestReconcileGatewayAPIResourcesSwitchesBackToManagedGateway(t *testing.T) 
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {
@@ -900,9 +892,8 @@ func TestReconcileGatewayAPIResourcesCreatesExternalHTTPRouteWithoutManagedGatew
 		Build()
 
 	r := &Reconciler{
-		Client:            client,
-		scheme:            scheme,
-		gatewayAPIEnabled: true,
+		Client: client,
+		scheme: scheme,
 	}
 
 	if _, err := r.reconcileGatewayAPIResources(ctx, cfg, zap.NewNop().Sugar()); err != nil {

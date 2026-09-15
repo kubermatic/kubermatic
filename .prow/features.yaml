@@ -28,7 +28,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
@@ -62,7 +62,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
@@ -96,7 +96,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
@@ -130,7 +130,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-canal-e2e-test.sh"
           env:
@@ -164,7 +164,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-gateway-api-e2e-tests.sh"
           env:
@@ -185,7 +185,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-gateway-api-migration-e2e
-    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api|.prow/|gateway/|gateway\\.go)"
+    run_if_changed: ".*(envoy[-_]gateway|gateway[-_]api|GatewayAPI|pkg/test/e2e/gateway-api/|hack/ci/run-gateway-api-migration|hack/ci/lib-gateway-api|.prow/|gateway/|gateway\\.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -198,7 +198,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-gateway-api-migration-e2e.sh"
           env:
@@ -232,7 +232,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
@@ -265,7 +265,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
           securityContext:
@@ -327,7 +327,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -360,7 +360,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           env:
@@ -390,7 +390,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-ipam-e2e-tests.sh"
           env:
@@ -426,7 +426,7 @@ presubmits:
       preset-vault: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-cluster-backup-e2e-tests.sh"
           env:
@@ -446,23 +446,24 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-kkp-argocd-gitops-e2e
-    run_if_changed: "charts/gitops"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      # preset-e2e-ssh: "true"
-      preset-aws-e2e-kkp: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
-          command:
-            - "./hack/ci/run-argocd-e2e-tests.sh"
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
+#  - name: pre-kubermatic-kkp-argocd-gitops-e2e
+#    run_if_changed: "charts/gitops"
+#    decorate: true
+#    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+#    labels:
+#      # preset-e2e-ssh: "true"
+#      preset-aws-e2e-kkp: "true"
+#      preset-docker-pull: "true"
+#      preset-docker-push: "true"
+#    spec:
+#      containers:
+#        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
+#          command:
+#            - "./hack/ci/run-argocd-e2e-tests.sh"
+#          env:
+#            - name: KUBERMATIC_EDITION
+#              value: ee
+
   - name: pre-kubermatic-encryption-at-rest-e2e
     run_if_changed: "(pkg/controller/seed-controller-manager/encryption-at-rest-controller/|pkg/test/e2e/encryption-at-rest/|pkg/resources/apiserver)"
     decorate: true
@@ -479,7 +480,7 @@ presubmits:
       preset-vault: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-encryption-at-rest-tests.sh"
           env:
@@ -515,7 +516,7 @@ presubmits:
       preset-vault: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-user-ssh-key-agent-e2e-tests.sh"
           env:

@@ -1,0 +1,13 @@
+name: setup
+description: "shared setup for Go projects"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v7
+      with:
+        go-version-file: go.mod
+        check-latest: true
+        cache: true
+        cache-dependency-path: |
+          go.sum
+          sdk/go.sum

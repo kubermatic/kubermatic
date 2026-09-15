@@ -36,16 +36,31 @@ import (
 var (
 	//go:embed static/crd-syncsecrets.yaml
 	syncSecretYAML string
+
+	//go:embed static/crd-tenantwafpolicies.yaml
+	tenantWAFPolicyYAML string
 )
 
-const SyncSecretCRDName = "syncsecrets.kubelb.k8c.io"
+const (
+	SyncSecretCRDName      = "syncsecrets.kubelb.k8c.io"
+	TenantWAFPolicyCRDName = "tenantwafpolicies.kubelb.k8c.io"
+)
 
 // SyncSecretCRDReconciler returns the SyncSecret CRD definition.
 func SyncSecretCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return crdReconciler(SyncSecretCRDName, syncSecretYAML)
+}
+
+// TenantWAFPolicyCRDReconciler returns the TenantWAFPolicy CRD definition.
+func TenantWAFPolicyCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return crdReconciler(TenantWAFPolicyCRDName, tenantWAFPolicyYAML)
+}
+
+func crdReconciler(name, definition string) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
-		return SyncSecretCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+		return name, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.UnmarshalStrict([]byte(syncSecretYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(definition), &fileCRD)
 			if err != nil {
 				return nil, err
 			}

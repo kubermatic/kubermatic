@@ -51,3 +51,37 @@ func TestFeatureGates(t *testing.T) {
 		})
 	}
 }
+
+func TestKubeVirtAcceleratorQuotaFeatureGate(t *testing.T) {
+	testCases := []struct {
+		name    string
+		input   string
+		enabled bool
+	}{
+		{
+			name: "disabled when omitted",
+		},
+		{
+			name:  "explicitly disabled",
+			input: KubeVirtAcceleratorQuota + "=false",
+		},
+		{
+			name:    "explicitly enabled",
+			input:   KubeVirtAcceleratorQuota + "=true",
+			enabled: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			featureGates, err := NewFeatures(tc.input)
+			if err != nil {
+				t.Fatalf("failed to parse feature gates: %v", err)
+			}
+
+			if enabled := featureGates.Enabled(KubeVirtAcceleratorQuota); enabled != tc.enabled {
+				t.Fatalf("expected %s enabled=%t, got %t", KubeVirtAcceleratorQuota, tc.enabled, enabled)
+			}
+		})
+	}
+}

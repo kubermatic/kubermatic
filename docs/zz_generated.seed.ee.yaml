@@ -315,6 +315,12 @@ spec:
           matchSubnetAndStorageLocation: null
           # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
           namespacedMode: null
+          # Optional: NodeDefaults sets the default CPU, memory and primary disk size for KubeVirt worker
+          # nodes in this datacenter. These defaults are used to pre-fill the "Custom Configuration" node
+          # form in the dashboard when an instance type is not selected, and are applied server-side to
+          # machine deployments that do not already specify a value. They have no effect once an instance
+          # type is chosen, as instance types already determine CPU and memory.
+          nodeDefaults: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
           providerNetwork: null
           # Optional: UsePodResourcesCPU enables CPU assignment via Kubernetes Pod resource requests/limits.

@@ -80,6 +80,10 @@ const (
 	// for cert-manager integration. This controller watches HTTPRoutes and ensures
 	// Gateway listeners have explicit hostnames so cert-manager can create certificates.
 	HTTPRouteGatewaySync = "HTTPRouteGatewaySync"
+
+	// KubeVirtAcceleratorQuota enables accelerator quota accounting for KubeVirt Machines.
+	// This feature is alpha and disabled by default.
+	KubeVirtAcceleratorQuota = "KubeVirtAcceleratorQuota"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

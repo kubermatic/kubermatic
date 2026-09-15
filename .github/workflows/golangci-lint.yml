@@ -1,0 +1,43 @@
+name: golangci-lint
+on:
+  pull_request:
+
+env:
+  KUBERMATIC_EDITION: ee
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
+
+  golangci-sdk:
+    name: lint sdk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # sdk is a separate Go module and is linted twice, mirroring
+      # `make -C sdk lint`: once with the SDK's own ruleset and once
+      # with the repository root's configuration.
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
+          working-directory: sdk
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
+          working-directory: sdk
+          args: --config ../.golangci.yml

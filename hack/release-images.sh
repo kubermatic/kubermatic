@@ -46,6 +46,8 @@ fi
 cd $(dirname "$0")/..
 source hack/lib.sh
 
+mkdir -p _dist/images
+
 export ALL_TAGS=$@
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
@@ -57,6 +59,38 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
+generate_image_sbom() {
+  local imageRef="$1"
+  local outFile="$2"
+
+  echodate "Generating SBOM for $imageRef..."
+  syft "docker:$imageRef" -o "spdx-json=$outFile"
+}
+
+declare -A ATTACHED_REFS
+
+attach_image_sbom() {
+  local imageRef="$1"
+  local sbomFile="$2"
+
+  local repo="${imageRef%:*}"
+  local digest
+  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -er '.digest')"
+  local ref="$repo@$digest"
+  local key="$ref:$(basename "$sbomFile")"
+
+  if [[ -n "${ATTACHED_REFS[$key]:-}" ]]; then
+    echodate "SBOM $(basename "$sbomFile") already attached to $ref, skipping duplicate for $imageRef..."
+    return
+  fi
+
+  echodate "Attaching SBOM $(basename "$sbomFile") to $ref..."
+  oras attach --artifact-type application/spdx+json \
+    "$ref" "$sbomFile:application/spdx+json"
+
+  ATTACHED_REFS[$key]=1
+}
+
 # build Docker images
 PRIMARY_TAG="${1}"
 VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
@@ -65,6 +99,12 @@ make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
+
+generate_image_sbom "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/addons:$PRIMARY_TAG" "_dist/images/addons.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
+generate_image_sbom "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" "_dist/images/conformance-tests.sbom.spdx.json"
 
 # switch to a multi platform-enabled builder
 docker buildx create --use
@@ -132,11 +172,23 @@ create_manifest() {
 echodate "Building user-ssh-keys-agent images..."
 buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG"
 
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$PRIMARY_TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+done
+
 echodate "Building kubeletdnat-controller images..."
 buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG"
 
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$PRIMARY_TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+done
+
 echodate "Building network-interface-manager images..."
 buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG"
+
+for arch in $ARCHITECTURES; do
+  generate_image_sbom "$DOCKER_REPO/network-interface-manager:$PRIMARY_TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+done
 
 # for each given tag, tag and push the image
 for TAG in $ALL_TAGS; do
@@ -153,19 +205,40 @@ for TAG in $ALL_TAGS; do
 
   if [ -z "${NO_PUSH:-}" ]; then
     echodate "Pushing images"
+
     docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+    attach_image_sbom "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
+    attach_image_sbom "$DOCKER_REPO/nodeport-proxy:$TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/addons:$TAG"
+    attach_image_sbom "$DOCKER_REPO/addons:$TAG" "_dist/images/addons.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/etcd-launcher:$TAG"
+    attach_image_sbom "$DOCKER_REPO/etcd-launcher:$TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
+
     docker push "$DOCKER_REPO/conformance-tests:$TAG"
+    attach_image_sbom "$DOCKER_REPO/conformance-tests:$TAG" "_dist/images/conformance-tests.sbom.spdx.json"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" "$TAG"
 
     docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+    done
+
     docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+    done
+
     docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
+    for arch in $ARCHITECTURES; do
+      attach_image_sbom "$DOCKER_REPO/network-interface-manager:$TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+    done
   fi
 done
 

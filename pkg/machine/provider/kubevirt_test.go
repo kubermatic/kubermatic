@@ -93,6 +93,61 @@ func TestCompleteKubevirtProviderSpec(t *testing.T) {
 				expected:  cloneBuilder(goodMachine).WithDNSPolicy("keep-me-kubevirt").WithClusterName(goodCluster.Name),
 			},
 		},
+		&kubevirtTestcase{
+			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]{
+				name: "should apply the node defaults from the datacenter",
+				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
+					NodeDefaults: &kubermaticv1.KubeVirtNodeDefaults{
+						CPUs:            "2",
+						Memory:          "2Gi",
+						PrimaryDiskSize: "10Gi",
+					},
+				},
+				expected: cloneBuilder(goodMachine).
+					WithCPUs(2).
+					WithMemory("2Gi").
+					WithPrimaryDiskSize("10Gi").
+					WithClusterName(goodCluster.Name),
+			},
+		},
+		&kubevirtTestcase{
+			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]{
+				name: "should not overwrite CPU, memory and disk size already set in an existing spec",
+				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
+					NodeDefaults: &kubermaticv1.KubeVirtNodeDefaults{
+						CPUs:            "2",
+						Memory:          "2Gi",
+						PrimaryDiskSize: "10Gi",
+					},
+				},
+				inputSpec: cloneBuilder(defaultMachine).
+					WithCPUs(4).
+					WithMemory("8Gi").
+					WithPrimaryDiskSize("50Gi"),
+				expected: cloneBuilder(goodMachine).
+					WithCPUs(4).
+					WithMemory("8Gi").
+					WithPrimaryDiskSize("50Gi").
+					WithClusterName(goodCluster.Name),
+			},
+		},
+		&kubevirtTestcase{
+			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]{
+				name: "should not apply CPU and memory defaults when an instance type is selected, but should still apply the disk size default",
+				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
+					NodeDefaults: &kubermaticv1.KubeVirtNodeDefaults{
+						CPUs:            "2",
+						Memory:          "2Gi",
+						PrimaryDiskSize: "10Gi",
+					},
+				},
+				inputSpec: cloneBuilder(defaultMachine).WithInstancetype("standard-2"),
+				expected: cloneBuilder(goodMachine).
+					WithInstancetype("standard-2").
+					WithPrimaryDiskSize("10Gi").
+					WithClusterName(goodCluster.Name),
+			},
+		},
 	}
 
 	runProviderTestcases(t, goodCluster, testcases)

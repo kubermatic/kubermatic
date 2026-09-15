@@ -37,6 +37,9 @@
 {{ if eq .Cluster.MajorMinorVersion "1.35" }}
 {{ $version = "v4.14.0" }}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.36" }}
+{{ $version = "v4.17.0" }}
+{{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 ---
 apiVersion: v1
@@ -137,7 +140,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-do-plugin
-          image: '{{ Image "digitalocean/do-csi-plugin:v4.14.0" }}'
+          image: '{{ Image "digitalocean/do-csi-plugin:v4.17.0" }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--token=$(DIGITALOCEAN_ACCESS_TOKEN)"
@@ -386,7 +389,7 @@ spec:
             - name: registration-dir
               mountPath: /registration/
         - name: csi-do-plugin
-          image: '{{ Image "digitalocean/do-csi-plugin:v4.14.0" }}'
+          image: '{{ Image "digitalocean/do-csi-plugin:v4.17.0" }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--url=$(DIGITALOCEAN_API_URL)"

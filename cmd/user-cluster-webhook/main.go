@@ -27,10 +27,12 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	applicationinstallationmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/mutation"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
+	machinemutation "k8c.io/kubermatic/v2/pkg/webhook/machine/mutation"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
@@ -136,6 +138,18 @@ func main() {
 	}
 	if err := builder.WebhookManagedBy(userMgr, &clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
+	}
+
+	// The user-cluster controller installs the dedicated accelerator webhook configurations
+	// when the feature is activated. Handlers stay authoritative whenever those configurations
+	// call them, including during rolling updates and after sticky activation.
+	if err := builder.WebhookManagedBy(userMgr, &clusterv1alpha1.Machine{}).
+		WithDefaulter(machinemutation.NewMutator(userMgr.GetClient(), options.kubeVirtInfraNamespace)).
+		WithValidator(machinevalidation.NewAcceleratorValidator()).
+		WithDefaulterCustomPath(resources.MachineAcceleratorFootprintMutatingWebhookPath).
+		WithValidatorCustomPath(resources.MachineAcceleratorFootprintValidatingWebhookPath).
+		Complete(); err != nil {
+		log.Fatalw("Failed to setup Machine accelerator footprint webhooks", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

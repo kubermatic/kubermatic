@@ -28,6 +28,7 @@ spec:
     - ports:
         - port: 11211
         - port: 9150
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/networkpolicy.yaml
 kind: NetworkPolicy
@@ -58,6 +59,7 @@ spec:
     - ports:
         - port: 11211
         - port: 9150
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks/templates/networkpolicy.yaml
 kind: NetworkPolicy
@@ -88,6 +90,7 @@ spec:
     - ports:
         - port: 11211
         - port: 9150
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-frontend/templates/networkpolicy.yaml
 kind: NetworkPolicy
@@ -118,6 +121,7 @@ spec:
     - ports:
         - port: 11211
         - port: 9150
+
 ---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -139,6 +143,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: alertmanager
   maxUnavailable: 1
+
 ---
 # Source: cortex/charts/cortex/templates/distributor/distributor-poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -160,6 +165,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: distributor
   maxUnavailable: 30%
+
 ---
 # Source: cortex/charts/cortex/templates/ingester/ingester-poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -181,6 +187,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: ingester
   maxUnavailable: 1
+
 ---
 # Source: cortex/charts/cortex/templates/querier/querier-poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -202,6 +209,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: querier
   maxUnavailable: 30%
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/serviceaccount.yaml
 apiVersion: v1
@@ -216,6 +224,7 @@ metadata:
     app.kubernetes.io/name: memcached-blocks-index
     app.kubernetes.io/version: 1.6.24
     helm.sh/chart: memcached-blocks-index-6.14.0
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/serviceaccount.yaml
 apiVersion: v1
@@ -230,6 +239,7 @@ metadata:
     app.kubernetes.io/name: memcached-blocks-metadata
     app.kubernetes.io/version: 1.6.24
     helm.sh/chart: memcached-blocks-metadata-6.14.0
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks/templates/serviceaccount.yaml
 apiVersion: v1
@@ -244,6 +254,7 @@ metadata:
     app.kubernetes.io/name: memcached-blocks
     app.kubernetes.io/version: 1.6.24
     helm.sh/chart: memcached-blocks-6.14.0
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-frontend/templates/serviceaccount.yaml
 apiVersion: v1
@@ -258,6 +269,7 @@ metadata:
     app.kubernetes.io/name: memcached-frontend
     app.kubernetes.io/version: 1.6.24
     helm.sh/chart: memcached-frontend-6.14.0
+
 ---
 # Source: cortex/charts/cortex/templates/serviceaccount.yaml
 apiVersion: v1
@@ -274,6 +286,7 @@ metadata:
   annotations:
     {}
 automountServiceAccountToken: true
+
 ---
 # Source: cortex/charts/cortex/templates/secret.yaml
 apiVersion: v1
@@ -289,6 +302,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 data:
   cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGNsdXN0ZXI6CiAgICBsaXN0ZW5fYWRkcmVzczogMC4wLjAuMDo5MDk0CiAgZGF0YV9kaXI6IC9kYXRhL2NvcnRleC9hbGVydC1kYXRhCiAgZW5hYmxlX2FwaTogdHJ1ZQogIGV4dGVybmFsX3VybDogL2FwaS9wcm9tL2FsZXJ0bWFuYWdlcgphbGVydG1hbmFnZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBhbGVydG1hbmFnZXIKICAgIGVuZHBvaW50OiBtaW5pbzo5MDAwCiAgICBpbnNlY3VyZTogdHJ1ZQphcGk6CiAgcHJvbWV0aGV1c19odHRwX3ByZWZpeDogL3Byb21ldGhldXMKICByZXNwb25zZV9jb21wcmVzc2lvbl9lbmFibGVkOiB0cnVlCmF1dGhfZW5hYmxlZDogdHJ1ZQpibG9ja3Nfc3RvcmFnZToKICBidWNrZXRfc3RvcmU6CiAgICBidWNrZXRfaW5kZXg6CiAgICAgIGVuYWJsZWQ6IHRydWUKICAgIGlnbm9yZV9kZWxldGlvbl9tYXJrX2RlbGF5OiAxaAogICAgc3luY19kaXI6IC9kYXRhCiAgczM6CiAgICBidWNrZXRfbmFtZTogY29ydGV4CiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKICB0c2RiOgogICAgY2xvc2VfaWRsZV90c2RiX3RpbWVvdXQ6IDM2NW0KICAgIGRpcjogL2RhdGEKICAgIGZsdXNoX2Jsb2Nrc19vbl9zaHV0ZG93bjogdHJ1ZQogICAgcmV0ZW50aW9uX3BlcmlvZDogMzY1bQogICAgd2FsX2NvbXByZXNzaW9uX3R5cGU6IHpzdGQKY29tcGFjdG9yOgogIGJsb2Nrc19mZXRjaF9jb25jdXJyZW5jeTogMTAKICBkYXRhX2RpcjogL2RhdGEvY29ydGV4L2NvbXBhY3RvcgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKZGlzdHJpYnV0b3I6CiAgaGFfdHJhY2tlcjoKICAgIGVuYWJsZV9oYV90cmFja2VyOiB0cnVlCiAgICBrdnN0b3JlOgogICAgICBjb25zdWw6CiAgICAgICAgaG9zdDogY29uc3VsLWNvbnN1bC1zZXJ2ZXI6ODUwMAogICAgICBzdG9yZTogY29uc3VsCiAgcG9vbDoKICAgIGhlYWx0aF9jaGVja19pbmdlc3RlcnM6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICBzaGFyZF9ieV9hbGxfbGFiZWxzOiB0cnVlCmZyb250ZW5kOgogIGxvZ19xdWVyaWVzX2xvbmdlcl90aGFuOiAxMHMKaW5nZXN0ZXI6CiAgbGlmZWN5Y2xlcjoKICAgIGZpbmFsX3NsZWVwOiAzMHMKICAgIGpvaW5fYWZ0ZXI6IDEwcwogICAgb2JzZXJ2ZV9wZXJpb2Q6IDEwcwogICAgcmluZzoKICAgICAga3ZzdG9yZToKICAgICAgICBzdG9yZTogbWVtYmVybGlzdAogICAgICByZXBsaWNhdGlvbl9mYWN0b3I6IDMKaW5nZXN0ZXJfY2xpZW50OgogIGdycGNfY2xpZW50X2NvbmZpZzoKICAgIG1heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MAogICAgbWF4X3NlbmRfbXNnX3NpemU6IDEwNDg1NzYwCmxpbWl0czoKICBhY2NlcHRfaGFfc2FtcGxlczogdHJ1ZQogIGVuZm9yY2VfbWV0cmljX25hbWU6IHRydWUKICBtYXhfbGFiZWxfbmFtZXNfcGVyX3NlcmllczogNDAKICBtYXhfcXVlcnlfbG9va2JhY2s6IDBzCiAgb3V0X29mX29yZGVyX3RpbWVfd2luZG93OiAxMG0KICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvYWN0aXZlLXF1ZXJ5LXRyYWNrZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIGRucytyZWxlYXNlLW5hbWUtY29ydGV4LXN0b3JlLWdhdGV3YXktaGVhZGxlc3M6OTA5NQpxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogZmFsc2UKICBjYWNoZV9yZXN1bHRzOiB0cnVlCiAgcmVzdWx0c19jYWNoZToKICAgIGNhY2hlOgogICAgICBtZW1jYWNoZWQ6CiAgICAgICAgZXhwaXJhdGlvbjogMWgKICAgICAgbWVtY2FjaGVkX2NsaWVudDoKICAgICAgICB0aW1lb3V0OiAxcwogIHNwbGl0X3F1ZXJpZXNfYnlfaW50ZXJ2YWw6IDI0aApydWxlcjoKICBlbmFibGVfYWxlcnRtYW5hZ2VyX2Rpc2NvdmVyeTogdHJ1ZQogIGVuYWJsZV9hcGk6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKcnVsZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBjb3J0ZXgtcnVsZXIKICAgIGVuZHBvaW50OiBtaW5pbzo5MDAwCiAgICBpbnNlY3VyZTogdHJ1ZQpydW50aW1lX2NvbmZpZzoKICBmaWxlOiAvZXRjL2NvcnRleC1ydW50aW1lLWNvbmZpZy9ydW50aW1lX2NvbmZpZy55YW1sCnNlcnZlcjoKICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgZ3JwY19zZXJ2ZXJfbWF4X2NvbmN1cnJlbnRfc3RyZWFtczogMTAwMDAKICBncnBjX3NlcnZlcl9tYXhfcmVjdl9tc2dfc2l6ZTogMTA0ODU3NjAKICBncnBjX3NlcnZlcl9tYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAKICBodHRwX2xpc3Rlbl9wb3J0OiA4MDgwCnN0b3JlX2dhdGV3YXk6CiAgc2hhcmRpbmdfZW5hYmxlZDogZmFsc2U=
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/metrics-svc.yaml
 apiVersion: v1
@@ -316,6 +330,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks-index
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/service.yaml
 apiVersion: v1
@@ -340,6 +355,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks-index
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/metrics-svc.yaml
 apiVersion: v1
@@ -367,6 +383,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks-metadata
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/service.yaml
 apiVersion: v1
@@ -391,6 +408,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks-metadata
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks/templates/metrics-svc.yaml
 apiVersion: v1
@@ -418,6 +436,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks/templates/service.yaml
 apiVersion: v1
@@ -442,6 +461,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-blocks
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-frontend/templates/metrics-svc.yaml
 apiVersion: v1
@@ -469,6 +489,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-frontend
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-frontend/templates/service.yaml
 apiVersion: v1
@@ -493,6 +514,7 @@ spec:
   selector:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/name: memcached-frontend
+
 ---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-svc-headless.yaml
 apiVersion: v1
@@ -813,6 +835,7 @@ spec:
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/component: ruler
+
 ---
 # Source: cortex/charts/cortex/templates/store-gateway/store-gateway-svc-headless.yaml
 apiVersion: v1
@@ -896,6 +919,7 @@ spec:
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/part-of: memberlist
+
 ---
 # Source: cortex/templates/cortex-alertmanager-headless-kkp.yaml
 # Copyright 2022 The Kubermatic Kubernetes Platform contributors.
@@ -934,6 +958,7 @@ spec:
     app.kubernetes.io/name: cortex
   sessionAffinity: None
   type: ClusterIP
+
 ---
 # Source: cortex/charts/cortex/templates/distributor/distributor-dep.yaml
 apiVersion: apps/v1
@@ -1050,6 +1075,7 @@ spec:
             name: release-name-cortex-runtime-config
         - name: storage
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/templates/querier/querier-dep.yaml
 apiVersion: apps/v1
@@ -1416,6 +1442,7 @@ spec:
           emptyDir: {}
         - name: storage
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -1489,6 +1516,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           args:
@@ -1540,6 +1568,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -1566,6 +1595,7 @@ spec:
       volumes:
         - name: empty-dir
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -1639,6 +1669,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           args:
@@ -1690,6 +1721,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -1716,6 +1748,7 @@ spec:
       volumes:
         - name: empty-dir
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -1789,6 +1822,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           args:
@@ -1840,6 +1874,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -1866,6 +1901,7 @@ spec:
       volumes:
         - name: empty-dir
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/charts/memcached-frontend/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -1938,6 +1974,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           args:
@@ -1986,6 +2023,7 @@ spec:
             runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: null
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -2012,6 +2050,7 @@ spec:
       volumes:
         - name: empty-dir
           emptyDir: {}
+
 ---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-statefulset.yaml
 apiVersion: apps/v1

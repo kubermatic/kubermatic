@@ -1,0 +1,15 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  name: apiserver
+  namespace: cluster-de-test-01
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: apiserver
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0

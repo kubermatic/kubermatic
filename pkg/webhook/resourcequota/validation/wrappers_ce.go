@@ -26,6 +26,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func acceleratorAccountingSupported() bool { return false }
+
+func validateAcceleratorAccountingResourceQuota(_ *kubermaticv1.ResourceQuota) error { return nil }
+
 func validateCreate(_ context.Context,
 	_ *kubermaticv1.ResourceQuota,
 	_ ctrlruntimeclient.Client,

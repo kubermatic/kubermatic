@@ -89,6 +89,10 @@ spec:
             name: minio-bucket-user-create-script
             defaultMode: 0500
       restartPolicy: Never
+
+
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-backup.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -256,6 +260,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
     automated: {}
+  
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
 apiVersion: argoproj.io/v1alpha1
@@ -409,6 +416,8 @@ spec:
         factor: 1
         maxDuration: "3m0s"
     automated: {}
+  
+
 ---
 # Source: argocd-apps/templates/argocd-apps-logging.yaml
 apiVersion: argoproj.io/v1alpha1
@@ -470,6 +479,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
     automated: {}
+  
+
+
 ---
 # Source: argocd-apps/templates/argocd-apps-monitoring.yaml
 apiVersion: argoproj.io/v1alpha1
@@ -688,6 +700,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
     automated: {}
+  
+
 ---
 # Source: argocd-apps/templates/argocd-apps-storage.yaml
 apiVersion: argoproj.io/v1alpha1
