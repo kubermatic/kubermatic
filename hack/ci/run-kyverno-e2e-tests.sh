@@ -15,12 +15,15 @@
 # limitations under the License.
 
 ### This script sets up a local KKP installation in kind and runs the
-### Kyverno integration e2e test against an AWS user cluster.
+### Kyverno integration e2e tests against an AWS user cluster.
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
+cd "$(dirname "$0")/../.."
 source hack/lib.sh
+
+# Kyverno integration controllers are only included in the Enterprise Edition.
+export KUBERMATIC_EDITION=ee
 
 TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
@@ -40,7 +43,7 @@ else
   echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
 fi
 
-echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+echodate "SSH public key will be $(head -c 25 "${E2E_SSH_PUBKEY}")...$(tail -c 25 "${E2E_SSH_PUBKEY}")"
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml

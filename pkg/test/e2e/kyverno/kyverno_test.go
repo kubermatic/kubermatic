@@ -21,21 +21,18 @@ package kyverno
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"slices"
-	"strings"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/go-logr/zapr"
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	kyvernocontroller "k8c.io/kubermatic/v2/pkg/ee/kyverno"
-	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	policybindingcontroller "k8c.io/kubermatic/v2/pkg/ee/policy-binding-controller"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -44,26 +41,23 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
-	waitInterval = 3 * time.Second
-	waitTimeout  = 5 * time.Minute
-
+	waitInterval       = 3 * time.Second
+	waitTimeout        = 5 * time.Minute
 	requiredLabelKey   = "kyverno-e2e"
 	requiredLabelValue = "enabled"
-	policyDenyMessage  = "the kyverno-e2e=enabled label is required"
+	policyDenyMessage  = "the required kyverno-e2e label is missing or invalid"
+	testClusterLabel   = "e2e.kubermatic.k8c.io/kyverno"
 )
 
 var (
@@ -77,634 +71,356 @@ func init() {
 	logOptions.AddFlags(flag.CommandLine)
 }
 
+type templateOptions struct {
+	namespaced, enforced, defaultPolicy bool
+	target                              string
+}
+
 func TestPolicyTemplateFixtures(t *testing.T) {
-	testCases := []struct {
-		name       string
-		namespaced bool
-		enforced   bool
+	for _, tc := range []struct {
+		name                 string
+		namespaced, enforced bool
 	}{
 		{name: "cluster-wide"},
 		{name: "cluster-wide-enforced", enforced: true},
 		{name: "namespaced", namespaced: true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			template, err := newPolicyTemplate("kyverno-e2e-fixture", "kyverno-e2e-fixture", testCase.namespaced, testCase.enforced)
-			if err != nil {
-				t.Fatalf("failed to build PolicyTemplate fixture: %v", err)
-			}
-			if validationErrors := validation.ValidatePolicyTemplate(template); len(validationErrors) > 0 {
-				t.Fatalf("PolicyTemplate fixture is invalid: %v", validationErrors.ToAggregate())
-			}
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			template, err := newPolicyTemplate("kyverno-e2e-fixture", "kyverno-e2e-fixture", tc.namespaced, tc.enforced)
+			require.NoError(t, err)
+			require.Empty(t, validation.ValidatePolicyTemplate(template))
 		})
 	}
 }
 
-//nolint:gocyclo // The phases form one ordered lifecycle and must stop at the first failed prerequisite.
+// The subtests share one AWS cluster and form an ordered lifecycle. Stop when a
+// prerequisite fails, while always cleaning up templates, cluster and project.
 func TestKyvernoIntegration(t *testing.T) {
 	ctx := context.Background()
 	rawLogger := log.NewFromOptions(logOptions)
 	logger := rawLogger.Sugar()
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
+	require.NoError(t, credentials.Parse(), "get AWS credentials")
 
-	if err := credentials.Parse(); err != nil {
-		t.Fatalf("failed to get credentials: %v", err)
-	}
-
+	// The CI runner installs a combined master/seed. Templates are authored on
+	// that cluster, and bindings live in the user cluster's seed namespace.
 	seedClient, _, err := utils.GetClients()
-	if err != nil {
-		t.Fatalf("failed to get client for seed cluster: %v", err)
-	}
-
-	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
-	testJig.ClusterJig.WithTestName("kyverno")
-	testJig.ClusterJig.WithPatch(func(spec *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-		spec.Kyverno = &kubermaticv1.KyvernoSettings{Enabled: true}
-		return spec
-	})
-
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
-	defer testJig.Cleanup(ctx, t, true)
-	if err != nil {
-		t.Fatalf("failed to setup test environment: %v", err)
-	}
-
-	logger.Info("Waiting for Kyverno controllers to become healthy...")
-	if err := testJig.WaitForKyvernoHealthy(ctx, 10*time.Minute); err != nil {
-		t.Fatalf("Kyverno controllers did not become healthy: %v", err)
-	}
-	if err := waitForSeedKyvernoControllersReady(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
-		t.Fatalf("failed to verify seed-side Kyverno controllers: %v", err)
-	}
-	if err := waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, true); err != nil {
-		t.Fatalf("Kyverno cleanup finalizer was not added to the cluster: %v", err)
-	}
-
-	logger.Info("Creating client for user cluster...")
-	userClient, err := testJig.ClusterClient(ctx)
-	if err != nil {
-		t.Fatalf("failed to create user cluster client: %v", err)
-	}
-	if err := kyvernov1.Install(userClient.Scheme()); err != nil {
-		t.Fatalf("failed to add Kyverno APIs to user cluster client scheme: %v", err)
-	}
-	if err := apiextensionsv1.AddToScheme(userClient.Scheme()); err != nil {
-		t.Fatalf("failed to add apiextensions APIs to user cluster client scheme: %v", err)
-	}
-
-	logger.Info("Waiting for Kyverno CRDs and user-cluster resources...")
-	if err := waitForKyvernoUserClusterResources(ctx, userClient, logger, cluster.Status.NamespaceName); err != nil {
-		t.Fatalf("Kyverno user-cluster resources did not become ready: %v", err)
-	}
-
+	require.NoError(t, err, "create seed client")
 	suffix := rand.String(6)
-	clusterPolicyNamespace := "kyverno-e2e-cluster-" + suffix
-	namespacedPolicyNamespace := "kyverno-e2e-namespaced-" + suffix
-	if err := userClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: clusterPolicyNamespace}}); err != nil {
-		t.Fatalf("failed to create ClusterPolicy test namespace: %v", err)
-	}
+	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
+	testJig.ClusterJig.WithTestName("kyverno").WithLabels(map[string]string{testClusterLabel: suffix}).
+		WithPatch(func(spec *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+			spec.Kyverno = &kubermaticv1.KyvernoSettings{Enabled: true}
+			return spec
+		})
 
-	clusterTemplateName := "kyverno-e2e-cluster-" + suffix
-	namespacedTemplateName := "kyverno-e2e-namespaced-" + suffix
-
-	logger.Info("Creating cluster-wide and namespaced PolicyTemplates and PolicyBindings...")
-	clusterTemplate, err := newPolicyTemplate(clusterTemplateName, clusterPolicyNamespace, false, true)
-	if err != nil {
-		t.Fatalf("failed to build enforced cluster-wide PolicyTemplate: %v", err)
-	}
-	if err := seedClient.Create(ctx, clusterTemplate); err != nil {
-		t.Fatalf("failed to create enforced cluster-wide PolicyTemplate: %v", err)
-	}
-	clusterBinding := newPolicyBinding(cluster.Status.NamespaceName, clusterTemplateName, "", false)
-	namespacedTemplate, namespacedBinding, err := createPolicyPair(ctx, seedClient, cluster.Status.NamespaceName, namespacedTemplateName, namespacedPolicyNamespace, true)
-	if err != nil {
-		t.Fatalf("failed to create namespaced policy pair: %v", err)
-	}
-
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(clusterBinding), true); err != nil {
-		t.Fatalf("cluster-wide PolicyBinding did not become active: %v", err)
-	}
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(namespacedBinding), false); err != nil {
-		t.Fatalf("namespaced PolicyBinding did not become active: %v", err)
-	}
-	if err := waitForClusterPolicyReady(ctx, userClient, logger, clusterTemplateName); err != nil {
-		t.Fatalf("generated ClusterPolicy did not become ready: %v", err)
-	}
-	if err := waitForPolicyReady(ctx, userClient, logger, namespacedPolicyNamespace, namespacedTemplateName); err != nil {
-		t.Fatalf("generated namespaced Policy did not become ready: %v", err)
-	}
-
-	logger.Info("Verifying ClusterPolicy admission enforcement...")
-	if err := verifyPolicyAdmission(ctx, userClient, logger, clusterPolicyNamespace); err != nil {
-		t.Fatalf("ClusterPolicy admission verification failed: %v", err)
-	}
-	logger.Info("Verifying namespaced Policy admission enforcement...")
-	if err := verifyPolicyAdmission(ctx, userClient, logger, namespacedPolicyNamespace); err != nil {
-		t.Fatalf("namespaced Policy admission verification failed: %v", err)
-	}
-
-	logger.Info("Deleting the namespaced PolicyBinding...")
-	if err := seedClient.Delete(ctx, namespacedBinding); err != nil {
-		t.Fatalf("failed to delete namespaced PolicyBinding: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, seedClient, logger, namespacedBinding); err != nil {
-		t.Fatalf("namespaced PolicyBinding was not deleted: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: namespacedTemplateName, Namespace: namespacedPolicyNamespace}}); err != nil {
-		t.Fatalf("generated namespaced Policy was not deleted with its binding: %v", err)
-	}
-
-	logger.Info("Deleting the cluster-wide PolicyTemplate...")
-	if err := waitForPolicyTemplateFinalizers(ctx, seedClient, logger, clusterTemplate.Name); err != nil {
-		t.Fatalf("PolicyTemplate cleanup finalizers were not established: %v", err)
-	}
-	if err := seedClient.Delete(ctx, clusterTemplate); err != nil {
-		t.Fatalf("failed to delete cluster-wide PolicyTemplate: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, seedClient, logger, clusterBinding); err != nil {
-		t.Fatalf("dependent PolicyBinding was not deleted with its PolicyTemplate: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: clusterTemplateName}}); err != nil {
-		t.Fatalf("generated ClusterPolicy was not deleted with its PolicyTemplate: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, seedClient, logger, clusterTemplate); err != nil {
-		t.Fatalf("PolicyTemplate did not finish deletion: %v", err)
-	}
-
-	// Keep active bindings across disable/re-enable to verify both the seed-side
-	// cleanup fallback and the restarted user-cluster controller.
-	disableClusterTemplateName := "kyverno-e2e-disable-cluster-" + suffix
-	disableNamespacedTemplateName := "kyverno-e2e-disable-namespaced-" + suffix
-	disableClusterTemplate, disableClusterBinding, err := createPolicyPair(ctx, seedClient, cluster.Status.NamespaceName, disableClusterTemplateName, clusterPolicyNamespace, false)
-	if err != nil {
-		t.Fatalf("failed to create cluster-wide disable test policy pair: %v", err)
-	}
-	disableNamespacedTemplate, disableNamespacedBinding, err := createPolicyPair(ctx, seedClient, cluster.Status.NamespaceName, disableNamespacedTemplateName, namespacedPolicyNamespace, true)
-	if err != nil {
-		t.Fatalf("failed to create namespaced disable test policy pair: %v", err)
-	}
-
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableClusterBinding), false); err != nil {
-		t.Fatalf("cluster-wide disable test binding did not become active: %v", err)
-	}
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableNamespacedBinding), false); err != nil {
-		t.Fatalf("namespaced disable test binding did not become active: %v", err)
-	}
-	if err := waitForClusterPolicyReady(ctx, userClient, logger, disableClusterTemplateName); err != nil {
-		t.Fatalf("disable test ClusterPolicy did not become ready: %v", err)
-	}
-	if err := waitForPolicyReady(ctx, userClient, logger, namespacedPolicyNamespace, disableNamespacedTemplateName); err != nil {
-		t.Fatalf("disable test Policy did not become ready: %v", err)
-	}
-
-	logger.Info("Disabling Kyverno and verifying cleanup...")
-	if err := setKyvernoEnabled(ctx, seedClient, cluster.Name, false); err != nil {
-		t.Fatalf("failed to disable Kyverno: %v", err)
-	}
-	if err := waitForInactivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableClusterBinding)); err != nil {
-		t.Fatalf("cluster-wide PolicyBinding did not become inactive after disabling Kyverno: %v", err)
-	}
-	if err := waitForInactivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableNamespacedBinding)); err != nil {
-		t.Fatalf("namespaced PolicyBinding did not become inactive after disabling Kyverno: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: disableClusterTemplateName}}); err != nil {
-		t.Fatalf("ClusterPolicy remained after disabling Kyverno: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: disableNamespacedTemplateName, Namespace: namespacedPolicyNamespace}}); err != nil {
-		t.Fatalf("namespaced Policy remained after disabling Kyverno: %v", err)
-	}
-	if err := waitForKyvernoCRDsRemoved(ctx, userClient, logger); err != nil {
-		t.Fatalf("Kyverno CRDs remained after disabling Kyverno: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, userClient, logger, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: cluster.Status.NamespaceName}}); err != nil {
-		t.Fatalf("Kyverno user-cluster namespace remained after disabling Kyverno: %v", err)
-	}
-	if err := waitForSeedKyvernoControllersRemoved(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
-		t.Fatalf("seed-side Kyverno controllers remained after disabling Kyverno: %v", err)
-	}
-	if err := waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, false); err != nil {
-		t.Fatalf("Kyverno cleanup finalizer remained after disable cleanup: %v", err)
-	}
-
-	logger.Info("Re-enabling Kyverno and verifying reconciliation of existing PolicyBindings...")
-	if err := setKyvernoEnabled(ctx, seedClient, cluster.Name, true); err != nil {
-		t.Fatalf("failed to re-enable Kyverno: %v", err)
-	}
-	if err := testJig.WaitForKyvernoHealthy(ctx, 10*time.Minute); err != nil {
-		t.Fatalf("Kyverno controllers did not recover after re-enabling: %v", err)
-	}
-	if err := waitForSeedKyvernoControllersReady(ctx, seedClient, logger, cluster.Status.NamespaceName); err != nil {
-		t.Fatalf("seed-side Kyverno controllers were not restored: %v", err)
-	}
-	if err := waitForKyvernoUserClusterResources(ctx, userClient, logger, cluster.Status.NamespaceName); err != nil {
-		t.Fatalf("Kyverno user-cluster resources were not restored: %v", err)
-	}
-	if err := waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, true); err != nil {
-		t.Fatalf("Kyverno cleanup finalizer was not restored: %v", err)
-	}
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableClusterBinding), false); err != nil {
-		t.Fatalf("cluster-wide PolicyBinding did not reactivate: %v", err)
-	}
-	if err := waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(disableNamespacedBinding), false); err != nil {
-		t.Fatalf("namespaced PolicyBinding did not reactivate: %v", err)
-	}
-	if err := waitForClusterPolicyReady(ctx, userClient, logger, disableClusterTemplateName); err != nil {
-		t.Fatalf("ClusterPolicy was not restored after re-enabling Kyverno: %v", err)
-	}
-	if err := waitForPolicyReady(ctx, userClient, logger, namespacedPolicyNamespace, disableNamespacedTemplateName); err != nil {
-		t.Fatalf("namespaced Policy was not restored after re-enabling Kyverno: %v", err)
-	}
-
-	logger.Info("Deleting the user cluster while Kyverno policies are active...")
-	clusterNamespace := cluster.Status.NamespaceName
-	if err := testJig.ClusterJig.Delete(ctx, true); err != nil {
-		t.Fatalf("Kyverno resources blocked user cluster deletion: %v", err)
-	}
-	if err := waitForObjectDeleted(ctx, seedClient, logger, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: clusterNamespace}}); err != nil {
-		t.Fatalf("user cluster namespace remained after cluster deletion: %v", err)
-	}
-
-	for _, template := range []*kubermaticv1.PolicyTemplate{namespacedTemplate, disableClusterTemplate, disableNamespacedTemplate} {
-		if err := seedClient.Delete(ctx, template); err != nil && !apierrors.IsNotFound(err) {
-			t.Errorf("failed to delete PolicyTemplate %s during test cleanup: %v", template.Name, err)
-			continue
+	var templates []*kubermaticv1.PolicyTemplate
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		// Request every template deletion even if an earlier resource is stuck.
+		// Then delete the cluster so its cleanup fallback can release bindings.
+		for _, template := range templates {
+			if err := seedClient.Delete(cleanupCtx, template); err != nil && !apierrors.IsNotFound(err) {
+				t.Errorf("delete PolicyTemplate %s: %v", template.Name, err)
+			}
 		}
-		if err := waitForObjectDeleted(ctx, seedClient, logger, template); err != nil {
-			t.Errorf("PolicyTemplate %s remained after test cleanup: %v", template.Name, err)
+		testJig.Cleanup(cleanupCtx, t, true)
+		for _, template := range templates {
+			if err := waitForObjectDeleted(cleanupCtx, seedClient, logger, template); err != nil {
+				t.Errorf("wait for PolicyTemplate %s cleanup: %v", template.Name, err)
+			}
 		}
-	}
-}
-func createPolicyPair(ctx context.Context, client ctrlruntimeclient.Client, bindingNamespace, name, policyNamespace string, namespaced bool) (*kubermaticv1.PolicyTemplate, *kubermaticv1.PolicyBinding, error) {
-	template, err := newPolicyTemplate(name, policyNamespace, namespaced, false)
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := client.Create(ctx, template); err != nil {
-		return nil, nil, fmt.Errorf("failed to create PolicyTemplate %s: %w", name, err)
-	}
-
-	binding := newPolicyBinding(bindingNamespace, name, policyNamespace, namespaced)
-	if err := client.Create(ctx, binding); err != nil {
-		return nil, nil, fmt.Errorf("failed to create PolicyBinding %s/%s: %w", bindingNamespace, name, err)
-	}
-
-	return template, binding, nil
-}
-
-func newPolicyBinding(bindingNamespace, name, policyNamespace string, namespaced bool) *kubermaticv1.PolicyBinding {
-	binding := &kubermaticv1.PolicyBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: bindingNamespace,
-		},
-		Spec: kubermaticv1.PolicyBindingSpec{
-			PolicyTemplateRef: corev1.ObjectReference{Name: name},
-		},
-	}
-	if namespaced {
-		binding.Spec.KyvernoPolicyNamespace = &kubermaticv1.KyvernoPolicyNamespace{Name: policyNamespace}
-	}
-	return binding
-}
-
-func newPolicyTemplate(name, policyNamespace string, namespaced, enforced bool) (*kubermaticv1.PolicyTemplate, error) {
-	pattern, err := json.Marshal(map[string]any{
-		"metadata": map[string]any{
-			"labels": map[string]string{requiredLabelKey: requiredLabelValue},
-		},
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal validation pattern: %w", err)
+
+	createTemplate := func(t *testing.T, name, namespace string, options templateOptions) *kubermaticv1.PolicyTemplate {
+		t.Helper()
+		template, err := newPolicyTemplate(name+"-"+suffix, namespace, options.namespaced, options.enforced)
+		require.NoError(t, err)
+		template.Spec.Default = options.defaultPolicy
+		target := options.target
+		if target == "" {
+			target = suffix
+		}
+		template.Spec.Target = &kubermaticv1.PolicyTemplateTarget{
+			ClusterSelector: &metav1.LabelSelector{MatchLabels: map[string]string{testClusterLabel: target}},
+		}
+		template.Spec.Category = "E2E"
+		template.Spec.Severity = "medium"
+		template.Annotations = map[string]string{"e2e.kubermatic.k8c.io/fixture": suffix}
+		require.Empty(t, validation.ValidatePolicyTemplate(template))
+		require.NoError(t, seedClient.Create(ctx, template), "create PolicyTemplate %s", template.Name)
+		templates = append(templates, template)
+		return template
 	}
 
-	resourceDescription := kyvernov1.ResourceDescription{Kinds: []string{"ConfigMap"}}
-	if !namespaced {
-		resourceDescription.Namespaces = []string{policyNamespace}
+	defaultNamespace := "kyverno-e2e-default-" + suffix
+	clusterNamespace := "kyverno-e2e-cluster-" + suffix
+	policyNamespace := "kyverno-e2e-policy-" + suffix
+	movedNamespace := "kyverno-e2e-moved-" + suffix
+	// Default bindings are initialized once, so these templates must exist
+	// before the cluster becomes healthy for the first time.
+	defaultTemplate := createTemplate(t, "kyverno-e2e-default", defaultNamespace, templateOptions{defaultPolicy: true})
+	excludedTemplate := createTemplate(t, "kyverno-e2e-excluded", defaultNamespace, templateOptions{enforced: true, target: "excluded-" + suffix})
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	require.NoError(t, err, "set up AWS user cluster")
+	userClient, err := testJig.ClusterClient(ctx)
+	require.NoError(t, err, "create user cluster client")
+	require.NoError(t, kyvernov1.Install(userClient.Scheme()))
+	require.NoError(t, apiextensionsv1.AddToScheme(userClient.Scheme()))
+
+	assertInstalled := func(t *testing.T) {
+		t.Helper()
+		require.NoError(t, testJig.WaitForKyvernoHealthy(ctx, 10*time.Minute))
+		// Health can still report the previous installation as Up after re-enable.
+		require.NoError(t, waitForSeedKyvernoControllersReady(ctx, seedClient, logger, cluster.Status.NamespaceName))
+		require.NoError(t, waitForKyvernoUserClusterResources(ctx, userClient, logger, cluster.Status.NamespaceName))
+		require.NoError(t, waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, true))
 	}
-
-	failureAction := kyvernov1.Enforce
-	background := false
-	policySpec, err := json.Marshal(kyvernov1.Spec{
-		Background: &background,
-		Rules: []kyvernov1.Rule{{
-			Name: "require-e2e-label",
-			MatchResources: kyvernov1.MatchResources{
-				Any: kyvernov1.ResourceFilters{{ResourceDescription: resourceDescription}},
-			},
-			Validation: &kyvernov1.Validation{
-				FailureAction: &failureAction,
-				Message:       policyDenyMessage,
-				RawPattern:    &apiextensionsv1.JSON{Raw: pattern},
-			},
-		}},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal Kyverno policy spec: %w", err)
+	assertActive := func(t *testing.T, template *kubermaticv1.PolicyTemplate, binding *kubermaticv1.PolicyBinding, namespace, labelValue string) {
+		t.Helper()
+		require.NoError(t, waitForActivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(binding), template.Spec.Enforced))
+		var policy kyvernoPolicy
+		if template.Spec.NamespacedPolicy {
+			require.NoError(t, waitForPolicyReady(ctx, userClient, logger, namespace, template.Name))
+			policy = &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: template.Name, Namespace: namespace}}
+		} else {
+			require.NoError(t, waitForClusterPolicyReady(ctx, userClient, logger, template.Name))
+			policy = &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: template.Name}}
+		}
+		require.NoError(t, waitForPolicyContent(ctx, userClient, logger, policy, template, binding.Name))
+		require.NoError(t, verifyPolicyAdmission(ctx, userClient, logger, namespace, template.Name, labelValue))
 	}
+	defaultBinding := newPolicyBinding(cluster.Status.NamespaceName, defaultTemplate.Name, "", false)
+	excludedBinding := newPolicyBinding(cluster.Status.NamespaceName, excludedTemplate.Name, "", false)
 
-	return &kubermaticv1.PolicyTemplate{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: kubermaticv1.PolicyTemplateSpec{
-			Title:            "Kyverno e2e required label",
-			Description:      "Requires a label on ConfigMaps created by the Kyverno integration e2e test.",
-			Visibility:       kubermaticv1.PolicyTemplateVisibilityGlobal,
-			Enforced:         enforced,
-			NamespacedPolicy: namespaced,
-			PolicySpec:       runtime.RawExtension{Raw: policySpec},
-		},
-	}, nil
-}
-
-func setKyvernoEnabled(ctx context.Context, client ctrlruntimeclient.Client, clusterName string, enabled bool) error {
-	cluster := &kubermaticv1.Cluster{}
-	if err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		return fmt.Errorf("failed to get cluster: %w", err)
-	}
-
-	oldCluster := cluster.DeepCopy()
-	cluster.Spec.Kyverno = &kubermaticv1.KyvernoSettings{Enabled: enabled}
-	if err := client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return fmt.Errorf("failed to patch Kyverno enabled=%t: %w", enabled, err)
-	}
-
-	return nil
-}
-
-func waitForSeedKyvernoControllersReady(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string) error {
-	deployments := map[string]int32{
-		commonseedresources.KyvernoAdmissionControllerDeploymentName:  commonseedresources.KyvernoAdmissionControllerReplicas,
-		commonseedresources.KyvernoBackgroundControllerDeploymentName: commonseedresources.KyvernoBackgroundControllerReplicas,
-		commonseedresources.KyvernoCleanupControllerDeploymentName:    commonseedresources.KyvernoCleanupControllerReplicas,
-		commonseedresources.KyvernoReportsControllerDeploymentName:    commonseedresources.KyvernoReportsControllerReplicas,
-	}
-
-	return wait.PollLog(ctx, logger, waitInterval, 10*time.Minute, func(ctx context.Context) (error, error) {
-		for name, expectedReady := range deployments {
-			deployment := &appsv1.Deployment{}
-			if err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment); err != nil {
-				return fmt.Errorf("failed to get Deployment %s/%s: %w", namespace, name, err), nil
+	if !t.Run("installation-and-default-binding", func(t *testing.T) {
+		assertInstalled(t)
+		for _, namespace := range []string{defaultNamespace, clusterNamespace} {
+			require.NoError(t, userClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}))
+		}
+		assertActive(t, defaultTemplate, defaultBinding, defaultNamespace, requiredLabelValue)
+		require.NoError(t, seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(defaultBinding), defaultBinding))
+		require.Equal(t, "true", defaultBinding.Annotations[kubermaticv1.AnnotationPolicyDefault])
+		require.NoError(t, wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
+			current := &kubermaticv1.Cluster{}
+			if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), current); err != nil {
+				return err, nil
 			}
-			if deployment.Status.ObservedGeneration != deployment.Generation || deployment.Status.ReadyReplicas < expectedReady || deployment.Status.UpdatedReplicas < expectedReady {
-				return fmt.Errorf("Deployment %s/%s is not fully rolled out: generation=%d observedGeneration=%d ready=%d updated=%d expected=%d", namespace, name, deployment.Generation, deployment.Status.ObservedGeneration, deployment.Status.ReadyReplicas, deployment.Status.UpdatedReplicas, expectedReady), nil
+			if !current.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully, corev1.ConditionTrue) {
+				return fmt.Errorf("default policy initialization is not complete"), nil
 			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForSeedKyvernoControllersRemoved(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string) error {
-	names := []string{
-		commonseedresources.KyvernoAdmissionControllerDeploymentName,
-		commonseedresources.KyvernoBackgroundControllerDeploymentName,
-		commonseedresources.KyvernoCleanupControllerDeploymentName,
-		commonseedresources.KyvernoReportsControllerDeploymentName,
-	}
-
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		for _, name := range names {
-			err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &appsv1.Deployment{})
-			if err == nil {
-				return fmt.Errorf("Deployment %s/%s still exists", namespace, name), nil
-			}
-			if !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get Deployment %s/%s: %w", namespace, name, err), nil
-			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForKyvernoUserClusterResources(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string) error {
-	if err := waitForKyvernoCRDsEstablished(ctx, client, logger); err != nil {
-		return err
-	}
-
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		if err := client.Get(ctx, types.NamespacedName{Name: namespace}, &corev1.Namespace{}); err != nil {
-			return fmt.Errorf("Kyverno namespace is not ready: %w", err), nil
-		}
-		for _, name := range []string{commonseedresources.KyvernoConfigMapName, commonseedresources.KyvernoMetricsConfigMapName} {
-			if err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &corev1.ConfigMap{}); err != nil {
-				return fmt.Errorf("Kyverno ConfigMap %s/%s is not ready: %w", namespace, name, err), nil
-			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForKyvernoCRDsEstablished(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
-	crds, err := userclusterresources.KyvernoCRDs()
-	if err != nil {
-		return fmt.Errorf("failed to load expected Kyverno CRDs: %w", err)
-	}
-
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		for _, expected := range crds {
-			crd := &apiextensionsv1.CustomResourceDefinition{}
-			if err := client.Get(ctx, types.NamespacedName{Name: expected.Name}, crd); err != nil {
-				return fmt.Errorf("Kyverno CRD %s is not available: %w", expected.Name, err), nil
-			}
-			established := false
-			for _, condition := range crd.Status.Conditions {
-				if condition.Type == apiextensionsv1.Established && condition.Status == apiextensionsv1.ConditionTrue {
-					established = true
-					break
-				}
-			}
-			if !established {
-				return fmt.Errorf("Kyverno CRD %s is not established", expected.Name), nil
-			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForKyvernoCRDsRemoved(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
-	crds, err := userclusterresources.KyvernoCRDs()
-	if err != nil {
-		return fmt.Errorf("failed to load expected Kyverno CRDs: %w", err)
-	}
-
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		for _, expected := range crds {
-			err := client.Get(ctx, types.NamespacedName{Name: expected.Name}, &apiextensionsv1.CustomResourceDefinition{})
-			if err == nil {
-				return fmt.Errorf("Kyverno CRD %s still exists", expected.Name), nil
-			}
-			if !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get Kyverno CRD %s: %w", expected.Name, err), nil
-			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForActivePolicyBinding(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, key types.NamespacedName, templateEnforced bool) error {
-	return waitForPolicyBindingState(ctx, client, logger, key, true, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonReady, true, templateEnforced)
-}
-
-func waitForInactivePolicyBinding(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, key types.NamespacedName) error {
-	return waitForPolicyBindingState(ctx, client, logger, key, false, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonKyvernoDisabled, false, false)
-}
-
-func waitForPolicyBindingState(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, key types.NamespacedName, active bool, conditionStatus metav1.ConditionStatus, reason string, expectFinalizer, templateEnforced bool) error {
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		binding := &kubermaticv1.PolicyBinding{}
-		if err := client.Get(ctx, key, binding); err != nil {
-			return fmt.Errorf("failed to get PolicyBinding %s: %w", key, err), nil
-		}
-
-		if binding.Status.Active == nil || *binding.Status.Active != active {
-			return fmt.Errorf("PolicyBinding %s active=%v, expected %t", key, binding.Status.Active, active), nil
-		}
-		if binding.Status.ObservedGeneration != binding.Generation {
-			return fmt.Errorf("PolicyBinding %s observed generation %d, expected %d", key, binding.Status.ObservedGeneration, binding.Generation), nil
-		}
-
-		for _, conditionType := range []kubermaticv1.PolicyBindingConditionType{
-			kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied,
-			kubermaticv1.PolicyBindingConditionReady,
-		} {
-			condition := meta.FindStatusCondition(binding.Status.Conditions, string(conditionType))
-			if condition == nil || condition.Status != conditionStatus || condition.Reason != reason {
-				return fmt.Errorf("PolicyBinding %s condition %s is %#v, expected status=%s reason=%s", key, conditionType, condition, conditionStatus, reason), nil
-			}
-		}
-		if active {
-			templateCondition := meta.FindStatusCondition(binding.Status.Conditions, string(kubermaticv1.PolicyBindingConditionTemplateValid))
-			if templateCondition == nil || templateCondition.Status != metav1.ConditionTrue || templateCondition.Reason != kubermaticv1.PolicyBindingReasonPolicyApplied {
-				return fmt.Errorf("PolicyBinding %s template condition is %#v, expected status=True reason=%s", key, templateCondition, kubermaticv1.PolicyBindingReasonPolicyApplied), nil
-			}
-			if binding.Status.TemplateEnforced == nil || *binding.Status.TemplateEnforced != templateEnforced {
-				return fmt.Errorf("PolicyBinding %s templateEnforced=%v, expected %t", key, binding.Status.TemplateEnforced, templateEnforced), nil
-			}
-			if templateEnforced && binding.Annotations[kubermaticv1.AnnotationPolicyEnforced] != "true" {
-				return fmt.Errorf("PolicyBinding %s was not marked as generated from an enforced template", key), nil
-			}
-		}
-
-		hasFinalizer := slices.Contains(binding.Finalizers, kubermaticv1.PolicyBindingCleanupFinalizer)
-		if hasFinalizer != expectFinalizer {
-			return fmt.Errorf("PolicyBinding %s cleanup finalizer present=%t, expected %t", key, hasFinalizer, expectFinalizer), nil
-		}
-
-		return nil, nil
-	})
-}
-
-func waitForClusterPolicyReady(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, name string) error {
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		policy := &kyvernov1.ClusterPolicy{}
-		if err := client.Get(ctx, types.NamespacedName{Name: name}, policy); err != nil {
-			return fmt.Errorf("failed to get ClusterPolicy %s: %w", name, err), nil
-		}
-		if !policy.Status.IsReady() {
-			return fmt.Errorf("ClusterPolicy %s is not ready: %#v", name, policy.Status.Conditions), nil
-		}
-		if policy.Labels[policybindingcontroller.LabelPolicyBinding] != name || policy.Labels[policybindingcontroller.LabelPolicyTemplate] != name {
-			return fmt.Errorf("ClusterPolicy %s has unexpected KKP ownership labels: %v", name, policy.Labels), nil
-		}
-		return nil, nil
-	})
-}
-
-func waitForPolicyReady(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace, name string) error {
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		policy := &kyvernov1.Policy{}
-		if err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, policy); err != nil {
-			return fmt.Errorf("failed to get Policy %s/%s: %w", namespace, name, err), nil
-		}
-		if !policy.Status.IsReady() {
-			return fmt.Errorf("Policy %s/%s is not ready: %#v", namespace, name, policy.Status.Conditions), nil
-		}
-		if policy.Labels[policybindingcontroller.LabelPolicyBinding] != name || policy.Labels[policybindingcontroller.LabelPolicyTemplate] != name {
-			return fmt.Errorf("Policy %s/%s has unexpected KKP ownership labels: %v", namespace, name, policy.Labels), nil
-		}
-		return nil, nil
-	})
-}
-
-func verifyPolicyAdmission(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string) error {
-	if err := wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		configMap := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "denied-" + rand.String(8), Namespace: namespace}}
-		err := client.Create(ctx, configMap)
-		if err == nil {
-			if deleteErr := client.Delete(ctx, configMap); deleteErr != nil && !apierrors.IsNotFound(deleteErr) {
-				return nil, fmt.Errorf("policy allowed an invalid ConfigMap and cleanup failed: %w", deleteErr)
-			}
-			return errors.New("policy allowed a ConfigMap without the required label"), nil
-		}
-		if !strings.Contains(err.Error(), policyDenyMessage) {
-			return fmt.Errorf("expected Kyverno denial containing %q, got: %w", policyDenyMessage, err), nil
-		}
-		return nil, nil
-	}); err != nil {
-		return err
-	}
-
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "allowed-" + rand.String(8),
-			Namespace: namespace,
-			Labels:    map[string]string{requiredLabelKey: requiredLabelValue},
-		},
-	}
-	if err := client.Create(ctx, configMap); err != nil {
-		return fmt.Errorf("policy rejected a ConfigMap with the required label: %w", err)
-	}
-	if err := client.Delete(ctx, configMap); err != nil {
-		return fmt.Errorf("failed to delete allowed ConfigMap: %w", err)
-	}
-	return nil
-}
-
-func waitForPolicyTemplateFinalizers(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, name string) error {
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		template := &kubermaticv1.PolicyTemplate{}
-		if err := client.Get(ctx, types.NamespacedName{Name: name}, template); err != nil {
-			return fmt.Errorf("failed to get PolicyTemplate %s: %w", name, err), nil
-		}
-		for _, finalizer := range []string{
-			kubermaticv1.PolicyTemplatePolicyBindingCleanupFinalizer,
-			kubermaticv1.PolicyTemplateSeedCleanupFinalizer,
-		} {
-			if !slices.Contains(template.Finalizers, finalizer) {
-				return fmt.Errorf("PolicyTemplate %s does not have finalizer %s", name, finalizer), nil
-			}
-		}
-		return nil, nil
-	})
-}
-
-func waitForClusterKyvernoFinalizer(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, clusterName string, present bool) error {
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		cluster := &kubermaticv1.Cluster{}
-		if err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-			return fmt.Errorf("failed to get Cluster %s: %w", clusterName, err), nil
-		}
-		hasFinalizer := slices.Contains(cluster.Finalizers, kyvernocontroller.CleanupFinalizer)
-		if hasFinalizer != present {
-			return fmt.Errorf("Cluster %s Kyverno cleanup finalizer present=%t, expected %t", clusterName, hasFinalizer, present), nil
-		}
-		return nil, nil
-	})
-}
-
-func waitForObjectDeleted(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, object ctrlruntimeclient.Object) error {
-	key := ctrlruntimeclient.ObjectKeyFromObject(object)
-	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
-		current, ok := object.DeepCopyObject().(ctrlruntimeclient.Object)
-		if !ok {
-			return nil, fmt.Errorf("object %T does not implement controller-runtime client.Object", object)
-		}
-		err := client.Get(ctx, key, current)
-		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
 			return nil, nil
+		}))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, excludedBinding))
+		require.NoError(t, seedClient.Delete(ctx, defaultBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, defaultBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: defaultTemplate.Name}}))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, defaultNamespace))
+	}) {
+		return
+	}
+
+	var clusterTemplate *kubermaticv1.PolicyTemplate
+	var clusterBinding *kubermaticv1.PolicyBinding
+	if !t.Run("enforced-binding-recreation-and-template-update", func(t *testing.T) {
+		clusterTemplate = createTemplate(t, "kyverno-e2e-enforced", clusterNamespace, templateOptions{enforced: true})
+		clusterBinding = newPolicyBinding(cluster.Status.NamespaceName, clusterTemplate.Name, "", false)
+		assertActive(t, clusterTemplate, clusterBinding, clusterNamespace, requiredLabelValue)
+		require.NoError(t, seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(clusterBinding), clusterBinding))
+		oldUID := clusterBinding.UID
+		require.NoError(t, seedClient.Delete(ctx, clusterBinding))
+		require.NoError(t, wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
+			current := &kubermaticv1.PolicyBinding{}
+			if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(clusterBinding), current); err != nil {
+				return err, nil
+			}
+			if current.UID == oldUID || current.DeletionTimestamp != nil {
+				return fmt.Errorf("enforced binding has not been recreated"), nil
+			}
+			clusterBinding = current
+			return nil, nil
+		}))
+		assertActive(t, clusterTemplate, clusterBinding, clusterNamespace, requiredLabelValue)
+		updateTemplateLabel(t, ctx, seedClient, clusterTemplate, "updated")
+		assertActive(t, clusterTemplate, clusterBinding, clusterNamespace, "updated")
+		// The enforced template event reconciled this cluster again. Defaults must
+		// remain opted out, and a selector mismatch must never create a binding.
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, defaultBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, excludedBinding))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, defaultNamespace))
+	}) {
+		return
+	}
+
+	var namespacedTemplate *kubermaticv1.PolicyTemplate
+	var namespacedBinding *kubermaticv1.PolicyBinding
+	if !t.Run("namespaced-binding-activation-and-retargeting", func(t *testing.T) {
+		namespacedTemplate = createTemplate(t, "kyverno-e2e-namespaced", "", templateOptions{namespaced: true})
+		// Deliberately use a different binding name to check ownership mapping.
+		namespacedBinding = newPolicyBinding(cluster.Status.NamespaceName, namespacedTemplate.Name, "", false)
+		namespacedBinding.Name = "kyverno-e2e-binding-" + suffix
+		require.NoError(t, seedClient.Create(ctx, namespacedBinding))
+		require.NoError(t, waitForPolicyBindingState(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(namespacedBinding), false, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, true, false))
+		setBindingNamespace(t, ctx, seedClient, namespacedBinding, policyNamespace)
+		assertActive(t, namespacedTemplate, namespacedBinding, policyNamespace, requiredLabelValue)
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, defaultNamespace), "namespaced policy must not apply outside its namespace")
+
+		setBindingNamespace(t, ctx, seedClient, namespacedBinding, movedNamespace)
+		assertActive(t, namespacedTemplate, namespacedBinding, movedNamespace, requiredLabelValue)
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: namespacedTemplate.Name, Namespace: policyNamespace}}))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, policyNamespace))
+
+		setBindingNamespace(t, ctx, seedClient, namespacedBinding, "")
+		require.NoError(t, waitForPolicyBindingState(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(namespacedBinding), false, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing, true, false))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: namespacedTemplate.Name, Namespace: movedNamespace}}))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, movedNamespace))
+		setBindingNamespace(t, ctx, seedClient, namespacedBinding, policyNamespace)
+		assertActive(t, namespacedTemplate, namespacedBinding, policyNamespace, requiredLabelValue)
+	}) {
+		return
+	}
+
+	if !t.Run("binding-and-template-deletion", func(t *testing.T) {
+		require.NoError(t, seedClient.Delete(ctx, namespacedBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, namespacedBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: namespacedTemplate.Name, Namespace: policyNamespace}}))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, policyNamespace))
+		require.NoError(t, waitForPolicyTemplateFinalizers(ctx, seedClient, logger, clusterTemplate.Name))
+		require.NoError(t, seedClient.Delete(ctx, clusterTemplate))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, clusterBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: clusterTemplate.Name}}))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, clusterTemplate))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, clusterNamespace))
+	}) {
+		return
+	}
+
+	if !t.Run("disable-with-active-bindings", func(t *testing.T) {
+		clusterTemplate = createTemplate(t, "kyverno-e2e-manual", clusterNamespace, templateOptions{})
+		clusterBinding = newPolicyBinding(cluster.Status.NamespaceName, clusterTemplate.Name, "", false)
+		require.NoError(t, seedClient.Create(ctx, clusterBinding))
+		namespacedBinding = newPolicyBinding(cluster.Status.NamespaceName, namespacedTemplate.Name, policyNamespace, true)
+		namespacedBinding.Name = "kyverno-e2e-binding-" + suffix
+		require.NoError(t, seedClient.Create(ctx, namespacedBinding))
+		assertActive(t, clusterTemplate, clusterBinding, clusterNamespace, requiredLabelValue)
+		assertActive(t, namespacedTemplate, namespacedBinding, policyNamespace, requiredLabelValue)
+		require.NoError(t, setKyvernoEnabled(ctx, seedClient, cluster.Name, false))
+		for _, binding := range []*kubermaticv1.PolicyBinding{clusterBinding, namespacedBinding} {
+			require.NoError(t, waitForInactivePolicyBinding(ctx, seedClient, logger, ctrlruntimeclient.ObjectKeyFromObject(binding)))
 		}
-		if err != nil {
-			return fmt.Errorf("failed to check whether %T %s was deleted: %w", object, key, err), nil
+		for _, webhook := range userclusterresources.WebhooksForDeletion() {
+			require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, webhook))
 		}
-		return fmt.Errorf("%T %s still exists", object, key), nil
+		require.NoError(t, waitForKyvernoCRDsRemoved(ctx, userClient, logger))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: clusterTemplate.Name}}))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &kyvernov1.Policy{ObjectMeta: metav1.ObjectMeta{Name: namespacedTemplate.Name, Namespace: policyNamespace}}))
+		require.NoError(t, waitForObjectDeleted(ctx, userClient, logger, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: cluster.Status.NamespaceName}}))
+		require.NoError(t, waitForSeedKyvernoControllersRemoved(ctx, seedClient, logger, cluster.Status.NamespaceName))
+		require.NoError(t, waitForClusterKyvernoFinalizer(ctx, seedClient, logger, cluster.Name, false))
+		for _, namespace := range []string{clusterNamespace, policyNamespace} {
+			require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, namespace))
+		}
+	}) {
+		return
+	}
+
+	if !t.Run("re-enable-existing-bindings", func(t *testing.T) {
+		require.NoError(t, setKyvernoEnabled(ctx, seedClient, cluster.Name, true))
+		assertInstalled(t)
+		assertActive(t, clusterTemplate, clusterBinding, clusterNamespace, requiredLabelValue)
+		assertActive(t, namespacedTemplate, namespacedBinding, policyNamespace, requiredLabelValue)
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, defaultBinding))
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, excludedBinding))
+		require.NoError(t, waitForAdmissionAllowed(ctx, userClient, logger, defaultNamespace))
+	}) {
+		return
+	}
+
+	t.Run("cluster-deletion-with-active-bindings", func(t *testing.T) {
+		require.NoError(t, testJig.ClusterJig.Delete(ctx, true), "Kyverno must not block cluster deletion")
+		require.NoError(t, waitForObjectDeleted(ctx, seedClient, logger, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: cluster.Status.NamespaceName}}))
+	})
+}
+
+func setBindingNamespace(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.PolicyBinding, namespace string) {
+	t.Helper()
+	require.NoError(t, client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(binding), binding))
+	before := binding.DeepCopy()
+	binding.Spec.KyvernoPolicyNamespace = nil
+	if namespace != "" {
+		binding.Spec.KyvernoPolicyNamespace = &kubermaticv1.KyvernoPolicyNamespace{Name: namespace}
+	}
+	require.NoError(t, client.Patch(ctx, binding, ctrlruntimeclient.MergeFrom(before)))
+}
+
+func updateTemplateLabel(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, template *kubermaticv1.PolicyTemplate, value string) {
+	t.Helper()
+	require.NoError(t, client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(template), template))
+	before := template.DeepCopy()
+	var spec kyvernov1.Spec
+	require.NoError(t, json.Unmarshal(template.Spec.PolicySpec.Raw, &spec))
+	pattern, err := json.Marshal(map[string]any{"metadata": map[string]any{"labels": map[string]string{requiredLabelKey: value}}})
+	require.NoError(t, err)
+	spec.Rules[0].Validation.RawPattern = &apiextensionsv1.JSON{Raw: pattern}
+	raw, err := json.Marshal(spec)
+	require.NoError(t, err)
+	template.Spec.PolicySpec = runtime.RawExtension{Raw: raw}
+	template.Spec.Title = "Updated Kyverno e2e required label"
+	template.Annotations["e2e.kubermatic.k8c.io/fixture"] = "updated"
+	require.NoError(t, client.Patch(ctx, template, ctrlruntimeclient.MergeFrom(before)))
+}
+
+type kyvernoPolicy interface {
+	ctrlruntimeclient.Object
+	kyvernov1.PolicyInterface
+}
+
+func waitForPolicyContent(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, policy kyvernoPolicy, template *kubermaticv1.PolicyTemplate, bindingName string) error {
+	var expected kyvernov1.Spec
+	if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &expected); err != nil {
+		return err
+	}
+	var expectedPattern any
+	if err := json.Unmarshal(expected.Rules[0].Validation.RawPattern.Raw, &expectedPattern); err != nil {
+		return err
+	}
+	return wait.PollLog(ctx, logger, waitInterval, waitTimeout, func(ctx context.Context) (error, error) {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(policy), policy); err != nil {
+			return err, nil
+		}
+		if policy.GetLabels()[policybindingcontroller.LabelPolicyBinding] != bindingName || policy.GetLabels()[policybindingcontroller.LabelPolicyTemplate] != template.Name {
+			return fmt.Errorf("policy %s has unexpected ownership labels: %v", template.Name, policy.GetLabels()), nil
+		}
+		expectedAnnotations := map[string]string{
+			policybindingcontroller.AnnotationTitle:       template.Spec.Title,
+			policybindingcontroller.AnnotationDescription: template.Spec.Description,
+			policybindingcontroller.AnnotationCategory:    template.Spec.Category,
+			policybindingcontroller.AnnotationSeverity:    template.Spec.Severity,
+		}
+		for key, value := range template.Annotations {
+			expectedAnnotations[key] = value
+		}
+		for key, value := range expectedAnnotations {
+			if policy.GetAnnotations()[key] != value {
+				return fmt.Errorf("policy %s annotation %s is %q, want %q", template.Name, key, policy.GetAnnotations()[key], value), nil
+			}
+		}
+		// Kyverno defaults other spec fields. Compare the authored rule pattern and
+		// then exercise admission, rather than equating a defaulted and raw spec.
+		if len(policy.GetSpec().Rules) != 1 || policy.GetSpec().Rules[0].Validation == nil {
+			return fmt.Errorf("policy %s does not contain the expected validation rule", template.Name), nil
+		}
+		rawPattern := policy.GetSpec().Rules[0].Validation.RawPattern
+		if rawPattern == nil {
+			return fmt.Errorf("policy %s has no validation pattern", template.Name), nil
+		}
+		var actualPattern any
+		if err := json.Unmarshal(rawPattern.Raw, &actualPattern); err != nil {
+			return nil, err
+		}
+		if !reflect.DeepEqual(actualPattern, expectedPattern) {
+			return fmt.Errorf("policy %s has not reconciled the template's validation pattern", template.Name), nil
+		}
+		return nil, nil
 	})
 }

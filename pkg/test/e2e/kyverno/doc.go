@@ -17,4 +17,7 @@ limitations under the License.
 */
 
 // Package kyverno contains end-to-end coverage for the KKP Kyverno integration.
+// The suite provisions an AWS user cluster on an Enterprise Edition master/seed
+// installation and exercises policy assignment, admission and cleanup across
+// the Kyverno lifecycle. See hack/ci/README.md for prerequisites and invocation.
 package kyverno
