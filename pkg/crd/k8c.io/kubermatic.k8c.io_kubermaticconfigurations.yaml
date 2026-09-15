@@ -7510,6 +7510,80 @@ spec:
                     etcdVolumeSize:
                       description: EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
                       type: string
+                    keyConfiguration:
+                      description: |-
+                        KeyConfiguration selects the algorithm and size of the key material KKP generates
+                        for user clusters. The value is stamped into each Cluster when it is created; it
+                        therefore only affects clusters created after it is changed, never existing ones.
+                        Clusters that already exist are not migrated to a changed value, and cannot be
+                        migrated: rotating the key material of a running cluster is not supported yet.
+
+                        This does not cover key material that does not belong to a single user cluster,
+                        such as the KKP webhook CA or the VPA admission certificate; those remain
+                        RSA-2048 regardless of this setting.
+                      properties:
+                        certificates:
+                          description: |-
+                            Certificates configures the cluster-internal CAs and leaf certificates
+                            (etcd, apiserver, front-proxy and the component clients).
+                          properties:
+                            algorithm:
+                              description: Algorithm is the public-key algorithm. Empty means RSA.
+                              enum:
+                                - RSA
+                                - ECDSA
+                              type: string
+                            ecdsaCurve:
+                              description: |-
+                                ECDSACurve is the elliptic curve. Only valid when Algorithm is ECDSA.
+                                Empty means P256.
+                              enum:
+                                - P256
+                                - P384
+                              type: string
+                            rsaKeySize:
+                              description: |-
+                                RSAKeySize is the RSA modulus size in bits. Only valid when Algorithm
+                                is RSA or empty. Empty means the legacy default of 2048.
+                              enum:
+                                - 2048
+                                - 3072
+                                - 4096
+                              format: int32
+                              type: integer
+                          type: object
+                        serviceAccountKey:
+                          description: |-
+                            ServiceAccountKey configures the user-cluster service-account token
+                            signing key. This key is consumed by systems outside the cluster when
+                            they validate JWTs, so its algorithm and size are externally visible.
+                          properties:
+                            algorithm:
+                              description: Algorithm is the public-key algorithm. Empty means RSA.
+                              enum:
+                                - RSA
+                                - ECDSA
+                              type: string
+                            ecdsaCurve:
+                              description: |-
+                                ECDSACurve is the elliptic curve. Only valid when Algorithm is ECDSA.
+                                Empty means P256.
+                              enum:
+                                - P256
+                                - P384
+                              type: string
+                            rsaKeySize:
+                              description: |-
+                                RSAKeySize is the RSA modulus size in bits. Only valid when Algorithm
+                                is RSA or empty. Empty means the legacy default of 2048.
+                              enum:
+                                - 2048
+                                - 3072
+                                - 4096
+                              format: int32
+                              type: integer
+                          type: object
+                      type: object
                     kubelb:
                       description: KubeLB configures the kubeLB component.
                       properties:

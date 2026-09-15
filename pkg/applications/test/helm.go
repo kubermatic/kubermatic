@@ -469,8 +469,13 @@ func setupPKI(t *testing.T, credentialDir string) *PKI {
 		t.Fatalf("failed to write dummy certificate: %s", err)
 	}
 
+	keyPEM, err := triple.MarshalPrivateKeyPEM(keypair.Key)
+	if err != nil {
+		t.Fatalf("failed to encode dummy certificate key: %s", err)
+	}
+
 	keyFile := filepath.Join(credentialDir, "server.key")
-	if err := os.WriteFile(keyFile, triple.EncodePrivateKeyPEM(keypair.Key), 0600); err != nil {
+	if err := os.WriteFile(keyFile, keyPEM, 0600); err != nil {
 		t.Fatalf("failed to write dummy certificate key: %s", err)
 	}
 

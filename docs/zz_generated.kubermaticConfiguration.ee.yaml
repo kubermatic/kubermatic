@@ -632,6 +632,16 @@ spec:
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
+    # KeyConfiguration selects the algorithm and size of the key material KKP generates
+    # for user clusters. The value is stamped into each Cluster when it is created; it
+    # therefore only affects clusters created after it is changed, never existing ones.
+    # Clusters that already exist are not migrated to a changed value, and cannot be
+    # migrated: rotating the key material of a running cluster is not supported yet.
+
+    # This does not cover key material that does not belong to a single user cluster,
+    # such as the KKP webhook CA or the VPA admission certificate; those remain
+    # RSA-2048 regardless of this setting.
+    keyConfiguration: null
     # KubeLB configures the kubeLB component.
     kubelb:
       # ImageRepository is used to override the KubeLB image repository.

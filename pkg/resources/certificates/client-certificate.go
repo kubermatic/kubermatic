@@ -30,7 +30,7 @@ import (
 type caGetter func() (*triple.KeyPair, error)
 
 // GetClientCertificateReconciler is a generic function to return a secret generator to create a client certificate signed by the cluster CA.
-func GetClientCertificateReconciler(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretReconcilerFactory {
+func GetClientCertificateReconciler(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := getCA()
@@ -53,12 +53,22 @@ func GetClientCertificateReconciler(name, commonName string, organizations []str
 				}
 			}
 
-			newKP, err := triple.NewClientKeyPair(ca, commonName, organizations)
+			keyConfig, err := getKeyConfig()
+			if err != nil {
+				return nil, err
+			}
+
+			newKP, err := triple.NewClientKeyPairWithConfig(ca, commonName, organizations, keyConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create key pair: %w", err)
 			}
 
-			se.Data[dataKeyKey] = triple.EncodePrivateKeyPEM(newKP.Key)
+			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the client key: %w", err)
+			}
+
+			se.Data[dataKeyKey] = keyPEM
 			se.Data[dataCertKey] = triple.EncodeCertPEM(newKP.Cert)
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)

@@ -118,7 +118,7 @@ type internalKubeconfigReconcilerData interface {
 }
 
 // GetInternalKubeconfigReconciler is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigReconciler(namespace, name, commonName string, organizations []string, data internalKubeconfigReconcilerData, log *zap.SugaredLogger) reconciling.NamedSecretReconcilerFactory {
+func GetInternalKubeconfigReconciler(namespace, name, commonName string, organizations []string, data internalKubeconfigReconcilerData, log *zap.SugaredLogger, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -141,7 +141,12 @@ func GetInternalKubeconfigReconciler(namespace, name, commonName string, organiz
 					objLogger.Info("invalid/outdated kubeconfig found, regenerating")
 				}
 
-				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)
+				keyConfig, err := getKeyConfig()
+				if err != nil {
+					return nil, err
+				}
+
+				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name, keyConfig)
 				if err != nil {
 					return nil, fmt.Errorf("failed to create new kubeconfig: %w", err)
 				}
@@ -153,8 +158,8 @@ func GetInternalKubeconfigReconciler(namespace, name, commonName string, organiz
 	}
 }
 
-func BuildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) ([]byte, error) {
-	kubeconfig, err := buildNewKubeconfig(ca, server, commonName, organizations, clusterName)
+func BuildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string, keyConfig triple.KeyConfig) ([]byte, error) {
+	kubeconfig, err := buildNewKubeconfig(ca, server, commonName, organizations, clusterName, keyConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -162,18 +167,23 @@ func BuildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, org
 	return clientcmd.Write(*kubeconfig)
 }
 
-func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) (*clientcmdapi.Config, error) {
+func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string, keyConfig triple.KeyConfig) (*clientcmdapi.Config, error) {
 	baseKubconfig := GetBaseKubeconfig(ca.Cert, server, clusterName)
 
-	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
+	kp, err := triple.NewClientKeyPairWithConfig(ca, commonName, organizations, keyConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key pair: %w", err)
+	}
+
+	keyPEM, err := triple.MarshalPrivateKeyPEM(kp.Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode the client key: %w", err)
 	}
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 		kubeconfigDefaultAuthInfoKey: {
 			ClientCertificateData: triple.EncodeCertPEM(kp.Cert),
-			ClientKeyData:         triple.EncodePrivateKeyPEM(kp.Key),
+			ClientKeyData:         keyPEM,
 		},
 	}
 

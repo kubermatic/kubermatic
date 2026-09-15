@@ -23,6 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -77,7 +78,12 @@ func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.Nam
 				}
 			}
 
-			key, err := triple.NewPrivateKey()
+			keyConfig, err := certificates.CertificateKeyConfig(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
+
+			key, err := keyConfig.GenerateKey()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create private key for etcd server tls certificate: %w", err)
 			}
@@ -102,7 +108,12 @@ func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.Nam
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
-			se.Data[resources.EtcdTLSKeySecretKey] = triple.EncodePrivateKeyPEM(key)
+			keyPEM, err := triple.MarshalPrivateKeyPEM(key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the etcd server private key: %w", err)
+			}
+
+			se.Data[resources.EtcdTLSKeySecretKey] = keyPEM
 			se.Data[resources.EtcdTLSCertSecretKey] = triple.EncodeCertPEM(cert)
 
 			return se, nil
