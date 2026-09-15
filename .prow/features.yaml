@@ -278,7 +278,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-kyverno-e2e
-    run_if_changed: "(go.mod|go.sum|.*[kK]yverno.*|.*policy[-_]?(binding|template).*|pkg/ee/default-policy-controller/|pkg/controller/seed-controller-manager/kubernetes/health.go|pkg/controller/user-cluster-controller-manager/|pkg/resources/usercluster/|sdk/apis/kubermatic/v1/(cluster|configuration).go|.prow/)"
+    run_if_changed: "(go.mod|go.sum|cmd/(seed-controller-manager|user-cluster-controller-manager|kubermatic-webhook)/|pkg/|sdk/|hack/ci/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -292,7 +292,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-kyverno-e2e-tests.sh"
           env:
