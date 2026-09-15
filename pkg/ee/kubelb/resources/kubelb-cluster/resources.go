@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2026 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -24,14 +24,19 @@
 
 package resources
 
-import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+import "k8s.io/apimachinery/pkg/runtime/schema"
+
+// KKP identity labels on management-cluster Tenants.
+const (
+	TenantClusterNameLabelKey         = "kubermatic.k8c.io/cluster-name"
+	TenantClusterExternalNameLabelKey = "kubermatic.k8c.io/cluster-external-name"
+	TenantProjectIDLabelKey           = "kubermatic.k8c.io/cluster-project-id"
 )
 
-func ResourcesForDeletion(name string) []ctrlruntimeclient.Object {
-	tenant := &unstructured.Unstructured{}
-	tenant.SetGroupVersionKind(KubelbTenantGVK)
-	tenant.SetName(name)
-	return []ctrlruntimeclient.Object{tenant}
+// KubelbTenantGVK identifies the kubelb Tenant CR. We use the unstructured
+// client to avoid a compile-time dep on k8c.io/kubelb.
+var KubelbTenantGVK = schema.GroupVersionKind{
+	Group:   "kubelb.k8c.io",
+	Version: "v1alpha1",
+	Kind:    "Tenant",
 }
