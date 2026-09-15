@@ -366,6 +366,8 @@ func TestNetworkProxyVersion(t *testing.T) {
 		{"1.34.0", "v0.34.0"},
 		{"1.34.1", "v0.34.0"},
 		{"1.35.0", "v0.34.0"},
+		{"1.36.0", "v0.35.0"},
+		{"1.37.0", "v0.36.0"},
 	}
 
 	for _, tt := range tests {

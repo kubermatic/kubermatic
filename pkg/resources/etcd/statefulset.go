@@ -90,7 +90,8 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			// The etcd team has recommended to enable this feature for etcd 3.5 due to data consistency issues.
 			// Reference: https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ
 			// Note: the --experimental-* corruption check flags are deprecated (but still functional) in
-			// etcd 3.6 and will only be removed in etcd 3.7.
+			// etcd 3.6 and were removed in etcd 3.7, so checks stay disabled for etcd 3.7 until
+			// etcd-launcher graduates its flags (3.7 only knows --corrupt-check-time).
 			if ok := etcdConstraint.Check(imageTagVersion); ok {
 				enableDataCorruptionChecks = true
 			}
@@ -433,7 +434,11 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/constants/constants.go
 	// for an overview.
 
-	// Kubernetes 1.36 requires etcd 3.6; older versions keep using etcd 3.5.
+	// Kubernetes 1.36 requires etcd 3.6 and 1.37 defaults to etcd 3.7;
+	// older versions keep using etcd 3.5.
+	if c.Status.Versions.Apiserver.Semver() != nil && c.Status.Versions.Apiserver.Semver().Minor() >= 37 {
+		return "3.7.1"
+	}
 	if c.Status.Versions.Apiserver.Semver() != nil && c.Status.Versions.Apiserver.Semver().Minor() >= 36 {
 		return "3.6.12"
 	}
