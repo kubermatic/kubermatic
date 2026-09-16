@@ -253,11 +253,19 @@ func waitForPolicyBindingState(ctx context.Context, client ctrlruntimeclient.Cli
 			return fmt.Errorf("failed to get PolicyBinding %s: %w", key, err), nil
 		}
 
+		stateError := func(format string, args ...any) error {
+			conditions := make([]string, 0, len(binding.Status.Conditions))
+			for _, condition := range binding.Status.Conditions {
+				conditions = append(conditions, fmt.Sprintf("%s=%s reason=%s message=%q observedGeneration=%d", condition.Type, condition.Status, condition.Reason, condition.Message, condition.ObservedGeneration))
+			}
+			return fmt.Errorf("PolicyBinding %s %s; active=%s templateEnforced=%s observedGeneration=%d generation=%d conditions=[%s]", key, fmt.Sprintf(format, args...), formatOptionalBool(binding.Status.Active), formatOptionalBool(binding.Status.TemplateEnforced), binding.Status.ObservedGeneration, binding.Generation, strings.Join(conditions, "; "))
+		}
+
 		if binding.Status.Active == nil || *binding.Status.Active != active {
-			return fmt.Errorf("PolicyBinding %s active=%v, expected %t", key, binding.Status.Active, active), nil
+			return stateError("expected active=%t", active), nil
 		}
 		if binding.Status.ObservedGeneration != binding.Generation {
-			return fmt.Errorf("PolicyBinding %s observed generation %d, expected %d", key, binding.Status.ObservedGeneration, binding.Generation), nil
+			return stateError("has not observed the current generation"), nil
 		}
 
 		for _, conditionType := range []kubermaticv1.PolicyBindingConditionType{
@@ -270,29 +278,36 @@ func waitForPolicyBindingState(ctx context.Context, client ctrlruntimeclient.Cli
 			}
 			condition := meta.FindStatusCondition(binding.Status.Conditions, string(conditionType))
 			if condition == nil || condition.Status != conditionStatus || condition.Reason != expectedReason || condition.ObservedGeneration != binding.Generation {
-				return fmt.Errorf("PolicyBinding %s condition %s is %#v, expected status=%s reason=%s generation=%d", key, conditionType, condition, conditionStatus, expectedReason, binding.Generation), nil
+				return stateError("expected condition %s status=%s reason=%s generation=%d", conditionType, conditionStatus, expectedReason, binding.Generation), nil
 			}
 		}
 		if active || reason == kubermaticv1.PolicyBindingReasonPolicyNamespaceMissing {
 			templateCondition := meta.FindStatusCondition(binding.Status.Conditions, string(kubermaticv1.PolicyBindingConditionTemplateValid))
 			if templateCondition == nil || templateCondition.Status != metav1.ConditionTrue || templateCondition.Reason != kubermaticv1.PolicyBindingReasonPolicyApplied || templateCondition.ObservedGeneration != binding.Generation {
-				return fmt.Errorf("PolicyBinding %s template condition is %#v, expected status=True reason=%s generation=%d", key, templateCondition, kubermaticv1.PolicyBindingReasonPolicyApplied, binding.Generation), nil
+				return stateError("expected condition %s status=True reason=%s generation=%d", kubermaticv1.PolicyBindingConditionTemplateValid, kubermaticv1.PolicyBindingReasonPolicyApplied, binding.Generation), nil
 			}
 			if binding.Status.TemplateEnforced == nil || *binding.Status.TemplateEnforced != templateEnforced {
-				return fmt.Errorf("PolicyBinding %s templateEnforced=%v, expected %t", key, binding.Status.TemplateEnforced, templateEnforced), nil
+				return stateError("expected templateEnforced=%t", templateEnforced), nil
 			}
 			if templateEnforced && binding.Annotations[kubermaticv1.AnnotationPolicyEnforced] != "true" {
-				return fmt.Errorf("PolicyBinding %s was not marked as generated from an enforced template", key), nil
+				return stateError("was not marked as generated from an enforced template"), nil
 			}
 		}
 
 		hasFinalizer := slices.Contains(binding.Finalizers, kubermaticv1.PolicyBindingCleanupFinalizer)
 		if hasFinalizer != expectFinalizer {
-			return fmt.Errorf("PolicyBinding %s cleanup finalizer present=%t, expected %t", key, hasFinalizer, expectFinalizer), nil
+			return stateError("cleanup finalizer present=%t, expected %t", hasFinalizer, expectFinalizer), nil
 		}
 
 		return nil, nil
 	})
+}
+
+func formatOptionalBool(value *bool) string {
+	if value == nil {
+		return "unset"
+	}
+	return fmt.Sprintf("%t", *value)
 }
 
 func waitForClusterPolicyReady(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, name string) error {
