@@ -354,7 +354,9 @@ func verifyPolicyAdmission(ctx context.Context, client ctrlruntimeclient.Client,
 		if err == nil {
 			return fmt.Errorf("policy %s allowed a ConfigMap without the required label", policyName), nil
 		}
-		if !strings.Contains(err.Error(), policyName) || !strings.Contains(err.Error(), policyDenyMessage) {
+		// Kyverno formats denials as YAML and may wrap the validation message.
+		denial := strings.Join(strings.Fields(err.Error()), " ")
+		if !strings.Contains(err.Error(), policyName) || !strings.Contains(denial, policyDenyMessage) {
 			return fmt.Errorf("expected Kyverno denial from policy %q containing %q, got: %w", policyName, policyDenyMessage, err), nil
 		}
 		return nil, nil
