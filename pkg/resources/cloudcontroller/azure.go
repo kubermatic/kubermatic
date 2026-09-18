@@ -121,9 +121,13 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 	case v135:
 		return "1.35.8", nil
 	case v136:
-		return "1.36.4", nil
+		return "1.36.5", nil
+	case v137:
+		// upstream (now kubernetes-sigs/cloud-provider-azure) has not shipped a
+		// 1.37 release yet; fall through to the newest 1.36 tag.
+		fallthrough
 	default:
-		return "1.36.4", nil
+		return "1.36.5", nil
 	}
 }
 
