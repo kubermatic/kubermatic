@@ -243,8 +243,6 @@ jobs:
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
             --ginkgo-image "$IMAGE_REF" \
-            --registry-username "$QUAY_USERNAME" \
-            --registry-password "$QUAY_PASSWORD" \
             --quiet \
             --verbose-logs \
             2>&1 | tee "_logs/test-output-${KKP_VERSION}.txt"
