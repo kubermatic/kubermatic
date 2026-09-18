@@ -157,8 +157,10 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      # Mirrors conformance-ee's own build-ginkgo-image.yml: buildx + gha
-      # layer cache, single amd64 platform (the KKP seed runners are amd64).
+      # Single amd64 platform (the KKP seed runners are amd64). No GHA layer
+      # cache: the image is a throwaway tag built once per issue-triggered run,
+      # so the cache almost never hits, and exporting it made the whole job fail
+      # ("failed to reserve cache") after the image had already been pushed.
       - name: Build and push Docker image to Quay
         uses: docker/build-push-action@v7
         with:
@@ -167,8 +169,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.IMAGE_REF }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build Go binaries
         run: |
