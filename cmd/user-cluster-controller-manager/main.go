@@ -382,7 +382,7 @@ func main() {
 		Start:  runOp.updateWindowStart,
 		Length: runOp.updateWindowLength,
 	}
-	if err := flatcar.Add(mgr, runOp.overwriteRegistry, updateWindow, isPausedChecker); err != nil {
+	if err := flatcar.Add(mgr, seedMgr, runOp.clusterName, runOp.overwriteRegistry, updateWindow, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register the Flatcar controller", zap.Error(err))
 	}
 	log.Info("Registered Flatcar controller")

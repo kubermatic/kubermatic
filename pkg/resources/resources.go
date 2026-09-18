@@ -1555,6 +1555,16 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 	return nil
 }
 
+// GetUserClusterWorkloadTolerations returns the tolerations configured for the KKP-managed
+// workloads that run on the worker nodes of the usercluster.
+func GetUserClusterWorkloadTolerations(componentSettings kubermaticv1.ComponentSettings) []corev1.Toleration {
+	if componentSettings.UserClusterWorkloads == nil {
+		return nil
+	}
+
+	return componentSettings.UserClusterWorkloads.Tolerations
+}
+
 func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*corev1.ResourceRequirements {
 	r := map[string]*corev1.ResourceRequirements{}
 	if componentSettings.Apiserver.Resources != nil {
