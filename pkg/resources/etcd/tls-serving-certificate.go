@@ -29,6 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 type tlsCertificateReconcilerData interface {
@@ -108,7 +109,7 @@ func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.Nam
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
-			keyPEM, err := triple.MarshalPrivateKeyPEM(key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(key)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode the etcd server private key: %w", err)
 			}

@@ -31,6 +31,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 type tlsServingCertReconcilerData interface {
@@ -142,7 +143,7 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
-			keyPEM, err := triple.MarshalPrivateKeyPEM(key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(key)
 			if err != nil {
 				return nil, fmt.Errorf("unable to encode the server private key: %w", err)
 			}

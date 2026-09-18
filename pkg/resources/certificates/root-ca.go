@@ -28,6 +28,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 // GetCAReconciler returns a function to create a secret containing a CA with the specified name.
@@ -56,7 +57,7 @@ func GetCAReconciler(commonName string, keyConfig triple.KeyConfig) reconciling.
 			return nil, fmt.Errorf("unable to create a new %s CA: %w", keyConfig, err)
 		}
 
-		keyPEM, err := triple.MarshalPrivateKeyPEM(caKp.Key)
+		keyPEM, err := keyutil.MarshalPrivateKeyToPEM(caKp.Key)
 		if err != nil {
 			return nil, fmt.Errorf("unable to encode the CA key: %w", err)
 		}

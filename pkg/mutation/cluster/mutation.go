@@ -78,8 +78,23 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	// during updates as well would retroactively apply a changed global default to
 	// clusters that already exist, and their certificates would silently switch
 	// algorithm the next time they are renewed.
-	if newCluster.Spec.KeyConfiguration == nil && config != nil && config.Spec.UserCluster.KeyConfiguration != nil {
-		newCluster.Spec.KeyConfiguration = config.Spec.UserCluster.KeyConfiguration.DeepCopy()
+	//
+	// Each category is inherited on its own, so a cluster that only overrides one
+	// of them still gets the global setting for the other.
+	if config != nil && config.Spec.UserCluster.KeyConfiguration != nil {
+		global := config.Spec.UserCluster.KeyConfiguration
+
+		if newCluster.Spec.KeyConfiguration == nil {
+			newCluster.Spec.KeyConfiguration = &kubermaticv1.KeyConfiguration{}
+		}
+
+		if newCluster.Spec.KeyConfiguration.ServiceAccountKey == nil {
+			newCluster.Spec.KeyConfiguration.ServiceAccountKey = global.ServiceAccountKey.DeepCopy()
+		}
+
+		if newCluster.Spec.KeyConfiguration.Certificates == nil {
+			newCluster.Spec.KeyConfiguration.Certificates = global.Certificates.DeepCopy()
+		}
 	}
 
 	return nil

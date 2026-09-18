@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 var (
@@ -282,7 +283,7 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 
-			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(newKP.Key)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
 			}

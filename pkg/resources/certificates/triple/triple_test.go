@@ -24,6 +24,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"testing"
+
+	"k8s.io/client-go/util/keyutil"
 )
 
 var keyConfigs = map[string]struct {
@@ -71,7 +73,7 @@ func TestGenerateKeyPEMRoundTrip(t *testing.T) {
 			}
 			checkKey(t, test.config, key)
 
-			keyPEM, err := MarshalPrivateKeyPEM(key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(key)
 			if err != nil {
 				t.Fatalf("failed to encode key: %v", err)
 			}
@@ -95,7 +97,7 @@ func TestGenerateKeyPEMRoundTrip(t *testing.T) {
 
 // TestRSAEncodingIsUnchanged is the cheapest possible proof that the default
 // path did not move: an RSA key still encodes exactly as it did before
-// MarshalPrivateKeyPEM replaced the RSA-only encoder.
+// keyutil.MarshalPrivateKeyToPEM replaced the RSA-only encoder.
 func TestRSAEncodingIsUnchanged(t *testing.T) {
 	key, err := KeyConfig{}.GenerateKey()
 	if err != nil {
@@ -112,7 +114,7 @@ func TestRSAEncodingIsUnchanged(t *testing.T) {
 		Bytes: x509.MarshalPKCS1PrivateKey(rsaKey),
 	})
 
-	current, err := MarshalPrivateKeyPEM(key)
+	current, err := keyutil.MarshalPrivateKeyToPEM(key)
 	if err != nil {
 		t.Fatalf("failed to encode key: %v", err)
 	}

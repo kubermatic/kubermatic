@@ -298,6 +298,9 @@ type ClusterSpec struct {
 	// already exist keep the key material they were created with; rotating it is not
 	// supported yet, so moving a cluster to a different algorithm or size requires
 	// recreating it.
+	//
+	// The OpenVPN and MLA gateway CAs and their certificates are not covered by this
+	// setting; they are always ECDSA P-256.
 	KeyConfiguration *KeyConfiguration `json:"keyConfiguration,omitempty"`
 }
 

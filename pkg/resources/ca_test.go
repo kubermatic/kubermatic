@@ -26,6 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/keyutil"
 )
 
 // TestGetClusterRootCAAcceptsEveryAlgorithm covers the one function that used to
@@ -45,7 +46,7 @@ func TestGetClusterRootCAAcceptsEveryAlgorithm(t *testing.T) {
 				t.Fatalf("failed to create CA: %v", err)
 			}
 
-			keyPEM, err := triple.MarshalPrivateKeyPEM(ca.Key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(ca.Key)
 			if err != nil {
 				t.Fatalf("failed to encode the CA key: %v", err)
 			}

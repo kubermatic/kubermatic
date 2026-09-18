@@ -89,6 +89,27 @@ func TestMutateCreateStampsKeyConfiguration(t *testing.T) {
 			expected: ecdsaKeyConfiguration,
 		},
 		{
+			name:   "a partial override still inherits the global default for the other category",
+			config: configWithKeyConfiguration(ecdsaKeyConfiguration),
+			cluster: func() *kubermaticv1.Cluster {
+				cluster := keyConfigurationTestCluster()
+				cluster.Spec.KeyConfiguration = &kubermaticv1.KeyConfiguration{
+					ServiceAccountKey: &kubermaticv1.KeySpec{
+						Algorithm:  kubermaticv1.KeyAlgorithmRSA,
+						RSAKeySize: 4096,
+					},
+				}
+				return cluster
+			}(),
+			expected: &kubermaticv1.KeyConfiguration{
+				ServiceAccountKey: &kubermaticv1.KeySpec{
+					Algorithm:  kubermaticv1.KeyAlgorithmRSA,
+					RSAKeySize: 4096,
+				},
+				Certificates: ecdsaKeyConfiguration.Certificates,
+			},
+		},
+		{
 			name:     "no global default leaves the field empty, which means RSA-2048",
 			config:   configWithKeyConfiguration(nil),
 			cluster:  keyConfigurationTestCluster(),

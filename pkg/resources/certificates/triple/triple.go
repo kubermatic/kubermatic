@@ -198,9 +198,7 @@ func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 	return x509.ParseCertificate(certDERBytes)
 }
 
-// ParseKeyPair parses a PEM-encoded certificate and private key of any supported
-// algorithm.
-func ParseKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
+func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	certs, err := certutil.ParseCertsPEM(certPEM)
 	if err != nil {
 		return nil, fmt.Errorf("certificate is not valid PEM: %w", err)
@@ -215,27 +213,12 @@ func ParseKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 		return nil, fmt.Errorf("private key is not valid PEM: %w", err)
 	}
 
-	signer, isSigner := key.(crypto.Signer)
-	if !isSigner {
-		return nil, fmt.Errorf("private key of type %T cannot be used to sign", key)
-	}
-
-	return &KeyPair{Cert: certs[0], Key: signer}, nil
-}
-
-// ParseRSAKeyPair is ParseKeyPair for callers that cannot handle anything but an
-// RSA key.
-func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
-	keyPair, err := ParseKeyPair(certPEM, keyPEM)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, isRSAKey := keyPair.Key.(*rsa.PrivateKey); !isRSAKey {
+	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
+	if !isRSAKey {
 		return nil, errors.New("private key is not a RSA key")
 	}
 
-	return keyPair, nil
+	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
 // EncodeCertPEM returns PEM-encoded certificate data.

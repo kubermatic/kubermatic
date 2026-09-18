@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 var webhookConfig = fmt.Sprintf(`
@@ -80,7 +81,7 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair, getKeyConfig triple.Key
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.CSIWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
-			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(newKP.Key)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
 			}

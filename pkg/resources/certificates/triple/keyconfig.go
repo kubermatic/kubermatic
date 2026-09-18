@@ -89,33 +89,6 @@ func (c KeyConfig) String() string {
 	return fmt.Sprintf("RSA-%d", size)
 }
 
-// MarshalPrivateKeyPEM returns PEM-encoded private key data for any supported
-// key type. RSA keys are encoded as PKCS#1 in an "RSA PRIVATE KEY" block, which
-// is byte-identical to what EncodePrivateKeyPEM has always produced; ECDSA keys
-// are encoded as SEC 1 in an "EC PRIVATE KEY" block.
-func MarshalPrivateKeyPEM(key crypto.Signer) ([]byte, error) {
-	switch k := key.(type) {
-	case *rsa.PrivateKey:
-		return pem.EncodeToMemory(&pem.Block{
-			Type:  RSAPrivateKeyBlockType,
-			Bytes: x509.MarshalPKCS1PrivateKey(k),
-		}), nil
-
-	case *ecdsa.PrivateKey:
-		der, err := x509.MarshalECPrivateKey(k)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal ECDSA key: %w", err)
-		}
-		return pem.EncodeToMemory(&pem.Block{
-			Type:  ECPrivateKeyBlockType,
-			Bytes: der,
-		}), nil
-
-	default:
-		return nil, fmt.Errorf("unsupported private key type %T", key)
-	}
-}
-
 // MarshalPublicKeyPEM returns the PKIX PEM encoding of a private key's public
 // half. This works for every algorithm supported by KeyConfig.
 func MarshalPublicKeyPEM(key crypto.Signer) ([]byte, error) {

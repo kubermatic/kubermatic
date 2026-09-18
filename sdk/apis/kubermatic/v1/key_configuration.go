@@ -78,6 +78,11 @@ type KeySpec struct {
 // user cluster, such as the KKP webhook CA or the VPA admission certificate;
 // those remain RSA-2048.
 //
+// It also does not cover the per-cluster OpenVPN CA and the MLA gateway CA with
+// the certificates issued from them. These have always been generated as ECDSA
+// P-256, independently of the control plane PKI, and stay that way regardless of
+// the algorithm or curve configured here.
+//
 // The value configured globally in the KubermaticConfiguration is copied into
 // ClusterSpec.KeyConfiguration when a cluster is created, and is immutable from
 // then on. Reconcilers only ever read the copy stored on the Cluster, so

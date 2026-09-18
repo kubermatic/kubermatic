@@ -341,6 +341,8 @@ type KubermaticUserClusterConfiguration struct {
 	// This does not cover key material that does not belong to a single user cluster,
 	// such as the KKP webhook CA or the VPA admission certificate; those remain
 	// RSA-2048 regardless of this setting.
+	// The per-cluster OpenVPN and MLA gateway CAs and their certificates are not
+	// covered either; they are always ECDSA P-256.
 	// +optional
 	KeyConfiguration *KeyConfiguration `json:"keyConfiguration,omitempty"`
 }

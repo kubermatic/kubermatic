@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 const (
@@ -175,7 +176,7 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 		return nil, fmt.Errorf("failed to create key pair: %w", err)
 	}
 
-	keyPEM, err := triple.MarshalPrivateKeyPEM(kp.Key)
+	keyPEM, err := keyutil.MarshalPrivateKeyToPEM(kp.Key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode the client key: %w", err)
 	}

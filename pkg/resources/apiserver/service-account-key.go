@@ -26,6 +26,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/keyutil"
 )
 
 type serviceAccountKeyReconcilerData interface {
@@ -53,7 +54,7 @@ func ServiceAccountKeyReconciler(data serviceAccountKeyReconcilerData) reconcili
 				return nil, fmt.Errorf("failed to generate %s service account key: %w", keyConfig, err)
 			}
 
-			privKeyPEM, err := triple.MarshalPrivateKeyPEM(priv)
+			privKeyPEM, err := keyutil.MarshalPrivateKeyToPEM(priv)
 			if err != nil {
 				return nil, err
 			}

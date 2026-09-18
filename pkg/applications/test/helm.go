@@ -48,6 +48,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+
+	"k8s.io/client-go/util/keyutil"
 )
 
 // Const relative to pkg/applications/helmclient/testdata/examplechart chart.
@@ -469,7 +471,7 @@ func setupPKI(t *testing.T, credentialDir string) *PKI {
 		t.Fatalf("failed to write dummy certificate: %s", err)
 	}
 
-	keyPEM, err := triple.MarshalPrivateKeyPEM(keypair.Key)
+	keyPEM, err := keyutil.MarshalPrivateKeyToPEM(keypair.Key)
 	if err != nil {
 		t.Fatalf("failed to encode dummy certificate key: %s", err)
 	}

@@ -25,6 +25,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 type caGetter func() (*triple.KeyPair, error)
@@ -63,7 +64,7 @@ func GetClientCertificateReconciler(name, commonName string, organizations []str
 				return nil, fmt.Errorf("failed to create key pair: %w", err)
 			}
 
-			keyPEM, err := triple.MarshalPrivateKeyPEM(newKP.Key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(newKP.Key)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode the client key: %w", err)
 			}
