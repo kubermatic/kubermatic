@@ -157,7 +157,7 @@ spec:
     spec:
       containers:
       - name: minio
-        image: 'quay.io/minio/minio:RELEASE.2023-05-04T21-44-30Z'
+        image: 'quay.io/kubermatic-mirror/images/minio/minio:RELEASE.2023-05-04T21-44-30Z'
         args:
         - server
         - /storage
