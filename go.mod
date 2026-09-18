@@ -79,7 +79,7 @@ require (
 	github.com/vmware/govmomi v0.49.0
 	go.anx.io/go-anxcloud v0.7.8
 	go.etcd.io/etcd/api/v3 v3.6.14
-	go.etcd.io/etcd/client/pkg/v3 v3.6.14
+	go.etcd.io/etcd/client/pkg/v3 v3.7.1
 	go.etcd.io/etcd/client/v3 v3.6.14
 	go.etcd.io/etcd/etcdutl/v3 v3.6.14
 	go.uber.org/zap v1.28.0
