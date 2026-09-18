@@ -990,7 +990,7 @@ type ComponentSettings struct {
 	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
-	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
@@ -1031,6 +1031,14 @@ type OSMControllerSettings struct {
 type ControllerSettings struct {
 	DeploymentSettings     `json:",inline"`
 	LeaderElectionSettings `json:"leaderElection,omitempty"`
+}
+
+type MachineControllerSettings struct {
+	DeploymentSettings `json:",inline"`
+	// SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
+	// deletion is stuck longer than this duration, eviction is skipped and the node is
+	// force-deleted. Defaults to the machine-controller binary's built-in 2h when unset.
+	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
 }
 
 type DeploymentSettings struct {
