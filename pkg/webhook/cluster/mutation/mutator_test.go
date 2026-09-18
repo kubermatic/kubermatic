@@ -928,3 +928,111 @@ func (r rawClusterGen) Do() *kubermaticv1.Cluster {
 
 	return &c
 }
+
+// TestMutatorKeyConfigurationDefaulting ensures that the defaulting template only
+// ever provides the key configuration on creation, and then only for the key
+// categories the cluster did not configure itself.
+func TestMutatorKeyConfigurationDefaulting(t *testing.T) {
+	templateKeyConfig := &kubermaticv1.KeyConfiguration{
+		ServiceAccountKey: &kubermaticv1.KeySpec{
+			Algorithm:  kubermaticv1.KeyAlgorithmECDSA,
+			ECDSACurve: kubermaticv1.ECDSACurveP256,
+		},
+		Certificates: &kubermaticv1.KeySpec{
+			Algorithm:  kubermaticv1.KeyAlgorithmECDSA,
+			ECDSACurve: kubermaticv1.ECDSACurveP384,
+		},
+	}
+
+	rsaCertificates := &kubermaticv1.KeySpec{
+		Algorithm:  kubermaticv1.KeyAlgorithmRSA,
+		RSAKeySize: 4096,
+	}
+
+	genCluster := func(keyConfig *kubermaticv1.KeyConfiguration) *kubermaticv1.Cluster {
+		cluster := rawClusterGen{
+			Name: "foo",
+			CloudSpec: kubermaticv1.CloudSpec{
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+				DatacenterName: "hetzner-dc",
+				Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+			},
+			ExternalCloudProvider: true,
+			CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: "v3.20",
+			},
+		}.Do()
+		cluster.Spec.KeyConfiguration = keyConfig.DeepCopy()
+
+		return cluster
+	}
+
+	tests := []struct {
+		name       string
+		oldCluster *kubermaticv1.Cluster
+		newCluster *kubermaticv1.Cluster
+		expected   *kubermaticv1.KeyConfiguration
+	}{
+		{
+			name:       "a new cluster inherits the key configuration of the template",
+			newCluster: genCluster(nil),
+			expected:   templateKeyConfig,
+		},
+		{
+			name:       "an RSA override is not mixed with the ECDSA settings of the template",
+			newCluster: genCluster(&kubermaticv1.KeyConfiguration{Certificates: rsaCertificates}),
+			expected: &kubermaticv1.KeyConfiguration{
+				ServiceAccountKey: templateKeyConfig.ServiceAccountKey,
+				Certificates:      rsaCertificates,
+			},
+		},
+		{
+			name:       "updating a cluster without key configuration does not pick up the template",
+			oldCluster: genCluster(nil),
+			newCluster: genCluster(nil),
+			expected:   nil,
+		},
+		{
+			name:       "updating a cluster keeps its partial key configuration as it is",
+			oldCluster: genCluster(&kubermaticv1.KeyConfiguration{Certificates: rsaCertificates}),
+			newCluster: genCluster(&kubermaticv1.KeyConfiguration{Certificates: rsaCertificates}),
+			expected:   &kubermaticv1.KeyConfiguration{Certificates: rsaCertificates},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testSeed := seed.DeepCopy()
+			testSeed.Spec.DefaultClusterTemplate = defaultingTemplateName
+
+			template := &kubermaticv1.ClusterTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      defaultingTemplateName,
+					Namespace: testSeed.Namespace,
+					Labels:    map[string]string{"scope": kubermaticv1.SeedTemplateScope},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					KeyConfiguration: templateKeyConfig.DeepCopy(),
+				},
+			}
+
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(&config)
+			if err != nil {
+				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
+			}
+
+			mutator := NewMutator(fake.NewClientBuilder().WithObjects(template).Build(), configGetter, test.NewSeedGetter(testSeed), nil)
+			mutator.disableProviderMutation = true
+
+			mutatedCluster, mutateErr := mutator.Mutate(context.Background(), tt.oldCluster, tt.newCluster)
+			if mutateErr != nil {
+				t.Fatalf("Request should have succeeded, but failed: %v", mutateErr)
+			}
+
+			if !diff.DeepEqual(tt.expected, mutatedCluster.Spec.KeyConfiguration) {
+				t.Errorf("Unexpected key configuration:\n%v", diff.ObjectDiff(tt.expected, mutatedCluster.Spec.KeyConfiguration))
+			}
+		})
+	}
+}

@@ -334,7 +334,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 }
 
 func WebhookServingCASecretReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
-	reconciler := certificates.GetCAReconciler(webhookCommonName)
+	reconciler := certificates.GetCAReconciler(webhookCommonName, triple.KeyConfig{})
 
 	return func() (string, reconciling.SecretReconciler) {
 		return WebhookServingCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
@@ -387,7 +387,7 @@ func WebhookServingCertSecretReconciler(
 		return keypair, nil
 	}
 
-	return servingcerthelper.ServingCertSecretReconciler(caGetter, WebhookServingCertSecretName, webhookCommonName, altNames, nil)
+	return servingcerthelper.ServingCertSecretReconciler(caGetter, WebhookServingCertSecretName, webhookCommonName, altNames, nil, triple.LegacyKeyConfigGetter)
 }
 
 func SeedAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string {

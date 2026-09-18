@@ -17,6 +17,7 @@ limitations under the License.
 package apiserver
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -25,6 +26,7 @@ import (
 
 type etcdClientCertificateReconcilerData interface {
 	GetRootCA() (*triple.KeyPair, error)
+	Cluster() *kubermaticv1.Cluster
 }
 
 // EtcdClientCertificateReconciler returns a function to create/update the secret with the client certificate for authenticating against etcd.
@@ -35,5 +37,6 @@ func EtcdClientCertificateReconciler(data etcdClientCertificateReconcilerData) r
 		nil,
 		resources.ApiserverEtcdClientCertificateCertSecretKey,
 		resources.ApiserverEtcdClientCertificateKeySecretKey,
-		data.GetRootCA)
+		data.GetRootCA,
+		certificates.ClusterCertificateKeyConfigGetter(data))
 }
