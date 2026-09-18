@@ -123,6 +123,13 @@ jobs:
           ref: main
           fetch-depth: 1
 
+      # conformance-ee publishes ginkgo images from main itself (its
+      # build-ginkgo-image.yml pushes :ginkgo-latest and :ginkgo-main-<sha12>),
+      # and the CLI derives :ginkgo-kkp<x.y.z> from the seed's KKP version with
+      # a fallback to :ginkgo-latest. None of those is right here: this run must
+      # test the conformance-ee main commit checked out above against the
+      # requested KKP version, so it builds its own throwaway tag and hands it
+      # to the CLI verbatim via --ginkgo-image (skipping version detection).
       - name: Resolve image tag
         run: |
           IMAGE_TAG="cis-${KKP_VERSION//./-}-${{ github.run_id }}"
@@ -141,26 +148,29 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Quay
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      # Single amd64 platform (the KKP seed runners are amd64). No GHA layer
+      # cache: the image is a throwaway tag built once per issue-triggered run,
+      # so the cache almost never hits, and exporting it made the whole job fail
+      # ("failed to reserve cache") after the image had already been pushed.
       - name: Build and push Docker image to Quay
-        run: |
-          docker build \
-            -f Dockerfile.ginkgo \
-            -t "${IMAGE_REF}" \
-            --push \
-            .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.ginkgo
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE_REF }}
 
       - name: Build Go binaries
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           make build
 
@@ -217,14 +227,22 @@ jobs:
         run: |
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --ginkgo-image "$IMAGE_REF" \
             --dry-run
 
       # ─── Run the suite ────────────────────────────────────────────────
+      # The ginkgo repo is private, so the CLI needs credentials to validate
+      # the image and to mint the in-cluster pull secret for it. Passing them
+      # explicitly rather than relying on the runner's ~/.docker/config.json.
       - name: Run conformance tests (CIS enabled)
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
         run: |
           mkdir -p _logs _reports
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --ginkgo-image "$IMAGE_REF" \
             --quiet \
             --verbose-logs \
             2>&1 | tee "_logs/test-output-${KKP_VERSION}.txt"
