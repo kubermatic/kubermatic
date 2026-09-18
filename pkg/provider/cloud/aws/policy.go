@@ -233,7 +233,6 @@ var (
           "ec2:DescribeVolumes",
           "ec2:CreateSecurityGroup",
           "ec2:DescribeVolumesModifications",
-          "ec2:DescribeInstanceTopology",
           "ec2:ModifyInstanceAttribute",
           "ec2:ModifyVolume",
           "ec2:DescribeVpcs",
