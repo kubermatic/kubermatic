@@ -76,11 +76,16 @@ func DefaultClusterSpec(
 	}
 
 	// Checking and applying each field of the ComponentSettings is tedious,
-	// so we reuse mergo as well. Even though DefaultComponentSettings is
-	// deprecated, we cannot remove its handling here, as the template can
-	// be unconfigured (i.e. nil).
+	// so we reuse mergo as well. DefaultComponentSettings is applied after
+	// the template, as the template can be unconfigured (i.e. nil).
 	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
 		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	}
+
+	// mergo fills a nil pointer with the pointer of the template or Seed itself,
+	// so copy the value to keep the Cluster from sharing it with a cached object.
+	if workloads := spec.ComponentsOverride.UserClusterWorkloads; workloads != nil {
+		spec.ComponentsOverride.UserClusterWorkloads = workloads.DeepCopy()
 	}
 
 	// Give cloud providers a chance to default their spec.

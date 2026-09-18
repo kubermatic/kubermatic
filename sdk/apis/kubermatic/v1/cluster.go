@@ -993,6 +993,16 @@ type ComponentSettings struct {
 	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
+	// UserClusterWorkloads configures the KKP-managed workloads that run on the worker nodes of the usercluster.
+	UserClusterWorkloads *UserClusterWorkloadSettings `json:"userClusterWorkloads,omitempty"`
+}
+
+type UserClusterWorkloadSettings struct {
+	// Tolerations are added to the Pods of all KKP-managed workloads running on the worker nodes
+	// of the usercluster, for example to allow them onto a tainted, dedicated node pool.
+	// They are appended to the tolerations a workload already has and never replace them.
+	// Workloads that already tolerate every taint are not affected.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 type APIServerSettings struct {
