@@ -21,4 +21,12 @@ source hack/lib.sh
 
 echodate "Updating CA bundle..."
 curl -Lo charts/kubermatic-operator/static/ca-bundle.pem https://curl.se/ca/cacert.pem
-echodate "Done."
+
+# The chart's golden master fixtures embed the CA bundle, so they have to be
+# regenerated whenever it changes. The test script rewrites the .yaml.out files
+# in place and then exits non-zero because they differ from what is committed,
+# which is exactly what we want here.
+echodate "Regenerating the kubermatic-operator chart fixtures..."
+./charts/kubermatic-operator/test/test.sh || true
+
+echodate "Done. Updated .yaml.out files."
