@@ -175,6 +175,10 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 		}
 	}
 
+	if opt.Registry != "" && !strings.Contains(opt.Registry, ":") {
+		logger.Fatalf("--registry must be given as host:port, e.g. localhost:5000")
+	}
+
 	return cmd
 }
 
@@ -187,7 +191,13 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 			logger.Fatalf("failed to create containerd certs directory for registry %q: %v", opt.Registry, err)
 		}
 		registryURL := "http://" + opt.Registry
-		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryURL, registryURL)
+		registryEndpoint := registryURL
+		if host := localInterfaceAddress(); host != nil {
+			if _, port, err := net.SplitHostPort(opt.Registry); err == nil && port != "" {
+				registryEndpoint = fmt.Sprintf("http://%s:%s", host.String(), port)
+			}
+		}
+		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryURL, registryEndpoint)
 		if err := os.WriteFile(filepath.Join(registryCertsDir, "hosts.toml"), []byte(hostsToml), 0644); err != nil {
 			logger.Fatalf("failed to write hosts.toml for registry %q: %v", opt.Registry, err)
 		}
@@ -380,6 +390,17 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase string, image
 		if tag, ok := imageOverrides["ui"]; ok {
 			doc.Set(yamled.Path{"spec", "ui", "dockerTag"}, tag)
 		}
+		if value, ok := imageOverrides["kubermatic"]; ok {
+			repository, tag, hasRepository := splitImageOverride(value)
+			for _, component := range []string{"seedController", "masterController", "webhook"} {
+				if hasRepository {
+					doc.Set(yamled.Path{"spec", component, "dockerRepository"}, repository)
+				}
+				if tag != "" {
+					doc.Set(yamled.Path{"spec", component, "dockerTag"}, tag)
+				}
+			}
+		}
 
 		return nil
 	})
@@ -506,6 +527,9 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
 	ms := kubermaticmaster.NewStack(false)
+	if err := ensureKubermaticCRDs(opts.ChartsDirectory); err != nil {
+		logger.Fatalf("failed to ensure Kubermatic CRDs are available: %v", err)
+	}
 	k, uk, err := loadKubermaticConfiguration(kubermaticPath)
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
@@ -578,6 +602,47 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 	})
 }
 
+func ensureKubermaticCRDs(chartsDirectory string) error {
+	target := filepath.Join(chartsDirectory, "kubermatic-operator", "crd", "k8c.io")
+	if entries, err := os.ReadDir(target); err == nil && len(entries) > 0 {
+		return nil
+	}
+
+	source := filepath.Join("pkg", "crd", "k8c.io")
+	entries, err := os.ReadDir(source)
+	if err != nil {
+		return fmt.Errorf("chart CRD directory %s is empty and no source CRDs found at %s: %w", target, source, err)
+	}
+
+	if err := os.MkdirAll(target, 0755); err != nil {
+		return fmt.Errorf("failed to create %s: %w", target, err)
+	}
+
+	copied := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(source, entry.Name()))
+		if err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(filepath.Join(target, entry.Name()), data, 0644); err != nil {
+			return err
+		}
+
+		copied++
+	}
+
+	if copied == 0 {
+		return fmt.Errorf("no CRD manifests found in %s", source)
+	}
+
+	return nil
+}
+
 func splitImageOverride(value string) (repository, tag string, hasRepository bool) {
 	slash := strings.LastIndex(value, "/")
 	if slash < 0 {
@@ -590,6 +655,26 @@ func splitImageOverride(value string) (repository, tag string, hasRepository boo
 	}
 
 	return value, "", true
+}
+
+func localInterfaceAddress() net.IP {
+	gwip, err := gateway.DiscoverGateway()
+	if err != nil {
+		return nil
+	}
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil
+	}
+
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.Contains(gwip) {
+			return ipnet.IP
+		}
+	}
+
+	return nil
 }
 
 func getLocalEndpoint(logger *logrus.Logger, opts LocalOptions) string {
