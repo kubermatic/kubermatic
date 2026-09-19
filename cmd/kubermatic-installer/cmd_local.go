@@ -59,12 +59,11 @@ import (
 )
 
 const (
-	nip                  = "nip.io"
-	sslip                = "sslip.io"
-	kkpDefaultLogin      = "kubermatic@example.com"
-	kkpDefaultPassword   = "password"
-	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
-	kindClusterName      = "kkp-cluster"
+	nip                = "nip.io"
+	sslip              = "sslip.io"
+	kkpDefaultLogin    = "kubermatic@example.com"
+	kkpDefaultPassword = "password"
+	kindClusterName    = "kkp-cluster"
 )
 
 var (
@@ -78,6 +77,10 @@ type LocalOptions struct {
 	HelmTimeout    time.Duration
 	Endpoint       string
 	KubeOVNEnabled bool
+	ClusterName    string
+	HostPorts      map[string]int
+	ImageOverrides map[string]string
+	Registry       string
 }
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
@@ -148,12 +151,50 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	}
 	cmd.PersistentFlags().StringVar(&opt.Endpoint, "endpoint", "", "endpoint address for KKP installation (e.g. 10.0.0.5.nip.io), if this flag is left empty, the installer does best effort in auto-configuring from available network interfaces")
 	cmd.PersistentFlags().BoolVar(&opt.KubeOVNEnabled, "kube-ovn-enabled", false, "enables usage of kube-ovn instead of kindnet as the cni plugin")
+	cmd.PersistentFlags().StringVar(&opt.ClusterName, "name", kindClusterName, "name of the kind cluster to create or reuse")
+	cmd.PersistentFlags().StringToIntVar(&opt.HostPorts, "host-ports", defaultLocalHostPorts(), "host ports exposed on the machine, valid keys: http, https, apiserver, tunnel")
+	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (tag or repository[:tag]), api and ui (tag only)")
+	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "local container registry (e.g. localhost:5000) that the kind cluster is configured to pull from via plain HTTP")
+
+	for key := range opt.HostPorts {
+		switch key {
+		case "http", "https", "apiserver", "tunnel":
+		default:
+			logger.Fatalf("invalid --host-ports key %q, valid keys are http, https, apiserver, tunnel", key)
+		}
+	}
+
+	for key, value := range opt.ImageOverrides {
+		switch key {
+		case "kubermatic", "api", "ui":
+		default:
+			logger.Fatalf("invalid --image-override key %q, valid keys are kubermatic, api, ui", key)
+		}
+		if key != "kubermatic" && (strings.Contains(value, "/") || strings.Contains(value, ":")) {
+			logger.Fatalf("--image-override %s accepts a plain tag only", key)
+		}
+	}
+
 	return cmd
 }
 
 func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc) {
+	registryCertsRoot := ""
+	if opt.Registry != "" {
+		registryCertsRoot = filepath.Join(dir, "containerd-certs.d")
+		registryCertsDir := filepath.Join(registryCertsRoot, opt.Registry)
+		if err := os.MkdirAll(registryCertsDir, 0755); err != nil {
+			logger.Fatalf("failed to create containerd certs directory for registry %q: %v", opt.Registry, err)
+		}
+		registryURL := "http://" + opt.Registry
+		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryURL, registryURL)
+		if err := os.WriteFile(filepath.Join(registryCertsDir, "hosts.toml"), []byte(hostsToml), 0644); err != nil {
+			logger.Fatalf("failed to write hosts.toml for registry %q: %v", opt.Registry, err)
+		}
+	}
+
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
-	configContent := kindConfigContent
+	configContent := kindConfigContent(opt.HostPorts, registryCertsRoot)
 	if opt.KubeOVNEnabled {
 		configContent += kindConfigKubeOVNContent
 		logger.Info("Disabling kindnet to deploy kube-ovn cni plugin")
@@ -162,7 +203,7 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Infof("Creating kind cluster %q…", kindClusterName)
+	logger.Infof("Creating kind cluster %q…", opt.ClusterName)
 
 	// start the manager in its own goroutine
 	appContext := context.Background()
@@ -170,21 +211,25 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 
 	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
 	if err == nil {
-		if strings.Contains(strings.TrimSpace(string(out)), kindClusterName) {
+		if strings.Contains(strings.TrimSpace(string(out)), opt.ClusterName) {
 			clusterExists = true
 		}
 	}
 
 	if clusterExists {
-		logger.Infof("Kind cluster %q already exists, skipping creation...", kindClusterName)
+		logger.Infof("Kind cluster %q already exists, skipping creation...", opt.ClusterName)
 	} else {
-		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", kindClusterName, "--config", kindConfig).CombinedOutput()
+		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", opt.ClusterName, "--config", kindConfig).CombinedOutput()
 		if err != nil {
 			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
 		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
+
+	if out, err := exec.CommandContext(appContext, "kubectl", "config", "use-context", "kind-"+opt.ClusterName).CombinedOutput(); err != nil {
+		logger.Fatalf("failed to switch kubectl to context kind-%s: %v\n%v", opt.ClusterName, err, string(out))
+	}
 	kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
 	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 	kindKubeConfig, err := os.Create(kindKubeConfigPath)
@@ -320,20 +365,27 @@ func prepareYAMLFile(dir, basename string, modifier func(*yamled.Document) error
 	return outputFile, nil
 }
 
-func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
+func prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase string, imageOverrides map[string]string) (string, error) {
 	return prepareYAMLFile(dir, "kubermatic", func(doc *yamled.Document) error {
 		doc.Set(yamled.Path{"spec", "ingress", "domain"}, kkpEndpoint)
 		doc.Remove(yamled.Path{"spec", "ingress", "certificateIssuer"})
-		doc.Set(yamled.Path{"spec", "auth", "tokenIssuer"}, fmt.Sprintf("http://%v/dex", kkpEndpoint))
+		doc.Set(yamled.Path{"spec", "auth", "tokenIssuer"}, fmt.Sprintf("http://%v/dex", endpointBase))
 		doc.Set(yamled.Path{"spec", "auth", "issuerClientSecret"}, randomString(32))
 		doc.Set(yamled.Path{"spec", "auth", "issuerCookieKey"}, randomString(32))
 		doc.Set(yamled.Path{"spec", "auth", "serviceAccountKey"}, randomString(32))
+
+		if tag, ok := imageOverrides["api"]; ok {
+			doc.Set(yamled.Path{"spec", "api", "dockerTag"}, tag)
+		}
+		if tag, ok := imageOverrides["ui"]; ok {
+			doc.Set(yamled.Path{"spec", "ui", "dockerTag"}, tag)
+		}
 
 		return nil
 	})
 }
 
-func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
+func prepareHelmValues(dir, kkpEndpoint, endpointBase string, imageOverrides map[string]string) (string, error) {
 	var imagePullSecret string
 
 	kubermaticFile := filepath.Join(dir, "kubermatic.example.yaml")
@@ -379,7 +431,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		// dex configuration
 		doc.Set(yamled.Path{"dex", "replicaCount"}, 1)
 		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
-		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
+		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", endpointBase))
 		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
 			"enabled": false,
 			"tls":     []map[string]interface{}{},
@@ -391,6 +443,16 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		// This ensures both configurations use the same value
 		if imagePullSecret != "" {
 			doc.Set(yamled.Path{"kubermaticOperator", "imagePullSecret"}, imagePullSecret)
+		}
+
+		if value, ok := imageOverrides["kubermatic"]; ok {
+			repository, tag, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				doc.Set(yamled.Path{"kubermaticOperator", "image", "repository"}, repository)
+			}
+			if tag != "" {
+				doc.Set(yamled.Path{"kubermaticOperator", "image", "tag"}, tag)
+			}
 		}
 
 		clients, ok := doc.GetArray(yamled.Path{"dex", "config", "staticClients"})
@@ -410,7 +472,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 					}
 
 					u.Scheme = "http"
-					u.Host = kkpEndpoint
+					u.Host = endpointBase
 
 					doc.Set(yamled.Path{"dex", "config", "staticClients", i, "RedirectURIs", j}, u.String())
 				}
@@ -423,14 +485,18 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 
 func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions) string {
 	kkpEndpoint := getLocalEndpoint(logger, opts)
-	logger.Infof("Installing KKP at %v…", kkpEndpoint) // TODO: prettify
+	endpointBase := kkpEndpoint
+	if httpPort := opts.hostPort("http"); httpPort != 80 {
+		endpointBase = fmt.Sprintf("%s:%d", kkpEndpoint, httpPort)
+	}
+	logger.Infof("Installing KKP at %v…", endpointBase) // TODO: prettify
 
-	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint)
+	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase, opts.ImageOverrides)
 	if err != nil {
 		logger.Fatalf("failed to prepare Kubermatic configuration: %v", err)
 	}
 
-	valuesPath, err := prepareHelmValues(dir, kkpEndpoint)
+	valuesPath, err := prepareHelmValues(dir, kkpEndpoint, endpointBase, opts.ImageOverrides)
 	if err != nil {
 		logger.Fatalf("failed to prepare Helm values: %v", err)
 	}
@@ -469,12 +535,12 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 
 	kubeconfig := filepath.Join(dir, "kube-config.yaml")
 	internalKubeconfig := filepath.Join(dir, "kube-config-internal.yaml")
-	kindSeedSecret := initKindSeedSecret(kubeClient, logger, kubeconfig, internalKubeconfig)
+	kindSeedSecret := initKindSeedSecret(kubeClient, logger, opts.ClusterName, kubeconfig, internalKubeconfig)
 	ensureResource(kubeClient, logger, &kindSeedSecret)
 	kindPreset := initKindPreset(logger, internalKubeconfig, opts.KubeOVNEnabled)
 	ensureResource(kubeClient, logger, &kindPreset)
 	ensureResource(kubeClient, logger, &kindLocalSeed)
-	return kkpEndpoint
+	return endpointBase
 }
 
 func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
@@ -507,9 +573,23 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
 		logger.Infof("  Default login:    %v", kkpDefaultLogin)
 		logger.Infof("  Default password: %v\n", kkpDefaultPassword)
-		logger.Infof("You can tear down the environment by %q", localKindTeardownCmd)
+		logger.Infof("You can tear down the environment by %q", fmt.Sprintf("kind delete cluster -n %s", opt.ClusterName))
 		return nil
 	})
+}
+
+func splitImageOverride(value string) (repository, tag string, hasRepository bool) {
+	slash := strings.LastIndex(value, "/")
+	if slash < 0 {
+		return "", value, false
+	}
+
+	rest := value[slash+1:]
+	if colon := strings.LastIndex(rest, ":"); colon >= 0 {
+		return value[:slash+1+colon], rest[colon+1:], true
+	}
+
+	return value, "", true
 }
 
 func getLocalEndpoint(logger *logrus.Logger, opts LocalOptions) string {
@@ -545,9 +625,9 @@ func ipToNip(ip net.IP) string {
 	return fmt.Sprintf("%v.%v", processedIP, sslip)
 }
 
-func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
+func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, clusterName, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
 	cpPod := corev1.Pod{}
-	key := ctrlruntimeclient.ObjectKey{Namespace: "kube-system", Name: "kube-apiserver-kkp-cluster-control-plane"}
+	key := ctrlruntimeclient.ObjectKey{Namespace: "kube-system", Name: fmt.Sprintf("kube-apiserver-%s-control-plane", clusterName)}
 	if err := kubeClient.Get(context.Background(), key, &cpPod); err != nil {
 		logger.Fatalf("Failed to get IP for kind control-plane pod: %v", err)
 	}

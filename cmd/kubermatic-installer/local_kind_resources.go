@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/machine-controller/sdk/providerconfig"
 
@@ -27,22 +29,51 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var kindConfigContent = `kind: Cluster
+func defaultLocalHostPorts() map[string]int {
+	return map[string]int{
+		"http":      80,
+		"https":     443,
+		"apiserver": 6443,
+		"tunnel":    8088,
+	}
+}
+
+func (o *LocalOptions) hostPort(name string) int {
+	if port, ok := o.HostPorts[name]; ok {
+		return port
+	}
+	return defaultLocalHostPorts()[name]
+}
+
+func kindConfigContent(hostPorts map[string]int, registryCertsDir string) string {
+	ports := defaultLocalHostPorts()
+	for key, value := range hostPorts {
+		ports[key] = value
+	}
+
+	registryMounts := ""
+	if registryCertsDir != "" {
+		registryMounts = fmt.Sprintf("   extraMounts:\n   - hostPath: %s\n     containerPath: /etc/containerd/certs.d\n     readOnly: true\n", registryCertsDir)
+	}
+
+	return fmt.Sprintf(`kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
  - role: control-plane
- - role: worker
+%s - role: worker
    extraPortMappings:
    # nodeport-proxy for user-cluster control-planes
    - containerPort: 30652
-     hostPort: 6443
+     hostPort: %d
    - containerPort: 32121
-     hostPort: 8088
+     hostPort: %d
    # envoy gateway for kubermatic api and dashboard
    - containerPort: 31514
-     hostPort: 80
+     hostPort: %d
    - containerPort: 32394
-     hostPort: 443`
+     hostPort: %d
+%s`, registryMounts, ports["apiserver"], ports["tunnel"], ports["http"], ports["https"], registryMounts)
+}
 
 var kindConfigKubeOVNContent = `
 networking:
