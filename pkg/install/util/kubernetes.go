@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,29 +43,31 @@ func EnsureNamespace(ctx context.Context, log logrus.FieldLogger, kubeClient ctr
 }
 
 func EnsureNamespaceLabel(ctx context.Context, kubeClient ctrlruntimeclient.Client, namespace, key, value string) error {
-	ns := &corev1.Namespace{}
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		ns := &corev1.Namespace{}
 
-	if err := wait.PollUntilContextTimeout(ctx, 250*time.Millisecond, 15*time.Second, true, func(ctx context.Context) (bool, error) {
-		if err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: namespace}, ns); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, nil
+		if err := wait.PollUntilContextTimeout(ctx, 250*time.Millisecond, 15*time.Second, true, func(ctx context.Context) (bool, error) {
+			if err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: namespace}, ns); err != nil {
+				if apierrors.IsNotFound(err) {
+					return false, nil
+				}
+				return false, err
 			}
-			return false, err
+			return true, nil
+		}); err != nil {
+			return err
 		}
-		return true, nil
-	}); err != nil {
-		return err
-	}
 
-	if ns.Labels == nil {
-		ns.Labels = make(map[string]string)
-	}
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
 
-	if ns.Labels[key] == value {
-		return nil
-	}
+		if ns.Labels[key] == value {
+			return nil
+		}
 
-	ns.Labels[key] = value
+		ns.Labels[key] = value
 
-	return kubeClient.Update(ctx, ns)
+		return kubeClient.Update(ctx, ns)
+	})
 }
