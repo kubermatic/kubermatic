@@ -43,6 +43,18 @@ IMAGE="${REPOSITORY}:${TAG}"
 if docker image inspect "${IMAGE}" >/dev/null 2>&1; then
   echo "> loading ${IMAGE} into kind cluster ${CLUSTER}"
   kind load docker-image "${IMAGE}" --name "${CLUSTER}"
+
+  # controller components keep the operator's build-time tag, so the
+  # image must also exist under the current commit SHA
+  SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+  if [ -n "${SHA}" ]; then
+    SHA_IMAGE="${REPOSITORY}:${SHA}"
+    if [ "${SHA_IMAGE}" != "${IMAGE}" ]; then
+      docker tag "${IMAGE}" "${SHA_IMAGE}"
+      echo "> loading ${SHA_IMAGE} into kind cluster ${CLUSTER}"
+      kind load docker-image "${SHA_IMAGE}" --name "${CLUSTER}"
+    fi
+  fi
 fi
 
 echo "> upgrading kubermatic-operator to ${IMAGE}"

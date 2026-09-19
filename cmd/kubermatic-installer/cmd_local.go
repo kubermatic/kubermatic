@@ -153,7 +153,7 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&opt.KubeOVNEnabled, "kube-ovn-enabled", false, "enables usage of kube-ovn instead of kindnet as the cni plugin")
 	cmd.PersistentFlags().StringVar(&opt.ClusterName, "name", kindClusterName, "name of the kind cluster to create or reuse")
 	cmd.PersistentFlags().StringToIntVar(&opt.HostPorts, "host-ports", defaultLocalHostPorts(), "host ports exposed on the machine, valid keys: http, https, apiserver, tunnel")
-	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (tag or repository[:tag]), api and ui (tag only)")
+	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (repository[:tag]; controllers use the repository and keep the build-time tag), api and ui (tag only)")
 	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "local container registry (e.g. localhost:5000) that the kind cluster is configured to pull from via plain HTTP")
 
 	for key := range opt.HostPorts {
@@ -391,13 +391,10 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase string, image
 			doc.Set(yamled.Path{"spec", "ui", "dockerTag"}, tag)
 		}
 		if value, ok := imageOverrides["kubermatic"]; ok {
-			repository, tag, hasRepository := splitImageOverride(value)
-			for _, component := range []string{"seedController", "masterController", "webhook"} {
-				if hasRepository {
+			repository, _, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				for _, component := range []string{"seedController", "masterController", "webhook"} {
 					doc.Set(yamled.Path{"spec", component, "dockerRepository"}, repository)
-				}
-				if tag != "" {
-					doc.Set(yamled.Path{"spec", component, "dockerTag"}, tag)
 				}
 			}
 		}
@@ -604,14 +601,15 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 
 func ensureKubermaticCRDs(chartsDirectory string) error {
 	target := filepath.Join(chartsDirectory, "kubermatic-operator", "crd", "k8c.io")
-	if entries, err := os.ReadDir(target); err == nil && len(entries) > 0 {
-		return nil
-	}
-
 	source := filepath.Join("pkg", "crd", "k8c.io")
+
 	entries, err := os.ReadDir(source)
 	if err != nil {
-		return fmt.Errorf("chart CRD directory %s is empty and no source CRDs found at %s: %w", target, source, err)
+		if _, targetErr := os.ReadDir(target); targetErr == nil {
+			return nil
+		}
+
+		return fmt.Errorf("no CRDs available: chart directory %s is empty and source directory %s is unavailable: %w", target, source, err)
 	}
 
 	if err := os.MkdirAll(target, 0755); err != nil {
