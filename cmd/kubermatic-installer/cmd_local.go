@@ -197,7 +197,7 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 				registryEndpoint = fmt.Sprintf("http://%s:%s", host.String(), port)
 			}
 		}
-		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryURL, registryEndpoint)
+		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryEndpoint, registryEndpoint)
 		if err := os.WriteFile(filepath.Join(registryCertsDir, "hosts.toml"), []byte(hostsToml), 0644); err != nil {
 			logger.Fatalf("failed to write hosts.toml for registry %q: %v", opt.Registry, err)
 		}
