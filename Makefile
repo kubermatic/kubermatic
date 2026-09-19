@@ -156,3 +156,13 @@ check-dependencies:
 .PHONY: shfmt
 shfmt:
 	shfmt -w -sr -i 2 hack
+
+CLUSTER ?= kkp-cluster
+
+.PHONY: dev-use-image
+dev-use-image:
+	./hack/dev/use-image.sh $(TAG) $(CLUSTER)
+
+.PHONY: dev-debug
+dev-debug:
+	./hack/dev/debug.sh $(COMPONENT) $(CLUSTER)
