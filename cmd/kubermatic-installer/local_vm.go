@@ -52,9 +52,11 @@ func limaVMName(clusterName string) string {
 }
 
 // limaVMTemplate renders the lima instance template for a local kind VM.
-// Plain (default) lima networking is used; the in-VM registry, the kind
-// apiserver and the four KKP host ports are forwarded 1:1 between host
-// and guest, so the same port numbers work on both sides.
+// The VM uses the shared lima network so its IP is directly reachable
+// from the host (the printed login URL opens in a browser). The in-VM
+// registry, the kind apiserver and the four KKP host ports are
+// additionally forwarded 1:1 between host and guest, so the same port
+// numbers work on both sides.
 func limaVMTemplate(clusterName string, cpus, memory, disk int, hostPorts map[string]int) string {
 	ports := defaultLocalHostPorts()
 	for key, value := range hostPorts {
@@ -86,6 +88,8 @@ images:
 cpus: %d
 memory: "%dGiB"
 disk: "%dGiB"
+networks:
+- lima: shared
 portForwards:
 %s`, limaVMName(clusterName), limaVMName(clusterName), cpus, memory, disk, forwards)
 }
