@@ -81,6 +81,10 @@ type LocalOptions struct {
 	HostPorts      map[string]int
 	ImageOverrides map[string]string
 	Registry       string
+	VM             bool
+	VMCPUs         int
+	VMMemory       int
+	VMDisk         int
 }
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
@@ -122,29 +126,55 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
 			}
 
-			_, err := exec.LookPath("kind")
-			if err != nil {
-				logger.Fatalf("failed to find 'kind' binary: %v", err)
-			}
-			out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
-			if err != nil {
-				logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
-			}
-			submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
-			if len(submatch) != 2 {
-				logger.Fatalf("failed to parse 'kind' version, requires at least %v: %v", minSupportedKindVersion, string(out))
-			}
-			kindVersion, err := semver.NewSemver(submatch[1])
-			if err != nil {
-				logger.Fatalf("failed to process 'kind' semver %q, requires at least %v: %v", submatch[1], minSupportedKindVersion, string(out))
-			}
-			if kindVersion.LessThan(minSupportedKindVersion) {
-				logger.Fatalf("please update your 'kind' %v, requires at least %v", kindVersion, minSupportedKindVersion)
+			if opt.VM {
+				if _, err := exec.LookPath("limactl"); err != nil {
+					logger.Fatalf("failed to find 'limactl' binary, required by --vm: brew install lima")
+				}
+			} else {
+				_, err := exec.LookPath("kind")
+				if err != nil {
+					logger.Fatalf("failed to find 'kind' binary: %v", err)
+				}
+				out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
+				if err != nil {
+					logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
+				}
+				submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
+				if len(submatch) != 2 {
+					logger.Fatalf("failed to parse 'kind' version, requires at least %v: %v", minSupportedKindVersion, string(out))
+				}
+				kindVersion, err := semver.NewSemver(submatch[1])
+				if err != nil {
+					logger.Fatalf("failed to process 'kind' semver %q, requires at least %v: %v", submatch[1], minSupportedKindVersion, string(out))
+				}
+				if kindVersion.LessThan(minSupportedKindVersion) {
+					logger.Fatalf("please update your 'kind' %v, requires at least %v", kindVersion, minSupportedKindVersion)
+				}
 			}
 
-			_, err = exec.LookPath("helm")
-			if err != nil {
+			if _, err := exec.LookPath("helm"); err != nil {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
+			}
+
+			if opt.VM {
+				forwarded := map[int]string{
+					limaRegistryPort:    "registry",
+					vmKindAPIserverPort: "kind apiserver",
+				}
+				for _, key := range []string{"http", "https", "apiserver", "tunnel"} {
+					port := opt.hostPort(key)
+					if other, ok := forwarded[port]; ok {
+						logger.Fatalf("--host-ports %s=%d collides with the %s port forwarded into the lima VM", key, port, other)
+					}
+					forwarded[port] = key
+				}
+
+				if opt.Registry == "" {
+					opt.Registry = fmt.Sprintf("localhost:%d", limaRegistryPort)
+				}
+				if host, port, err := net.SplitHostPort(opt.Registry); err != nil || port != fmt.Sprintf("%d", limaRegistryPort) {
+					logger.Fatalf("--vm runs the registry inside the VM on port %d, use --registry %s:%d (default)", limaRegistryPort, host, limaRegistryPort)
+				}
 			}
 		},
 		RunE: localKindFunc(logger, &opt),
@@ -155,6 +185,10 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	cmd.PersistentFlags().StringToIntVar(&opt.HostPorts, "host-ports", defaultLocalHostPorts(), "host ports exposed on the machine, valid keys: http, https, apiserver, tunnel")
 	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (repository[:tag]; controllers use the repository and keep the build-time tag), api, ui (tag or repository[:tag]), addons (repository)")
 	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "local container registry (e.g. localhost:5000) that the kind cluster is configured to pull from via plain HTTP")
+	cmd.PersistentFlags().BoolVar(&opt.VM, "vm", false, "run the kind cluster inside a lima VM (requires limactl)")
+	cmd.PersistentFlags().IntVar(&opt.VMCPUs, "vm-cpus", 8, "number of CPUs of the lima VM (requires --vm)")
+	cmd.PersistentFlags().IntVar(&opt.VMMemory, "vm-memory", 16, "memory in GiB of the lima VM (requires --vm)")
+	cmd.PersistentFlags().IntVar(&opt.VMDisk, "vm-disk", 60, "disk size in GiB of the lima VM (requires --vm)")
 
 	for key := range opt.HostPorts {
 		switch key {
