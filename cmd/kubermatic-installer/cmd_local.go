@@ -217,7 +217,7 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	return cmd
 }
 
-func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc) {
+func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc, *limaVM) {
 	appContext := context.Background()
 
 	var vm *limaVM
@@ -352,7 +352,7 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
 		logger.Fatal("Timed out while waiting for Kubernetes client caches to synchronize.")
 	}
-	return mgr.GetClient(), cancel
+	return mgr.GetClient(), cancel, vm
 }
 
 func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, o ctrlruntimeclient.Object) {
@@ -580,8 +580,17 @@ func prepareHelmValues(dir, kkpEndpoint, endpointBase string, imageOverrides map
 	})
 }
 
-func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions) string {
-	kkpEndpoint := getLocalEndpoint(logger, opts)
+func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions, vm *limaVM) string {
+	kkpEndpoint := ""
+	if vm != nil && opts.Endpoint == "" {
+		if ip := net.ParseIP(vm.ip); ip != nil {
+			kkpEndpoint = ipToNip(ip)
+		} else {
+			logger.Fatalf("failed to determine the VM endpoint from IP %q, please use --endpoint flag", vm.ip)
+		}
+	} else {
+		kkpEndpoint = getLocalEndpoint(logger, opts)
+	}
 	endpointBase := kkpEndpoint
 	if httpPort := opts.hostPort("http"); httpPort != 80 {
 		endpointBase = fmt.Sprintf("%s:%d", kkpEndpoint, httpPort)
@@ -656,7 +665,7 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 			logger.Fatal("Failed to find examples directory, please ensure it and the charts directory from the KKP download archive remain together with the kubermatic-installer.")
 		}
 
-		kubeClient, cancel := localKind(logger, exampleDir, opt)
+		kubeClient, cancel, vm := localKind(logger, exampleDir, opt)
 		defer cancel()
 
 		kubeconfig := filepath.Join(exampleDir, "kube-config.yaml")
@@ -668,12 +677,18 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 			installKubeOVN(logger, helmClient, *opt)
 		}
 		installKubevirt(logger, helmClient, *opt)
-		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, *opt)
+		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, *opt, vm)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
 		logger.Infof("  Default login:    %v", kkpDefaultLogin)
 		logger.Infof("  Default password: %v\n", kkpDefaultPassword)
-		logger.Infof("You can tear down the environment by %q", fmt.Sprintf("kind delete cluster -n %s", opt.ClusterName))
+		if vm != nil {
+			logger.Infof("You can use the cluster via: kubectl --kubeconfig %s get nodes", filepath.Join(exampleDir, "kube-config.yaml"))
+			logger.Infof("You can tear down the whole environment by %q", fmt.Sprintf("limactl delete -f %s", vm.instance))
+			logger.Infof("  or only the kind cluster by %q", fmt.Sprintf("limactl shell %s -- kind delete cluster -n %s", vm.instance, opt.ClusterName))
+		} else {
+			logger.Infof("You can tear down the environment by %q", fmt.Sprintf("kind delete cluster -n %s", opt.ClusterName))
+		}
 		return nil
 	})
 }
