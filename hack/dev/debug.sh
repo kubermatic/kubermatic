@@ -38,16 +38,16 @@ CLUSTER="${2:-kkp-cluster}"
 CONTEXT="kind-${CLUSTER}"
 
 case "${COMPONENT}" in
-  master-controller-manager|seed-controller-manager|kubermatic-webhook)
-    ;;
-  user-cluster-controller-manager)
-    echo "unsupported: user-cluster-controller-manager runs per user cluster; debug it via its cluster namespace" >&2
-    exit 1
-    ;;
-  *)
-    echo "unknown component '${COMPONENT}', expected master-controller-manager, seed-controller-manager or kubermatic-webhook" >&2
-    exit 1
-    ;;
+master-controller-manager | seed-controller-manager | kubermatic-webhook)
+  ;;
+user-cluster-controller-manager)
+  echo "unsupported: user-cluster-controller-manager runs per user cluster; debug it via its cluster namespace" >&2
+  exit 1
+  ;;
+*)
+  echo "unknown component '${COMPONENT}', expected master-controller-manager, seed-controller-manager or kubermatic-webhook" >&2
+  exit 1
+  ;;
 esac
 
 DEPLOYMENT="kubermatic-${COMPONENT}"
@@ -65,8 +65,8 @@ trap restore EXIT
 
 # mirror the args the operator gave the in-cluster instance, minus leader election
 ARGS="$(kubectl --context "${CONTEXT}" --namespace "${NAMESPACE}" get deploy "${DEPLOYMENT}" \
-  -o jsonpath='{.spec.template.spec.containers[0].args}' \
-  | tr ' ' '\n' | grep -v -- '--enable-leader-election' | tr '\n' ' ')"
+  -o jsonpath='{.spec.template.spec.containers[0].args}' |
+  tr ' ' '\n' | grep -v -- '--enable-leader-election' | tr '\n' ' ')"
 
 echo "> running ${COMPONENT} locally (Ctrl-C to stop; the Deployment is restored on exit)"
 echo "> go run ./cmd/${COMPONENT} ${ARGS} --enable-leader-election=false"
