@@ -65,6 +65,13 @@ HELM_ARGS=(--kube-context "${CONTEXT}" --namespace kubermatic --reuse-values --w
 
 helm upgrade kubermatic-operator charts/kubermatic-operator "${HELM_ARGS[@]}"
 
+CURRENT_IMAGE="$(kubectl --context "${CONTEXT}" --namespace kubermatic get deploy kubermatic-operator -o jsonpath='{.spec.template.spec.containers[0].image}')"
+TARGET_IMAGE="${REPOSITORY}:${TAG}"
+if [ "${CURRENT_IMAGE}" = "${TARGET_IMAGE}" ]; then
+  echo "> image string unchanged; restarting the operator to pick up the re-pushed tag"
+  kubectl --context "${CONTEXT}" --namespace kubermatic rollout restart deploy/kubermatic-operator
+fi
+
 kubectl --context "${CONTEXT}" --namespace kubermatic rollout status deploy/kubermatic-operator --timeout=5m
 
 echo "> done; controllers roll to ${TAG} as the operator reconciles them"
