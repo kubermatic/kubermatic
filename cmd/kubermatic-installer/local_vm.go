@@ -223,6 +223,12 @@ func limaVMIP(ctx context.Context, logger *logrus.Logger, vm *limaVM) (string, e
 		logger.Warnf("failed to list the lima VM as JSON: %v", err)
 	}
 
+	if out, err := vm.shell(ctx, "sh", "-c", "ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | cut -d' ' -f2").Output(); err == nil {
+		if ip := strings.TrimSpace(string(out)); net.ParseIP(ip) != nil {
+			return ip, nil
+		}
+	}
+
 	if out, err := vm.shell(ctx, "sh", "-c", "hostname -I | cut -d' ' -f1").Output(); err == nil {
 		if ip := strings.TrimSpace(string(out)); net.ParseIP(ip) != nil {
 			return ip, nil
