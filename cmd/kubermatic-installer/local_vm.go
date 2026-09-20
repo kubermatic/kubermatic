@@ -295,3 +295,62 @@ func prepareLimaVM(ctx context.Context, logger *logrus.Logger, opt *LocalOptions
 
 	return vm, nil
 }
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// createKindCluster stages the kind config and the registry certs into the
+// VM and creates the kind cluster inside it. The certs dir host path in the
+// kind config refers to a VM-local path so the kind nodes can mount it.
+func (vm *limaVM) createKindCluster(ctx context.Context, logger *logrus.Logger, opt *LocalOptions, kindConfigPath, certsRoot string) error {
+	remoteCertsRoot := filepath.Join(vmRemoteDir, "containerd-certs.d")
+	remoteKindConfig := filepath.Join(vmRemoteDir, "kind-config.yaml")
+
+	if certsRoot != "" {
+		remoteCertsDir := filepath.Join(remoteCertsRoot, opt.Registry)
+		if out, err := vm.shell(ctx, "sh", "-c", "mkdir -p "+shellQuote(remoteCertsDir)).CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to prepare %q inside the VM: %w\n%s", remoteCertsDir, err, string(out))
+		}
+		if out, err := limaCommand(ctx, "copy", filepath.Join(certsRoot, opt.Registry, "hosts.toml"), vm.instance+":"+filepath.Join(remoteCertsDir, "hosts.toml")).CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to copy the registry hosts.toml into the VM: %w\n%s", err, string(out))
+		}
+	}
+	if out, err := limaCommand(ctx, "copy", kindConfigPath, vm.instance+":"+remoteKindConfig).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to copy the kind config into the VM: %w\n%s", err, string(out))
+	}
+
+	if out, err := vm.shell(ctx, "kind", "get", "clusters").CombinedOutput(); err == nil && strings.Contains(strings.TrimSpace(string(out)), vm.cluster) {
+		logger.Infof("Kind cluster %q already exists inside the VM, skipping creation...", vm.cluster)
+	} else {
+		logger.Infof("Creating kind cluster %q inside the VM (node image pull can take a while)…", vm.cluster)
+		if out, err := vm.shell(ctx, "kind", "create", "cluster", "-n", vm.cluster, "--config", remoteKindConfig).CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to create kind cluster %q inside the VM: %w\n%s", vm.cluster, err, string(out))
+		}
+	}
+
+	return nil
+}
+
+// extractKubeconfig reads the kind kubeconfig from inside the VM, rewrites
+// the apiserver address to the loopback address forwarded by lima and writes
+// it to destPath on the host.
+func (vm *limaVM) extractKubeconfig(ctx context.Context, logger *logrus.Logger, destPath string) error {
+	var out []byte
+	var err error
+	if out, err = vm.shell(ctx, "kind", "get", "kubeconfig", "--name", vm.cluster).Output(); err != nil {
+		return fmt.Errorf("failed to get the kind kubeconfig from inside the VM: %w", err)
+	}
+
+	kubeconfig := rewriteKubeconfigServer(string(out), fmt.Sprintf("https://127.0.0.1:%d", vmKindAPIserverPort))
+	if err := os.WriteFile(destPath, []byte(kubeconfig), 0600); err != nil {
+		return fmt.Errorf("failed to write the kind kubeconfig: %w", err)
+	}
+	logger.Infof("Kind kubeconfig written to %s (apiserver via lima port-forward 127.0.0.1:%d)", destPath, vmKindAPIserverPort)
+
+	return nil
+}
+
+func rewriteKubeconfigServer(kubeconfig, server string) string {
+	return regexp.MustCompile(`(server:) https://[^:\s]+:[0-9]+`).ReplaceAllString(kubeconfig, "${1} "+server)
+}

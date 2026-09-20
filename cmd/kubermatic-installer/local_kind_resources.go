@@ -45,7 +45,7 @@ func (o *LocalOptions) hostPort(name string) int {
 	return defaultLocalHostPorts()[name]
 }
 
-func kindConfigContent(hostPorts map[string]int, registryCertsDir string) string {
+func kindConfigContent(hostPorts map[string]int, registryCertsDir string, apiServerPort int) string {
 	ports := defaultLocalHostPorts()
 	for key, value := range hostPorts {
 		ports[key] = value
@@ -56,9 +56,14 @@ func kindConfigContent(hostPorts map[string]int, registryCertsDir string) string
 		registryMounts = fmt.Sprintf("   extraMounts:\n   - hostPath: %s\n     containerPath: /etc/containerd/certs.d\n     readOnly: true\n", registryCertsDir)
 	}
 
+	networking := ""
+	if apiServerPort > 0 {
+		networking = fmt.Sprintf("networking:\n  apiServerPort: %d\n", apiServerPort)
+	}
+
 	return fmt.Sprintf(`kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
+%snodes:
  - role: control-plane
 %s - role: worker
    extraPortMappings:
@@ -72,7 +77,7 @@ nodes:
      hostPort: %d
    - containerPort: 32394
      hostPort: %d
-%s`, registryMounts, ports["apiserver"], ports["tunnel"], ports["http"], ports["https"], registryMounts)
+%s`, networking, registryMounts, ports["apiserver"], ports["tunnel"], ports["http"], ports["https"], registryMounts)
 }
 
 var kindConfigKubeOVNContent = `

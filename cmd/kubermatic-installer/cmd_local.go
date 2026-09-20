@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -217,6 +218,17 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 }
 
 func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc) {
+	appContext := context.Background()
+
+	var vm *limaVM
+	if opt.VM {
+		startedVM, err := prepareLimaVM(appContext, logger, opt)
+		if err != nil {
+			logger.Fatalf("failed to prepare the lima VM: %v", err)
+		}
+		vm = startedVM
+	}
+
 	registryCertsRoot := ""
 	if opt.Registry != "" {
 		registryCertsRoot = filepath.Join(dir, "containerd-certs.d")
@@ -224,9 +236,10 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 		if err := os.MkdirAll(registryCertsDir, 0755); err != nil {
 			logger.Fatalf("failed to create containerd certs directory for registry %q: %v", opt.Registry, err)
 		}
-		registryURL := "http://" + opt.Registry
-		registryEndpoint := registryURL
-		if host := localInterfaceAddress(); host != nil {
+		registryEndpoint := "http://" + opt.Registry
+		if vm != nil {
+			registryEndpoint = fmt.Sprintf("http://%s", net.JoinHostPort(vm.ip, strconv.Itoa(limaRegistryPort)))
+		} else if host := localInterfaceAddress(); host != nil {
 			if _, port, err := net.SplitHostPort(opt.Registry); err == nil && port != "" {
 				registryEndpoint = fmt.Sprintf("http://%s:%s", host.String(), port)
 			}
@@ -237,8 +250,17 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 		}
 	}
 
+	// inside the VM the kind config must reference VM-local paths and a
+	// deterministic apiserver port that lima forwards to the host
+	kindCertsRoot := registryCertsRoot
+	apiServerPort := 0
+	if vm != nil {
+		kindCertsRoot = filepath.Join(vmRemoteDir, "containerd-certs.d")
+		apiServerPort = vmKindAPIserverPort
+	}
+
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
-	configContent := kindConfigContent(opt.HostPorts, registryCertsRoot)
+	configContent := kindConfigContent(opt.HostPorts, kindCertsRoot, apiServerPort)
 	if opt.KubeOVNEnabled {
 		configContent += kindConfigKubeOVNContent
 		logger.Info("Disabling kindnet to deploy kube-ovn cni plugin")
@@ -247,46 +269,54 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Infof("Creating kind cluster %q…", opt.ClusterName)
+	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 
-	// start the manager in its own goroutine
-	appContext := context.Background()
-	clusterExists := false
-
-	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
-	if err == nil {
-		if strings.Contains(strings.TrimSpace(string(out)), opt.ClusterName) {
-			clusterExists = true
+	if vm != nil {
+		if err := vm.createKindCluster(appContext, logger, opt, kindConfig, registryCertsRoot); err != nil {
+			logger.Fatalf("%v", err)
 		}
-	}
-
-	if clusterExists {
-		logger.Infof("Kind cluster %q already exists, skipping creation...", opt.ClusterName)
+		if err := vm.extractKubeconfig(appContext, logger, kindKubeConfigPath); err != nil {
+			logger.Fatalf("%v", err)
+		}
 	} else {
-		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", opt.ClusterName, "--config", kindConfig).CombinedOutput()
+		logger.Infof("Creating kind cluster %q…", opt.ClusterName)
+
+		clusterExists := false
+
+		out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
+		if err == nil {
+			if strings.Contains(strings.TrimSpace(string(out)), opt.ClusterName) {
+				clusterExists = true
+			}
+		}
+
+		if clusterExists {
+			logger.Infof("Kind cluster %q already exists, skipping creation...", opt.ClusterName)
+		} else {
+			out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", opt.ClusterName, "--config", kindConfig).CombinedOutput()
+			if err != nil {
+				logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+			}
+		}
+
+		if out, err := exec.CommandContext(appContext, "kubectl", "config", "use-context", "kind-"+opt.ClusterName).CombinedOutput(); err != nil {
+			logger.Fatalf("failed to switch kubectl to context kind-%s: %v\n%v", opt.ClusterName, err, string(out))
+		}
+		kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
+		kindKubeConfig, err := os.Create(kindKubeConfigPath)
 		if err != nil {
-			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+			logger.Fatalf("failed to create 'kind' cluster kubeconfig: %v", err)
+		}
+		kubeconfigCmd.Stdout = kindKubeConfig
+		if err = kubeconfigCmd.Run(); err != nil {
+			logger.Fatalf("failed to write 'kind' cluster kubeconfig: %v", err)
+		}
+		if err := kindKubeConfig.Close(); err != nil {
+			logger.Fatalf("failed to close kind kubeconfig: %v", err)
 		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
-
-	if out, err := exec.CommandContext(appContext, "kubectl", "config", "use-context", "kind-"+opt.ClusterName).CombinedOutput(); err != nil {
-		logger.Fatalf("failed to switch kubectl to context kind-%s: %v\n%v", opt.ClusterName, err, string(out))
-	}
-	kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
-	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
-	kindKubeConfig, err := os.Create(kindKubeConfigPath)
-	if err != nil {
-		logger.Fatalf("failed to create 'kind' cluster kubeconfig: %v", err)
-	}
-	kubeconfigCmd.Stdout = kindKubeConfig
-	if err = kubeconfigCmd.Run(); err != nil {
-		logger.Fatalf("failed to write 'kind' cluster kubeconfig: %v", err)
-	}
-	if err := kindKubeConfig.Close(); err != nil {
-		logger.Fatalf("failed to close 'kind' cluster kubeconfig: %v", err)
-	}
 
 	if err := flag.Set("kubeconfig", kindKubeConfigPath); err != nil {
 		logger.Fatalf("failed to close set kubeconfig path: %v", err)

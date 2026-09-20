@@ -42,7 +42,7 @@ nodes:
      hostPort: 443
 `
 
-	if config := kindConfigContent(nil, ""); config != expected {
+	if config := kindConfigContent(nil, "", 0); config != expected {
 		t.Errorf("default kind config does not match the previous constant:\n%s", config)
 	}
 
@@ -52,7 +52,7 @@ nodes:
 }
 
 func TestKindConfigContentOverrides(t *testing.T) {
-	config := kindConfigContent(map[string]int{"http": 8080, "apiserver": 16443}, "/tmp/certs")
+	config := kindConfigContent(map[string]int{"http": 8080, "apiserver": 16443}, "/tmp/certs", 0)
 
 	for _, needle := range []string{"hostPort: 16443", "hostPort: 8088", "hostPort: 8080", "hostPort: 443"} {
 		if !strings.Contains(config, needle) {
@@ -66,6 +66,22 @@ func TestKindConfigContentOverrides(t *testing.T) {
 
 	if err := yaml.Unmarshal([]byte(config), &map[string]interface{}{}); err != nil {
 		t.Errorf("overridden kind config is not valid YAML: %v", err)
+	}
+}
+
+func TestKindConfigContentAPIServerPort(t *testing.T) {
+	config := kindConfigContent(nil, "", 36443)
+
+	if !strings.Contains(config, "apiServerPort: 36443") {
+		t.Errorf("config does not contain the apiserver port:\n%s", config)
+	}
+
+	if strings.Contains(config, "apiServerAddress") {
+		t.Errorf("config should not pin the apiserver address:\n%s", config)
+	}
+
+	if err := yaml.Unmarshal([]byte(config), &map[string]interface{}{}); err != nil {
+		t.Errorf("vm kind config is not valid YAML: %v", err)
 	}
 }
 
