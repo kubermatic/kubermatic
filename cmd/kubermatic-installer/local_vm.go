@@ -341,11 +341,14 @@ func (vm *limaVM) createKindCluster(ctx context.Context, logger *logrus.Logger, 
 		return err
 	}
 
-	if out, err := vm.shell(ctx, "kind", "get", "clusters").CombinedOutput(); err == nil && strings.Contains(strings.TrimSpace(string(out)), vm.cluster) {
+	// limactl shell sessions multiplex over an SSH connection established
+	// before the docker group was granted, so docker access needs sg
+	if out, err := vm.shell(ctx, "sh", "-c", "sg docker -c "+shellQuote("kind get clusters")).CombinedOutput(); err == nil && strings.Contains(strings.TrimSpace(string(out)), vm.cluster) {
 		logger.Infof("Kind cluster %q already exists inside the VM, skipping creation...", vm.cluster)
 	} else {
 		logger.Infof("Creating kind cluster %q inside the VM (node image pull can take a while)…", vm.cluster)
-		if out, err := vm.shell(ctx, "kind", "create", "cluster", "-n", vm.cluster, "--config", remoteKindConfig).CombinedOutput(); err != nil {
+		create := fmt.Sprintf("kind create cluster -n %s --config %s", vm.cluster, remoteKindConfig)
+		if out, err := vm.shell(ctx, "sh", "-c", "sg docker -c "+shellQuote(create)).CombinedOutput(); err != nil {
 			return fmt.Errorf("failed to create kind cluster %q inside the VM: %w\n%s", vm.cluster, err, string(out))
 		}
 	}
@@ -359,7 +362,8 @@ func (vm *limaVM) createKindCluster(ctx context.Context, logger *logrus.Logger, 
 func (vm *limaVM) extractKubeconfig(ctx context.Context, logger *logrus.Logger, destPath string) error {
 	var out []byte
 	var err error
-	if out, err = vm.shell(ctx, "kind", "get", "kubeconfig", "--name", vm.cluster).Output(); err != nil {
+	getKubeconfig := fmt.Sprintf("kind get kubeconfig --name %s", vm.cluster)
+	if out, err = vm.shell(ctx, "sh", "-c", "sg docker -c "+shellQuote(getKubeconfig)).Output(); err != nil {
 		return fmt.Errorf("failed to get the kind kubeconfig from inside the VM: %w", err)
 	}
 

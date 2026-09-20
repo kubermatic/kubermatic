@@ -685,7 +685,7 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 		if vm != nil {
 			logger.Infof("You can use the cluster via: kubectl --kubeconfig %s get nodes", filepath.Join(exampleDir, "kube-config.yaml"))
 			logger.Infof("You can tear down the whole environment by %q", fmt.Sprintf("limactl delete -f %s", vm.instance))
-			logger.Infof("  or only the kind cluster by %q", fmt.Sprintf("limactl shell %s -- kind delete cluster -n %s", vm.instance, opt.ClusterName))
+			logger.Infof("  or only the kind cluster by %q", fmt.Sprintf("limactl shell %s -- sg docker -c %q", vm.instance, "kind delete cluster -n "+opt.ClusterName))
 		} else {
 			logger.Infof("You can tear down the environment by %q", fmt.Sprintf("kind delete cluster -n %s", opt.ClusterName))
 		}
