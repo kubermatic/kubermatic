@@ -218,7 +218,7 @@ func limaVMIP(ctx context.Context, logger *logrus.Logger, vm *limaVM) (string, e
 		if ip := limaIPFromJSON(out); ip != "" {
 			return ip, nil
 		}
-		logger.Info("could not determine the VM IP from `limactl list --json`, falling back to hostname -I")
+		logger.Info("could not determine the VM IP from `limactl list --json`, falling back to the VM's default route")
 	} else {
 		logger.Warnf("failed to list the lima VM as JSON: %v", err)
 	}
