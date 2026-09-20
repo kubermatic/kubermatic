@@ -31,6 +31,7 @@ func TestLimaVMTemplateDefaults(t *testing.T) {
 		`memory: "16GiB"`,
 		`disk: "60GiB"`,
 		"# instance: kkp-kkp-cluster",
+		"noble-server-cloudimg-arm64.img",
 	} {
 		if !strings.Contains(template, needle) {
 			t.Errorf("template does not contain %q:\n%s", needle, template)
