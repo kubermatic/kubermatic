@@ -27,6 +27,9 @@ const (
 	// DefaultEtcdLauncherImage defines the default Docker repository containing the etcd launcher image.
 	DefaultEtcdLauncherImage = "quay.io/kubermatic/etcd-launcher"
 
+	// DefaultUtilImageRepository defines the default Docker repository containing the util image.
+	DefaultUtilImageRepository = "quay.io/kubermatic/util"
+
 	// DefaultDNATControllerImage defines the default Docker repository containing the DNAT controller image.
 	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
 

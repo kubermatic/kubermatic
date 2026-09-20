@@ -562,6 +562,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
+	if err := defaultDockerRepo(&configCopy.Spec.Util.DockerRepository, DefaultUtilImageRepository, "util.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
 		return configCopy, err
 	}

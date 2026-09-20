@@ -188,6 +188,7 @@ func clearRepositoryOverrides(config *kubermaticv1.KubermaticConfiguration) {
 	config.Spec.MasterController.DockerRepository = ""
 	config.Spec.SeedController.DockerRepository = ""
 	config.Spec.Webhook.DockerRepository = ""
+	config.Spec.Util.DockerRepository = ""
 	config.Spec.UserCluster.KubermaticDockerRepository = ""
 	config.Spec.UserCluster.DNATControllerDockerRepository = ""
 	config.Spec.UserCluster.EtcdLauncherDockerRepository = ""

@@ -717,6 +717,10 @@ spec:
       # instead of HTTPS.
       # This is intended for local or air-gapped setups where HTTPS is not available.
       plainHTTP: false
+  # Util configures the shared util toolbox image.
+  util:
+    # DockerRepository is the repository containing the Kubermatic util image.
+    dockerRepository: quay.io/kubermatic/util
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
