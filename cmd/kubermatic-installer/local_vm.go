@@ -19,6 +19,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -305,6 +306,21 @@ func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
+// stageFile transfers a small file into the VM. Content is passed through
+// base64 because `limactl copy` cannot handle paths containing a colon (the
+// registry certs directory is named after the host:port registry address).
+func (vm *limaVM) stageFile(ctx context.Context, localPath, remotePath string) error {
+	data, err := os.ReadFile(localPath)
+	if err != nil {
+		return fmt.Errorf("failed to read %q for staging into the VM: %w", localPath, err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(data)
+	if out, err := vm.shell(ctx, "sh", "-c", fmt.Sprintf("echo %s | base64 -d > %s", encoded, shellQuote(remotePath))).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to stage %q into the VM at %q: %w\n%s", localPath, remotePath, err, string(out))
+	}
+	return nil
+}
+
 // createKindCluster stages the kind config and the registry certs into the
 // VM and creates the kind cluster inside it. The certs dir host path in the
 // kind config refers to a VM-local path so the kind nodes can mount it.
@@ -317,12 +333,12 @@ func (vm *limaVM) createKindCluster(ctx context.Context, logger *logrus.Logger, 
 		if out, err := vm.shell(ctx, "sh", "-c", "mkdir -p "+shellQuote(remoteCertsDir)).CombinedOutput(); err != nil {
 			return fmt.Errorf("failed to prepare %q inside the VM: %w\n%s", remoteCertsDir, err, string(out))
 		}
-		if out, err := limaCommand(ctx, "copy", filepath.Join(certsRoot, opt.Registry, "hosts.toml"), vm.instance+":"+filepath.Join(remoteCertsDir, "hosts.toml")).CombinedOutput(); err != nil {
-			return fmt.Errorf("failed to copy the registry hosts.toml into the VM: %w\n%s", err, string(out))
+		if err := vm.stageFile(ctx, filepath.Join(certsRoot, opt.Registry, "hosts.toml"), filepath.Join(remoteCertsDir, "hosts.toml")); err != nil {
+			return err
 		}
 	}
-	if out, err := limaCommand(ctx, "copy", kindConfigPath, vm.instance+":"+remoteKindConfig).CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to copy the kind config into the VM: %w\n%s", err, string(out))
+	if err := vm.stageFile(ctx, kindConfigPath, remoteKindConfig); err != nil {
+		return err
 	}
 
 	if out, err := vm.shell(ctx, "kind", "get", "clusters").CombinedOutput(); err == nil && strings.Contains(strings.TrimSpace(string(out)), vm.cluster) {
