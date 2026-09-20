@@ -79,3 +79,50 @@ func TestLimaVMTemplateOverrides(t *testing.T) {
 		t.Errorf("template is not valid YAML: %v", err)
 	}
 }
+
+func TestLimaIPFromJSON(t *testing.T) {
+	testcases := []struct {
+		name string
+		data string
+		ip   string
+	}{
+		{
+			name: "array with networks",
+			data: `[{"name":"kkp-p5test","status":"Running","sshAddress":"127.0.0.1","networks":[{"lima":"shared","ip":"192.168.5.15"}]}]`,
+			ip:   "192.168.5.15",
+		},
+		{
+			name: "single object with lowercase fields",
+			data: `{"name":"kkp-p5test","status":"Running","networks":[{"ip":"192.168.5.15"}]}`,
+			ip:   "192.168.5.15",
+		},
+		{
+			name: "json lines",
+			data: "{\"name\":\"kkp-p5test\",\"networks\":[{\"ip\":\"192.168.5.15\"}]}\n",
+			ip:   "192.168.5.15",
+		},
+		{
+			name: "capitalized fields",
+			data: `{"Name":"kkp-p5test","Status":"Running","Networks":[{"IP":"192.168.5.15"}]}`,
+			ip:   "192.168.5.15",
+		},
+		{
+			name: "loopback only",
+			data: `{"name":"kkp-p5test","networks":[{"ip":"127.0.0.1"}]}`,
+			ip:   "",
+		},
+		{
+			name: "no networks",
+			data: `{"name":"kkp-p5test","status":"Running"}`,
+			ip:   "",
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			if ip := limaIPFromJSON([]byte(testcase.data)); ip != testcase.ip {
+				t.Errorf("got IP %q, expected %q", ip, testcase.ip)
+			}
+		})
+	}
+}

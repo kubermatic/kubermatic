@@ -17,14 +17,19 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"k8c.io/kubermatic/sdk/v2/semver"
 )
 
 const (
@@ -131,4 +136,162 @@ func startLimaVM(ctx context.Context, logger *logrus.Logger, opt *LocalOptions) 
 		instance: instance,
 		cluster:  opt.ClusterName,
 	}, nil
+}
+
+func bootstrapLimaVM(ctx context.Context, logger *logrus.Logger, vm *limaVM) error {
+	script := fmt.Sprintf(`set -euo pipefail
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "installing docker"
+  curl -fsSL https://get.docker.com | sudo sh
+fi
+sudo systemctl enable --now docker
+
+if ! id -nG "$USER" | grep -qw docker; then
+  sudo usermod -aG docker "$USER"
+fi
+
+case "$(uname -m)" in
+  aarch64) ARCH=arm64 ;;
+  *)       ARCH=amd64 ;;
+esac
+
+if ! command -v kind >/dev/null 2>&1; then
+  echo "installing kind %[2]s"
+  curl -fsSLo /tmp/kind "https://kind.sigs.k8s.io/dl/%[2]s/kind-linux-${ARCH}"
+  sudo install -m 0755 /tmp/kind /usr/local/bin/kind
+fi
+
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "installing kubectl"
+  KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"
+  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl"
+  sudo install -m 0755 /tmp/kubectl /usr/local/bin/kubectl
+fi
+
+if ! sudo docker ps -a --format '{{.Names}}' | grep -qx '%[1]s-registry'; then
+  echo "starting %[1]s-registry container"
+  sudo docker run -d --name '%[1]s-registry' -p %[3]d:%[3]d registry:2
+elif ! sudo docker ps --format '{{.Names}}' | grep -qx '%[1]s-registry'; then
+  sudo docker start '%[1]s-registry'
+fi
+
+echo "bootstrap complete"
+`, vm.cluster, vmKindVersion, limaRegistryPort)
+
+	logger.Infof("Bootstrapping docker, kind, kubectl and the registry inside the VM (idempotent)…")
+	if out, err := vm.shell(ctx, "bash", "-c", script).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to bootstrap the lima VM: %w\n%s", err, string(out))
+	}
+
+	if out, err := vm.shell(ctx, "kind", "version").CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to determine 'kind' version inside the VM: %w\n%s", err, string(out))
+	} else {
+		submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
+		if len(submatch) != 2 {
+			return fmt.Errorf("failed to parse 'kind' version inside the VM, requires at least %v: %v", minSupportedKindVersion, string(out))
+		}
+		kindVersion, err := semver.NewSemver(submatch[1])
+		if err != nil {
+			return fmt.Errorf("failed to process 'kind' semver %q inside the VM, requires at least %v: %v", submatch[1], minSupportedKindVersion, string(out))
+		}
+		if kindVersion.LessThan(minSupportedKindVersion) {
+			return fmt.Errorf("please update 'kind' %v inside the VM, requires at least %v", kindVersion, minSupportedKindVersion)
+		}
+	}
+
+	return nil
+}
+
+func limaVMIP(ctx context.Context, logger *logrus.Logger, vm *limaVM) (string, error) {
+	if out, err := limaCommand(ctx, "list", "--json", vm.instance).Output(); err == nil {
+		if ip := limaIPFromJSON(out); ip != "" {
+			return ip, nil
+		}
+		logger.Info("could not determine the VM IP from `limactl list --json`, falling back to hostname -I")
+	} else {
+		logger.Warnf("failed to list the lima VM as JSON: %v", err)
+	}
+
+	if out, err := vm.shell(ctx, "sh", "-c", "hostname -I | cut -d' ' -f1").Output(); err == nil {
+		if ip := strings.TrimSpace(string(out)); net.ParseIP(ip) != nil {
+			return ip, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to determine the IP of lima VM %q", vm.instance)
+}
+
+// limaIPFromJSON extracts the guest IP from `limactl list --json` output,
+// tolerating the different shapes (single object, array or JSON lines) and
+// field naming across limactl versions.
+func limaIPFromJSON(data []byte) string {
+	top, err := unmarshalFirstJSONValue(data)
+	if err != nil {
+		return ""
+	}
+	return findLimaIP(top)
+}
+
+func unmarshalFirstJSONValue(data []byte) (any, error) {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	var first any
+	if err := dec.Decode(&first); err != nil {
+		return nil, err
+	}
+	if list, ok := first.([]any); ok {
+		if len(list) == 0 {
+			return nil, fmt.Errorf("empty instance list")
+		}
+		return list[0], nil
+	}
+	return first, nil
+}
+
+func findLimaIP(v any) string {
+	switch t := v.(type) {
+	case map[string]any:
+		for _, key := range []string{"networks", "Networks"} {
+			if networks, ok := t[key].([]any); ok {
+				for _, network := range networks {
+					if ip := findLimaIP(network); ip != "" {
+						return ip
+					}
+				}
+			}
+		}
+		for _, key := range []string{"ip", "IP", "address", "Address", "ipAddress", "IPAddress"} {
+			if value, ok := t[key].(string); ok {
+				if ip := net.ParseIP(value); ip != nil && !ip.IsLoopback() {
+					return value
+				}
+			}
+		}
+	case []any:
+		for _, item := range t {
+			if ip := findLimaIP(item); ip != "" {
+				return ip
+			}
+		}
+	}
+	return ""
+}
+
+func prepareLimaVM(ctx context.Context, logger *logrus.Logger, opt *LocalOptions) (*limaVM, error) {
+	vm, err := startLimaVM(ctx, logger, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := bootstrapLimaVM(ctx, logger, vm); err != nil {
+		return nil, err
+	}
+
+	vm.ip, err = limaVMIP(ctx, logger, vm)
+	if err != nil {
+		return nil, err
+	}
+	logger.Infof("Lima VM %q is ready at %s", vm.instance, vm.ip)
+
+	return vm, nil
 }
