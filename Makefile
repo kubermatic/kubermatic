@@ -46,7 +46,9 @@ build: $(CMD)
 .PHONY: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
 
-$(BUILD_DEST)/%: cmd/% download-gocache
+GO_SOURCES := $(shell find cmd pkg sdk codegen -name '*.go')
+
+$(BUILD_DEST)/%: $(GO_SOURCES) download-gocache
 	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
 .PHONY: install
