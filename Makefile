@@ -163,7 +163,7 @@ CLUSTER ?= kkp-cluster
 
 .PHONY: dev-use-image
 dev-use-image:
-	./hack/dev/use-image.sh $(TAG) $(CLUSTER)
+	./hack/dev/use-image.sh $(TAG) $(CLUSTER) $(REPOSITORY)
 
 .PHONY: dev-debug
 dev-debug:
