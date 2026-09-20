@@ -133,3 +133,34 @@ func TestDefaultConfigurationPreservesExplicitGatewayClassNameWhenExternalGatewa
 		t.Fatalf("expected explicit ClassName to be preserved so validation can reject the conflict, got %q", defaulted.Spec.Ingress.Gateway.ClassName)
 	}
 }
+
+func TestDefaultConfigurationDefaultsUtilImageRepository(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Util.DockerRepository != defaulting.DefaultUtilImageRepository {
+		t.Fatalf("expected util repository to be defaulted to %q, got %q", defaulting.DefaultUtilImageRepository, defaulted.Spec.Util.DockerRepository)
+	}
+
+	overridden := cfg.DeepCopy()
+	overridden.Spec.Util.DockerRepository = "registry.corp/kkp/util"
+
+	defaulted, err = defaulting.DefaultConfiguration(overridden, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Util.DockerRepository != "registry.corp/kkp/util" {
+		t.Fatalf("expected explicit util repository to be preserved, got %q", defaulted.Spec.Util.DockerRepository)
+	}
+}
