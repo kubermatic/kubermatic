@@ -153,7 +153,7 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&opt.KubeOVNEnabled, "kube-ovn-enabled", false, "enables usage of kube-ovn instead of kindnet as the cni plugin")
 	cmd.PersistentFlags().StringVar(&opt.ClusterName, "name", kindClusterName, "name of the kind cluster to create or reuse")
 	cmd.PersistentFlags().StringToIntVar(&opt.HostPorts, "host-ports", defaultLocalHostPorts(), "host ports exposed on the machine, valid keys: http, https, apiserver, tunnel")
-	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (repository[:tag]; controllers use the repository and keep the build-time tag), api and ui (tag only)")
+	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (repository[:tag]; controllers use the repository and keep the build-time tag), api and ui (tag only), addons (repository)")
 	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "local container registry (e.g. localhost:5000) that the kind cluster is configured to pull from via plain HTTP")
 
 	for key := range opt.HostPorts {
@@ -166,11 +166,14 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 
 	for key, value := range opt.ImageOverrides {
 		switch key {
-		case "kubermatic", "api", "ui":
+		case "kubermatic", "api", "ui", "addons":
 		default:
-			logger.Fatalf("invalid --image-override key %q, valid keys are kubermatic, api, ui", key)
+			logger.Fatalf("invalid --image-override key %q, valid keys are kubermatic, api, ui, addons", key)
 		}
-		if key != "kubermatic" && (strings.Contains(value, "/") || strings.Contains(value, ":")) {
+		if key == "addons" && !strings.Contains(value, "/") {
+			logger.Fatalf("--image-override addons accepts a repository, e.g. localhost:5000/addons")
+		}
+		if (key == "api" || key == "ui") && (strings.Contains(value, "/") || strings.Contains(value, ":")) {
 			logger.Fatalf("--image-override %s accepts a plain tag only", key)
 		}
 	}
@@ -389,6 +392,9 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase string, image
 		}
 		if tag, ok := imageOverrides["ui"]; ok {
 			doc.Set(yamled.Path{"spec", "ui", "dockerTag"}, tag)
+		}
+		if value, ok := imageOverrides["addons"]; ok {
+			doc.Set(yamled.Path{"spec", "userCluster", "addons", "dockerRepository"}, value)
 		}
 		if value, ok := imageOverrides["kubermatic"]; ok {
 			repository, _, hasRepository := splitImageOverride(value)
