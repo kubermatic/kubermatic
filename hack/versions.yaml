@@ -152,6 +152,13 @@ products:
           package: k8c.io/kubermatic/v2/pkg/resources
           constant: KubeOneImageTag
 
+  - name: Util
+    source: https://quay.io/repository/kubermatic/util
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources
+          constant: UtilVersion
+
   - name: Metering
     source: https://github.com/kubermatic/kubermatic
     occurrences:
