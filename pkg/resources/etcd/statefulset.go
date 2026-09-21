@@ -96,6 +96,10 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				enableDataCorruptionChecks = true
 			}
 
+			if imageTagVersion.Major() == 3 && imageTagVersion.Minor() >= 7 {
+				enableDataCorruptionChecks = false
+			}
+
 			set.Spec.Replicas = resources.Int32(replicas)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
