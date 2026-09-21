@@ -58,7 +58,11 @@ Support for a new minor release is a cross-repo effort. Land the pieces in this 
 1. `operating-system-manager` and `machine-controller` bump their `k8s.io/v0.X` Go libraries first.
 2. The `kubermatic` PR (this repo) lands.
 3. The dashboard bumps its KKP Go dependency (`make update-kkp` in `modules/api`, both
-   `k8c.io/kubermatic/v2` and `k8c.io/sdk/v2`).
+   `k8c.io/kubermatic/v2` and `k8c.io/sdk/v2`). This rides the standing `Bump KKP
+   dependencies` cycle on main rather than a dedicated PR, and the pinned revision must
+   postdate the support merge for the new version to appear in the UI. Across the last five
+   minors (#13984, #14419, #14940, #15347, #15986) the first bump landed 0 to 16 days after
+   the kubermatic merge, 1 to 2 days in the last three cycles.
 
 On the operating-system-manager side the version bump is not the only change. The default OSPs in
 `deploy/osps/default/` select the crictl version per minor via a `semverCompare "~1.X.0"` branch in
