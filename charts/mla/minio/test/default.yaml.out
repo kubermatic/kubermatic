@@ -509,7 +509,7 @@ spec:
       serviceAccountName: minio-sa
       containers:
         - name: minio
-          image: "quay.io/minio/minio:RELEASE.2023-04-28T18-11-17Z"
+          image: "quay.io/kubermatic-mirror/images/minio/minio:RELEASE.2023-04-28T18-11-17Z"
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -581,7 +581,7 @@ spec:
                   name: minio
       containers:
         - name: minio-make-bucket
-          image: "quay.io/minio/mc:RELEASE.2023-04-12T02-21-51Z"
+          image: "quay.io/kubermatic-mirror/images/minio/mc:RELEASE.2023-04-12T02-21-51Z"
           imagePullPolicy: IfNotPresent
           command: [ "/bin/sh", "/config/initialize" ]
           env:
@@ -596,7 +596,7 @@ spec:
             requests:
               memory: 128Mi
         - name: minio-make-user
-          image: "quay.io/minio/mc:RELEASE.2023-04-12T02-21-51Z"
+          image: "quay.io/kubermatic-mirror/images/minio/mc:RELEASE.2023-04-12T02-21-51Z"
           imagePullPolicy: IfNotPresent
           command: [ "/bin/sh", "/config/add-user" ]
           env:

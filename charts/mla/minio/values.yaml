@@ -29,6 +29,16 @@ minio:
     repository: docker.io/bskim45/helm-kubectl-jq
     tag: 3.1.0
     pullPolicy: IfNotPresent
+  ## MinIO server and `mc` client, mirrored from quay.io/minio.
+  ##
+  image:
+    repository: quay.io/kubermatic-mirror/images/minio/minio
+    tag: RELEASE.2023-04-28T18-11-17Z
+    pullPolicy: IfNotPresent
+  mcImage:
+    repository: quay.io/kubermatic-mirror/images/minio/mc
+    tag: RELEASE.2023-04-12T02-21-51Z
+    pullPolicy: IfNotPresent
   ## minio server mode, i.e. standalone or distributed.
   ## Distributed Minio ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
   ##
