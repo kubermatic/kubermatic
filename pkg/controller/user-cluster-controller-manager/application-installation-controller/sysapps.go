@@ -17,12 +17,16 @@ limitations under the License.
 package applicationinstallationcontroller
 
 import (
+	"strings"
+
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 )
 
 const (
 	ClusterAutoscalerDefaultRepository = "registry.k8s.io/autoscaling/cluster-autoscaler"
+	AgentGatewayControllerImage        = "cr.agentgateway.dev/controller"
+	AgentGatewayProxyImage             = "cr.agentgateway.dev/agentgateway"
 )
 
 // Function signature for generating Helm values block.
@@ -30,6 +34,7 @@ type ValuesGenerator func(app *appskubermaticv1.ApplicationInstallation, overwri
 
 // Map of functions to generate Helm values for system applications.
 var SystemAppsValuesGenerators = map[string]ValuesGenerator{
+	"agentgateway":       generateAgentGatewayValues,
 	"cluster-autoscaler": generateClusterAutoscalerValues,
 }
 
@@ -41,4 +46,34 @@ func generateClusterAutoscalerValues(app *appskubermaticv1.ApplicationInstallati
 	}
 
 	return values
+}
+
+func generateAgentGatewayValues(app *appskubermaticv1.ApplicationInstallation, overwriteRegistry string) map[string]interface{} {
+	controllerRegistry, controllerRepository := splitRegistryRepository(registry.Must(registry.RewriteImage(AgentGatewayControllerImage, overwriteRegistry)))
+	proxyRegistry, proxyRepository := splitRegistryRepository(registry.Must(registry.RewriteImage(AgentGatewayProxyImage, overwriteRegistry)))
+
+	values := map[string]any{
+		"controller": map[string]any{
+			"image": map[string]any{
+				"registry":   controllerRegistry,
+				"repository": controllerRepository,
+			},
+		},
+		"proxy": map[string]any{
+			"image": map[string]any{
+				"registry":   proxyRegistry,
+				"repository": proxyRepository,
+			},
+		},
+	}
+
+	return values
+}
+
+func splitRegistryRepository(image string) (string, string) {
+	imageRegistry, imageRepository, ok := strings.Cut(image, "/")
+	if !ok {
+		return "", image
+	}
+	return imageRegistry, imageRepository
 }
