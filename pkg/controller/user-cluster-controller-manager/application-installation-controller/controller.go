@@ -266,10 +266,21 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 }
 
 func (r *reconciler) applyManagedValues(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
-	if IsSystemApplication(appDefinition) {
+	if IsSystemApplication(appDefinition) || isAdminPushed(appInstallation) {
 		return r.updateValuesBlock(ctx, appDefinition, appInstallation, workloadTolerations)
 	}
 	return nil
+}
+
+// isAdminPushed checks whether the application was installed because a KKP admin marked its
+// ApplicationDefinition as default or enforced, rather than being chosen by the cluster's users.
+// Applications a user installed themselves are left alone: giving them the tolerations would let
+// user workloads onto the node pool those tolerations exist to keep for KKP.
+func isAdminPushed(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
+	annotations := appInstallation.GetAnnotations()
+
+	return annotations[appskubermaticv1.ApplicationEnforcedAnnotation] == "true" ||
+		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] == "true"
 }
 
 // userClusterWorkloadTolerations returns the tolerations configured for the KKP-managed workloads
@@ -617,10 +628,6 @@ func handleAddonCleanup(ctx context.Context, applicationName string, seedCluster
 // updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place.
 func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
 	appName := appDefinition.Name
-	getOverrideValues, exists := SystemAppsValuesGenerators[appName]
-	if !exists {
-		return nil
-	}
 
 	values, err := appInstallation.Spec.GetParsedValues()
 	if err != nil {
@@ -636,8 +643,16 @@ func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appsk
 		values = initialValues
 	}
 
-	// Generate the Helm values
-	overrideValues := getOverrideValues(appInstallation, r.overwriteRegistry, workloadTolerations)
+	var overrideValues map[string]any
+	if getOverrideValues, exists := SystemAppsValuesGenerators[appName]; exists {
+		overrideValues = getOverrideValues(appInstallation, r.overwriteRegistry, workloadTolerations)
+	} else {
+		overrideValues = generateApplicationTolerationValues(appName, workloadTolerations, values)
+	}
+
+	if len(overrideValues) == 0 {
+		return nil
+	}
 
 	if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 		return fmt.Errorf("failed to merge application values: %w", err)
