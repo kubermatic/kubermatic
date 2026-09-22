@@ -1,6 +1,6 @@
 dependencies:
 - name: minio
-  repository: https://charts.min.io/
+  repository: oci://quay.io/kubermatic-mirror/helm-charts
   version: 5.4.0
-digest: sha256:ca3dd8fdfc0b69d495b8b1eb1ec912a73c47cb5e845b6fb757db8d445bda0e5d
+digest: sha256:7ffab91b5b0eb599821ab5660f37db2e2cef59cf9fb70c570aa486531b04b89a
 generated: "2026-07-06T19:37:41.411321+03:00"
