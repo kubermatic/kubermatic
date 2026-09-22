@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"dario.cat/mergo"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
@@ -36,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -121,6 +123,9 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 				return true
 			}
 			if !reflect.DeepEqual(oldCluster.Status.Address, newCluster.Status.Address) {
+				return true
+			}
+			if !reflect.DeepEqual(oldCluster.Spec.ComponentsOverride, newCluster.Spec.ComponentsOverride) {
 				return true
 			}
 			return false
@@ -504,20 +509,71 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	uiSecContext := maps.Clone(podSecurityContext)
 	uiSecContext["enabled"] = true
 
+	valuesUI := map[string]any{
+		"securityContext": uiSecContext,
+		"frontend":        valuesFrontend,
+		"backend":         valuesBackend,
+	}
+
+	// The agent and envoy DaemonSets tolerate every taint already and are left alone.
+	if tolerations := resources.GetUserClusterWorkloadTolerations(cluster.Spec.ComponentsOverride); len(tolerations) > 0 {
+		valuesCertGen["tolerations"] = helmTolerations(nil, tolerations)
+		valuesRelay["tolerations"] = helmTolerations(nil, tolerations)
+		valuesUI["tolerations"] = helmTolerations(nil, tolerations)
+
+		if !operatorToleratesEverything(cluster.Spec.CNIPlugin.Version) {
+			valuesOperator["tolerations"] = helmTolerations(ciliumOperatorDefaultTolerations, tolerations)
+		}
+	}
+
 	values["cni"] = valuesCni
 	values["envoy"] = valuesEnvoy
 	values["operator"] = valuesOperator
 	values["certgen"] = valuesCertGen
 	values["hubble"] = map[string]any{
 		"relay": valuesRelay,
-		"ui": map[string]any{
-			"securityContext": uiSecContext,
-			"frontend":        valuesFrontend,
-			"backend":         valuesBackend,
-		},
+		"ui":    valuesUI,
 	}
 
 	return values
+}
+
+// ciliumOperatorDefaultTolerations are the tolerations of the cilium-operator in the Helm chart since
+// Cilium 1.18. Helm replaces lists instead of merging them, so they have to be repeated whenever
+// tolerations are set for the operator, or it could not be scheduled while a node is bootstrapping.
+var ciliumOperatorDefaultTolerations = []corev1.Toleration{
+	{Key: "node-role.kubernetes.io/control-plane", Operator: corev1.TolerationOpExists},
+	{Key: "node-role.kubernetes.io/master", Operator: corev1.TolerationOpExists},
+	{Key: "node.kubernetes.io/not-ready", Operator: corev1.TolerationOpExists},
+	{Key: "node.cloudprovider.kubernetes.io/uninitialized", Operator: corev1.TolerationOpExists},
+}
+
+// operatorToleratesEverything reports whether the chart of the given Cilium version ships the
+// cilium-operator with a blanket toleration, which was the case up to Cilium 1.17. Setting
+// tolerations for such a version would only narrow down what the operator tolerates.
+func operatorToleratesEverything(ciliumVersion string) bool {
+	version, err := semverlib.NewVersion(ciliumVersion)
+	if err != nil {
+		return false
+	}
+
+	return version.LessThan(semverlib.MustParse("1.18.0"))
+}
+
+func helmTolerations(chartDefaults, configured []corev1.Toleration) []any {
+	tolerations, _ := modifier.AppendTolerations(slices.Clone(chartDefaults), configured)
+
+	result := make([]any, 0, len(tolerations))
+	for i := range tolerations {
+		// Tolerations only consist of strings and an integer and can always be converted.
+		raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&tolerations[i])
+		if err != nil {
+			panic(fmt.Sprintf("failed to convert toleration: %v", err))
+		}
+		result = append(result, raw)
+	}
+
+	return result
 }
 
 func ensureCiliumNodeLocalDNSExcludeLocalAddress(cluster *kubermaticv1.Cluster, values map[string]any) {
