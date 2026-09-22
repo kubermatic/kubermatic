@@ -107,6 +107,8 @@ tests:
     promql_expr_test:
       - expr: node:node_num_cpu:sum
         eval_time: 10m
+      - expr: node:node_cpu_utilisation:avg1m
+        eval_time: 10m
 
     alert_rule_test:
       - eval_time: 45m

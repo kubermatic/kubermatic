@@ -148,7 +148,7 @@ presubmits:
 
   - name: pre-kubermatic-monitoring-e2e
     optional: true
-    run_if_changed: "(charts/monitoring/|hack/ci/run-monitoring-e2e-test.sh)"
+    run_if_changed: "(charts/monitoring/|cmd/kubermatic-installer/|pkg/install/|hack/ci/run-monitoring-e2e-test.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
