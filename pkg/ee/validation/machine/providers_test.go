@@ -29,10 +29,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
 	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
 	"k8c.io/machine-controller/sdk/providerconfig"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -152,5 +154,61 @@ func genFakeKubeVirtSpec(cpu int, ram, disk string) runtime.RawExtension {
 	rawBytes, _ := json.Marshal(kubevirtConfig)
 	return runtime.RawExtension{
 		Raw: rawBytes,
+	}
+}
+
+func TestGetMachineResourceUsageBaremetalReturnsZero(t *testing.T) {
+	testCases := []struct {
+		name        string
+		config      *providerconfig.Config
+		expectedErr bool
+	}{
+		{
+			name: "baremetal machine without resolvable kubeconfig accounts zero usage",
+			config: &providerconfig.Config{
+				CloudProvider:     providerconfig.CloudProviderBaremetal,
+				CloudProviderSpec: genFakeBaremetalSpec(""),
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := &MockCtrlRuntimeClient{}
+
+			// Build a machine whose ProviderSpec decodes to the baremetal config.
+			rawConfig, _ := json.Marshal(tc.config)
+			machine := &clusterv1alpha1.Machine{
+				Spec: clusterv1alpha1.MachineSpec{
+					ProviderSpec: clusterv1alpha1.ProviderSpec{
+						Value: &runtime.RawExtension{Raw: rawConfig},
+					},
+				},
+			}
+
+			details, err := GetMachineResourceUsage(context.Background(), mockClient, "", machine, nil)
+			if err != nil {
+				if !tc.expectedErr {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			}
+
+			if err == nil && tc.expectedErr {
+				t.Fatal("expected error, got none")
+			}
+
+			if err == nil && details == nil {
+				t.Fatal("expected non-nil ResourceDetails")
+			}
+
+			// Baremetal (degraded) should report zero usage and never block creation.
+			if err == nil {
+				zero := resource.Quantity{}
+				if !details.CPU().Equal(zero) || !details.Memory().Equal(zero) || !details.Storage().Equal(zero) {
+					t.Fatalf("expected zero usage, got %+v", details)
+				}
+			}
+		})
 	}
 }
