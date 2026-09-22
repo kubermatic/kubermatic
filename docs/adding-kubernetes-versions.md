@@ -201,7 +201,10 @@ with the appropriate `hack/` scripts.
 - Update `BinaryForClusterVersion` in `pkg/util/kubectl/kubectl.go`. Version skew is exploited
   here: not every minor ships its own kubectl binary, so only add a new case when needed.
 - Add new kubectl binaries to the root `Dockerfile`.
-- Update the `util` image (`hack/images/util/Dockerfile`) to use a newer kubectl version if needed.
+- Update the kubectl version in both CI images in the same PR: `KUBECTL_VERSION` in
+  `cmd/conformance-tester/Dockerfile` and `hack/images/util/Dockerfile`. This is not optional
+  cleanup; #15986 bumped both in its support PR, and deferring it on #16469 drew a maintainer
+  review round asking for exactly these two pins.
 
 ### CI
 
