@@ -563,17 +563,7 @@ func operatorToleratesEverything(ciliumVersion string) bool {
 func helmTolerations(chartDefaults, configured []corev1.Toleration) []any {
 	tolerations, _ := modifier.AppendTolerations(slices.Clone(chartDefaults), configured)
 
-	result := make([]any, 0, len(tolerations))
-	for i := range tolerations {
-		// Tolerations only consist of strings and an integer and can always be converted.
-		raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&tolerations[i])
-		if err != nil {
-			panic(fmt.Sprintf("failed to convert toleration: %v", err))
-		}
-		result = append(result, raw)
-	}
-
-	return result
+	return resources.TolerationsToHelmValues(tolerations)
 }
 
 func ensureCiliumNodeLocalDNSExcludeLocalAddress(cluster *kubermaticv1.Cluster, values map[string]any) {
