@@ -1,0 +1,105 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0”)
+#                   Copyright © 2026 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+# Structural subset of the KubeLB v1.5 Tenant schema, including its defaulting
+# and field ownership semantics. Only the fields exercised by these tests are included.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tenants.kubelb.k8c.io
+spec:
+  group: kubelb.k8c.io
+  names:
+    kind: Tenant
+    listKind: TenantList
+    plural: tenants
+    singular: tenant
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                allowedDomains:
+                  type: array
+                  default: ["**"]
+                  items:
+                    type: string
+                defaultAnnotations:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    additionalProperties:
+                      type: string
+                gatewayAPI:
+                  type: object
+                  properties:
+                    class:
+                      type: string
+                    classMappings:
+                      type: array
+                      maxItems: 32
+                      x-kubernetes-list-type: map
+                      x-kubernetes-list-map-keys: [source]
+                      items:
+                        type: object
+                        required: [source, target]
+                        properties:
+                          source:
+                            type: string
+                            minLength: 1
+                            maxLength: 253
+                          target:
+                            type: string
+                            minLength: 1
+                            maxLength: 253
+                loadBalancer:
+                  type: object
+                  properties:
+                    limit:
+                      type: integer
+                timeouts:
+                  type: object
+                  properties:
+                    connect:
+                      type: string
+                    request:
+                      type: string
+                    idleConnection:
+                      type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string

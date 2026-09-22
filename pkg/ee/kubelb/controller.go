@@ -26,7 +26,6 @@ package kubelbcontroller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -50,17 +49,24 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	kubernetesjson "k8s.io/apimachinery/pkg/util/json"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -117,6 +123,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Cluster{}, builder.WithPredicates(workerlabel.Predicate(workerName), clusterIsAlive)).
+		Watches(&kubermaticv1.Project{}, reconciler.enqueueClustersForProject(), builder.WithPredicates(projectDefaultsChangedPredicate())).
 		Build(reconciler)
 
 	return err
@@ -234,49 +241,72 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	// Create/update required resources in kubeLB management cluster.
-	if err := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster, project.Spec.DefaultTenantSpec); err != nil {
-		return nil, err
+	return r.reconcileKubeLBResources(ctx, kubeLBManagementClient, kubeLBManagementKubeConfig, cluster, datacenter, project.Spec.DefaultTenantSpec)
+}
+
+func (r *reconciler) reconcileKubeLBResources(ctx context.Context, kubeLBManagementClient ctrlruntimeclient.Client, kubeLBManagementKubeConfig []byte, cluster *kubermaticv1.Cluster, datacenter kubermaticv1.Datacenter, defaultTenantSpec *runtime.RawExtension) (*reconcile.Result, error) {
+	// Register new Tenants before waiting for their credentials. For an existing
+	// live Tenant, a defaults error must not block CCM maintenance.
+	existingUsable, tenantErr := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster, defaultTenantSpec)
+	if tenantErr != nil && !existingUsable {
+		return nil, tenantErr
 	}
 
 	// Create/update required resources in user cluster.
 	if err := r.createOrUpdateKubeLBUserClusterResources(ctx, cluster, datacenter); err != nil {
-		return nil, err
+		return nil, kerrors.NewAggregate([]error{tenantErr, err})
 	}
 
 	// Create/update required resources in user cluster namespace in seed.
-	return r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, kubeLBManagementKubeConfig, datacenter)
+	result, err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, kubeLBManagementKubeConfig, datacenter)
+	return result, kerrors.NewAggregate([]error{tenantErr, err})
 }
 
-func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtension) error {
-	tenant := &unstructured.Unstructured{}
-	tenant.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
-	tenant.SetName(cluster.Name)
-	tenant.SetLabels(map[string]string{
-		"kubermatic.k8c.io/cluster-name":          cluster.Name,
-		"kubermatic.k8c.io/cluster-external-name": cluster.Status.Address.ExternalName,
-		"kubermatic.k8c.io/cluster-project-id":    cluster.Labels[kubermaticv1.ProjectIDLabelKey],
-	})
-
-	if defaultTenantSpec != nil && len(defaultTenantSpec.Raw) > 0 {
-		spec := map[string]any{}
-		if err := json.Unmarshal(defaultTenantSpec.Raw, &spec); err != nil {
-			return fmt.Errorf("failed to decode project default tenant spec: %w", err)
-		}
-		tenant.Object["spec"] = spec
-	}
-
+// createOrUpdateKubeLBManagementClusterResources reports whether an existing,
+// nonterminating Tenant permits CCM maintenance when updating its defaults fails.
+func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtension) (bool, error) {
 	existing := &unstructured.Unstructured{}
 	existing.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), existing); err != nil {
+	existing.SetName(cluster.Name)
+	existingUsable := false
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(existing), existing); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get tenant: %w", err)
+			return false, fmt.Errorf("failed to get tenant %q: %w", cluster.Name, err)
 		}
-		if err := client.Create(ctx, tenant); err != nil {
-			return fmt.Errorf("failed to create tenant: %w", err)
+	} else {
+		if !existing.GetDeletionTimestamp().IsZero() {
+			return false, fmt.Errorf("tenant %q is still terminating", cluster.Name)
+		}
+		existingUsable = true
+	}
+
+	tenant, err := kubelbclusterresources.Tenant(cluster, defaultTenantSpec)
+	if err != nil {
+		return existingUsable, err
+	}
+	if existingUsable {
+		// Adopt legacy ownership only for fields explicitly desired now.
+		// Omitted legacy fields may be API defaults and must be preserved.
+		patch, err := kubelbclusterresources.TenantManagedFieldsMigrationPatch(existing, tenant, ControllerName)
+		if err != nil {
+			return true, fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
+		}
+		if patch != nil {
+			if err := client.Patch(ctx, existing, ctrlruntimeclient.RawPatch(types.JSONPatchType, patch)); err != nil {
+				return true, fmt.Errorf("failed to migrate tenant %q field ownership: %w", tenant.GetName(), err)
+			}
 		}
 	}
-	return nil
+
+	// Standard Create/Update reconcilers do not detect field ownership conflicts.
+	// Apply only project defaults and KKP labels. Omitted fields owned only
+	// by this apply manager are removed; other managers' fields remain. A
+	// conflicting administrator edit is reported through the reconciliation
+	// condition instead of being overwritten with ForceOwnership.
+	if err := client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(tenant), ctrlruntimeclient.FieldOwner(ControllerName)); err != nil {
+		return existingUsable, fmt.Errorf("failed to apply project defaults to tenant %q: %w", tenant.GetName(), err)
+	}
+	return existingUsable, nil
 }
 
 func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, dc kubermaticv1.Datacenter) error {
@@ -472,4 +502,72 @@ func normalizeTenantKubeconfig(tenantKubeconfig, managementKubeconfig []byte) ([
 	}
 
 	return clientcmd.Write(*tenantCfg)
+}
+
+func (r *reconciler) enqueueClustersForProject() handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+		project, ok := obj.(*kubermaticv1.Project)
+		if !ok || project == nil || !project.DeletionTimestamp.IsZero() {
+			return nil
+		}
+
+		clusters := &kubermaticv1.ClusterList{}
+		if err := r.List(ctx, clusters, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
+			// Mapping handlers cannot retry failed reads. A later Project or Cluster
+			// event must enqueue the affected clusters again.
+			utilruntime.HandleError(fmt.Errorf("failed to list clusters for KubeLB project %q: %w", project.Name, err))
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, cluster := range clusters.Items {
+			// Mapped requests bypass the predicates on the Cluster watch.
+			if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName ||
+				cluster.Spec.Pause || cluster.Status.NamespaceName == "" ||
+				!cluster.DeletionTimestamp.IsZero() || !cluster.Spec.IsKubeLBEnabled() {
+				continue
+			}
+			requests = append(requests, reconcile.Request{NamespacedName: ctrlruntimeclient.ObjectKeyFromObject(&cluster)})
+		}
+		return requests
+	})
+}
+
+func projectDefaultsChangedPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		// Include initial informer events even when defaults are empty: defaults
+		// may have been removed while this controller was stopped.
+		CreateFunc: func(e event.CreateEvent) bool {
+			project, ok := e.Object.(*kubermaticv1.Project)
+			return ok && project != nil && project.DeletionTimestamp.IsZero()
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldProject, oldOK := e.ObjectOld.(*kubermaticv1.Project)
+			newProject, newOK := e.ObjectNew.(*kubermaticv1.Project)
+			return oldOK && newOK && oldProject != nil && newProject != nil && newProject.DeletionTimestamp.IsZero() &&
+				!projectDefaultTenantSpecsEqual(oldProject.Spec.DefaultTenantSpec, newProject.Spec.DefaultTenantSpec)
+		},
+		DeleteFunc:  func(event.DeleteEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return false },
+	}
+}
+
+func projectDefaultTenantSpecsEqual(oldSpec, newSpec *runtime.RawExtension) bool {
+	if apiequality.Semantic.DeepEqual(oldSpec, newSpec) {
+		return true
+	}
+	if oldSpec == nil || newSpec == nil {
+		return false
+	}
+
+	// Formatting and object-key order do not change the desired Tenant spec.
+	// Preserve integer values when decoding so large numbers compare correctly.
+	var oldValue, newValue any
+	if err := kubernetesjson.Unmarshal(oldSpec.Raw, &oldValue); err != nil {
+		return false
+	}
+	if err := kubernetesjson.Unmarshal(newSpec.Raw, &newValue); err != nil {
+		return false
+	}
+	return apiequality.Semantic.DeepEqual(oldValue, newValue)
 }
