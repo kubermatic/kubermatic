@@ -24,11 +24,20 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
 echodate "Building kubermatic-installer..."
 go build -o _build/kubermatic-installer ./cmd/kubermatic-installer
 
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-monitoring-e2e}"
 source hack/ci/setup-kind-cluster.sh
+
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/monitoring" --namespace monitoring > /dev/null 2>&1 &
 
 VALUES_FILE="$(mktemp)"
 cat << EOF > "$VALUES_FILE"
@@ -47,6 +56,7 @@ metadata:
 spec: {}
 EOF
 
+TEST_NAME="Deploy monitoring stack"
 echodate "Deploying monitoring stack via kubermatic-installer..."
 KUBECONFIG="$KUBECONFIG" _build/kubermatic-installer deploy seed-mla --config "$CONFIG_FILE" --charts-directory charts --helm-values "$VALUES_FILE" --mla-skip-logging --skip-charts grafana,blackbox-exporter,alertmanager,karma,helm-exporter
 
@@ -57,6 +67,7 @@ kubectl rollout status daemonset/node-exporter --namespace "$NS" --timeout=5m
 kubectl rollout status deployment/kube-state-metrics --namespace "$NS" --timeout=5m
 kubectl rollout status statefulset/prometheus --namespace "$NS" --timeout=5m
 
+TEST_NAME="Verify Prometheus label contract"
 echodate "Polling Prometheus label contract..."
 PROM_POD="$(kubectl get pods --namespace "$NS" -l app.kubernetes.io/name=prometheus -o name | head -n 1)"
 

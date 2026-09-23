@@ -146,30 +146,6 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-monitoring-e2e
-    optional: true
-    run_if_changed: "(charts/monitoring/|cmd/kubermatic-installer/|pkg/install/|hack/ci/run-monitoring-e2e-test.sh)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-kind-volume-mounts: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
-          command:
-            - "./hack/ci/run-monitoring-e2e-test.sh"
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 2
-            limits:
-              memory: 4Gi
-              cpu: 2
-
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
     run_if_changed: "cmd/user-ssh-keys-agent/"
