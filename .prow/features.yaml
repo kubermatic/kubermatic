@@ -278,7 +278,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-kyverno-e2e
-    run_if_changed: "(go.mod|go.sum|cmd/(seed-controller-manager|user-cluster-controller-manager|kubermatic-webhook)/|pkg/|sdk/|hack/ci/|.prow/)"
+    run_if_changed: "(.*([kK]yverno|[pP]olicy[-_]?([tT]emplate|[bB]inding|[cC]atalog)|default-policy).*|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
