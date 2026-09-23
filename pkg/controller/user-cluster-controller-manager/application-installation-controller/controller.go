@@ -119,8 +119,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 			&appskubermaticv1.ApplicationDefinition{},
 			handler.TypedEnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(r.userClient)),
 		)).
-		// The Cluster carries the tolerations that KKP adds to the workloads of its own
-		// applications; without this watch a changed configuration would never be rolled out.
+		// Roll out tolerations changes, which live on the Cluster.
 		WatchesRawSource(source.Kind(
 			seedMgr.GetCache(),
 			&kubermaticv1.Cluster{},
@@ -244,8 +243,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		return err
 	}
 
-	// KKP enforces some Helm values on the applications it manages itself: the registry to pull
-	// from, and the tolerations that let the application run on a dedicated node pool.
+	// KKP enforces the image registry and tolerations on the applications it manages.
 	workloadTolerations, err := r.userClusterWorkloadTolerations(ctx)
 	if err != nil {
 		return err
@@ -272,10 +270,9 @@ func (r *reconciler) applyManagedValues(ctx context.Context, appDefinition *apps
 	return nil
 }
 
-// isAdminPushed checks whether the application was installed because a KKP admin marked its
-// ApplicationDefinition as default or enforced, rather than being chosen by the cluster's users.
-// Applications a user installed themselves are left alone: giving them the tolerations would let
-// user workloads onto the node pool those tolerations exist to keep for KKP.
+// isAdminPushed reports whether an admin marked the ApplicationDefinition default or enforced.
+// User-installed applications are left alone: tolerating the taint would let user workloads onto
+// the node pool it reserves.
 func isAdminPushed(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
 	annotations := appInstallation.GetAnnotations()
 
@@ -283,8 +280,7 @@ func isAdminPushed(appInstallation *appskubermaticv1.ApplicationInstallation) bo
 		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] == "true"
 }
 
-// userClusterWorkloadTolerations returns the tolerations configured for the KKP-managed workloads
-// that run on the worker nodes of this user cluster.
+// userClusterWorkloadTolerations returns this cluster's configured workload tolerations.
 func (r *reconciler) userClusterWorkloadTolerations(ctx context.Context) ([]corev1.Toleration, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: r.clusterName}, cluster); err != nil {
@@ -591,8 +587,7 @@ func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(c
 	}
 }
 
-// componentsOverrideChangedPredicate only lets through Cluster updates that changed the component
-// settings, which is where the tolerations for KKP-managed workloads live.
+// componentsOverrideChangedPredicate passes only Cluster updates that changed componentsOverride.
 func componentsOverrideChangedPredicate() predicate.TypedFuncs[*kubermaticv1.Cluster] {
 	return predicate.TypedFuncs[*kubermaticv1.Cluster]{
 		CreateFunc: func(event.TypedCreateEvent[*kubermaticv1.Cluster]) bool { return false },
@@ -603,8 +598,7 @@ func componentsOverrideChangedPredicate() predicate.TypedFuncs[*kubermaticv1.Clu
 	}
 }
 
-// enqueueAllAppInstallations enqueues every ApplicationInstallation of the user cluster, for changes
-// that can affect all of them at once.
+// enqueueAllAppInstallations enqueues every ApplicationInstallation in the user cluster.
 func enqueueAllAppInstallations(userClient ctrlruntimeclient.Client) func(context.Context, *kubermaticv1.Cluster) []reconcile.Request {
 	return func(ctx context.Context, _ *kubermaticv1.Cluster) []reconcile.Request {
 		appList := &appskubermaticv1.ApplicationInstallationList{}

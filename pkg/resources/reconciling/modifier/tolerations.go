@@ -28,10 +28,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// AppliedTolerationsAnnotation records the tolerations the Tolerations modifier added to a workload.
-// Most reconcilers never assign the tolerations of their Pods and so keep whatever the existing
-// object has. Without this record a toleration could never be taken away again once the
-// configuration changes.
+// AppliedTolerationsAnnotation records what the Tolerations modifier added. Most reconcilers never
+// assign Pod tolerations, so without this record an added toleration could never be removed again.
 const AppliedTolerationsAnnotation = "kubermatic.k8c.io/applied-tolerations"
 
 // Tolerations returns a modifier that adds the given tolerations to the Pods of Deployments,
@@ -86,8 +84,8 @@ func Tolerations(extra []corev1.Toleration) reconciling.ObjectModifier {
 	}
 }
 
-// AppendTolerations adds those of the extra tolerations that are not part of the existing ones yet.
-// It returns the combined list and the tolerations that were actually added.
+// AppendTolerations appends the extra tolerations not already present, returning the combined list
+// and those actually added.
 func AppendTolerations(existing, extra []corev1.Toleration) (combined, added []corev1.Toleration) {
 	combined = existing
 

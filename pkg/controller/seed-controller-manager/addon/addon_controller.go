@@ -855,9 +855,8 @@ var podSpecPaths = map[string][]string{
 	"CronJob":     {"spec", "jobTemplate", "spec", "template", "spec"},
 }
 
-// injectTolerations adds the tolerations to the Pods of a workload manifest. Manifests are applied
-// client-side and tolerations have no merge key, so the list in the manifest is the complete list
-// and the tolerations shipped with the addon have to be kept here.
+// injectTolerations appends tolerations to a workload manifest. Apply is client-side and tolerations
+// is an atomic list, so the addon's own entries must be kept here.
 func injectTolerations(obj *metav1unstructured.Unstructured, tolerations []corev1.Toleration) error {
 	if len(tolerations) == 0 {
 		return nil

@@ -246,9 +246,7 @@ type ClusterData struct {
 	KubeVirtInfraVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
 	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
 	DisableCSIDriver bool
-	// WorkloadTolerations are the tolerations configured for all KKP-managed workloads on the worker
-	// nodes. They are added to the workloads of every addon automatically, templates do not need to
-	// render them.
+	// WorkloadTolerations are added to every addon workload automatically; templates need not render them.
 	WorkloadTolerations []corev1.Toleration
 }
 

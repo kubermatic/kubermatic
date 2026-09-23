@@ -538,9 +538,8 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	return values
 }
 
-// ciliumOperatorDefaultTolerations are the tolerations of the cilium-operator in the Helm chart since
-// Cilium 1.18. Helm replaces lists instead of merging them, so they have to be repeated whenever
-// tolerations are set for the operator, or it could not be scheduled while a node is bootstrapping.
+// ciliumOperatorDefaultTolerations mirror the operator's chart defaults since Cilium 1.18. Helm replaces
+// lists, so they are re-emitted with ours. Keep in sync on chart bumps.
 var ciliumOperatorDefaultTolerations = []corev1.Toleration{
 	{Key: "node-role.kubernetes.io/control-plane", Operator: corev1.TolerationOpExists},
 	{Key: "node-role.kubernetes.io/master", Operator: corev1.TolerationOpExists},
@@ -548,9 +547,8 @@ var ciliumOperatorDefaultTolerations = []corev1.Toleration{
 	{Key: "node.cloudprovider.kubernetes.io/uninitialized", Operator: corev1.TolerationOpExists},
 }
 
-// operatorToleratesEverything reports whether the chart of the given Cilium version ships the
-// cilium-operator with a blanket toleration, which was the case up to Cilium 1.17. Setting
-// tolerations for such a version would only narrow down what the operator tolerates.
+// operatorToleratesEverything reports whether the operator chart ships a blanket toleration
+// (Cilium < 1.18); setting tolerations there would only narrow it.
 func operatorToleratesEverything(ciliumVersion string) bool {
 	version, err := semverlib.NewVersion(ciliumVersion)
 	if err != nil {

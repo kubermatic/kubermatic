@@ -3683,10 +3683,9 @@ spec:
                       properties:
                         tolerations:
                           description: |-
-                            Tolerations are added to the Pods of all KKP-managed workloads running on the worker nodes
-                            of the usercluster, for example to allow them onto a tainted, dedicated node pool.
-                            They are appended to the tolerations a workload already has and never replace them.
-                            Workloads that already tolerate every taint are not affected.
+                            Tolerations are appended to the Pods of all KKP-managed workloads running on the worker nodes
+                            of the usercluster, for example to allow them onto a tainted, dedicated node pool. Tolerations
+                            a workload already has are never replaced.
                           items:
                             description: |-
                               The pod this Toleration is attached to tolerates any taint that matches

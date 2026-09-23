@@ -1556,8 +1556,7 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 	return nil
 }
 
-// GetUserClusterWorkloadTolerations returns the tolerations configured for the KKP-managed
-// workloads that run on the worker nodes of the usercluster.
+// GetUserClusterWorkloadTolerations returns the configured workload tolerations, or nil if unset.
 func GetUserClusterWorkloadTolerations(componentSettings kubermaticv1.ComponentSettings) []corev1.Toleration {
 	if componentSettings.UserClusterWorkloads == nil {
 		return nil
@@ -1566,9 +1565,8 @@ func GetUserClusterWorkloadTolerations(componentSettings kubermaticv1.ComponentS
 	return componentSettings.UserClusterWorkloads.Tolerations
 }
 
-// TolerationsToHelmValues converts tolerations into the generic representation Helm values use.
-// Helm replaces lists instead of merging them, so a caller that emits this for a chart whose
-// defaults are not empty has to include those defaults in the given list.
+// TolerationsToHelmValues converts tolerations to Helm values. Helm replaces lists, so callers must
+// include any non-empty chart defaults.
 func TolerationsToHelmValues(tolerations []corev1.Toleration) []any {
 	values := make([]any, 0, len(tolerations))
 
