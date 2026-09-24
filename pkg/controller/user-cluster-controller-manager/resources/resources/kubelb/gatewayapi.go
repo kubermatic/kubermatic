@@ -58,10 +58,12 @@ func managedByLabels() map[string]string {
 // Gateway API CRD writes from everyone except the kubeLB CCM.
 //
 // While Gateway API support is enabled, the CCM owns these CRDs and installs them from the experimental
-// channel. Installing a different set on top of them, in particular the standard channel, breaks the
-// CCM: the Gateway API ships its own safe-upgrades ValidatingAdmissionPolicy alongside those manifests,
-// which then rejects the CCM's experimental writes with "Installing experimental CRDs on top of
-// standard channel CRDs is prohibited by default", leaving the CCM in a crash loop.
+// channel. Installing a different or newer bundle on top of them breaks the CCM: every Gateway API
+// release ships its own safe-upgrades ValidatingAdmissionPolicy alongside its CRDs, which pins the
+// cluster to that release's channel and version. It then rejects the CCM's writes, for example with
+// "Installing experimental CRDs on top of standard channel CRDs is prohibited by default" after a
+// standard channel install, or with a version downgrade error after any newer release, leaving the
+// CCM in a crash loop.
 //
 // This is a guard rail rather than a guarantee, because a cluster-admin of the user cluster can delete
 // the policy. It is reconciled continuously, so it comes back.

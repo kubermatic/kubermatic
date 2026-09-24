@@ -710,12 +710,12 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 // reconcileValidatingAdmissionPolicies keeps the ValidatingAdmissionPolicies in the user cluster in
 // sync. Currently this is only the guard rail that reserves the Gateway API CRDs for the kubeLB CCM,
-// which applies as long as Gateway API support is enabled for this cluster.
+// which applies as long as kubeLB and its Gateway API support are enabled for this cluster.
 //
 // ValidatingAdmissionPolicy is GA since Kubernetes 1.30 and KKP supports 1.33 and higher, so the type
 // is always available in a user cluster.
 func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, data reconcileData) error {
-	gatewayAPIEnabled := data.cluster != nil && data.cluster.Spec.KubeLB != nil && data.cluster.Spec.KubeLB.IsGatewayAPIEnabled()
+	gatewayAPIEnabled := kubeLBGatewayAPIEnabled(data.cluster)
 
 	// Removing the policy when it is switched off matters as much as creating it, otherwise a cluster
 	// would keep rejecting Gateway API CRD writes after an admin opted out.
@@ -842,8 +842,27 @@ func (r *reconciler) gatewayAPIProtectionDisabled(cluster *kubermaticv1.Cluster)
 	return cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection
 }
 
+// kubeLBGatewayAPIEnabled reports whether the kubeLB CCM is running with Gateway API support, and
+// therefore owns the Gateway API CRDs in the user cluster.
+//
+// Both switches are required. Disabling kubeLB leaves enableGatewayAPI in place, but the CCM is torn
+// down, so nobody installs the Gateway API CRDs anymore; keeping the policy then would lock the user
+// out of installing them themselves.
+func kubeLBGatewayAPIEnabled(cluster *kubermaticv1.Cluster) bool {
+	return cluster != nil && cluster.Spec.IsKubeLBEnabled() && cluster.Spec.KubeLB.IsGatewayAPIEnabled()
+}
+
 func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {
 	for _, resource := range kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion() {
+		// Most clusters never had the policy, so look it up in the cache first instead of sending a
+		// DELETE to the user cluster on every reconcile.
+		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return fmt.Errorf("failed to get %T %q: %w", resource, resource.GetName(), err)
+		}
+
 		if err := r.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure %T %q is removed/not present: %w", resource, resource.GetName(), err)
 		}

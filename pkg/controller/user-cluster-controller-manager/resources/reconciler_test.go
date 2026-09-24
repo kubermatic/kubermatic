@@ -20,7 +20,68 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	"k8s.io/utils/ptr"
 )
+
+func TestKubeLBGatewayAPIEnabled(t *testing.T) {
+	clusterWith := func(kubeLBEnabled bool, gatewayAPI *bool) *kubermaticv1.Cluster {
+		return &kubermaticv1.Cluster{
+			Spec: kubermaticv1.ClusterSpec{
+				KubeLB: &kubermaticv1.KubeLB{Enabled: kubeLBEnabled, EnableGatewayAPI: gatewayAPI},
+			},
+		}
+	}
+
+	testCases := []struct {
+		name     string
+		cluster  *kubermaticv1.Cluster
+		expected bool
+	}{
+		{
+			name:     "kubeLB with Gateway API",
+			cluster:  clusterWith(true, ptr.To(true)),
+			expected: true,
+		},
+		{
+			name:     "kubeLB without Gateway API",
+			cluster:  clusterWith(true, ptr.To(false)),
+			expected: false,
+		},
+		{
+			name:     "kubeLB with Gateway API unset",
+			cluster:  clusterWith(true, nil),
+			expected: false,
+		},
+		{
+			// Disabling kubeLB keeps enableGatewayAPI, but tears down the CCM that owns the CRDs, so
+			// the policy has to go as well or the user is locked out of the Gateway API CRDs.
+			name:     "kubeLB disabled with Gateway API still set",
+			cluster:  clusterWith(false, ptr.To(true)),
+			expected: false,
+		},
+		{
+			name:     "a cluster without kubeLB settings",
+			cluster:  &kubermaticv1.Cluster{},
+			expected: false,
+		},
+		{
+			name:     "a nil cluster",
+			cluster:  nil,
+			expected: false,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := kubeLBGatewayAPIEnabled(test.cluster); got != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, got)
+			}
+		})
+	}
+}
 
 func TestGatewayAPIProtectionDisabled(t *testing.T) {
 	clusterWith := func(disabled bool) *kubermaticv1.Cluster {
