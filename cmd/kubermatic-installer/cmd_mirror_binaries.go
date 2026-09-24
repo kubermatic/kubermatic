@@ -206,13 +206,12 @@ func getCriToolsRelease(version semverlib.Version) string {
 		"1.36": "v1.36.0",
 		"1.35": "v1.35.0",
 		"1.34": "v1.34.0",
-		"1.33": "v1.33.0",
 	}
 	if criToolRelease, ok := criToolsReleases[release]; ok {
 		return criToolRelease
 	}
 
-	return "v1.35.0"
+	return "v1.36.0"
 }
 
 // downloadCRITools downloads the CRI tools tarball and its checksum for the given Kubernetes version.

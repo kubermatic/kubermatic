@@ -359,8 +359,6 @@ func TestNetworkProxyVersion(t *testing.T) {
 		clusterVersion string
 		expected       string
 	}{
-		{"1.32.0", "v0.32.1"},
-		{"1.32.5", "v0.32.1"},
 		{"1.33.0", "v0.33.1"},
 		{"1.33.3", "v0.33.1"},
 		{"1.34.0", "v0.34.0"},

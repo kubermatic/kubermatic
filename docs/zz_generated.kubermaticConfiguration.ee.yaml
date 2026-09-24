@@ -785,8 +785,6 @@ spec:
         # Can be a wildcard otherwise, e.g. "1.20.*".
         to: 1.33.*
       - from: 1.33.*
-        to: 1.33.*
-      - from: 1.33.*
         to: 1.34.*
       - from: 1.34.*
         to: 1.34.*
@@ -800,18 +798,6 @@ spec:
         to: 1.36.*
     # Versions lists the available versions.
     versions:
-      - v1.33.0
-      - v1.33.2
-      - v1.33.3
-      - v1.33.5
-      - v1.33.6
-      - v1.33.7
-      - v1.33.8
-      - v1.33.9
-      - v1.33.10
-      - v1.33.11
-      - v1.33.12
-      - v1.33.13
       - v1.34.1
       - v1.34.2
       - v1.34.3
