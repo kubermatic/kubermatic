@@ -332,6 +332,19 @@ type KubermaticUserClusterConfiguration struct {
 	// AdmissionPlugins configures global admission plugin settings for all user clusters.
 	// +optional
 	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
+	// KeyConfiguration selects the algorithm and size of the key material KKP generates
+	// for user clusters. The value is stamped into each Cluster when it is created; it
+	// therefore only affects clusters created after it is changed, never existing ones.
+	// Clusters that already exist are not migrated to a changed value, and cannot be
+	// migrated: rotating the key material of a running cluster is not supported yet.
+	//
+	// This does not cover key material that does not belong to a single user cluster,
+	// such as the KKP webhook CA or the VPA admission certificate; those remain
+	// RSA-2048 regardless of this setting.
+	// The per-cluster OpenVPN and MLA gateway CAs and their certificates are not
+	// covered either; they are always ECDSA P-256.
+	// +optional
+	KeyConfiguration *KeyConfiguration `json:"keyConfiguration,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.

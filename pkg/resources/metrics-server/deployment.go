@@ -73,7 +73,7 @@ type metricsServerData interface {
 
 // TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics
 // server.
-func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
+func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretReconciler(caGetter,
 		ServingCertSecretName,
@@ -81,7 +81,8 @@ func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter) reconci
 		// Can unfortunately not have a trailing dot, as that's only allowed in Kube 1.16+
 		dnsName,
 		[]string{dnsName},
-		nil)
+		nil,
+		getKeyConfig)
 }
 
 // DeploymentReconciler returns the function to create and update the metrics server deployment.
