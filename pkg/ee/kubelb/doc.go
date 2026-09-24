@@ -27,6 +27,9 @@ Package kubelbcontroller contains a controller that is responsible for configuri
 It is responsible for the following:
 1. KubeLB cluster: register the user cluster as a tenant.
 2. Seed cluster: deploy KubeLB CCM to the user cluster namespace.
-3. User cluster: configure RBAC for the KubeLB CCM.
+3. User cluster: configure RBAC and CRDs for the KubeLB CCM.
+
+CCM creates its tenant proxy resources in the user cluster's kube-system namespace.
+The CCM Deployment itself remains in the user cluster's namespace in the Seed.
 */
 package kubelbcontroller

@@ -27,13 +27,14 @@ package resources
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,7 +63,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.4.3"
+	imageTag  = "v1.5.0"
 )
 
 type kubeLBData interface {
@@ -131,21 +132,32 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName))
-			if r := data.KubeLBImageRepository(); r != "" {
-				repository = r
+			repository := data.KubeLBImageRepository()
+			if repository == "" {
+				var err error
+				repository, err = data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to rewrite KubeLB CCM image: %w", err)
+				}
 			}
 			tag := imageTag
 			if t := data.KubeLBImageTag(); t != "" {
 				tag = t
 			}
+			ccmImage := repository + ":" + tag
+			flags, err := getFlags(data, ccmImage)
+			if err != nil {
+				return nil, err
+			}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.KubeLBDeploymentName,
-					Image:   repository + ":" + tag,
+					Image:   ccmImage,
 					Command: []string{"/ccm"},
-					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB, data.Cluster().Spec.KubeLB),
+					Args:    flags,
+					// CCM runs in the Seed, but its tenant proxy resources belong in the user cluster.
+					Env: []corev1.EnvVar{{Name: "NAMESPACE", Value: metav1.NamespaceSystem}},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -198,7 +210,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
@@ -208,14 +220,24 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 	}
 }
 
-func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, clusterKubeLB *kubermaticv1.KubeLB) []string {
+func getFlags(data kubeLBData, ccmImage string) ([]string, error) {
+	proxyImages, err := GetTenantProxyImages(data.RewriteImage)
+	if err != nil {
+		return nil, err
+	}
+
+	kubelb := data.DC().Spec.KubeLB
+	clusterKubeLB := data.Cluster().Spec.KubeLB
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-kubelb-kubeconfig", "/etc/kubernetes/kubelb-kubeconfig/kubeconfig",
 		"-health-probe-bind-address", "0.0.0.0:8085",
 		"-metrics-addr", "0.0.0.0:8082",
 		"-leader-election-namespace", metav1.NamespaceSystem,
-		"-cluster-name", fmt.Sprintf(kubelbresources.TenantNamespacePattern, name),
+		"-cluster-name", fmt.Sprintf(kubelbresources.TenantNamespacePattern, data.Cluster().Name),
+		"-tenant-proxy-xds-writer-image", ccmImage,
+		"-tenant-proxy-envoy-image", proxyImages.Envoy,
+		"-tenant-proxy-shutdown-manager-image", proxyImages.ShutdownManager,
 	}
 
 	if kubelb != nil {
@@ -237,15 +259,15 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 	}
 
 	// Cluster configuration has a higher precedence than datacenter configuration.
+	var extraArgs map[string]string
 	if clusterKubeLB != nil && clusterKubeLB.ExtraArgs != nil {
-		for k, v := range clusterKubeLB.ExtraArgs {
-			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
-		}
-	} else if kubelb != nil && kubelb.ExtraArgs != nil {
-		for k, v := range kubelb.ExtraArgs {
-			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
-		}
+		extraArgs = clusterKubeLB.ExtraArgs
+	} else if kubelb != nil {
+		extraArgs = kubelb.ExtraArgs
+	}
+	for _, key := range slices.Sorted(maps.Keys(extraArgs)) {
+		flags = append(flags, fmt.Sprintf("-%s=%s", key, extraArgs[key]))
 	}
 
-	return flags
+	return flags, nil
 }

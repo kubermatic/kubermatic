@@ -11,10 +11,6 @@
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "loki",
-        "uid": "P982945308D3682D1"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -24,10 +20,6 @@
       "id": 175,
       "targets": [
         {
-          "datasource": {
-            "type": "loki",
-            "uid": "P982945308D3682D1"
-          },
           "refId": "A"
         }
       ],
@@ -37,7 +29,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -100,7 +92,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "avg(rate(container_cpu_usage_seconds_total{namespace=~\"$deployment_namespace\",pod=~\"^$deployment_name|$statefulset_name.*$\"}[5m]))",
           "intervalFactor": 2,
@@ -116,7 +108,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -179,7 +171,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(container_memory_working_set_bytes{namespace=~\"$deployment_namespace\",pod=~\"^$deployment_name|$statefulset_name.*$\"})",
           "intervalFactor": 2,
@@ -195,7 +187,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -258,7 +250,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"^$deployment_name|$statefulset_name.*$\"}[5m])) + sum(rate(container_network_receive_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"^$deployment_name|$statefulset_name.*$.*\"}[5m]))",
           "intervalFactor": 2,
@@ -274,7 +266,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -336,7 +328,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(max(kube_deployment_spec_replicas{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) + sum(max(kube_statefulset_replicas{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
           "intervalFactor": 2,
@@ -353,7 +345,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -415,7 +407,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(min(kube_deployment_status_replicas_available{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) + sum(min(kube_statefulset_status_replicas_current{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
           "intervalFactor": 2,
@@ -431,7 +423,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -515,7 +507,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "exemplar": true,
           "expr": "sum(max(kube_deployment_status_replicas{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) + sum(max(kube_statefulset_status_replicas_current{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
@@ -528,7 +520,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "exemplar": true,
           "expr": "sum(min(kube_deployment_status_replicas_available{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) + sum(min(kube_statefulset_status_replicas_ready{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
@@ -541,7 +533,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "exemplar": true,
           "expr": "sum(max(kube_deployment_status_replicas_unavailable{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) +\n(sum(max(kube_statefulset_replicas{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) - sum(min(kube_statefulset_status_replicas_ready{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)))",
@@ -554,7 +546,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "exemplar": true,
           "expr": "sum(min(kube_deployment_status_replicas_updated{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) + sum(min(kube_statefulset_status_replicas_updated{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
@@ -567,7 +559,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "exemplar": true,
           "expr": "sum(max(kube_deployment_spec_replicas{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)) +\nsum(max(kube_statefulset_replicas{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod))",
@@ -585,10 +577,6 @@
     },
     {
       "collapsed": false,
-      "datasource": {
-        "type": "loki",
-        "uid": "P982945308D3682D1"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -600,10 +588,6 @@
       "repeat": "deployment_name",
       "targets": [
         {
-          "datasource": {
-            "type": "loki",
-            "uid": "P982945308D3682D1"
-          },
           "refId": "A"
         }
       ],
@@ -613,7 +597,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -676,7 +660,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$deployment_namespace\",pod=~\"$deployment_name.*\"}[5m]))",
           "intervalFactor": 2,
@@ -692,7 +676,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -755,7 +739,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(container_memory_working_set_bytes{namespace=~\"$deployment_namespace\",pod=~\"$deployment_name.*\"})",
           "intervalFactor": 2,
@@ -771,7 +755,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -834,7 +818,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"$deployment_name.*\"}[5m])) + sum(rate(container_network_receive_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"$deployment_name.*\"}[5m]))",
           "intervalFactor": 2,
@@ -850,7 +834,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -912,7 +896,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_spec_replicas{deployment=~\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -929,7 +913,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -991,7 +975,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1007,7 +991,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1069,7 +1053,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_status_observed_generation{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1085,7 +1069,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1147,7 +1131,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_metadata_generation{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1163,7 +1147,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1247,7 +1231,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_status_replicas{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1258,7 +1242,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_deployment_status_replicas_available{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1269,7 +1253,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_status_replicas_unavailable{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1280,7 +1264,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_deployment_status_replicas_updated{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1291,7 +1275,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_deployment_spec_replicas{deployment=\"$deployment_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1307,10 +1291,6 @@
     },
     {
       "collapsed": false,
-      "datasource": {
-        "type": "loki",
-        "uid": "P982945308D3682D1"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1322,10 +1302,6 @@
       "repeat": "statefulset_name",
       "targets": [
         {
-          "datasource": {
-            "type": "loki",
-            "uid": "P982945308D3682D1"
-          },
           "refId": "A"
         }
       ],
@@ -1335,7 +1311,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1398,7 +1374,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"$deployment_namespace\",pod=~\"$statefulset_name.*\"}[5m]))",
           "intervalFactor": 2,
@@ -1414,7 +1390,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1477,7 +1453,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(container_memory_working_set_bytes{namespace=~\"$deployment_namespace\",pod=~\"$statefulset_name.*\"})",
           "intervalFactor": 2,
@@ -1493,7 +1469,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1556,7 +1532,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"$statefulset_name.*\"}[5m])) + sum(rate(container_network_receive_bytes_total{namespace=~\"$deployment_namespace\",pod=~\"$statefulset_name.*\"}[5m]))",
           "intervalFactor": 2,
@@ -1572,7 +1548,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1634,7 +1610,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_replicas{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1651,7 +1627,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1713,7 +1689,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_statefulset_status_replicas_ready{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1729,7 +1705,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1791,7 +1767,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_status_observed_generation{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1807,7 +1783,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1869,7 +1845,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_metadata_generation{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1885,7 +1861,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -1969,7 +1945,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_status_replicas_current{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1980,7 +1956,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_statefulset_status_replicas_ready{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -1991,7 +1967,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_replicas{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod) - min(kube_statefulset_status_replicas_ready{statefulset=~\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -2002,7 +1978,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "min(kube_statefulset_status_replicas_updated{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -2013,7 +1989,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "expr": "max(kube_statefulset_replicas{statefulset=\"$statefulset_name\",namespace=~\"$deployment_namespace\"}) without (instance, pod)",
           "intervalFactor": 2,
@@ -2034,6 +2010,19 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "hide": 2,
         "label": "Namespace",
         "name": "deployment_namespace",
@@ -2046,7 +2035,7 @@
         "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "P1809F7CD0C75ACF3"
+          "uid": "$datasource"
         },
         "definition": "label_values(kube_deployment_metadata_generation{namespace=~\"$deployment_namespace\"}, deployment)",
         "hide": 0,
@@ -2071,7 +2060,7 @@
         "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "P1809F7CD0C75ACF3"
+          "uid": "$datasource"
         },
         "definition": "label_values(kube_statefulset_metadata_generation{namespace=~\"$deployment_namespace\"}, statefulset)",
         "hide": 0,

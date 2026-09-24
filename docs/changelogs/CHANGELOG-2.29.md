@@ -11,6 +11,37 @@
 - [v2.29.8](#v2298)
 - [v2.29.9](#v2299)
 - [v2.29.10](#v22910)
+- [v2.29.11](#v22911)
+
+## v2.29.11
+
+**GitHub release: [v2.29.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.11)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.11 ([#16301](https://github.com/kubermatic/kubermatic/pull/16301))
+
+#### Supported Versions
+
+- v1.34.11
+
+### Cloud Providers
+
+#### OpenStack
+
+- Update OpenStack Cinder CSI sidecar images (csi-attacher v4.12.0, csi-snapshotter v8.6.0, livenessprobe v2.19.0, csi-node-driver-registrar v2.17.0) to address known CVEs ([#16333](https://github.com/kubermatic/kubermatic/pull/16333))
+
+### Updates
+
+- Update machine-controller to [v1.64.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.5) ([#16349](https://github.com/kubermatic/kubermatic/pull/16349))
+- Update machine-controller to [v1.64.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.4) ([#16278](https://github.com/kubermatic/kubermatic/pull/16278))
+- Update the utility container image to 2.10.0 across all charts and controllers ([#16341](https://github.com/kubermatic/kubermatic/pull/16341))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Hide cluster backup options in Community Edition, where the feature is not supported ([#8255](https://github.com/kubermatic/dashboard/pull/8255))
 
 ## v2.29.10
 

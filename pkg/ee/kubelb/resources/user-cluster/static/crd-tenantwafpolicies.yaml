@@ -1,0 +1,278 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0”)
+#                   Copyright © 2024 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+
+# Source: https://github.com/kubermatic/kubelb-ee/blob/v1.5.0/charts/kubelb-ccm/crds/kubelb.k8c.io_tenantwafpolicies.yaml
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: tenantwafpolicies.kubelb.k8c.io
+spec:
+  group: kubelb.k8c.io
+  names:
+    kind: TenantWAFPolicy
+    listKind: TenantWAFPolicyList
+    plural: tenantwafpolicies
+    singular: tenantwafpolicy
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.targetRef.name
+      name: Target
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Accepted")].status
+      name: Accepted
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          TenantWAFPolicy defines a tenant-authored Web Application Firewall policy for
+          L7 routes. Unlike the cluster-scoped WAFPolicy, it is namespaced and created
+          by tenants in their own tenant cluster. It applies to HTTPRoute and GRPCRoute
+          resources owned by that tenant only.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              TenantWAFPolicySpec defines the desired state of TenantWAFPolicy.
+              Exactly one targeting method must be used: targetRef, targetSelector, or default.
+              Setting multiple targeting methods is invalid. Policies without any targeting are ignored.
+              Feature stage: Beta
+            properties:
+              default:
+                description: |-
+                  Default when set to true applies this policy to all of this tenant's routes.
+                  It is the tenant-scoped analogue of WAFPolicy.global and never affects other
+                  tenants or global config.
+                  Mutually exclusive with TargetRef and TargetSelector.
+                  Policies without default, targetRef, or targetSelector are ignored.
+                type: boolean
+              directives:
+                description: |-
+                  Directives contains SecLang/ModSecurity directives passed to Coraza.
+                  Reference: https://coraza.io/docs/seclang/directives/
+
+                  Tenant directives are untrusted. They are validated at sync time by
+                  SanitizeTenantDirectives, a default-deny allowlist: dangerous directives
+                  (SecRemoteRules, filesystem Include, log/path directives, exec/setenv, and
+                  ctl actions targeting admin rule IDs) are rejected. The MaxItems/MaxLength
+                  caps below are structural CRD limits; an admin can tighten them further at
+                  runtime via Config.spec.waf.maxDirectivesPerPolicy and maxDirectiveLength.
+                items:
+                  maxLength: 1024
+                  type: string
+                maxItems: 64
+                type: array
+              failureMode:
+                default: Closed
+                description: |-
+                  FailureMode defines behavior when WAF filter creation fails.
+                  - Closed: Block traffic if WAF cannot be applied (default)
+                  - Open: Allow traffic without WAF protection
+                  Tenants may set this, but an admin enforceFailureMode on Config or Tenant
+                  overrides the tenant-chosen value.
+                enum:
+                - Open
+                - Closed
+                type: string
+              targetRef:
+                description: |-
+                  TargetRef identifies a specific route by name and optionally namespace.
+                  For tenant policies, Kind is HTTPRoute or GRPCRoute and
+                  namespace/originNamespace refer to the tenant-cluster namespace.
+                  Mutually exclusive with Default and TargetSelector.
+                properties:
+                  group:
+                    default: gateway.networking.k8s.io
+                    description: Group is the API group of the target resource.
+                    type: string
+                  kind:
+                    description: Kind is the kind of the target resource.
+                    enum:
+                    - HTTPRoute
+                    - GRPCRoute
+                    type: string
+                  name:
+                    description: |-
+                      Name is the name of the target resource which could either be the name of the resource in management cluster
+                      that is generated by KubeLB or the `kubelb.k8c.io/origin-name` that is the original name of the resource in the tenant cluster.
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace is the management cluster namespace (e.g., tenant-primary).
+                      If omitted, matches across all namespaces.
+                    type: string
+                  originNamespace:
+                    description: |-
+                      OriginNamespace is the namespace of the original resource in the tenant
+                      cluster (the `kubelb.k8c.io/origin-ns`). Two routes synced into the same
+                      management namespace from different tenant-cluster namespaces can share an
+                      origin name; set OriginNamespace to disambiguate them. If omitted, origin
+                      namespace is not considered during matching.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              targetSelector:
+                description: |-
+                  TargetSelector selects routes or HTTPRoute/GRPCRoute resources by label.
+                  It checks whether the route has the labels or the labels of the HTTPRoute/GRPCRoute resource. In case of a
+                  conflict, the labels of the Route resource takes precedence.
+                  Mutually exclusive with Default and TargetRef.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+            x-kubernetes-validations:
+            - message: targetRef and targetSelector are mutually exclusive
+              rule: '!(has(self.targetRef) && has(self.targetSelector))'
+            - message: default and targetRef are mutually exclusive
+              rule: '!((has(self.default) && self.default) && has(self.targetRef))'
+            - message: default and targetSelector are mutually exclusive
+              rule: '!((has(self.default) && self.default) && has(self.targetSelector))'
+          status:
+            description: TenantWAFPolicyStatus defines the observed state of TenantWAFPolicy.
+            properties:
+              conditions:
+                description: Conditions describe the current state of the TenantWAFPolicy.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

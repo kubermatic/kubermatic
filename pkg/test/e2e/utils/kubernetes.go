@@ -332,3 +332,25 @@ func WaitForDeploymentReady(ctx context.Context, c ctrlruntimeclient.Client, log
 		return nil, nil
 	})
 }
+
+// WaitForDaemonSetReady waits until every scheduled pod of the DaemonSet is ready.
+func WaitForDaemonSetReady(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns, name string, timeout time.Duration) error {
+	key := ctrlruntimeclient.ObjectKey{Name: name, Namespace: ns}
+
+	// namespace and timeout are already set in the log's context
+	logger := log.With("daemonset", key.String())
+	logger.Info("Waiting for DaemonSet to be ready...")
+
+	return wait.PollImmediateLog(ctx, log, 5*time.Second, timeout, func(ctx context.Context) (error, error) {
+		status, err := resources.HealthyDaemonSet(ctx, c, key, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		if status != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("DaemonSet is %v", status), nil
+		}
+
+		return nil, nil
+	})
+}
