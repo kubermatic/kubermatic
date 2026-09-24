@@ -1,0 +1,138 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-node-exporter.yaml
+  - ../general-kube-state-metrics.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      # node-exporter series carrying exactly the labels the scrape pipeline
+      # attaches: keep filter on app_kubernetes_io_name, pod-label labelmap,
+      # namespace/pod/node_name target labels. No plain app label exists.
+      - series: 'node_cpu_seconds_total{job="node-exporter",app_kubernetes_io_name="node-exporter",mode="idle",cpu="0",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+60x100'
+      - series: 'node_cpu_seconds_total{job="node-exporter",app_kubernetes_io_name="node-exporter",mode="idle",cpu="1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+60x100'
+      # kube-state-metrics series feeding the node_namespace_pod:kube_pod_info:
+      # recording the per-node rules join on
+      - series: 'kube_pod_info{job="kube-state-metrics",node="node1",namespace="monitoring",pod="node-exporter-abc",created_by_kind="DaemonSet",created_by_name="node-exporter",host_ip="10.0.0.1",pod_ip="10.244.0.1",uid="abc-123"}'
+        values: '1+0x100'
+      # filesystem nearly full: 0.1% available, writable
+      - series: 'node_filesystem_avail_bytes{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '1000+0x100'
+      - series: 'node_filesystem_size_bytes{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '1000000+0x100'
+      - series: 'node_filesystem_readonly{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+0x100'
+
+    promql_expr_test:
+      # the full join chain revived: scrape labels -> kube_pod_info -> node label
+      - expr: node:node_num_cpu:sum
+        eval_time: 10m
+        exp_samples:
+          - labels: 'node:node_num_cpu:sum{node="node1"}'
+            value: 2
+      - expr: node:node_cpu_utilisation:avg1m
+        eval_time: 10m
+        exp_samples:
+          - labels: 'node:node_cpu_utilisation:avg1m{node="node1"}'
+            value: 0
+
+    alert_rule_test:
+      # both severity variants fire on a 0.1% full filesystem
+      - eval_time: 45m
+        alertname: NodeFilesystemOutOfSpace
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: node-exporter
+              job: node-exporter
+              resource: '10.0.0.1:9100 /dev/sda1'
+              app_kubernetes_io_name: node-exporter
+              fstype: ext4
+              device: /dev/sda1
+              namespace: monitoring
+              pod: node-exporter-abc
+              node_name: node1
+              instance: '10.0.0.1:9100'
+            exp_annotations:
+              message: 'Filesystem on node node1 having IP 10.0.0.1:9100 has only 0.1% available space left on drive /dev/sda1.'
+              runbook_url: 'https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace'
+          - exp_labels:
+              severity: critical
+              service: node-exporter
+              job: node-exporter
+              resource: '10.0.0.1:9100 /dev/sda1'
+              app_kubernetes_io_name: node-exporter
+              fstype: ext4
+              device: /dev/sda1
+              namespace: monitoring
+              pod: node-exporter-abc
+              node_name: node1
+              instance: '10.0.0.1:9100'
+            exp_annotations:
+              message: 'Filesystem on node node1 having IP 10.0.0.1:9100 has only 0.1% available space left on drive /dev/sda1.'
+              runbook_url: 'https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace'
+
+  # regression guard for the dead app label: series labeled the pre-#16535
+  # way must drive no recordings and no alerts
+  - interval: 1m
+    input_series:
+      - series: 'node_cpu_seconds_total{job="node-exporter",app="node-exporter",mode="idle",cpu="0",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+60x100'
+      - series: 'node_cpu_seconds_total{job="node-exporter",app="node-exporter",mode="idle",cpu="1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+60x100'
+      - series: 'kube_pod_info{job="kube-state-metrics",node="node1",namespace="monitoring",pod="node-exporter-abc",created_by_kind="DaemonSet",created_by_name="node-exporter",host_ip="10.0.0.1",pod_ip="10.244.0.1",uid="abc-123"}'
+        values: '1+0x100'
+      - series: 'node_filesystem_avail_bytes{job="node-exporter",app="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '1000+0x100'
+      - series: 'node_filesystem_size_bytes{job="node-exporter",app="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '1000000+0x100'
+      - series: 'node_filesystem_readonly{job="node-exporter",app="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '0+0x100'
+
+    promql_expr_test:
+      - expr: node:node_num_cpu:sum
+        eval_time: 10m
+      - expr: node:node_cpu_utilisation:avg1m
+        eval_time: 10m
+
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: NodeFilesystemOutOfSpace
+
+  # the kube-state-metrics rule touched by the same selector migration:
+  # overcommitted namespace memory requests fire the warning alert
+  - interval: 1m
+    input_series:
+      - series: 'kube_resourcequota{job="kube-state-metrics",type="hard",resource="requests.memory",namespace="team-a"}'
+        values: '3000000000+0x20'
+      - series: 'node_memory_MemTotal_bytes{job="node-exporter",app_kubernetes_io_name="node-exporter",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
+        values: '1000000000+0x20'
+
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KubeMemOvercommit
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              resource: cluster
+              service: kube-state-metrics
+            exp_annotations:
+              message: 'Cluster has overcommitted memory resource requests for namespaces.'
+              runbook_url: 'https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubememovercommit'
