@@ -244,7 +244,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(.*([oO]pa|[gG]atekeeper|[cC]onstraint|allowed-registry).*|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
