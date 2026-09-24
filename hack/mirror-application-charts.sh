@@ -77,7 +77,7 @@ declare -A CHART_VERSIONS=(
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
-  ["kueue"]="0.13.4"
+  ["kueue"]="0.19.6"
   ["mcp-server-kubernetes"]="2.9.9"
   ["velero"]="1.17.1"
 )
