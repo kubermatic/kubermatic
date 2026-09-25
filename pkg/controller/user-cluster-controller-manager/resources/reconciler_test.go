@@ -54,8 +54,7 @@ func TestKubeLBGatewayAPIEnabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			// Disabling kubeLB keeps enableGatewayAPI, but tears down the CCM that owns the CRDs, so
-			// the policy has to go as well or the user is locked out of the Gateway API CRDs.
+			// The CCM is gone, so the policy must go too.
 			name:     "kubeLB disabled with Gateway API still set",
 			cluster:  clusterWith(false, ptr.To(true)),
 			expected: false,
@@ -94,10 +93,10 @@ func TestGatewayAPIProtectionDisabled(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		// datacenterFlag is what the seed-controller-manager passed on the command line.
-		datacenterFlag bool
-		cluster        *kubermaticv1.Cluster
-		expected       bool
+		// adminFlag is the -kubelb-disable-gateway-api-protection flag.
+		adminFlag bool
+		cluster   *kubermaticv1.Cluster
+		expected  bool
 	}{
 		{
 			name:     "nothing configured keeps the guard",
@@ -105,18 +104,10 @@ func TestGatewayAPIProtectionDisabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:           "the datacenter disables it for every cluster",
-			datacenterFlag: true,
-			cluster:        clusterWith(false),
-			expected:       true,
-		},
-		{
-			// The case that separates these semantics from precedence: a cluster cannot bring the guard
-			// back once an admin has turned it off for the whole datacenter.
-			name:           "a cluster cannot re-enable what the datacenter disabled",
-			datacenterFlag: true,
-			cluster:        clusterWith(false),
-			expected:       true,
+			name:      "an admin disables it for every cluster",
+			adminFlag: true,
+			cluster:   clusterWith(false),
+			expected:  true,
 		},
 		{
 			name:     "a cluster can opt out on its own",
@@ -124,7 +115,14 @@ func TestGatewayAPIProtectionDisabled(t *testing.T) {
 			expected: true,
 		},
 		{
-			// Clusters without any kubeLB block are the common case and must not panic.
+			// Both disabling it must not cancel out.
+			name:      "an admin and the cluster both disable it",
+			adminFlag: true,
+			cluster:   clusterWith(true),
+			expected:  true,
+		},
+		{
+			// The common case; must not panic.
 			name:     "a cluster without kubeLB settings keeps the guard",
 			cluster:  &kubermaticv1.Cluster{},
 			expected: false,
@@ -135,74 +133,10 @@ func TestGatewayAPIProtectionDisabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:           "a nil cluster still honours the datacenter",
-			datacenterFlag: true,
-			cluster:        nil,
-			expected:       true,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			r := &reconciler{kubeLBDisableGatewayAPIProtection: test.datacenterFlag}
-
-			if got := r.gatewayAPIProtectionDisabled(test.cluster); got != test.expected {
-				t.Errorf("expected %v, got %v", test.expected, got)
-			}
-		})
-	}
-}
-
-func TestGatewayAPIProtectionDisabler(t *testing.T) {
-	clusterWith := func(disabled bool) *kubermaticv1.Cluster {
-		return &kubermaticv1.Cluster{
-			Spec: kubermaticv1.ClusterSpec{
-				KubeLB: &kubermaticv1.KubeLB{DisableGatewayAPIProtection: disabled},
-			},
-		}
-	}
-
-	testCases := []struct {
-		name      string
-		adminFlag bool
-		cluster   *kubermaticv1.Cluster
-		expected  kubermaticv1.GatewayAPIProtectionDisabler
-	}{
-		{
-			name:     "nobody disabled it",
-			cluster:  clusterWith(false),
-			expected: "",
-		},
-		{
-			name:      "the admin disabled it",
+			name:      "a nil cluster still honours the admin setting",
 			adminFlag: true,
-			cluster:   clusterWith(false),
-			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
-		},
-		{
-			name:     "the cluster disabled it",
-			cluster:  clusterWith(true),
-			expected: kubermaticv1.GatewayAPIProtectionDisabledByCluster,
-		},
-		{
-			// Both switched it off, but only the admin's decision is binding, so reporting Cluster here
-			// would imply the tenant could put the protection back by flipping their own field.
-			name:      "the admin wins when both disabled it",
-			adminFlag: true,
-			cluster:   clusterWith(true),
-			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
-		},
-		{
-			name:     "a cluster without kubeLB settings blames nobody",
-			cluster:  &kubermaticv1.Cluster{},
-			expected: "",
-		},
-		{
-			name:      "a nil cluster still reports the admin",
-			adminFlag: true,
-			expected:  kubermaticv1.GatewayAPIProtectionDisabledByAdmin,
+			cluster:   nil,
+			expected:  true,
 		},
 	}
 
@@ -212,8 +146,8 @@ func TestGatewayAPIProtectionDisabler(t *testing.T) {
 
 			r := &reconciler{kubeLBDisableGatewayAPIProtection: test.adminFlag}
 
-			if got := r.gatewayAPIProtectionDisabler(test.cluster); got != test.expected {
-				t.Errorf("expected %q, got %q", test.expected, got)
+			if got := r.gatewayAPIProtectionDisabled(test.cluster); got != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, got)
 			}
 		})
 	}

@@ -73,7 +73,7 @@ type userclusterControllerData interface {
 	IsKonnectivityEnabled() bool
 	IsSSHKeysDisabled() bool
 	DC() *kubermaticv1.Datacenter
-	Seed() *kubermaticv1.Seed
+	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
@@ -207,14 +207,9 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-enable-network-policies")
 			}
 
-			// The Gateway API CRDs in a user cluster are owned by the kubeLB CCM, so KKP guards them with a
-			// ValidatingAdmissionPolicy. Admins can turn that guard off for a whole seed or a single
-			// datacenter.
-			//
-			// Only the admin settings travel as a flag; the per-cluster one is read directly off the Cluster
-			// by the user-cluster-controller-manager, which has no Seed or Datacenter object but does have
-			// its own Cluster, and which then needs no restart when that field changes.
-			if adminDisabledGatewayAPIProtection(data.Seed(), data.DC()) {
+			// Only the admin settings are passed as a flag. The per-cluster setting is read off the Cluster,
+			// so changing it needs no restart.
+			if adminDisabledGatewayAPIProtection(data.KubermaticConfiguration(), data.DC()) {
 				args = append(args, "-kubelb-disable-gateway-api-protection=true")
 			}
 
@@ -473,15 +468,10 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	return networkFlags
 }
 
-// adminDisabledGatewayAPIProtection reports whether an admin has switched off the guard rail that
-// reserves the Gateway API CRDs for the kubeLB CCM, either for a whole seed or for one datacenter.
-//
-// Both live on the same embedded KubeLBSettings, and either one disabling it is enough; a narrower
-// level can never re-enable what a wider one turned off. The per-cluster setting is deliberately not
-// considered here - the user-cluster-controller-manager reads that one off the Cluster itself, so
-// changing it does not have to roll the deployment this argument belongs to.
-func adminDisabledGatewayAPIProtection(seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter) bool {
-	if seed != nil && seed.Spec.KubeLB != nil && seed.Spec.KubeLB.DisableGatewayAPIProtection {
+// adminDisabledGatewayAPIProtection reports whether the KubermaticConfiguration or the datacenter
+// disabled the Gateway API CRD protection. Either one disabling it is enough.
+func adminDisabledGatewayAPIProtection(config *kubermaticv1.KubermaticConfiguration, dc *kubermaticv1.Datacenter) bool {
+	if config != nil && config.Spec.UserCluster.KubeLB.DisableGatewayAPIProtection {
 		return true
 	}
 
