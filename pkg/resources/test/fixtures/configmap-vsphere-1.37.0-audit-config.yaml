@@ -1,0 +1,12 @@
+# This file has been generated, DO NOT EDIT.
+
+data:
+  policy.yaml: |
+    # policyPreset: metadata
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    rules:
+      - level: Metadata
+metadata:
+  name: audit-config
+  namespace: cluster-de-test-01

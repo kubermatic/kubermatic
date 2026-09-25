@@ -134,8 +134,10 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 		fallthrough
 	case v136: // 21 May 2026 - 28 June 2027
 		fallthrough
+	case v137: // 26 August 2026 - end date not yet announced by DO
+		fallthrough
 	default:
 		// This should always be the latest version.
-		return "v0.1.67"
+		return "v0.1.70"
 	}
 }
