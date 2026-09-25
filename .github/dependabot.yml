@@ -20,6 +20,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    groups:
+      # the etcd modules only build together at matching versions
+      etcd:
+        patterns:
+          - "go.etcd.io/etcd/*"
     labels:
       - dependencies
       - release-note-none
@@ -33,6 +38,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    groups:
+      # the etcd modules only build together at matching versions
+      etcd:
+        patterns:
+          - "go.etcd.io/etcd/*"
     ignore:
       - dependency-name: "go"
     labels:
@@ -48,6 +58,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    groups:
+      # the etcd modules only build together at matching versions
+      etcd:
+        patterns:
+          - "go.etcd.io/etcd/*"
     ignore:
       - dependency-name: "go"
     labels:
@@ -63,6 +78,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    groups:
+      # the etcd modules only build together at matching versions
+      etcd:
+        patterns:
+          - "go.etcd.io/etcd/*"
     ignore:
       - dependency-name: "go"
     labels:
