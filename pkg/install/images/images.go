@@ -88,6 +88,18 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
+const (
+	OriginReconciler = "reconciler"
+	OriginAddon      = "addon"
+	OriginEtcdBackup = "etcd-backup"
+)
+
+type ImageContribution struct {
+	Origin string
+	Name   string
+	Images []string
+}
+
 type ImageSourceDest struct {
 	Source      string
 	Destination string
@@ -400,7 +412,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	})
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) ([]ImageContribution, error) {
 	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
@@ -416,32 +428,40 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
 
-	images = append(images, creatorImages...)
+	contributions := []ImageContribution{}
+	contributions = append(contributions, ImageContribution{Origin: OriginReconciler, Images: creatorImages})
 
-	addonImages, err := getImagesFromAddons(log, addons, templateData.Cluster())
+	addonContributions, err := getImagesFromAddons(log, addons, templateData.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
 
-	images = append(images, addonImages...)
+	contributions = append(contributions, addonContributions...)
+
 	if backupImages, err := etcdBackupImages(config.Spec.SeedController); err != nil {
 		return nil, fmt.Errorf("failed to get images from etcd backups: %w", err)
 	} else {
-		images = append(images, backupImages...)
+		contributions = append(contributions, ImageContribution{Origin: OriginEtcdBackup, Images: backupImages})
 	}
 
 	if registryPrefix != "" {
-		var filteredImages []string
-		for _, image := range images {
-			if strings.HasPrefix(image, registryPrefix) {
-				filteredImages = append(filteredImages, image)
+		filteredContributions := []ImageContribution{}
+		for _, contribution := range contributions {
+			var filteredImages []string
+			for _, image := range contribution.Images {
+				if strings.HasPrefix(image, registryPrefix) {
+					filteredImages = append(filteredImages, image)
+				}
+			}
+			if len(filteredImages) > 0 {
+				filteredContributions = append(filteredContributions, ImageContribution{Origin: contribution.Origin, Name: contribution.Name, Images: filteredImages})
 			}
 		}
 
-		images = filteredImages
+		contributions = filteredContributions
 	}
 
-	return images, nil
+	return contributions, nil
 }
 
 func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfiguration) ([]string, error) {
