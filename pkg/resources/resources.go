@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1557,6 +1558,32 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 	}
 
 	return nil
+}
+
+// GetUserClusterWorkloadTolerations returns the configured workload tolerations, or nil if unset.
+func GetUserClusterWorkloadTolerations(componentSettings kubermaticv1.ComponentSettings) []corev1.Toleration {
+	if componentSettings.UserClusterWorkloads == nil {
+		return nil
+	}
+
+	return componentSettings.UserClusterWorkloads.Tolerations
+}
+
+// TolerationsToHelmValues converts tolerations to Helm values. Helm replaces lists, so callers must
+// include any non-empty chart defaults.
+func TolerationsToHelmValues(tolerations []corev1.Toleration) []any {
+	values := make([]any, 0, len(tolerations))
+
+	for i := range tolerations {
+		// Tolerations only consist of strings and an integer and can always be converted.
+		raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&tolerations[i])
+		if err != nil {
+			panic(fmt.Sprintf("failed to convert toleration: %v", err))
+		}
+		values = append(values, raw)
+	}
+
+	return values
 }
 
 func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*corev1.ResourceRequirements {
