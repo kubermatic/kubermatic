@@ -78,7 +78,13 @@ func enrich(poller PollFunc, immediate bool, ctx context.Context, log *zap.Sugar
 			return false, terminal
 		}
 
-		lastErr = transient
+		// If the timeout hits while the condition is running, it usually fails
+		// because of the expired context (e.g. "client rate limiter Wait returned
+		// an error"). Keep the previous error in that case, as it explains why
+		// the condition was never met.
+		if lastErr == nil || ctx.Err() == nil {
+			lastErr = transient
+		}
 
 		// If a logger is given, we provide continuous feedback about the condition.
 		if transient != nil && log != nil {
