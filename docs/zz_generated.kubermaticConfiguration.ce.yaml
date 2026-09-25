@@ -632,6 +632,18 @@ spec:
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
+    # KeyConfiguration selects the algorithm and size of the key material KKP generates
+    # for user clusters. The value is stamped into each Cluster when it is created; it
+    # therefore only affects clusters created after it is changed, never existing ones.
+    # Clusters that already exist are not migrated to a changed value, and cannot be
+    # migrated: rotating the key material of a running cluster is not supported yet.
+
+    # This does not cover key material that does not belong to a single user cluster,
+    # such as the KKP webhook CA or the VPA admission certificate; those remain
+    # RSA-2048 regardless of this setting.
+    # The per-cluster OpenVPN and MLA gateway CAs and their certificates are not
+    # covered either; they are always ECDSA P-256.
+    keyConfiguration: null
     # KubeLB configures the kubeLB component.
     kubelb:
       # ImageRepository is used to override the KubeLB image repository.
@@ -773,8 +785,6 @@ spec:
         # Can be a wildcard otherwise, e.g. "1.20.*".
         to: 1.33.*
       - from: 1.33.*
-        to: 1.33.*
-      - from: 1.33.*
         to: 1.34.*
       - from: 1.34.*
         to: 1.34.*
@@ -792,18 +802,6 @@ spec:
         to: 1.37.*
     # Versions lists the available versions.
     versions:
-      - v1.33.0
-      - v1.33.2
-      - v1.33.3
-      - v1.33.5
-      - v1.33.6
-      - v1.33.7
-      - v1.33.8
-      - v1.33.9
-      - v1.33.10
-      - v1.33.11
-      - v1.33.12
-      - v1.33.13
       - v1.34.1
       - v1.34.2
       - v1.34.3
@@ -815,6 +813,7 @@ spec:
       - v1.34.9
       - v1.34.10
       - v1.34.11
+      - v1.34.12
       - v1.35.0
       - v1.35.1
       - v1.35.2
@@ -824,8 +823,10 @@ spec:
       - v1.35.6
       - v1.35.7
       - v1.35.8
+      - v1.35.9
       - v1.36.3
       - v1.36.4
+      - v1.36.5
       - v1.37.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:

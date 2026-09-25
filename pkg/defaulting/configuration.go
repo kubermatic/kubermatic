@@ -232,19 +232,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.33
-			newSemver("v1.33.0"),
-			newSemver("v1.33.2"),
-			newSemver("v1.33.3"),
-			newSemver("v1.33.5"),
-			newSemver("v1.33.6"),
-			newSemver("v1.33.7"),
-			newSemver("v1.33.8"),
-			newSemver("v1.33.9"),
-			newSemver("v1.33.10"),
-			newSemver("v1.33.11"),
-			newSemver("v1.33.12"),
-			newSemver("v1.33.13"),
 			// Kubernetes 1.34
 			newSemver("v1.34.1"),
 			newSemver("v1.34.2"),
@@ -257,6 +244,7 @@ var (
 			newSemver("v1.34.9"),
 			newSemver("v1.34.10"),
 			newSemver("v1.34.11"),
+			newSemver("v1.34.12"),
 			// Kubernetes 1.35
 			newSemver("v1.35.0"),
 			newSemver("v1.35.1"),
@@ -267,9 +255,11 @@ var (
 			newSemver("v1.35.6"),
 			newSemver("v1.35.7"),
 			newSemver("v1.35.8"),
+			newSemver("v1.35.9"),
 			// Kubernetes 1.36
 			newSemver("v1.36.3"),
 			newSemver("v1.36.4"),
+			newSemver("v1.36.5"),
 			// Kubernetes 1.37
 			newSemver("v1.37.0"),
 		},
@@ -281,11 +271,6 @@ var (
 				To:   "1.33.*",
 			},
 			// ======= 1.33 =======
-			{
-				// Allow to change to any patch version
-				From: "1.33.*",
-				To:   "1.33.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.33.*",
