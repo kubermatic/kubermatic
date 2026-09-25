@@ -373,7 +373,7 @@ func collectImages(ctx context.Context, logger *logrus.Logger, versions kubermat
 		return nil, fmt.Errorf("failed to load versions: %w", err)
 	}
 
-	caBundle, err := mirrorImagesCABundle(options)
+	caBundle, err := imageCollectionCABundle(options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA bundle: %w", err)
 	}
@@ -692,14 +692,14 @@ func resolveChartURL(chart *catalogv1alpha1.ChartConfig, version *catalogv1alpha
 	return catalogv1alpha1.DefaultHelmRepository
 }
 
-// mirrorImagesCABundle returns the CA bundle that KKP resources are rendered with while their
+// imageCollectionCABundle returns the CA bundle that KKP resources are rendered with while their
 // images are enumerated. Unless an explicit --ca-bundle is given, this mirrors what the
 // kubermatic-operator chart renders from disk, i.e. the shipped bundle plus every drop-in in
 // static/extra-ca, so that the rendering input matches the installation.
 //
 // This bundle is not used to contact any registry; crane copies images using the host's system
 // trust store.
-func mirrorImagesCABundle(options *MirrorImagesOptions) (*certificates.CABundle, error) {
+func imageCollectionCABundle(options *ImageCollectionOptions) (*certificates.CABundle, error) {
 	if options.CABundle != "" {
 		return certificates.NewCABundleFromFile(options.CABundle)
 	}
