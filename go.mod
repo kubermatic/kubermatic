@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.26.7
+go 1.26.8
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -39,7 +39,7 @@ require (
 	github.com/aws/smithy-go v1.27.6
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.19.7
-	github.com/containerd/containerd/v2 v2.3.5
+	github.com/containerd/containerd/v2 v2.3.6
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.1.1
 	github.com/distribution/reference v0.6.0
