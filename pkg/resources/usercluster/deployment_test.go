@@ -32,11 +32,11 @@ import (
 )
 
 func TestAdminDisabledGatewayAPIProtection(t *testing.T) {
-	seedWith := func(disabled bool) *kubermaticv1.Seed {
-		return &kubermaticv1.Seed{
-			Spec: kubermaticv1.SeedSpec{
-				KubeLB: &kubermaticv1.KubeLBSeedSettings{
-					KubeLBSettings: kubermaticv1.KubeLBSettings{DisableGatewayAPIProtection: disabled},
+	configWith := func(disabled bool) *kubermaticv1.KubermaticConfiguration {
+		return &kubermaticv1.KubermaticConfiguration{
+			Spec: kubermaticv1.KubermaticConfigurationSpec{
+				UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+					KubeLB: kubermaticv1.KubeLBConfiguration{DisableGatewayAPIProtection: disabled},
 				},
 			},
 		}
@@ -44,63 +44,61 @@ func TestAdminDisabledGatewayAPIProtection(t *testing.T) {
 	dcWith := func(disabled bool) *kubermaticv1.Datacenter {
 		return &kubermaticv1.Datacenter{
 			Spec: kubermaticv1.DatacenterSpec{
-				KubeLB: &kubermaticv1.KubeLBDatacenterSettings{
-					KubeLBSettings: kubermaticv1.KubeLBSettings{DisableGatewayAPIProtection: disabled},
-				},
+				KubeLB: &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: disabled},
 			},
 		}
 	}
 
 	testCases := []struct {
 		name     string
-		seed     *kubermaticv1.Seed
+		config   *kubermaticv1.KubermaticConfiguration
 		dc       *kubermaticv1.Datacenter
 		expected bool
 	}{
 		{
 			name:     "nothing configured keeps the guard",
-			seed:     seedWith(false),
+			config:   configWith(false),
 			dc:       dcWith(false),
 			expected: false,
 		},
 		{
-			name:     "the seed disables it for every datacenter",
-			seed:     seedWith(true),
+			name:     "the KubermaticConfiguration disables it for every datacenter",
+			config:   configWith(true),
 			dc:       dcWith(false),
 			expected: true,
 		},
 		{
 			name:     "a single datacenter disables it",
-			seed:     seedWith(false),
+			config:   configWith(false),
 			dc:       dcWith(true),
 			expected: true,
 		},
 		{
 			// Neither level can re-enable what the other turned off.
 			name:     "both disabling it is still disabled",
-			seed:     seedWith(true),
+			config:   configWith(true),
 			dc:       dcWith(true),
 			expected: true,
 		},
 		{
-			// Seeds and datacenters without any kubeLB block are the common case.
-			name:     "missing kubeLB blocks keep the guard",
-			seed:     &kubermaticv1.Seed{},
+			// The common case.
+			name:     "missing kubeLB settings keep the guard",
+			config:   &kubermaticv1.KubermaticConfiguration{},
 			dc:       &kubermaticv1.Datacenter{},
 			expected: false,
 		},
 		{
-			name:     "nil seed and datacenter keep the guard",
+			name:     "nil configuration and datacenter keep the guard",
 			expected: false,
 		},
 		{
-			name:     "a nil seed does not hide the datacenter setting",
+			name:     "a nil configuration does not hide the datacenter setting",
 			dc:       dcWith(true),
 			expected: true,
 		},
 		{
-			name:     "a nil datacenter does not hide the seed setting",
-			seed:     seedWith(true),
+			name:     "a nil datacenter does not hide the configuration setting",
+			config:   configWith(true),
 			expected: true,
 		},
 	}
@@ -109,7 +107,7 @@ func TestAdminDisabledGatewayAPIProtection(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := adminDisabledGatewayAPIProtection(test.seed, test.dc); got != test.expected {
+			if got := adminDisabledGatewayAPIProtection(test.config, test.dc); got != test.expected {
 				t.Errorf("expected %v, got %v", test.expected, got)
 			}
 		})

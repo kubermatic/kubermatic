@@ -7513,6 +7513,11 @@ spec:
                     kubelb:
                       description: KubeLB configures the kubeLB component.
                       properties:
+                        disableGatewayAPIProtection:
+                          description: |-
+                            DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
+                            CRDs for the kubeLB CCM. Datacenters and clusters cannot re-enable it.
+                          type: boolean
                         imageRepository:
                           description: |-
                             ImageRepository is used to override the KubeLB image repository.

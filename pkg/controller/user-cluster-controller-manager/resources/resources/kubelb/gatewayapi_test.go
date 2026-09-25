@@ -17,6 +17,7 @@ limitations under the License.
 package kubelb
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -36,13 +37,12 @@ func TestGatewayAPIValidatingAdmissionPolicyReconciler(t *testing.T) {
 		t.Fatalf("failed to reconcile policy: %v", err)
 	}
 
-	// A cluster must not silently lose the guard rail if the policy cannot be evaluated.
+	// Fail closed if the policy cannot be evaluated.
 	if policy.Spec.FailurePolicy == nil || *policy.Spec.FailurePolicy != admissionregistrationv1.Fail {
 		t.Error("expected failurePolicy Fail")
 	}
 
-	// The policy has to reject writes rather than allow them, so the only validation must be a
-	// constant denial.
+	// The only validation must be a constant denial.
 	if len(policy.Spec.Validations) != 1 {
 		t.Fatalf("expected exactly 1 validation, got %d", len(policy.Spec.Validations))
 	}
@@ -50,13 +50,12 @@ func TestGatewayAPIValidatingAdmissionPolicyReconciler(t *testing.T) {
 		t.Errorf("expected validation expression %q, got %q", "false", expr)
 	}
 
-	// Matching anything other than these CRD operations would either miss the case we care about or
-	// interfere with unrelated requests.
+	// Match exactly CRD CREATE, UPDATE and DELETE.
 	if len(policy.Spec.MatchConstraints.ResourceRules) != 1 {
 		t.Fatalf("expected exactly 1 resource rule, got %d", len(policy.Spec.MatchConstraints.ResourceRules))
 	}
 	rule := policy.Spec.MatchConstraints.ResourceRules[0]
-	if got, want := rule.Resources, []string{"customresourcedefinitions"}; !equalStrings(got, want) {
+	if got, want := rule.Resources, []string{"customresourcedefinitions"}; !slices.Equal(got, want) {
 		t.Errorf("expected resources %v, got %v", want, got)
 	}
 	wantOps := []admissionregistrationv1.OperationType{
@@ -73,8 +72,7 @@ func TestGatewayAPIValidatingAdmissionPolicyReconciler(t *testing.T) {
 		}
 	}
 
-	// Both match conditions are load bearing: without the group check the policy would block every
-	// CRD in the cluster, and without the username check it would block the kubeLB CCM itself.
+	// Without the group check every CRD is blocked; without the username check the CCM is.
 	conditions := map[string]string{}
 	for _, condition := range policy.Spec.MatchConditions {
 		conditions[condition.Name] = condition.Expression
@@ -84,9 +82,7 @@ func TestGatewayAPIValidatingAdmissionPolicyReconciler(t *testing.T) {
 	if !ok {
 		t.Fatal("expected a gateway-api-crds-only match condition")
 	}
-	// The policy also matches DELETE, where the request carries no object. Reading object.spec.group
-	// unconditionally would make the expression fail on every DELETE, and since failurePolicy is Fail,
-	// that would reject deleting any CRD in the cluster.
+	// DELETE has no object; reading it directly would block every CRD delete.
 	if !strings.Contains(groupExpr, "object == null ? oldObject : object") {
 		t.Errorf("expected group match condition to fall back to oldObject for DELETE, got %q", groupExpr)
 	}
@@ -119,7 +115,7 @@ func TestGatewayAPIValidatingAdmissionPolicyBindingReconciler(t *testing.T) {
 		t.Fatalf("failed to reconcile binding: %v", err)
 	}
 
-	// A binding pointing at another policy, or one that only audits, would leave the CRDs unguarded.
+	// Must enforce our policy in Deny mode.
 	if binding.Spec.PolicyName != GatewayAPIAdmissionPolicyName {
 		t.Errorf("expected binding to reference policy %q, got %q", GatewayAPIAdmissionPolicyName, binding.Spec.PolicyName)
 	}
@@ -134,7 +130,7 @@ func TestGatewayAPIAdmissionPolicyResourcesForDeletion(t *testing.T) {
 		t.Fatalf("expected 2 objects to delete, got %d", len(objects))
 	}
 
-	// The binding has to go first, otherwise the policy would briefly stay in effect without it.
+	// Binding first, so no binding is left pointing at a deleted policy.
 	if _, ok := objects[0].(*admissionregistrationv1.ValidatingAdmissionPolicyBinding); !ok {
 		t.Errorf("expected the binding to be deleted first, got %T", objects[0])
 	}
@@ -147,16 +143,4 @@ func TestGatewayAPIAdmissionPolicyResourcesForDeletion(t *testing.T) {
 			t.Errorf("expected name %q, got %q", GatewayAPIAdmissionPolicyName, object.GetName())
 		}
 	}
-}
-
-func equalStrings(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

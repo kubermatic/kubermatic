@@ -708,25 +708,18 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	return nil
 }
 
-// reconcileValidatingAdmissionPolicies keeps the ValidatingAdmissionPolicies in the user cluster in
-// sync. Currently this is only the guard rail that reserves the Gateway API CRDs for the kubeLB CCM,
-// which applies as long as kubeLB and its Gateway API support are enabled for this cluster.
-//
-// ValidatingAdmissionPolicy is GA since Kubernetes 1.30 and KKP supports 1.33 and higher, so the type
-// is always available in a user cluster.
+// reconcileValidatingAdmissionPolicies manages the policy that reserves the Gateway API CRDs for the
+// kubeLB CCM while kubeLB and its Gateway API support are enabled.
 func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, data reconcileData) error {
 	gatewayAPIEnabled := kubeLBGatewayAPIEnabled(data.cluster)
 
-	// Removing the policy when it is switched off matters as much as creating it, otherwise a cluster
-	// would keep rejecting Gateway API CRD writes after an admin opted out.
+	// Remove the policy when it is not needed, or Gateway API CRD writes stay blocked.
 	if !gatewayAPIEnabled {
 		if err := r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx); err != nil {
 			return err
 		}
 
-		// Nothing to report: without Gateway API there is nothing to protect, and saying "unprotected"
-		// on a cluster that does not use kubeLB reads as a problem rather than as a non-subject. This
-		// runs for every cluster, so most of them end up here.
+		// Nothing to protect, so report nothing rather than "unprotected".
 		return r.clearGatewayAPIProtectedStatus(ctx)
 	}
 
@@ -735,7 +728,7 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 			return err
 		}
 
-		return r.setGatewayAPIProtectedStatus(ctx, false, r.gatewayAPIProtectionDisabler(data.cluster))
+		return r.setGatewayAPIProtectedStatus(ctx, false)
 	}
 
 	policyCreators := []kkpreconciling.NamedValidatingAdmissionPolicyReconcilerFactory{
@@ -745,8 +738,7 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicies: %w", err)
 	}
 
-	// The binding is reconciled after the policy so that it never references a policy that does not
-	// exist yet.
+	// Reconcile the binding after the policy so it never references a missing policy.
 	bindingCreators := []kkpreconciling.NamedValidatingAdmissionPolicyBindingReconcilerFactory{
 		kubelb.GatewayAPIValidatingAdmissionPolicyBindingReconciler(),
 	}
@@ -754,26 +746,19 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicyBindings: %w", err)
 	}
 
-	return r.setGatewayAPIProtectedStatus(ctx, true, "")
+	return r.setGatewayAPIProtectedStatus(ctx, true)
 }
 
-// setGatewayAPIProtectedStatus records on the Cluster whether the guard rail is currently in place.
-//
-// The inputs to that decision are spread across the Seed, the Datacenter and the Cluster, so the spec
-// on its own never answers "is this cluster protected right now". This is written after the policy has
-// actually been reconciled, so it reports what is true rather than what was intended.
-//
-// Status is the right home precisely because nothing else writes it: mirroring an admin setting into
-// the spec would be indistinguishable from a user having asked for it, and could not follow an admin
-// changing their mind without clobbering real user intent.
-func (r *reconciler) setGatewayAPIProtectedStatus(ctx context.Context, protected bool, disabledBy kubermaticv1.GatewayAPIProtectionDisabler) error {
+// setGatewayAPIProtectedStatus records whether the protection is in place. It is written after the
+// policy was reconciled, so it reflects the effective result of all admin and cluster settings.
+func (r *reconciler) setGatewayAPIProtectedStatus(ctx context.Context, protected bool) error {
 	cluster, err := r.getCluster(ctx)
 	if err != nil {
 		return fmt.Errorf("failed getting cluster to record the Gateway API protection status: %w", err)
 	}
 
 	current := cluster.Status.KubeLB
-	if current != nil && current.GatewayAPIProtected == protected && current.GatewayAPIProtectionDisabledBy == disabledBy {
+	if current != nil && current.GatewayAPIProtected == protected {
 		return nil
 	}
 
@@ -782,16 +767,11 @@ func (r *reconciler) setGatewayAPIProtectedStatus(ctx context.Context, protected
 			c.Status.KubeLB = &kubermaticv1.KubeLBStatus{}
 		}
 		c.Status.KubeLB.GatewayAPIProtected = protected
-		c.Status.KubeLB.GatewayAPIProtectionDisabledBy = disabledBy
 	})
 }
 
-// clearGatewayAPIProtectedStatus drops the whole kubeLB status block, for clusters where Gateway API
-// support is not enabled and the question therefore does not apply.
-//
-// It also cleans up after a cluster that used to have it enabled: status is never pruned on its own, so
-// without this a cluster would keep advertising a stale protection verdict for a feature it no longer
-// runs.
+// clearGatewayAPIProtectedStatus removes the kubeLB status block, including a stale one left behind
+// after Gateway API support was turned off.
 func (r *reconciler) clearGatewayAPIProtectedStatus(ctx context.Context) error {
 	cluster, err := r.getCluster(ctx)
 	if err != nil {
@@ -802,38 +782,14 @@ func (r *reconciler) clearGatewayAPIProtectedStatus(ctx context.Context) error {
 		return nil
 	}
 
-	// Nil on a pointer field becomes a null in the merge patch, which removes the key.
+	// A nil pointer becomes null in the merge patch, which removes the key.
 	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.KubeLB = nil
 	})
 }
 
-// gatewayAPIProtectionDisabler names who switched the protection off, for the status field. The admin
-// setting is checked first because it wins: a cluster that also opted out changes nothing, and
-// reporting Cluster there would suggest the tenant could put the protection back.
-func (r *reconciler) gatewayAPIProtectionDisabler(cluster *kubermaticv1.Cluster) kubermaticv1.GatewayAPIProtectionDisabler {
-	if r.kubeLBDisableGatewayAPIProtection {
-		return kubermaticv1.GatewayAPIProtectionDisabledByAdmin
-	}
-
-	if cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection {
-		return kubermaticv1.GatewayAPIProtectionDisabledByCluster
-	}
-
-	// Gateway API is simply not enabled, so there is nothing to protect and nobody disabled anything.
-	return ""
-}
-
-// gatewayAPIProtectionDisabled reports whether the guard rail that reserves the Gateway API CRDs for
-// the kubeLB CCM should be skipped for this cluster.
-//
-// Either level can switch it off and neither can switch it back on, so an admin who disables it for
-// the whole datacenter cannot be overridden by a single cluster.
-//
-// The two values arrive by different routes on purpose. The datacenter setting comes in as a startup
-// flag, because this controller only ever sees its own cluster and has no Datacenter object to read.
-// The cluster setting is read straight off the Cluster here, so flipping it takes effect on the next
-// reconcile instead of requiring the pod to be restarted with a new flag.
+// gatewayAPIProtectionDisabled reports whether an admin (via the startup flag) or the cluster itself
+// disabled the protection. Either one disabling it wins.
 func (r *reconciler) gatewayAPIProtectionDisabled(cluster *kubermaticv1.Cluster) bool {
 	if r.kubeLBDisableGatewayAPIProtection {
 		return true
@@ -842,20 +798,15 @@ func (r *reconciler) gatewayAPIProtectionDisabled(cluster *kubermaticv1.Cluster)
 	return cluster != nil && cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.DisableGatewayAPIProtection
 }
 
-// kubeLBGatewayAPIEnabled reports whether the kubeLB CCM is running with Gateway API support, and
-// therefore owns the Gateway API CRDs in the user cluster.
-//
-// Both switches are required. Disabling kubeLB leaves enableGatewayAPI in place, but the CCM is torn
-// down, so nobody installs the Gateway API CRDs anymore; keeping the policy then would lock the user
-// out of installing them themselves.
+// kubeLBGatewayAPIEnabled reports whether the kubeLB CCM runs with Gateway API support. Both switches
+// are required: disabling kubeLB keeps enableGatewayAPI set but removes the CCM.
 func kubeLBGatewayAPIEnabled(cluster *kubermaticv1.Cluster) bool {
 	return cluster != nil && cluster.Spec.IsKubeLBEnabled() && cluster.Spec.KubeLB.IsGatewayAPIEnabled()
 }
 
 func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {
 	for _, resource := range kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion() {
-		// Most clusters never had the policy, so look it up in the cache first instead of sending a
-		// DELETE to the user cluster on every reconcile.
+		// Check the cache first to avoid a DELETE on every reconcile.
 		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue

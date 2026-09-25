@@ -202,17 +202,13 @@ func Add(
 		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew))
 	}
 
-	// The admission policy types are cluster scoped and shared with everything else in the user
-	// cluster, most notably the Gateway API's own safe-upgrades policy, which is written often enough
-	// to keep this controller busy for no reason. Only the one KKP owns is worth a reconcile.
-	//
-	// Matched by name rather than by the managed-by label, so that stripping the label off our policy
-	// cannot also stop us from restoring it.
+	// Only react to KKP's own admission policy, not to others such as the Gateway API's safe-upgrades
+	// policy. Matched by name, not label, so removing the label cannot stop us from restoring it.
 	kubeLBGatewayAPIPolicy := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
 		return o.GetName() == kubelb.GatewayAPIAdmissionPolicyName
 	})
 
-	// The policy and its binding deliberately share a name, so one check covers both.
+	// The policy and its binding share a name, so one predicate covers both.
 	policyTypesToWatch := []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingAdmissionPolicy{},
 		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
@@ -282,8 +278,7 @@ type reconciler struct {
 	networkPolices    bool
 	versions          kubermatic.Versions
 
-	// kubeLBDisableGatewayAPIProtection turns off the ValidatingAdmissionPolicy that reserves the
-	// Gateway API CRDs for the kubeLB CCM.
+	// kubeLBDisableGatewayAPIProtection is set when an admin disabled the Gateway API CRD protection.
 	kubeLBDisableGatewayAPIProtection bool
 	caBundle                          resources.CABundle
 	userClusterMLA                    UserClusterMLA

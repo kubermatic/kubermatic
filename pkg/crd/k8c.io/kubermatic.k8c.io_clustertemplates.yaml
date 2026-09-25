@@ -3955,12 +3955,8 @@ spec:
                   properties:
                     disableGatewayAPIProtection:
                       description: |-
-                        DisableGatewayAPIProtection disables the ValidatingAdmissionPolicy that reserves the Gateway API
-                        CRDs in this cluster for the kubeLB CCM. Set this only when those CRDs are managed elsewhere;
-                        installing a set that the CCM does not expect makes it crash loop.
-
-                        The datacenter has the same setting. Protection is skipped when either of them disables it, so
-                        this cannot re-enable protection that the datacenter has turned off.
+                        DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM.
+                        Protection is also off when the KubermaticConfiguration or the datacenter disables it.
                       type: boolean
                     enableGatewayAPI:
                       description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
