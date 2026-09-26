@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"iter"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -65,6 +64,15 @@ type ImageCollectionOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
+
+	// CABundle is the CA bundle that KKP resources are rendered with while their images are
+	// being enumerated. If empty, the bundle shipped with the kubermatic-operator chart plus
+	// the chart's static/extra-ca drop-ins are used, matching what the chart itself renders.
+	//
+	// Note that this does not influence how this command talks to registries: image copying
+	// goes through crane, which uses the host's system trust store (see --insecure to skip
+	// verification entirely).
+	CABundle string
 }
 
 type MirrorImagesOptions struct {
@@ -144,6 +152,7 @@ func addImageCollectionFlags(cmd *cobra.Command, opt *ImageCollectionOptions, ve
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
+	cmd.PersistentFlags().StringVar(&opt.CABundle, "ca-bundle", "", "Render KKP resources with this CA bundle instead of the one shipped with the kubermatic-operator chart (this does not affect how registries are contacted, see --insecure)")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x or 4.x binary to use for rendering charts")
 }
 
@@ -364,7 +373,7 @@ func collectImages(ctx context.Context, logger *logrus.Logger, versions kubermat
 		return nil, fmt.Errorf("failed to load versions: %w", err)
 	}
 
-	caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
+	caBundle, err := imageCollectionCABundle(options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA bundle: %w", err)
 	}
@@ -681,4 +690,19 @@ func resolveChartURL(chart *catalogv1alpha1.ChartConfig, version *catalogv1alpha
 
 	// use default Helm repository from application-catalog-manager
 	return catalogv1alpha1.DefaultHelmRepository
+}
+
+// imageCollectionCABundle returns the CA bundle that KKP resources are rendered with while their
+// images are enumerated. Unless an explicit --ca-bundle is given, this mirrors what the
+// kubermatic-operator chart renders from disk, i.e. the shipped bundle plus every drop-in in
+// static/extra-ca, so that the rendering input matches the installation.
+//
+// This bundle is not used to contact any registry; crane copies images using the host's system
+// trust store.
+func imageCollectionCABundle(options *ImageCollectionOptions) (*certificates.CABundle, error) {
+	if options.CABundle != "" {
+		return certificates.NewCABundleFromFile(options.CABundle)
+	}
+
+	return localCABundle(options.ChartsDirectory)
 }
