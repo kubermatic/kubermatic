@@ -383,6 +383,9 @@ type KubeLBConfiguration struct {
 	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
+	// DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
+	// CRDs for the kubeLB CCM. Datacenters and clusters cannot re-enable it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 }
 
 // AdmissionPluginsConfiguration contains global settings for admission plugins.

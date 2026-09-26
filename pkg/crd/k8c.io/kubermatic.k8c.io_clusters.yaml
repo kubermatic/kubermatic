@@ -4037,6 +4037,11 @@ spec:
                     KubeLB holds the configuration for the kubeLB component.
                     Only available in Enterprise Edition.
                   properties:
+                    disableGatewayAPIProtection:
+                      description: |-
+                        DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM.
+                        Protection is also off when the KubermaticConfiguration or the datacenter disables it.
+                      type: boolean
                     enableGatewayAPI:
                       description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
                       type: boolean
@@ -5039,6 +5044,15 @@ spec:
                   additionalProperties:
                     type: string
                   description: InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
+                  type: object
+                kubelb:
+                  description: KubeLB contains the observed state of the kubeLB integration.
+                  properties:
+                    gatewayAPIProtected:
+                      description: |-
+                        GatewayAPIProtected reports whether the policy that reserves the Gateway API CRDs for the kubeLB CCM
+                        is installed. No omitempty, so false stays visible.
+                      type: boolean
                   type: object
                 lastProviderReconciliation:
                   description: |-

@@ -336,8 +336,19 @@ type KubeLB struct {
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM.
+	// Protection is also off when the KubermaticConfiguration or the datacenter disables it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
+}
+
+// KubeLBStatus is the observed state of the kubeLB integration.
+type KubeLBStatus struct {
+	// GatewayAPIProtected reports whether the policy that reserves the Gateway API CRDs for the kubeLB CCM
+	// is installed. No omitempty, so false stays visible.
+	// +optional
+	GatewayAPIProtected bool `json:"gatewayAPIProtected"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
@@ -712,6 +723,10 @@ type ClusterStatus struct {
 	// of the cluster control plane and worker nodes.
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
+
+	// KubeLB contains the observed state of the kubeLB integration.
+	// +optional
+	KubeLB *KubeLBStatus `json:"kubelb,omitempty"`
 
 	// Deprecated: UserName contains the name of the owner of this cluster.
 	// This field is not actively used and will be removed in the future.
