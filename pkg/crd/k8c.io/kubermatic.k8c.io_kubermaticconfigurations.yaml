@@ -7749,6 +7749,13 @@ spec:
                           type: boolean
                       type: object
                   type: object
+                util:
+                  description: Util configures the shared util toolbox image.
+                  properties:
+                    dockerRepository:
+                      description: DockerRepository is the repository containing the Kubermatic util image.
+                      type: string
+                  type: object
                 versions:
                   description: Versions configures the available and default Kubernetes versions and updates.
                   properties:

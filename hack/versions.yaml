@@ -152,6 +152,27 @@ products:
           package: k8c.io/kubermatic/v2/pkg/resources
           constant: KubeOneImageTag
 
+  - name: Util
+    source: https://quay.io/repository/kubermatic/util
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources
+          constant: UtilVersion
+      - helmChart:
+          directory: charts/minio
+          valuePath: minio.backup.image.tag
+      - helmChart:
+          directory: charts/monitoring/grafana
+          valuePath: grafana.utilImage.tag
+      - helmChart:
+          directory: charts/monitoring/karma
+          valuePath: karma.images.initContainer.tag
+      - helmChart:
+          directory: charts/monitoring/prometheus
+          valuePath: prometheus.backup.image.tag
+      # bump companions no occurrence kind can reach: hack/lib.sh (CONTAINERIZE_IMAGE default),
+      # hack/ci/testdata/minio_bucket_job.yaml, pkg/test/dualstack/egress-validator-{4,6,daemonset}.yaml
+
   - name: Metering
     source: https://github.com/kubermatic/kubermatic
     occurrences:

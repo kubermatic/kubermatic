@@ -49,6 +49,7 @@ done
 
 type encryptionData interface {
 	RewriteImage(string) (string, error)
+	UtilImage() string
 }
 
 func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, secret *corev1.Secret, res []string, key string) batchv1.Job {
@@ -75,7 +76,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 					Containers: []corev1.Container{
 						{
 							Name:    "encryption-runner",
-							Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.10.0")),
+							Image:   registry.Must(data.RewriteImage(data.UtilImage())),
 							Command: []string{"/bin/bash", "-c"},
 							Args: []string{
 								fmt.Sprintf(encryptionJobScript, resourceList),
