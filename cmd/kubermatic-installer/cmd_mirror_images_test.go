@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/install/images"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -262,4 +263,30 @@ func TestClearRepositoryOverrides(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestImageCollectionCollapsesToFlatImageSet(t *testing.T) {
+	collected := newImageCollection()
+	collected.recordContribution(images.ImageContribution{Origin: images.OriginReconciler, Images: []string{"quay.io/kubermatic/http-prober:v0.5.1", "quay.io/kubermatic/kubermatic:v2.31.0"}}, "v2.31")
+	collected.recordContribution(images.ImageContribution{Origin: images.OriginEtcdBackup, Images: []string{"quay.io/kubermatic/http-prober:v0.5.1"}}, "v2.31")
+	collected.recordContribution(images.ImageContribution{Origin: images.OriginAddon, Name: "canal", Images: []string{"quay.io/calico/node:v3.28.0"}}, "v2.31")
+	collected.record("quay.io/kubermatic/kubermatic:v2.31.0", ImageOrigin{Kind: originMirrorImages})
+	collected.recordApplicationChart("cilium", "1.13.3", "oci://quay.io/kubermatic-mirror/helm-charts", []string{"quay.io/cilium/cilium:v1.13.3", "quay.io/cilium/operator:v1.13.3"})
+	collected.recordApplicationChart("cilium", "1.13.3", "oci://quay.io/kubermatic-mirror/helm-charts", []string{"quay.io/cilium/cilium:v1.13.3"})
+	collected.record("registry.k8s.io/pause:3.10", ImageOrigin{Kind: originStatic})
+
+	expected := sets.New(
+		"quay.io/kubermatic/http-prober:v0.5.1",
+		"quay.io/kubermatic/kubermatic:v2.31.0",
+		"quay.io/calico/node:v3.28.0",
+		"quay.io/kubermatic-mirror/helm-charts/cilium:1.13.3",
+		"quay.io/cilium/cilium:v1.13.3",
+		"quay.io/cilium/operator:v1.13.3",
+		"registry.k8s.io/pause:3.10",
+	)
+
+	assert.Equal(t, expected, collected.flatImageSet())
+	assert.Equal(t, []ImageOrigin{{Kind: originReconciler, Version: "v2.31"}}, collected.origins["quay.io/kubermatic/http-prober:v0.5.1"])
+	assert.Equal(t, []ImageOrigin{{Kind: originReconciler, Version: "v2.31"}, {Kind: originMirrorImages}}, collected.origins["quay.io/kubermatic/kubermatic:v2.31.0"])
+	assert.Equal(t, []ChartRecord{{Name: "cilium", ChartVersion: "1.13.3", Source: "oci://quay.io/kubermatic-mirror/helm-charts"}}, collected.charts)
 }
