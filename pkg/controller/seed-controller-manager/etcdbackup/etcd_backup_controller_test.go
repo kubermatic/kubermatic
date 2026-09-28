@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -43,6 +44,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -1820,4 +1822,65 @@ func isInsecureURL(u string) bool {
 	// an HTTP url
 
 	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""
+}
+
+// TestOrphanedBackupConfigFinalization verifies that an EtcdBackupConfig being deleted
+// whose owning Cluster CR is already gone gets its finalizer removed instead of looping
+// with a not-found error (https://github.com/kubermatic/kubermatic/issues/15876).
+func TestOrphanedBackupConfigFinalization(t *testing.T) {
+	t.Parallel()
+
+	cluster := genTestCluster()
+	backupConfig := genBackupConfig(cluster, "testbackup")
+
+	now := metav1.Now()
+	backupConfig.DeletionTimestamp = &now
+	kuberneteshelper.AddFinalizer(backupConfig, DeleteAllBackupsFinalizer)
+	backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{
+		{
+			BackupName:  "testbackup-stale",
+			BackupPhase: kubermaticv1.BackupStatusPhaseCompleted,
+		},
+	}
+
+	// Intentionally omit the cluster from the fake client to simulate it being already gone.
+	fc := fake.NewClientBuilder().WithObjects(backupConfig).WithStatusSubresource(backupConfig).Build()
+
+	reconciler := Reconciler{
+		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+		Client:   fc,
+		scheme:   scheme.Scheme,
+		recorder: events.NewFakeRecorder(10),
+		clock:    clocktesting.NewFakeClock(time.Unix(60, 0).UTC()),
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return generator.GenTestSeed(addSeedDestinations), nil
+		},
+		configGetter: getConfigGetter(t),
+	}
+
+	ctx := context.Background()
+	_, err := reconciler.Reconcile(ctx, reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: backupConfig.Namespace, Name: backupConfig.Name},
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	result := &kubermaticv1.EtcdBackupConfig{}
+	err = fc.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(backupConfig), result)
+	if err != nil {
+		// Object deleted entirely after finalizer removal — expected outcome.
+		if apierrors.IsNotFound(err) {
+			return
+		}
+		t.Fatalf("failed to read back EtcdBackupConfig: %v", err)
+	}
+
+	if kuberneteshelper.HasFinalizer(result, DeleteAllBackupsFinalizer) {
+		t.Error("expected finalizer to be removed, but it is still present")
+	}
+
+	if len(result.Status.CurrentBackups) != 0 {
+		t.Errorf("expected CurrentBackups to be empty, got %d entries", len(result.Status.CurrentBackups))
+	}
 }
