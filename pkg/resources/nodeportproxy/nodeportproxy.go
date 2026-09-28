@@ -42,7 +42,7 @@ const (
 	imageName          = "kubermatic/nodeport-proxy"
 	envoyAppLabelValue = resources.NodePortProxyEnvoyDeploymentName
 
-	EnvoyVersion = "distroless-v1.37.0"
+	EnvoyVersion = "distroless-v1.37.6"
 
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
