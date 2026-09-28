@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/sdk/v2
 
-go 1.26.7
+go 1.27.1
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
