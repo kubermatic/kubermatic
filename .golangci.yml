@@ -153,10 +153,10 @@ linters:
       # https://github.com/kubermatic/kubermatic/issues/14876
       - linters:
           - staticcheck
-        text: "SA1019: corev1.Endpoints is deprecated"
+        text: "SA1019: .*v1\\.Endpoints is deprecated"
       - linters:
           - staticcheck
-        text: "SA1019: corev1.EndpointSubset is deprecated"
+        text: "SA1019: .*v1\\.EndpointSubset is deprecated"
       # KKP's own deprecated fields still referenced for backward compatibility.
       # These will be removed together with the deprecated fields themselves.
       - linters:
@@ -170,7 +170,7 @@ linters:
         text: "SA1019: .*OVDCNetwork is deprecated"
       - linters:
           - staticcheck
-        text: "SA1019: .*NodeportProxy\\.Annotations is deprecated"
+        text: "SA1019: .*NodeportProxy.*\\.Annotations is deprecated"
       - linters:
           - staticcheck
         text: "SA1019: .*DefaultValues is deprecated"
@@ -179,13 +179,38 @@ linters:
         text: "SA1019: .*VMNetName is deprecated"
       - linters:
           - staticcheck
-        text: "SA1019: .*Ingress\\.ClassName is deprecated"
+        text: "SA1019: .*IngressConfiguration.*\\.ClassName is deprecated"
       - linters:
           - staticcheck
         text: "SA1019: registry.GetOverwriteFunc is deprecated"
       - linters:
           - staticcheck
         text: "SA1019: .*Datacenter is deprecated"
+      # Deprecated fields retained for backwards compatibility, resurfaced by
+      # the fully qualified SA1019 messages in golangci-lint 2.14.
+      - linters:
+          - staticcheck
+        text: "SA1019: .*NetworkPolicyEnabled is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*\\.OIDC is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*KonnectivityEnabled is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*MigrateToGatewayAPI is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*EnableNginxIngressMigration is deprecated"
+      # controller-runtime deprecations that need larger refactors
+      # (Requeue -> RequeueAfter, EventBroadcaster removal).
+      - linters:
+          - staticcheck
+        text: "SA1019: .*\\.Requeue is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*\\.EventBroadcaster is deprecated"
       # deprecated SDK and controller-runtime fields ride their deprecation
       # windows; golangci-lint 2.14 prints fully qualified receivers.
       - linters:
