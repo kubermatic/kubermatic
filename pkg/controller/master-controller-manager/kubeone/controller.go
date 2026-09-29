@@ -726,7 +726,7 @@ func (r *reconciler) upgradeAction(
 
 	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 		Phase:   kubermaticv1.KubeOnePhaseReconcilingUpgrade,
-		Message: fmt.Sprintf("upgrading cluster %v version from %v to %v", externalCluster, currentVersion, desiredVersion),
+		Message: fmt.Sprintf("upgrading cluster %s version from %v to %v", externalCluster.Name, currentVersion, desiredVersion),
 	}); err != nil {
 		return err
 	}
