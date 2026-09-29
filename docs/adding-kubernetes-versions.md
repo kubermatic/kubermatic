@@ -52,7 +52,9 @@ Once new Docker images are ready, KKP can be updated as well.
   image tag for the e2e images to use the new tag you just created with the new test binaries.
 - Update the `VERSION_TO_TEST` environment variable for the backup-related e2e jobs in
   `.prow/features.yaml` (`pre-kubermatic-etcd-launcher-e2e`, `pre-kubermatic-cluster-backup-e2e`)
-  so the etcd and cluster backup suites exercise the new minor.
+  so the etcd and cluster backup suites exercise the new minor. The variable
+  accepts a minor version like `v1.37` and resolves it to the latest supported
+  patch release.
 - Update the CSI addon manifests (`addon/csi/*.yaml`) to include the new minor version.
 - Update the CCM manifests located in `pkg/resources/cloudcontroller`) to include the new minor version.
 - The conformance-tests runner (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of

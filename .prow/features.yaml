@@ -239,7 +239,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSION_TO_TEST
-              value: v1.37.0
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -435,7 +435,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSION_TO_TEST
-              value: v1.37.0
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
