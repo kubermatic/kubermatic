@@ -36,7 +36,6 @@ CRD_DIR=pkg/crd/k8c.io
 
 echodate "Generating openAPI v3 CRDs"
 
-export GODEBUG=gotypesalias=0
 # see https://github.com/kubernetes-sigs/controller-tools/issues/1123
 # and https://github.com/kubernetes-sigs/controller-tools/pull/1122
 #

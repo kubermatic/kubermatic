@@ -53,6 +53,7 @@ require (
 	github.com/google/go-containerregistry v0.21.7
 	github.com/google/uuid v1.6.0
 	github.com/gophercloud/gophercloud v1.14.1
+	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.14
@@ -94,9 +95,12 @@ require (
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.21.4
+	k8c.io/application-catalog-manager v0.0.0-00010101000000-000000000000
 	k8c.io/kubeone v1.12.3
+	k8c.io/kubermatic/sdk/v2 v2.28.1
 	k8c.io/machine-controller/sdk v1.66.3
 	k8c.io/operating-system-manager v1.11.4
 	k8c.io/reconciler v0.5.0
@@ -112,24 +116,17 @@ require (
 	k8s.io/kube-aggregator v0.36.2
 	k8s.io/kubectl v0.36.2
 	k8s.io/metrics v0.36.3
+	k8s.io/pod-security-admission v0.34.1
 	k8s.io/test-infra v0.0.0-20250329100633-7758a586d30c
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	kubevirt.io/api v1.3.1
 	kubevirt.io/containerized-data-importer-api v1.60.3
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/controller-tools v0.21.0
+	sigs.k8s.io/gateway-api v1.5.1
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2
 	sigs.k8s.io/yaml v1.6.0
-)
-
-require (
-	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
-	gopkg.in/yaml.v2 v2.4.0
-	k8c.io/application-catalog-manager v0.0.0-00010101000000-000000000000
-	k8c.io/kubermatic/sdk/v2 v2.28.1
-	k8s.io/pod-security-admission v0.34.1
-	sigs.k8s.io/gateway-api v1.5.1
 )
 
 require (
