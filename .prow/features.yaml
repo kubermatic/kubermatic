@@ -238,6 +238,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37.0
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -411,7 +413,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cluster-backup-e2e
-    run_if_changed: "pkg/ee/cluster-backup/"
+    run_if_changed: "pkg/ee/cluster-backup/|pkg/defaulting/configuration.go"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -432,6 +434,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37.0
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
