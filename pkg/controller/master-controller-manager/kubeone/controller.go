@@ -957,10 +957,10 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 		envVar = setEnvForProvider(providerName, envVar, credentialSecret)
 	}
 
-	// storing kubeone pod scripts in a configMap.
-	cm := generateConfigMap(kubeOneNamespaceName, action)
-	if err := r.Create(ctx, cm); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
-		return nil, fmt.Errorf("failed to create kubeone script configmap: %w", err)
+	// storing kubeone pod scripts in a configMap. The ConfigMap is reconciled (not only created),
+	// so that clusters imported with an older KKP version receive script changes.
+	if err := reconciling.ReconcileConfigMaps(ctx, []reconciling.NamedConfigMapReconcilerFactory{kubeOneScriptConfigMapReconciler(action)}, kubeOneNamespaceName, r); err != nil {
+		return nil, fmt.Errorf("failed to reconcile kubeone script configmap: %w", err)
 	}
 
 	_, ok := sshSecret.Data[resources.KubeOneSSHPassphrase]
@@ -1386,7 +1386,7 @@ func setEnvForProvider(providerName string, envVar []corev1.EnvVar, credentialSe
 	return envVar
 }
 
-func generateConfigMap(namespace, action string) *corev1.ConfigMap {
+func kubeOneScriptConfigMapReconciler(action string) reconciling.NamedConfigMapReconcilerFactory {
 	var name, scriptToRun string
 	scriptToRun = resources.KubeOneScript
 
@@ -1402,14 +1402,14 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 		scriptToRun += "kubeone migrate to-containerd --manifest kubeonemanifest/manifest --log-format json"
 	}
 
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: map[string]string{
-			"script.sh": scriptToRun,
-		},
+	return func() (string, reconciling.ConfigMapReconciler) {
+		return name, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			cm.Data = map[string]string{
+				"script.sh": scriptToRun,
+			}
+
+			return cm, nil
+		}
 	}
 }
 
