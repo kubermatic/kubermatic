@@ -19,5 +19,22 @@ metadata:
   labels:
     app.kubernetes.io/name: kubermatic-operator
 data:
+  # The bundle is assembled from, in order:
+  #   1. either .Values.caBundle.certificates or the bundle shipped with this chart
+  #   2. every PEM file in this chart's static/extra-ca/ directory
+  #   3. .Values.caBundle.additionalCertificates
   ca-bundle.pem: |
-{{ .Files.Get "static/ca-bundle.pem" | indent 4 }}
+{{- with (.Values.caBundle).certificates }}
+{{- include "kubermatic-operator.validatePEM" (dict "content" . "source" "caBundle.certificates") }}
+{{ . | indent 4 }}
+{{- else }}
+{{ $.Files.Get "static/ca-bundle.pem" | indent 4 }}
+{{- end }}
+{{- range $path, $_ := .Files.Glob "static/extra-ca/*.pem" }}
+{{- include "kubermatic-operator.validatePEM" (dict "content" ($.Files.Get $path) "source" $path) }}
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
+{{- with (.Values.caBundle).additionalCertificates }}
+{{- include "kubermatic-operator.validatePEM" (dict "content" . "source" "caBundle.additionalCertificates") }}
+{{ . | indent 4 }}
+{{- end }}
