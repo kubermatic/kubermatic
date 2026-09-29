@@ -275,6 +275,7 @@ var (
 			newSemver("v1.36.5"),
 			// Kubernetes 1.37
 			newSemver("v1.37.0"),
+			newSemver("v1.37.1"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
