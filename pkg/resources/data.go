@@ -359,7 +359,7 @@ func (d *TemplateData) OIDCIssuerClientID() string {
 // IsAuthenticationConfigurationEnabled returns true when the AuthenticationConfiguration is enabled.
 func (d *TemplateData) IsAuthenticationConfigurationEnabled() bool {
 	// Method implementation needs to be aligned with the conditions within AuthenticationConfigurationReconciler
-	oidcSettings := d.cluster.Spec.OIDC //nolint:staticcheck
+	oidcSettings := d.cluster.Spec.OIDC
 
 	return d.cluster.Spec.IsAuthenticationConfigurationEnabled() ||
 		len(d.authenticationConfigurationYAML) > 0 ||

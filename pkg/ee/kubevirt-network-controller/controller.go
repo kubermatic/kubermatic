@@ -145,7 +145,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if (datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicy == nil || !datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicy.Enabled) && !datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicyEnabled { //nolint:staticcheck
+	if (datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicy == nil || !datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicy.Enabled) && !datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicyEnabled {
 		log.Debug("Skipping reconciliation as the network policy feature is not enabled")
 		return reconcile.Result{}, nil
 	}

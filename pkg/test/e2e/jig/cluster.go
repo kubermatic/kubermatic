@@ -154,7 +154,7 @@ func (j *ClusterJig) WithSSHKeyAgent(enabled bool) *ClusterJig {
 }
 
 func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
-	j.spec.ClusterNetwork.KonnectivityEnabled = ptr.To(enabled) //nolint:staticcheck
+	j.spec.ClusterNetwork.KonnectivityEnabled = ptr.To(enabled)
 	return j
 }
 
