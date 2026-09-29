@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -99,6 +100,28 @@ const (
 
 	// KubeOneMigrateConfigMap is the name of kubeone configmap which stores migrate action script.
 	KubeOneMigrateConfigMap = "kubeone-migrate"
+
+	// kubeOneOutputFile stores the output of kubeone in the KubeOne jobs, so that its final error
+	// can be reported as the termination message of the job's pod.
+	kubeOneOutputFile = "/tmp/kubeone.log"
+
+	// reportKubeOneError preserves the exit code of kubeone and, if kubeone failed, writes the final
+	// error it prints ("Error: ...") to the termination message of the container. The controller
+	// shows that message in the ExternalCluster status.
+	reportKubeOneError = `
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  awk '/^Error: /{found=1; msg=""} found{msg=msg $0 "\n"} END{printf "%s", msg}' ` + kubeOneOutputFile + ` | head -c 1024 > /dev/termination-log
+  [ -s /dev/termination-log ] || tail -n 5 ` + kubeOneOutputFile + ` | head -c 1024 > /dev/termination-log
+fi
+exit $rc
+`
+
+	// importRetryMessagePrefix prefixes the status message while a failed import is retried.
+	importRetryMessagePrefix = "import failed, retrying: "
+
+	// maxKubeOneErrorMessageLength limits the length of KubeOne errors in the ExternalCluster status.
+	maxKubeOneErrorMessageLength = 1024
 )
 
 type templateData interface {
@@ -477,9 +500,14 @@ func (r *reconciler) initiateImportCluster(
 
 	kubeoneNamespace := externalCluster.GetKubeOneNamespaceName()
 
+	lastImportError, err := r.lastFailedJobPodError(ctx, kubeoneNamespace, KubeOneImportJob)
+	if err != nil {
+		return err
+	}
+
 	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 		Phase:   kubermaticv1.ExternalClusterPhaseProvisioning,
-		Message: fmt.Sprintf("trying to fetch cluster %s kubeconfig", externalCluster.Name),
+		Message: importStatusMessage(externalCluster, lastImportError),
 	}); err != nil {
 		return err
 	}
@@ -1393,13 +1421,14 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 	switch action {
 	case ImportAction:
 		name = KubeOneImportConfigMap
-		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest 2> /dev/null"
+		// stdout is the kubeconfig, so the output of kubeone (stderr) is only used to report errors.
+		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest 2> " + kubeOneOutputFile + reportKubeOneError
 	case UpgradeControlPlaneAction:
 		name = KubeOneUpgradeConfigMap
-		scriptToRun += "kubeone apply --manifest kubeonemanifest/manifest -y --log-format json"
+		scriptToRun += "set -o pipefail\nkubeone apply --manifest kubeonemanifest/manifest -y --log-format json 2>&1 | tee " + kubeOneOutputFile + reportKubeOneError
 	case MigrateContainerRuntimeAction:
 		name = KubeOneMigrateConfigMap
-		scriptToRun += "kubeone migrate to-containerd --manifest kubeonemanifest/manifest --log-format json"
+		scriptToRun += "set -o pipefail\nkubeone migrate to-containerd --manifest kubeonemanifest/manifest --log-format json 2>&1 | tee " + kubeOneOutputFile + reportKubeOneError
 	}
 
 	return &corev1.ConfigMap{
@@ -1461,19 +1490,28 @@ func (r *reconciler) updateClusterStatus(ctx context.Context,
 		}
 		if len(podList.Items) > 0 {
 			failedPod := podList.Items[0]
-			statusList := failedPod.Status.ContainerStatuses
+			terminated := kubeOneContainerTermination(&failedPod)
 			// determine kubeone error using failed pod exitcode.
-			if len(statusList) > 0 {
-				exitCode := statusList[0].State.Terminated.ExitCode
-				phaseError = determineExitCode(exitCode)
+			if terminated != nil {
+				phaseError = determineExitCode(terminated.ExitCode)
 				externalCluster.Status.Condition.Phase = phaseError
 			}
-			// fetch error message from failed pod logs.
-			logError, err := getPodLogs(ctx, &failedPod)
-			if err != nil {
-				return err
+
+			// prefer the final KubeOne error from the termination message, fall back to the pod logs.
+			var message string
+			if terminated != nil {
+				message = kubeOneErrorMessage(terminated.Message)
 			}
-			externalCluster.Status.Condition.Message = logError
+			if message == "" {
+				logs, err := getPodLogs(ctx, &failedPod)
+				if err != nil {
+					return err
+				}
+				message = kubeOneErrorMessage(lastLines(logs, 5))
+			}
+			if message != "" {
+				externalCluster.Status.Condition.Message = message
+			}
 		}
 	}
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(original)); err != nil {
@@ -1526,6 +1564,103 @@ func getPodLogs(ctx context.Context, pod *corev1.Pod) (string, error) {
 	str := buf.String()
 
 	return str, nil
+}
+
+// lastFailedJobPodError returns the KubeOne error of the most recently failed pod of the given job.
+func (r *reconciler) lastFailedJobPodError(ctx context.Context, namespace, jobName string) (string, error) {
+	podList := &corev1.PodList{}
+	if err := r.List(ctx,
+		podList,
+		&ctrlruntimeclient.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(podPhaseKey, string(corev1.PodFailed)),
+			Namespace:     namespace,
+		},
+		&ctrlruntimeclient.MatchingLabels{JobNameLabel: jobName},
+	); err != nil {
+		return "", err
+	}
+
+	var latest *corev1.ContainerStateTerminated
+	for i := range podList.Items {
+		terminated := kubeOneContainerTermination(&podList.Items[i])
+		if terminated == nil {
+			continue
+		}
+		if latest == nil || terminated.FinishedAt.After(latest.FinishedAt.Time) {
+			latest = terminated
+		}
+	}
+	if latest == nil {
+		return "", nil
+	}
+
+	return kubeOneErrorMessage(latest.Message), nil
+}
+
+// kubeOneContainerTermination returns the terminated state of the kubeone container of a KubeOne job pod.
+func kubeOneContainerTermination(pod *corev1.Pod) *corev1.ContainerStateTerminated {
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name == "kubeone" && status.State.Terminated != nil {
+			return status.State.Terminated
+		}
+	}
+
+	return nil
+}
+
+// importStatusMessage returns the status message while KKP imports a cluster. The last import
+// error stays visible while the import is retried.
+func importStatusMessage(cluster *kubermaticv1.ExternalCluster, lastImportError string) string {
+	condition := cluster.Status.Condition
+
+	switch {
+	case lastImportError != "":
+		return importRetryMessagePrefix + lastImportError
+	case isKubeOneJobErrorPhase(condition.Phase) && condition.Message != "":
+		return importRetryMessagePrefix + strings.TrimPrefix(condition.Message, importRetryMessagePrefix)
+	case condition.Phase == kubermaticv1.ExternalClusterPhaseProvisioning && strings.HasPrefix(condition.Message, importRetryMessagePrefix):
+		return condition.Message
+	default:
+		return fmt.Sprintf("trying to fetch cluster %s kubeconfig", cluster.Name)
+	}
+}
+
+// isKubeOneJobErrorPhase returns true for the phases set from the exit code of a failed KubeOne job.
+func isKubeOneJobErrorPhase(phase kubermaticv1.ExternalClusterPhase) bool {
+	switch phase {
+	case kubermaticv1.ExternalClusterPhaseRuntimeError,
+		kubermaticv1.ExternalClusterPhaseEtcdError,
+		kubermaticv1.ExternalClusterPhaseKubeClientError,
+		kubermaticv1.ExternalClusterPhaseSSHError,
+		kubermaticv1.ExternalClusterPhaseConnectionError,
+		kubermaticv1.ExternalClusterPhaseConfigError:
+		return true
+	default:
+		return false
+	}
+}
+
+// kubeOneErrorMessage turns a KubeOne error into a single line for the ExternalCluster status.
+// Long messages are cut from the start, because the actual error is at the end.
+func kubeOneErrorMessage(raw string) string {
+	message := strings.TrimPrefix(strings.TrimSpace(raw), "Error: ")
+	message = strings.Join(strings.Fields(message), " ")
+
+	if runes := []rune(message); len(runes) > maxKubeOneErrorMessageLength {
+		message = "..." + string(runes[len(runes)-maxKubeOneErrorMessageLength:])
+	}
+
+	return message
+}
+
+// lastLines returns the last n lines of s.
+func lastLines(s string, n int) string {
+	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func determineExitCode(exitCode int32) kubermaticv1.ExternalClusterPhase {
