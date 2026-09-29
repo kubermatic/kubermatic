@@ -656,11 +656,14 @@ const (
 	KubeOneOpenStack           = "openstack"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
-	KubeOneImageTag            = "v1.12.3"
-	KubeOneScript              = `
+	KubeOneImageTag            = "v1.13.7"
+	// KubeOneScript prepares the SSH agent for the KubeOne jobs. The agent socket is
+	// bound to /tmp because OpenSSH 10+ (KubeOne images >= v1.13) creates it under
+	// ~/.ssh/agent/ by default, and /root/.ssh is a read-only Secret mount in the jobs.
+	KubeOneScript = `
 #!/usr/bin/env bash
 
-eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
+eval ` + "`" + "ssh-agent -a /tmp/kubeone-agent.sock" + "`" + ` > /dev/null
 printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
