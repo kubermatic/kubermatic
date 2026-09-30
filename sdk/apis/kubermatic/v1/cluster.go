@@ -624,6 +624,7 @@ const (
 	ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully ClusterConditionType = "DefaultApplicationsCreatedSuccessfully"
 	ClusterConditionOperatingSystemManagerMigratorControllerReconcilingSuccess   ClusterConditionType = "OperatingSystemManagerMigratorControllerReconciledSuccessfully"
 	ClusterConditionKubeLBControllerReconcilingSuccess                           ClusterConditionType = "KubeLBControllerReconciledSuccessfully"
+	ClusterConditionKubeLBGatewayAPIProtectionReconcilingSuccess                 ClusterConditionType = "KubeLBGatewayAPIProtectionReconciledSuccessfully"
 	ClusterConditionCNIControllerReconcilingSuccess                              ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                              ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess                       ClusterConditionType = "EncryptionControllerReconciledSuccessfully"

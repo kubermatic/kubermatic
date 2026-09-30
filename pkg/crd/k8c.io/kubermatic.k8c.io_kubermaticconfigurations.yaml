@@ -7704,7 +7704,8 @@ spec:
                         disableGatewayAPIProtection:
                           description: |-
                             DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
-                            CRDs for the kubeLB CCM. Datacenters and clusters cannot re-enable it.
+                            CRDs for the kubeLB CCM, and stops KKP from removing the upstream Gateway API safe-upgrades policy.
+                            Datacenters and clusters cannot re-enable it.
                           type: boolean
                         imageRepository:
                           description: |-

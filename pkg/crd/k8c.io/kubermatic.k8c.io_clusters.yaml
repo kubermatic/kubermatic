@@ -4041,8 +4041,9 @@ spec:
                   properties:
                     disableGatewayAPIProtection:
                       description: |-
-                        DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM.
-                        Protection is also off when the KubermaticConfiguration or the datacenter disables it.
+                        DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM,
+                        and stops KKP from removing the upstream Gateway API safe-upgrades policy. Protection is also off when
+                        the KubermaticConfiguration or the datacenter disables it.
                       type: boolean
                     enableGatewayAPI:
                       description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.

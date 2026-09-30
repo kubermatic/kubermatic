@@ -330,7 +330,6 @@ func main() {
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.networkPolicies,
-		runOp.kubeLBDisableGatewayAPIProtection,
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
@@ -447,7 +446,7 @@ func main() {
 		kvInfraNamespace = runOp.kubeVirtInfraNamespace
 	}
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kubeVirtAcceleratorQuota, runOp.kyvernoEnabled); err != nil {
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kubeVirtAcceleratorQuota, runOp.kyvernoEnabled, runOp.kubeLBDisableGatewayAPIProtection); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 
