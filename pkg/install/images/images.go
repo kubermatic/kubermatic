@@ -50,6 +50,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	flatcarresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
@@ -488,6 +489,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, mlamonitoringagent.DeploymentReconciler(nil, nil, templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
+	deploymentReconcilers = append(deploymentReconcilers, flatcarresources.OperatorDeploymentReconciler(templateData.RewriteImage, kubermaticv1.UpdateWindow{}))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, metricsserver.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, dns.DeploymentReconciler(templateData))
@@ -516,6 +518,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(templateData.Cluster(), net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
+	daemonsetReconcilers = append(daemonsetReconcilers, flatcarresources.AgentDaemonSetReconciler(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetReconcilers {
 		_, creator := creatorGetter()
