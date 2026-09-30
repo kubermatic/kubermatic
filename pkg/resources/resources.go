@@ -1017,6 +1017,10 @@ const (
 	UserClusterLegacyPromtailSecretName             = "promtail"
 	UserClusterLegacyPromtailDaemonSetName          = "promtail"
 	UserClusterLegacyPromtailCertificatesSecretName = "promtail-certificates"
+
+	// Legacy external-admin-user resource names, used only for cleanup/migration purposes.
+	UserClusterLegacyExternalAdminUserServiceAccountName     = "external-admin-user"
+	UserClusterLegacyExternalAdminUserClusterRoleBindingName = "external-admin-user"
 )
 
 const (
