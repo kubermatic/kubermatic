@@ -144,3 +144,24 @@ func TestGatewayAPIAdmissionPolicyResourcesForDeletion(t *testing.T) {
 		}
 	}
 }
+
+func TestUpstreamSafeUpgradesResourcesForDeletion(t *testing.T) {
+	objects := UpstreamSafeUpgradesResourcesForDeletion()
+	if len(objects) != 2 {
+		t.Fatalf("expected 2 objects to delete, got %d", len(objects))
+	}
+
+	// Binding first, so no binding is left pointing at a deleted policy.
+	if _, ok := objects[0].(*admissionregistrationv1.ValidatingAdmissionPolicyBinding); !ok {
+		t.Errorf("expected the binding to be deleted first, got %T", objects[0])
+	}
+	if _, ok := objects[1].(*admissionregistrationv1.ValidatingAdmissionPolicy); !ok {
+		t.Errorf("expected the policy to be deleted second, got %T", objects[1])
+	}
+
+	for _, object := range objects {
+		if object.GetName() != UpstreamSafeUpgradesPolicyName {
+			t.Errorf("expected name %q, got %q", UpstreamSafeUpgradesPolicyName, object.GetName())
+		}
+	}
+}

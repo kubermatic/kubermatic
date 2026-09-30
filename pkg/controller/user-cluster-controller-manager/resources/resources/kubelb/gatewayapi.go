@@ -34,6 +34,10 @@ import (
 // GatewayAPIAdmissionPolicyName is the name of both the policy and its binding.
 const GatewayAPIAdmissionPolicyName = "kubermatic-kubelb-gateway-api-crds"
 
+// UpstreamSafeUpgradesPolicyName is the name of both the safe-upgrades policy and its binding that ship
+// with every upstream Gateway API release.
+const UpstreamSafeUpgradesPolicyName = "safe-upgrades.gateway.networking.k8s.io"
+
 // managedByLabelValue marks KKP as the owner of the admission policy objects.
 const managedByLabelValue = "kkp"
 
@@ -49,8 +53,8 @@ func managedByLabels() map[string]string {
 }
 
 // GatewayAPIValidatingAdmissionPolicyReconciler returns the policy that rejects Gateway API CRD writes
-// from everyone except the kubeLB CCM. Another bundle on top of the CCM's would bring its own upstream
-// safe-upgrades policy, which then blocks the CCM and makes it crash loop.
+// from everyone except the kubeLB CCM, so no other bundle can replace the CCM's CRDs. The upstream
+// safe-upgrades policy such a bundle brings along is removed separately by the reconciler.
 func GatewayAPIValidatingAdmissionPolicyReconciler() kkpreconciling.NamedValidatingAdmissionPolicyReconcilerFactory {
 	return func() (string, kkpreconciling.ValidatingAdmissionPolicyReconciler) {
 		return GatewayAPIAdmissionPolicyName, func(policy *admissionregistrationv1.ValidatingAdmissionPolicy) (*admissionregistrationv1.ValidatingAdmissionPolicy, error) {
@@ -138,6 +142,18 @@ func GatewayAPIAdmissionPolicyResourcesForDeletion() []ctrlruntimeclient.Object 
 		},
 		&admissionregistrationv1.ValidatingAdmissionPolicy{
 			ObjectMeta: metav1.ObjectMeta{Name: GatewayAPIAdmissionPolicyName},
+		},
+	}
+}
+
+// UpstreamSafeUpgradesResourcesForDeletion returns the upstream safe-upgrades objects, binding first.
+func UpstreamSafeUpgradesResourcesForDeletion() []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: UpstreamSafeUpgradesPolicyName},
+		},
+		&admissionregistrationv1.ValidatingAdmissionPolicy{
+			ObjectMeta: metav1.ObjectMeta{Name: UpstreamSafeUpgradesPolicyName},
 		},
 	}
 }

@@ -384,7 +384,8 @@ type KubeLBConfiguration struct {
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
 	// DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
-	// CRDs for the kubeLB CCM. Datacenters and clusters cannot re-enable it.
+	// CRDs for the kubeLB CCM, and stops KKP from removing the upstream Gateway API safe-upgrades policy.
+	// Datacenters and clusters cannot re-enable it.
 	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 }
 

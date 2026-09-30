@@ -202,13 +202,14 @@ func Add(
 		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew))
 	}
 
-	// Only react to KKP's own admission policy, not to others such as the Gateway API's safe-upgrades
-	// policy. Matched by name, not label, so removing the label cannot stop us from restoring it.
+	// Only react to KKP's own admission policy and the upstream safe-upgrades policy it removes. Matched
+	// by name, not label, so removing the label cannot stop us from restoring our policy.
 	kubeLBGatewayAPIPolicy := predicate.NewPredicateFuncs(func(o ctrlruntimeclient.Object) bool {
-		return o.GetName() == kubelb.GatewayAPIAdmissionPolicyName
+		name := o.GetName()
+		return name == kubelb.GatewayAPIAdmissionPolicyName || name == kubelb.UpstreamSafeUpgradesPolicyName
 	})
 
-	// The policy and its binding share a name, so one predicate covers both.
+	// Each policy and its binding share a name, so one predicate covers both.
 	policyTypesToWatch := []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingAdmissionPolicy{},
 		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},

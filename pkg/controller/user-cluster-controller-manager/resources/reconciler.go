@@ -710,13 +710,14 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 }
 
 // reconcileValidatingAdmissionPolicies manages the policy that reserves the Gateway API CRDs for the
-// kubeLB CCM while kubeLB and its Gateway API support are enabled.
+// kubeLB CCM while kubeLB and its Gateway API support are enabled, and removes the upstream
+// safe-upgrades policy while that protection is in place.
 func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, data reconcileData) error {
 	gatewayAPIEnabled := kubeLBGatewayAPIEnabled(data.cluster)
 
 	// Remove the policy when it is not needed, or Gateway API CRD writes stay blocked.
 	if !gatewayAPIEnabled {
-		if err := r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx); err != nil {
+		if err := r.ensureObjectsAreRemoved(ctx, kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion()); err != nil {
 			return err
 		}
 
@@ -725,7 +726,7 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 	}
 
 	if r.gatewayAPIProtectionDisabled(data.cluster) {
-		if err := r.ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx); err != nil {
+		if err := r.ensureObjectsAreRemoved(ctx, kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion()); err != nil {
 			return err
 		}
 
@@ -745,6 +746,12 @@ func (r *reconciler) reconcileValidatingAdmissionPolicies(ctx context.Context, d
 	}
 	if err := kkpreconciling.ReconcileValidatingAdmissionPolicyBindings(ctx, bindingCreators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingAdmissionPolicyBindings: %w", err)
+	}
+
+	// The upstream safe-upgrades policy comes with any Gateway API bundle and version-locks the CCM's
+	// CRDs; a policy cannot block another policy, so remove it while KubeLB owns the CRDs.
+	if err := r.ensureObjectsAreRemoved(ctx, kubelb.UpstreamSafeUpgradesResourcesForDeletion()); err != nil {
+		return err
 	}
 
 	return r.setGatewayAPIProtectedStatus(ctx, true)
@@ -805,8 +812,9 @@ func kubeLBGatewayAPIEnabled(cluster *kubermaticv1.Cluster) bool {
 	return cluster != nil && cluster.Spec.IsKubeLBEnabled() && cluster.Spec.KubeLB.IsGatewayAPIEnabled()
 }
 
-func (r *reconciler) ensureKubeLBGatewayAPIAdmissionPolicyIsRemoved(ctx context.Context) error {
-	for _, resource := range kubelb.GatewayAPIAdmissionPolicyResourcesForDeletion() {
+// ensureObjectsAreRemoved deletes the given objects in order, skipping those that do not exist.
+func (r *reconciler) ensureObjectsAreRemoved(ctx context.Context, objects []ctrlruntimeclient.Object) error {
+	for _, resource := range objects {
 		// Check the cache first to avoid a DELETE on every reconcile.
 		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
 			if apierrors.IsNotFound(err) {
