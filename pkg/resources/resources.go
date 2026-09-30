@@ -432,6 +432,9 @@ const (
 	// RegistryQuay defines the image registry from coreos/redhat - quay.
 	RegistryQuay = "quay.io"
 
+	// UtilVersion defines the version of the shared util toolbox image.
+	UtilVersion = "2.10.0"
+
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
 	// TopologyKeyZone defines the topology key for the node's cloud provider zone.

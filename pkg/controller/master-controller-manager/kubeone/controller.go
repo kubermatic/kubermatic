@@ -126,6 +126,7 @@ exit $rc
 
 type templateData interface {
 	RewriteImage(image string) (string, error)
+	UtilImage() string
 }
 
 type reconciler struct {
@@ -133,9 +134,10 @@ type reconciler struct {
 	log               *zap.SugaredLogger
 	secretKeySelector provider.SecretKeySelectorValueFunc
 	overwriteRegistry string
+	configGetter      provider.KubermaticConfigurationGetter
 }
 
-func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, overwriteRegistry string) error {
+func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, overwriteRegistry string, configGetter provider.KubermaticConfigurationGetter) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podPhaseKey, func(rawObj ctrlruntimeclient.Object) []string {
 		pod := rawObj.(*corev1.Pod)
 		return []string{string(pod.Status.Phase)}
@@ -148,6 +150,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, overw
 		log:               log.Named(ControllerName),
 		secretKeySelector: provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
 		overwriteRegistry: overwriteRegistry,
+		configGetter:      configGetter,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -248,8 +251,14 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		return nil
 	}
 
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return err
+	}
+
 	data := resources.NewTemplateDataBuilder().
 		WithOverwriteRegistry(r.overwriteRegistry).
+		WithKubermaticConfiguration(config).
 		Build()
 
 	kubeOneSecrests, err := r.ensureKubeOneSecrets(ctx, log, data, externalCluster)
@@ -1084,7 +1093,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					InitContainers: []corev1.Container{
 						{
 							Name:    "copy-ro-manifest",
-							Image:   registry.Must(data.RewriteImage("quay.io/kubermatic/util:2.10.0")),
+							Image:   data.UtilImage(),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",

@@ -242,7 +242,7 @@ func generatedKubeOneScript(t *testing.T, action string) string {
 	).Build()
 
 	r := &reconciler{Client: client, log: zap.NewNop().Sugar()}
-	job, err := r.generateKubeOneActionJob(context.Background(), r.log, resources.NewTemplateDataBuilder().Build(), cluster, action)
+	job, err := r.generateKubeOneActionJob(context.Background(), r.log, defaultedTemplateData(t), cluster, action)
 	if err != nil {
 		t.Fatalf("failed to generate kubeone job: %v", err)
 	}
