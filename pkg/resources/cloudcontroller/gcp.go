@@ -219,8 +219,11 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v135:
 		return "v35.0.8"
 	case v136:
-		return "v36.0.7"
+		return "v36.2.4"
+	case v137:
+		// no v37 line upstream yet; fall through to the 1.36 tag
+		return "v36.2.4"
 	default:
-		return "v36.0.7"
+		return "v36.2.4"
 	}
 }

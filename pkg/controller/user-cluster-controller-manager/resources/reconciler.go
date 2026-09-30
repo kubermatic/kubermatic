@@ -60,6 +60,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
@@ -915,7 +916,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = append(creators, metricsserver.TLSServingCertSecretReconciler(
 			func() (*triple.KeyPair, error) {
 				return data.caCert, nil
-			}),
+			},
+			data.certificateKeyConfig),
 		)
 	}
 
@@ -925,21 +927,21 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 			if data.ccmMigration {
-				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert))
+				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert, data.certificateKeyConfig))
 			}
 		}
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
-				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 		}
 	}
 
 	if !data.cluster.Spec.DisableCSIDriver {
 		if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 		}
 	}
 
@@ -1229,6 +1231,14 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 	return nil
+}
+
+// certificateKeyConfig resolves the key parameters that were frozen into the
+// cluster when it was created. It is a KeyConfigGetter, so an unusable
+// configuration surfaces as a reconcile error rather than a panic while the
+// reconciler list is assembled.
+func (d reconcileData) certificateKeyConfig() (triple.KeyConfig, error) {
+	return certificates.CertificateKeyConfig(d.cluster)
 }
 
 type reconcileData struct {

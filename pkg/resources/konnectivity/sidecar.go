@@ -36,11 +36,11 @@ const (
 	defaultXfrChannelSize = 150
 
 	// Supported Kubernetes versions.
-	v132 = "1.32"
 	v133 = "1.33"
 	v134 = "1.34"
 	v135 = "1.35"
 	v136 = "1.36"
+	v137 = "1.37"
 )
 
 var (
@@ -150,8 +150,6 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	// https://github.com/kubernetes-sigs/apiserver-network-proxy#versioning-and-releases
 
 	switch clusterVersion.MajorMinor() {
-	case v132:
-		return "v0.32.1"
 	case v133:
 		return "v0.33.1"
 	case v134:
@@ -159,7 +157,11 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	case v135:
 		return "v0.34.0"
 	case v136:
-		fallthrough
+		return "v0.35.0"
+	case v137:
+		// the konnectivity-client version vendored by k8s 1.37; no ANP v0.37.0
+		// has been released yet
+		return "v0.36.0"
 	default:
 		return "v0.35.0"
 	}

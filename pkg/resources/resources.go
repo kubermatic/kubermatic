@@ -18,8 +18,8 @@ package resources
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
@@ -666,11 +666,14 @@ const (
 	KubeOneOpenStack           = "openstack"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
-	KubeOneImageTag            = "v1.12.3"
-	KubeOneScript              = `
+	KubeOneImageTag            = "v1.14.3"
+	// KubeOneScript prepares the SSH agent for the KubeOne jobs. The agent socket is
+	// bound to /tmp because OpenSSH 10+ (KubeOne images >= v1.13) creates it under
+	// ~/.ssh/agent/ by default, and /root/.ssh is a read-only Secret mount in the jobs.
+	KubeOneScript = `
 #!/usr/bin/env bash
 
-eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
+eval ` + "`" + "ssh-agent -a /tmp/kubeone-agent.sock" + "`" + ` > /dev/null
 printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
@@ -1380,16 +1383,20 @@ func getECDSAClusterCAFromLister(ctx context.Context, namespace, name string, cl
 	return &ECDSAKeyPair{Cert: cert, Key: ecdsaKey}, nil
 }
 
-func getRSAClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+// getSignerClusterCAFromLister returns a cluster CA regardless of the algorithm
+// its key uses. Everything downstream of it signs through crypto.Signer, so
+// requiring RSA here would take down every leaf reconciler and every internal
+// kubeconfig of a cluster whose CA is not RSA.
+func getSignerClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
 	cert, key, err := getClusterCAFromLister(ctx, namespace, name, client)
 	if err != nil {
 		return nil, err
 	}
-	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
-	if !isRSAKey {
-		return nil, errors.New("key is not a RSA key")
+	signer, isSigner := key.(crypto.Signer)
+	if !isSigner {
+		return nil, fmt.Errorf("CA key of type %T cannot be used to sign", key)
 	}
-	return &triple.KeyPair{Cert: cert, Key: rsaKey}, nil
+	return &triple.KeyPair{Cert: cert, Key: signer}, nil
 }
 
 // getClusterCAFromLister returns the CA of the cluster from the lister.
@@ -1434,12 +1441,12 @@ func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
 
 // GetClusterRootCA returns the root CA of the cluster from the lister.
 func GetClusterRootCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(ctx, namespace, CASecretName, client)
+	return getSignerClusterCAFromLister(ctx, namespace, CASecretName, client)
 }
 
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister.
 func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
+	return getSignerClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
 }
 
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister.
