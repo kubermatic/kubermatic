@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
@@ -340,7 +341,7 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
-					Image: "quay.io/kubermatic/util:2.10.0",
+					Image: resources.RegistryQuay + "/kubermatic/util:" + resources.UtilVersion,
 					Command: []string{
 						"/bin/sh",
 						"-c",

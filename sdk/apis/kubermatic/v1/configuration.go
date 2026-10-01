@@ -116,6 +116,8 @@ type KubermaticConfigurationSpec struct {
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// Webhook configures the webhook.
 	Webhook KubermaticWebhookConfiguration `json:"webhook,omitempty"`
+	// Util configures the shared util toolbox image.
+	Util KubermaticUtilConfiguration `json:"util,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
@@ -287,6 +289,12 @@ type KubermaticWebhookConfiguration struct {
 	PodSchedulingConfigurations `json:",inline"`
 }
 
+// KubermaticUtilConfiguration configures the shared util toolbox image.
+type KubermaticUtilConfiguration struct {
+	// DockerRepository is the repository containing the Kubermatic util image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+}
+
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
 type KubermaticUserClusterConfiguration struct {
 	// KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
@@ -332,6 +340,19 @@ type KubermaticUserClusterConfiguration struct {
 	// AdmissionPlugins configures global admission plugin settings for all user clusters.
 	// +optional
 	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
+	// KeyConfiguration selects the algorithm and size of the key material KKP generates
+	// for user clusters. The value is stamped into each Cluster when it is created; it
+	// therefore only affects clusters created after it is changed, never existing ones.
+	// Clusters that already exist are not migrated to a changed value, and cannot be
+	// migrated: rotating the key material of a running cluster is not supported yet.
+	//
+	// This does not cover key material that does not belong to a single user cluster,
+	// such as the KKP webhook CA or the VPA admission certificate; those remain
+	// RSA-2048 regardless of this setting.
+	// The per-cluster OpenVPN and MLA gateway CAs and their certificates are not
+	// covered either; they are always ECDSA P-256.
+	// +optional
+	KeyConfiguration *KeyConfiguration `json:"keyConfiguration,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.

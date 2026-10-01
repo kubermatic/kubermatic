@@ -49,6 +49,7 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 
 	allErrs = append(allErrs, ValidateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
+	allErrs = append(allErrs, ValidateKeyConfiguration(spec.UserCluster.KeyConfiguration, field.NewPath("spec", "userCluster", "keyConfiguration"))...)
 
 	return allErrs
 }

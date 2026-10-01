@@ -26,6 +26,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -93,7 +94,7 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 					Containers: []corev1.Container{
 						{
 							Name:  "busybox",
-							Image: "quay.io/kubermatic/util:2.10.0",
+							Image: resources.RegistryQuay + "/kubermatic/util:" + resources.UtilVersion,
 							Args: []string{
 								"/bin/sh",
 								"-c",

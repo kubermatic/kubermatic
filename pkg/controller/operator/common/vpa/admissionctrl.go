@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 	"k8s.io/utils/ptr"
 )
 
@@ -216,7 +217,12 @@ func AdmissionControllerServingCertReconciler() reconciling.NamedSecretReconcile
 				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
-			se.Data[AdmissionControllerServingCertKeyName] = triple.EncodePrivateKeyPEM(key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(key)
+			if err != nil {
+				return nil, fmt.Errorf("unable to encode the server private key: %w", err)
+			}
+
+			se.Data[AdmissionControllerServingCertKeyName] = keyPEM
 			se.Data[AdmissionControllerServingCertName] = triple.EncodeCertPEM(cert)
 			se.Data[AdmissionControllerServingCertCAName] = triple.EncodeCertPEM(ca.Cert)
 
