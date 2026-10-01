@@ -40,7 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/tools/events"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -102,7 +102,7 @@ func TestPolicyBindingCRDDefaultingIntegration(t *testing.T) {
 				seedClient:  seedClient,
 				userClient:  userClient,
 				log:         zap.NewNop().Sugar(),
-				recorder:    &events.FakeRecorder{},
+				recorder:    &record.FakeRecorder{},
 				namespace:   testClusterNamespace,
 				clusterName: testClusterName,
 				clusterIsPaused: func(context.Context) (bool, error) {
