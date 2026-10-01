@@ -18,7 +18,10 @@ package applicationinstallationcontroller
 
 import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -26,18 +29,23 @@ const (
 )
 
 // Function signature for generating Helm values block.
-type ValuesGenerator func(app *appskubermaticv1.ApplicationInstallation, overwriteRegistry string) map[string]interface{}
+type ValuesGenerator func(app *appskubermaticv1.ApplicationInstallation, overwriteRegistry string, workloadTolerations []corev1.Toleration) map[string]interface{}
 
 // Map of functions to generate Helm values for system applications.
 var SystemAppsValuesGenerators = map[string]ValuesGenerator{
 	"cluster-autoscaler": generateClusterAutoscalerValues,
 }
 
-func generateClusterAutoscalerValues(app *appskubermaticv1.ApplicationInstallation, overwriteRegistry string) map[string]interface{} {
+func generateClusterAutoscalerValues(app *appskubermaticv1.ApplicationInstallation, overwriteRegistry string, workloadTolerations []corev1.Toleration) map[string]interface{} {
 	values := map[string]any{
 		"image": map[string]any{
 			"repository": registry.Must(registry.RewriteImage(ClusterAutoscalerDefaultRepository, overwriteRegistry)),
 		},
+	}
+
+	// The chart has no tolerations of its own, so the configured list is emitted as it is.
+	if len(workloadTolerations) > 0 {
+		values["tolerations"] = resources.TolerationsToHelmValues(workloadTolerations)
 	}
 
 	return values

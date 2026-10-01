@@ -826,3 +826,107 @@ func TestDefaultAuditLogging(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultUserClusterWorkloads(t *testing.T) {
+	const dcName = "workloads-test-dc"
+
+	seedTolerations := []corev1.Toleration{{Key: "node-role", Operator: corev1.TolerationOpEqual, Value: "system", Effect: corev1.TaintEffectNoSchedule}}
+	templateTolerations := []corev1.Toleration{{Key: "from-template", Operator: corev1.TolerationOpExists}}
+	clusterTolerations := []corev1.Toleration{{Key: "gpu", Operator: corev1.TolerationOpExists}}
+
+	makeSeed := func(tolerations []corev1.Toleration) *kubermaticv1.Seed {
+		seed := &kubermaticv1.Seed{
+			Spec: kubermaticv1.SeedSpec{
+				Datacenters: map[string]kubermaticv1.Datacenter{
+					dcName: {Spec: kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}},
+				},
+			},
+		}
+		if tolerations != nil {
+			seed.Spec.DefaultComponentSettings.UserClusterWorkloads = &kubermaticv1.UserClusterWorkloadSettings{Tolerations: tolerations}
+		}
+		return seed
+	}
+
+	makeTemplate := func(tolerations []corev1.Toleration) *kubermaticv1.ClusterTemplate {
+		return &kubermaticv1.ClusterTemplate{
+			Spec: kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					UserClusterWorkloads: &kubermaticv1.UserClusterWorkloadSettings{Tolerations: tolerations},
+				},
+			},
+		}
+	}
+
+	makeSpec := func(tolerations []corev1.Toleration) *kubermaticv1.ClusterSpec {
+		spec := &kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: dcName,
+				ProviderName:   string(kubermaticv1.FakeCloudProvider),
+				Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+			},
+		}
+		if tolerations != nil {
+			spec.ComponentsOverride.UserClusterWorkloads = &kubermaticv1.UserClusterWorkloadSettings{Tolerations: tolerations}
+		}
+		return spec
+	}
+
+	testCases := []struct {
+		name     string
+		spec     *kubermaticv1.ClusterSpec
+		template *kubermaticv1.ClusterTemplate
+		seed     *kubermaticv1.Seed
+		expected []corev1.Toleration
+	}{
+		{
+			name:     "nothing configured: field stays unset",
+			spec:     makeSpec(nil),
+			seed:     makeSeed(nil),
+			expected: nil,
+		},
+		{
+			name:     "cluster unset: seed tolerations are inherited",
+			spec:     makeSpec(nil),
+			seed:     makeSeed(seedTolerations),
+			expected: seedTolerations,
+		},
+		{
+			name:     "cluster set: cluster tolerations win over the seed",
+			spec:     makeSpec(clusterTolerations),
+			seed:     makeSeed(seedTolerations),
+			expected: clusterTolerations,
+		},
+		{
+			name:     "cluster unset: template wins over the seed",
+			spec:     makeSpec(nil),
+			template: makeTemplate(templateTolerations),
+			seed:     makeSeed(seedTolerations),
+			expected: templateTolerations,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+			err = DefaultClusterSpec(context.Background(), tc.spec, nil, tc.template, tc.seed, config, nil)
+			if err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+
+			workloads := tc.spec.ComponentsOverride.UserClusterWorkloads
+			if tc.expected == nil {
+				assert.Nil(t, workloads)
+				return
+			}
+
+			assert.Equal(t, tc.expected, workloads.Tolerations)
+			if tc.template != nil {
+				assert.NotSame(t, tc.template.Spec.ComponentsOverride.UserClusterWorkloads, workloads)
+			}
+		})
+	}
+}

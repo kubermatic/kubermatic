@@ -45,6 +45,7 @@ import (
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -164,6 +165,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	allErrs = append(allErrs, validateMachineControllerSettings(spec, parentFieldPath)...)
+	allErrs = append(allErrs, validateUserClusterWorkloadSettings(spec, parentFieldPath)...)
 
 	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
@@ -1434,6 +1436,61 @@ func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *
 
 	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
+	}
+
+	return allErrs
+}
+
+func validateUserClusterWorkloadSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	workloads := spec.ComponentsOverride.UserClusterWorkloads
+	if workloads == nil {
+		return allErrs
+	}
+
+	tolerationsPath := fldPath.Child("componentsOverride", "userClusterWorkloads", "tolerations")
+	for i, toleration := range workloads.Tolerations {
+		allErrs = append(allErrs, validateToleration(toleration, tolerationsPath.Index(i))...)
+	}
+
+	return allErrs
+}
+
+// validateToleration mirrors the checks the Kubernetes API server runs on Pod tolerations,
+// so that an invalid toleration is rejected here instead of breaking the workloads later.
+func validateToleration(toleration corev1.Toleration, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if toleration.Key != "" {
+		for _, msg := range k8svalidation.IsQualifiedName(toleration.Key) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("key"), toleration.Key, msg))
+		}
+	} else if toleration.Operator != corev1.TolerationOpExists {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("operator"), toleration.Operator, "operator must be Exists when key is empty"))
+	}
+
+	switch toleration.Operator {
+	case corev1.TolerationOpEqual, "":
+		for _, msg := range k8svalidation.IsValidLabelValue(toleration.Value) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("value"), toleration.Value, msg))
+		}
+	case corev1.TolerationOpExists:
+		if toleration.Value != "" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("value"), toleration.Value, "value must be empty when operator is Exists"))
+		}
+	default:
+		allErrs = append(allErrs, field.NotSupported(fldPath.Child("operator"), toleration.Operator, []string{string(corev1.TolerationOpEqual), string(corev1.TolerationOpExists)}))
+	}
+
+	switch toleration.Effect {
+	case "", corev1.TaintEffectNoSchedule, corev1.TaintEffectPreferNoSchedule, corev1.TaintEffectNoExecute:
+	default:
+		allErrs = append(allErrs, field.NotSupported(fldPath.Child("effect"), toleration.Effect, []string{string(corev1.TaintEffectNoSchedule), string(corev1.TaintEffectPreferNoSchedule), string(corev1.TaintEffectNoExecute)}))
+	}
+
+	if toleration.TolerationSeconds != nil && toleration.Effect != corev1.TaintEffectNoExecute {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("effect"), toleration.Effect, "effect must be NoExecute when tolerationSeconds is set"))
 	}
 
 	return allErrs

@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
@@ -1467,6 +1468,96 @@ func TestValidateCoreDNSReplicas(t *testing.T) {
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
+		})
+	}
+}
+
+func TestValidateUserClusterWorkloadSettings(t *testing.T) {
+	tests := []struct {
+		name       string
+		toleration *corev1.Toleration
+		valid      bool
+	}{
+		{
+			name:  "field not set",
+			valid: true,
+		},
+		{
+			name:       "equal toleration",
+			valid:      true,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpEqual, Value: "system", Effect: corev1.TaintEffectNoSchedule},
+		},
+		{
+			name:       "operator defaults to Equal",
+			valid:      true,
+			toleration: &corev1.Toleration{Key: "node-role", Value: "system"},
+		},
+		{
+			name:       "exists toleration with prefixed key",
+			valid:      true,
+			toleration: &corev1.Toleration{Key: "example.com/node-role", Operator: corev1.TolerationOpExists},
+		},
+		{
+			name:       "tolerate everything",
+			valid:      true,
+			toleration: &corev1.Toleration{Operator: corev1.TolerationOpExists},
+		},
+		{
+			name:       "tolerationSeconds with NoExecute",
+			valid:      true,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute, TolerationSeconds: ptr.To[int64](60)},
+		},
+		{
+			name:       "invalid key",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "not a key", Operator: corev1.TolerationOpExists},
+		},
+		{
+			name:       "empty key without Exists",
+			valid:      false,
+			toleration: &corev1.Toleration{Operator: corev1.TolerationOpEqual, Value: "system"},
+		},
+		{
+			name:       "invalid value",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpEqual, Value: "not a value"},
+		},
+		{
+			name:       "Exists with a value",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpExists, Value: "system"},
+		},
+		{
+			name:       "unknown operator",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: "In", Value: "system"},
+		},
+		{
+			name:       "unknown effect",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpExists, Effect: "NoStart"},
+		},
+		{
+			name:       "tolerationSeconds without NoExecute",
+			valid:      false,
+			toleration: &corev1.Toleration{Key: "node-role", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule, TolerationSeconds: ptr.To[int64](60)},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			spec := &kubermaticv1.ClusterSpec{}
+			if test.toleration != nil {
+				spec.ComponentsOverride.UserClusterWorkloads = &kubermaticv1.UserClusterWorkloadSettings{
+					Tolerations: []corev1.Toleration{*test.toleration},
+				}
+			}
+
+			errs := validateUserClusterWorkloadSettings(spec, nil)
+
+			if (len(errs) == 0) != test.valid {
+				t.Errorf("Expected valid to be %v, got errors %v", test.valid, errs)
 			}
 		})
 	}

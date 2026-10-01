@@ -29,11 +29,14 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	applicationtemplates "k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,6 +46,7 @@ import (
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -83,10 +87,11 @@ type reconciler struct {
 	clusterIsPaused      userclustercontrollermanager.IsPausedChecker
 	appInstaller         applications.ApplicationInstaller
 	seedClusterNamespace string
+	clusterName          string
 	overwriteRegistry    string
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace, overwriteRegistry string, appInstaller applications.ApplicationInstaller) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace, clusterName, overwriteRegistry string, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
@@ -97,6 +102,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		clusterIsPaused:      clusterIsPaused,
 		appInstaller:         appInstaller,
 		seedClusterNamespace: seedClusterNamespace,
+		clusterName:          clusterName,
 		overwriteRegistry:    overwriteRegistry,
 	}
 
@@ -112,6 +118,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 			seedMgr.GetCache(),
 			&appskubermaticv1.ApplicationDefinition{},
 			handler.TypedEnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(r.userClient)),
+		)).
+		// Roll out tolerations changes, which live on the Cluster.
+		WatchesRawSource(source.Kind(
+			seedMgr.GetCache(),
+			&kubermaticv1.Cluster{},
+			handler.TypedEnqueueRequestsFromMapFunc(enqueueAllAppInstallations(r.userClient)),
+			predicateutil.TypedByName[*kubermaticv1.Cluster](clusterName),
+			componentsOverrideChangedPredicate(),
 		)).
 		Build(r)
 
@@ -229,10 +243,15 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		return err
 	}
 
-	if r.overwriteRegistry != "" {
-		err := r.useOverwriteRegistry(ctx, applicationDef, appInstallation)
-		if err != nil {
-			return fmt.Errorf("failed to overwrite the registry in application installation %w", err)
+	// KKP enforces the image registry and tolerations on the applications it manages.
+	workloadTolerations, err := r.userClusterWorkloadTolerations(ctx)
+	if err != nil {
+		return err
+	}
+
+	if r.overwriteRegistry != "" || len(workloadTolerations) > 0 {
+		if err := r.applyManagedValues(ctx, applicationDef, appInstallation, workloadTolerations); err != nil {
+			return fmt.Errorf("failed to apply the KKP-managed values to the application installation: %w", err)
 		}
 	}
 
@@ -244,11 +263,31 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	return nil
 }
 
-func (r *reconciler) useOverwriteRegistry(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
-	if IsSystemApplication(appDefinition) {
-		return r.updateValuesBlock(ctx, appDefinition, appInstallation)
+func (r *reconciler) applyManagedValues(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
+	if IsSystemApplication(appDefinition) || isAdminPushed(appInstallation) {
+		return r.updateValuesBlock(ctx, appDefinition, appInstallation, workloadTolerations)
 	}
 	return nil
+}
+
+// isAdminPushed reports whether an admin marked the ApplicationDefinition default or enforced.
+// User-installed applications are left alone: tolerating the taint would let user workloads onto
+// the node pool it reserves.
+func isAdminPushed(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
+	annotations := appInstallation.GetAnnotations()
+
+	return annotations[appskubermaticv1.ApplicationEnforcedAnnotation] == "true" ||
+		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] == "true"
+}
+
+// userClusterWorkloadTolerations returns this cluster's configured workload tolerations.
+func (r *reconciler) userClusterWorkloadTolerations(ctx context.Context) ([]corev1.Toleration, error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: r.clusterName}, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster %q: %w", r.clusterName, err)
+	}
+
+	return resources.GetUserClusterWorkloadTolerations(cluster.Spec.ComponentsOverride), nil
 }
 
 // IsSystemApplication checks if the ApplicationDefinition is system application.
@@ -548,17 +587,41 @@ func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(c
 	}
 }
 
+// componentsOverrideChangedPredicate passes only Cluster updates that changed componentsOverride.
+func componentsOverrideChangedPredicate() predicate.TypedFuncs[*kubermaticv1.Cluster] {
+	return predicate.TypedFuncs[*kubermaticv1.Cluster]{
+		CreateFunc: func(event.TypedCreateEvent[*kubermaticv1.Cluster]) bool { return false },
+		DeleteFunc: func(event.TypedDeleteEvent[*kubermaticv1.Cluster]) bool { return false },
+		UpdateFunc: func(e event.TypedUpdateEvent[*kubermaticv1.Cluster]) bool {
+			return !equality.Semantic.DeepEqual(e.ObjectOld.Spec.ComponentsOverride, e.ObjectNew.Spec.ComponentsOverride)
+		},
+	}
+}
+
+// enqueueAllAppInstallations enqueues every ApplicationInstallation in the user cluster.
+func enqueueAllAppInstallations(userClient ctrlruntimeclient.Client) func(context.Context, *kubermaticv1.Cluster) []reconcile.Request {
+	return func(ctx context.Context, _ *kubermaticv1.Cluster) []reconcile.Request {
+		appList := &appskubermaticv1.ApplicationInstallationList{}
+		if err := userClient.List(ctx, appList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list applicationInstallation: %w", err))
+			return []reconcile.Request{}
+		}
+
+		res := make([]reconcile.Request, 0, len(appList.Items))
+		for _, appInstallation := range appList.Items {
+			res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: appInstallation.Name, Namespace: appInstallation.Namespace}})
+		}
+		return res
+	}
+}
+
 func handleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	return applicationtemplates.HandleAddonCleanup(ctx, applicationName, seedClusterNamespace, seedClient, log)
 }
 
 // updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place.
-func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
 	appName := appDefinition.Name
-	getOverrideValues, exists := SystemAppsValuesGenerators[appName]
-	if !exists {
-		return nil
-	}
 
 	values, err := appInstallation.Spec.GetParsedValues()
 	if err != nil {
@@ -574,8 +637,16 @@ func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appsk
 		values = initialValues
 	}
 
-	// Generate the Helm values
-	overrideValues := getOverrideValues(appInstallation, r.overwriteRegistry)
+	var overrideValues map[string]any
+	if getOverrideValues, exists := SystemAppsValuesGenerators[appName]; exists {
+		overrideValues = getOverrideValues(appInstallation, r.overwriteRegistry, workloadTolerations)
+	} else {
+		overrideValues = generateApplicationTolerationValues(appName, workloadTolerations, values)
+	}
+
+	if len(overrideValues) == 0 {
+		return nil
+	}
 
 	if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 		return fmt.Errorf("failed to merge application values: %w", err)
@@ -584,6 +655,12 @@ func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appsk
 	rawValues, err := yaml.Marshal(values)
 	if err != nil {
 		return fmt.Errorf("failed to marshal Helm values for %s: %w", appName, err)
+	}
+
+	// This runs on every reconcile, so an unchanged values block must not cause a write.
+	valuesCleared := len(appInstallation.Spec.Values.Raw) == 0 || string(appInstallation.Spec.Values.Raw) == "{}"
+	if appInstallation.Spec.ValuesBlock == string(rawValues) && valuesCleared {
+		return nil
 	}
 
 	// Update the valuesBlock field in-place

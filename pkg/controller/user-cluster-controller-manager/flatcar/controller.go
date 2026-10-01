@@ -32,6 +32,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -49,14 +50,18 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
+	seedClient        ctrlruntimeclient.Client
+	clusterName       string
 	overwriteRegistry string
 	updateWindow      kubermaticv1.UpdateWindow
 	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
+func Add(mgr, seedMgr manager.Manager, clusterName string, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
+		seedClient:        seedMgr.GetClient(),
+		clusterName:       clusterName,
 		overwriteRegistry: overwriteRegistry,
 		updateWindow:      updateWindow,
 		clusterIsPaused:   clusterIsPaused,
@@ -114,6 +119,16 @@ func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
 // https://github.com/flatcar/flatcar-linux-update-operator
 func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: r.clusterName}, cluster); err != nil {
+		return fmt.Errorf("failed to get cluster %q: %w", r.clusterName, err)
+	}
+
+	var workloadTolerations []corev1.Toleration
+	if workloads := cluster.Spec.ComponentsOverride.UserClusterWorkloads; workloads != nil {
+		workloadTolerations = workloads.Tolerations
+	}
+
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		resources.OperatorServiceAccountReconciler(),
 		resources.AgentServiceAccountReconciler(),
@@ -157,7 +172,8 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorDeploymentReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
 	revisionHistoryLimit := modifier.RevisionHistoryLimit(2)
-	err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r, revisionHistoryLimit)
+	tolerations := modifier.Tolerations(workloadTolerations)
+	err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r, revisionHistoryLimit, tolerations)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
@@ -165,7 +181,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		resources.AgentDaemonSetReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r, revisionHistoryLimit); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r, revisionHistoryLimit, tolerations); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 

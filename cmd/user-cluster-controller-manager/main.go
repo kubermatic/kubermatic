@@ -382,7 +382,7 @@ func main() {
 		Start:  runOp.updateWindowStart,
 		Length: runOp.updateWindowLength,
 	}
-	if err := flatcar.Add(mgr, runOp.overwriteRegistry, updateWindow, isPausedChecker); err != nil {
+	if err := flatcar.Add(mgr, seedMgr, runOp.clusterName, runOp.overwriteRegistry, updateWindow, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register the Flatcar controller", zap.Error(err))
 	}
 	log.Info("Registered Flatcar controller")
@@ -432,7 +432,7 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigFlag.Value.String(), SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName}); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.clusterName, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigFlag.Value.String(), SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")

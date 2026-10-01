@@ -29,6 +29,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -181,6 +182,7 @@ func NewTemplateData(
 			KubeVirtInfraStorageClasses:        kubeVirtStorageClasses,
 			KubeVirtInfraVolumeSnapshotClasses: kubeVirtVolumeSnapshotClasses,
 			DisableCSIDriver:                   cluster.Spec.DisableCSIDriver,
+			WorkloadTolerations:                resources.GetUserClusterWorkloadTolerations(cluster.Spec.ComponentsOverride),
 		},
 	}, nil
 }
@@ -244,6 +246,8 @@ type ClusterData struct {
 	KubeVirtInfraVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
 	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
 	DisableCSIDriver bool
+	// WorkloadTolerations are added to every addon workload automatically; templates need not render them.
+	WorkloadTolerations []corev1.Toleration
 }
 
 type ClusterNetwork struct {
