@@ -94,6 +94,7 @@ type controllerRunOptions struct {
 	opaIntegration                    bool
 	opaEnableMutation                 bool
 	opaWebhookTimeout                 int
+	kubeLBDisableGatewayAPIProtection bool
 	useSSHKeyAgent                    bool
 	networkPolicies                   bool
 	caBundleFile                      string
@@ -156,6 +157,7 @@ func main() {
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
+	flag.BoolVar(&runOp.kubeLBDisableGatewayAPIProtection, "kubelb-disable-gateway-api-protection", false, "Do not deploy the ValidatingAdmissionPolicy protecting the Gateway API CRDs for the kubeLB CCM, and leave the upstream safe-upgrades policy alone (set when an admin disabled it).")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
@@ -186,8 +188,10 @@ func main() {
 	versions := kubermatic.GetVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", &versions)
 
-	kubeconfigFlag := flag.Lookup("kubeconfig")
-	if kubeconfigFlag == nil { // Should not be possible.
+	var kubeconfigPath string
+	if kubeconfigFlag := flag.Lookup("kubeconfig"); kubeconfigFlag != nil {
+		kubeconfigPath = kubeconfigFlag.Value.String()
+	} else { // Should not be possible.
 		log.Fatal("can not get kubeconfig flag")
 	}
 
@@ -429,7 +433,7 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigFlag.Value.String(), SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName}); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigPath, SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")
@@ -441,7 +445,7 @@ func main() {
 		kvInfraNamespace = runOp.kubeVirtInfraNamespace
 	}
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kyvernoEnabled); err != nil {
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, kvInfraNamespace, runOp.kyvernoEnabled, runOp.kubeLBDisableGatewayAPIProtection); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 

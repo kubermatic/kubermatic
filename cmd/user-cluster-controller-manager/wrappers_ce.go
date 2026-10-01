@@ -61,6 +61,7 @@ func setupControllers(
 	namespace string,
 	kubeVirtInfraNamespace string,
 	kyvernoEnabled bool,
+	kubeLBDisableGatewayAPIProtection bool,
 ) error {
 	return nil
 }
