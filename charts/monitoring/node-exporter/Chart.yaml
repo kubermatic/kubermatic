@@ -15,7 +15,7 @@
 apiVersion: v2
 name: node-exporter
 version: 9.9.9-dev
-appVersion: 1.9.0
+appVersion: 1.12.1
 description: Prometheus Node Exporter for Kubermatic
 keywords:
   - kubermatic
@@ -28,5 +28,5 @@ sources:
 dependencies:
 - name: prometheus-node-exporter
   repository: https://prometheus-community.github.io/helm-charts
-  version: 4.44.0
+  version: 4.59.0
   alias: node-exporter
