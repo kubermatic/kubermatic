@@ -76,11 +76,11 @@ ok=0
 while [ "$attempt" -lt 20 ]; do
   attempt=$((attempt + 1))
 
-  UP="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'up{job="node-exporter"}' 2>/dev/null || true)"
-  DEAD="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'count({app="node-exporter"})' 2>/dev/null || true)"
-  LIVE="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'count({app_kubernetes_io_name="node-exporter"})' 2>/dev/null || true)"
-  CPUS="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'node:node_num_cpu:sum' 2>/dev/null || true)"
-  UTIL="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'node:node_cpu_utilisation:avg1m' 2>/dev/null || true)"
+  UP="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'up{job="node-exporter"}' 2> /dev/null || true)"
+  DEAD="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'count({app="node-exporter"})' 2> /dev/null || true)"
+  LIVE="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'count({app_kubernetes_io_name="node-exporter"})' 2> /dev/null || true)"
+  CPUS="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'node:node_num_cpu:sum' 2> /dev/null || true)"
+  UTIL="$(kubectl exec --namespace "$NS" "$PROM_POD" -c prometheus -- promtool query instant http://localhost:9090 'node:node_cpu_utilisation:avg1m' 2> /dev/null || true)"
 
   ok=1
 
