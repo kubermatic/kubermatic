@@ -126,7 +126,7 @@ data:
       reject_old_samples_max_age: 168h
       split_queries_by_interval: 15m
     memberlist:
-      cluster_label: release-name.default
+      cluster_label: ""
       join_members:
       - release-name-loki-distributed-memberlist
     query_range:
@@ -685,7 +685,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -799,7 +799,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -913,7 +913,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,tmp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -1039,7 +1039,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -1161,7 +1161,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,temp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -1291,7 +1291,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -1870,7 +1870,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333bed6b36a6ba32641e7ca202c3041c1432c7be481962d9ca67fd5c021dd143
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
