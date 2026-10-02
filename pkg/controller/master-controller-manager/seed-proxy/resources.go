@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -220,7 +219,7 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, config *kubermaticv1.KubermaticConfiguration) reconciling.NamedDeploymentReconcilerFactory {
 	name := deploymentName(seed)
 
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -260,7 +259,7 @@ func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kubermatic/util:2.10.0")),
+					Image:   config.Spec.Util.DockerRepository + ":" + resources.UtilVersion,
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{

@@ -27,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	velerocontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller"
+	gatewayapiprotectioncontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb/gateway-api-protection-controller"
 	policybindingcontroller "k8c.io/kubermatic/v2/pkg/ee/policy-binding-controller"
 	resourceusagecontroller "k8c.io/kubermatic/v2/pkg/ee/resource-usage-controller"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -102,6 +103,7 @@ func setupControllers(
 	kubeVirtInfraNamespace string,
 	kubeVirtAcceleratorQuota bool,
 	kyvernoEnabled bool,
+	kubeLBDisableGatewayAPIProtection bool,
 ) error {
 	if err := resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, kubeVirtInfraNamespace, versions.GitVersion, kubeVirtAcceleratorQuota, caBundle, clusterIsPaused); err != nil {
 		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
@@ -116,6 +118,10 @@ func setupControllers(
 		if err := policybindingcontroller.Add(seedMgr, userMgr, log, namespace, clusterName, clusterIsPaused); err != nil {
 			return fmt.Errorf("failed to create policy-binding controller: %w", err)
 		}
+	}
+
+	if err := gatewayapiprotectioncontroller.Add(seedMgr, userMgr, log, clusterName, versions, kubeLBDisableGatewayAPIProtection); err != nil {
+		return fmt.Errorf("failed to create kubeLB Gateway API protection controller: %w", err)
 	}
 
 	return nil

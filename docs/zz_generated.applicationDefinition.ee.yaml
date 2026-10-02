@@ -29,11 +29,6 @@ spec:
               password:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: pass
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -43,11 +38,6 @@ spec:
               sshKey:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: private-key
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -57,11 +47,6 @@ spec:
               token:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: token
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -71,11 +56,6 @@ spec:
               username:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: user
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -112,11 +92,6 @@ spec:
               password:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: pass
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -127,11 +102,6 @@ spec:
               registryConfigFile:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: .dockerconfigjson
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
@@ -141,11 +111,6 @@ spec:
               username:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: user
-                # Name of the referent.
-                # This field is effectively required, but due to backwards compatibility is
-                # allowed to be empty. Instances of this type with an empty value here are
-                # almost certainly wrong.
-                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false

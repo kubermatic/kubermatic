@@ -22,12 +22,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 // ServiceReconciler returns the function to reconcile the usercluster webhook service.
@@ -96,19 +98,30 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				}
 			}
 
-			newKP, err := triple.NewServerKeyPair(ca,
+			keyConfig, err := certificates.CertificateKeyConfig(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
+
+			newKP, err := triple.NewServerKeyPairWithConfig(ca,
 				commonName,
 				resources.UserClusterWebhookServiceName,
 				data.Cluster().Status.NamespaceName,
 				"",
 				nil,
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
-				[]string{commonName})
+				[]string{commonName},
+				keyConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
+
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(newKP.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
+			}
 			se.Data[resources.ServingCertSecretKey] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.ServingCertKeySecretKey] = triple.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.ServingCertKeySecretKey] = keyPEM
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 

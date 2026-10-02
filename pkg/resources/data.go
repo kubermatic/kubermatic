@@ -480,6 +480,10 @@ func (d *TemplateData) KubeLBImageTag() string {
 	return d.kubeLBImageTag
 }
 
+func (d *TemplateData) UtilImage() string {
+	return d.config.Spec.Util.DockerRepository + ":" + UtilVersion
+}
+
 func (d *TemplateData) MachineControllerImageTag() string {
 	return d.machineControllerImageTag
 }

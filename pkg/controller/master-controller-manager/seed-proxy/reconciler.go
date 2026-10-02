@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -321,7 +320,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 	}
 
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
-		masterDeploymentReconciler(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
+		masterDeploymentReconciler(seed, secret, config),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r); err != nil {

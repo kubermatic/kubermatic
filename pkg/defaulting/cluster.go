@@ -37,6 +37,25 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// restoreKeySpecs undoes the field-wise template merge for every key category
+// the cluster configured itself. A KeySpec is only meaningful as a whole: merging
+// field by field would, for example, add the template's ECDSA curve to a cluster
+// that explicitly asked for RSA, and the result would fail validation. The
+// template therefore only applies to categories the cluster left unset.
+func restoreKeySpecs(spec *kubermaticv1.ClusterSpec, own *kubermaticv1.KeyConfiguration) {
+	if own == nil {
+		return
+	}
+
+	if own.ServiceAccountKey != nil {
+		spec.KeyConfiguration.ServiceAccountKey = own.ServiceAccountKey
+	}
+
+	if own.Certificates != nil {
+		spec.KeyConfiguration.Certificates = own.Certificates
+	}
+}
+
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
 // Defaults are taken from, in order:
 //  1. ClusterTemplate (if given)
@@ -70,9 +89,13 @@ func DefaultClusterSpec(
 	// retrieved it for us already and we can use it as the primary
 	// source for defaults.
 	if template != nil {
+		ownKeyConfig := spec.KeyConfiguration.DeepCopy()
+
 		if err := mergo.Merge(spec, template.Spec); err != nil {
 			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
 		}
+
+		restoreKeySpecs(spec, ownKeyConfig)
 	}
 
 	// Checking and applying each field of the ComponentSettings is tedious,

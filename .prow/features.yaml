@@ -264,6 +264,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -304,7 +306,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-kyverno-e2e
-    run_if_changed: "(go.mod|go.sum|cmd/(seed-controller-manager|user-cluster-controller-manager|kubermatic-webhook)/|pkg/|sdk/|hack/ci/|.prow/)"
+    run_if_changed: "(.*([kK]yverno|[pP]olicy[-_]?([tT]emplate|[bB]inding|catalog)|default-policy).*|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -339,7 +341,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(.*([oO]pa|[gG]atekeeper|[cC]onstraint|allowed-registry).*|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -437,7 +439,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cluster-backup-e2e
-    run_if_changed: "pkg/ee/cluster-backup/"
+    run_if_changed: "pkg/ee/cluster-backup/|pkg/defaulting/configuration.go"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -458,6 +460,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
