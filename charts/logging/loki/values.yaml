@@ -21,6 +21,12 @@ loki:
 
   loki:
     auth_enabled: false
+    storage:
+      # chart 5.48.0 comments out these defaults; keep them so the
+      # rendered config is unchanged from 5.47.2
+      bucketNames:
+        chunks: chunks
+        ruler: ruler
     ingester:
       chunk_idle_period: 3m
       chunk_block_size: 262144

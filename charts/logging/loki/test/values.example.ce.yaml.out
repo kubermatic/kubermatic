@@ -6,7 +6,7 @@ metadata:
   name: loki
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -20,7 +20,7 @@ metadata:
   name: loki
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -135,7 +135,7 @@ metadata:
   name: loki-runtime
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -149,7 +149,7 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -166,7 +166,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: loki-clusterrolebinding
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -187,7 +187,7 @@ metadata:
   name: loki-memberlist
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -212,7 +212,7 @@ metadata:
   name: loki-headless
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -238,7 +238,7 @@ metadata:
   name: loki
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -267,7 +267,7 @@ metadata:
   name: loki
   namespace: default
   labels:
-    helm.sh/chart: loki-5.47.2
+    helm.sh/chart: loki-5.48.0
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.9.6"
@@ -290,7 +290,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5cda108a31c2d09ccf82f099f4373cb12635a2c04f8bfd335390ecaa7241df48
+        checksum/config: 6059e8269eaf15eba34ce45853902923c1fad17f9a764c057a9f0d2316cad48f
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"

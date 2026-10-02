@@ -32,4 +32,4 @@ maintainers:
 dependencies:
   - name: loki
     repository: https://grafana.github.io/helm-charts
-    version: 5.47.2
+    version: 5.48.0
