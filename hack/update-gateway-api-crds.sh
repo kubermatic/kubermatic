@@ -23,7 +23,7 @@ containerize ./hack/update-gateway-api-crds.sh
 
 cd charts/envoy-gateway-controller/
 
-# Gateway API version required by Envoy Gateway v1.6.1
+# Gateway API version required by Envoy Gateway v1.6.7
 version=v1.4.1
 source=https://github.com/kubernetes-sigs/gateway-api/releases/download/$version/standard-install.yaml
 # do not use "crds/" or else Helm will try to install the
