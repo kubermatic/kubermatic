@@ -19,26 +19,26 @@ rule_files:
 evaluation_interval: 1m
 
 tests:
-  - interval: 1m
+  - interval: 30s
     input_series:
       # node-exporter series carrying exactly the labels the scrape pipeline
       # attaches: keep filter on app_kubernetes_io_name, pod-label labelmap,
       # namespace/pod/node_name target labels. No plain app label exists.
       - series: 'node_cpu_seconds_total{job="node-exporter",app_kubernetes_io_name="node-exporter",mode="idle",cpu="0",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
-        values: '0+60x100'
+        values: '0+30x200'
       - series: 'node_cpu_seconds_total{job="node-exporter",app_kubernetes_io_name="node-exporter",mode="idle",cpu="1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
-        values: '0+60x100'
+        values: '0+30x200'
       # kube-state-metrics series feeding the node_namespace_pod:kube_pod_info:
       # recording the per-node rules join on
       - series: 'kube_pod_info{job="kube-state-metrics",node="node1",namespace="monitoring",pod="node-exporter-abc",created_by_kind="DaemonSet",created_by_name="node-exporter",host_ip="10.0.0.1",pod_ip="10.244.0.1",uid="abc-123"}'
-        values: '1+0x100'
+        values: '1+0x200'
       # filesystem nearly full: 0.1% available, writable
       - series: 'node_filesystem_avail_bytes{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
-        values: '1000+0x100'
+        values: '1000+0x200'
       - series: 'node_filesystem_size_bytes{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
-        values: '1000000+0x100'
+        values: '1000000+0x200'
       - series: 'node_filesystem_readonly{job="node-exporter",app_kubernetes_io_name="node-exporter",fstype="ext4",device="/dev/sda1",namespace="monitoring",pod="node-exporter-abc",node_name="node1",instance="10.0.0.1:9100"}'
-        values: '0+0x100'
+        values: '0+0x200'
 
     promql_expr_test:
       # the full join chain revived: scrape labels -> kube_pod_info -> node label
