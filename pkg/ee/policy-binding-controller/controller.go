@@ -26,7 +26,6 @@ package policybindingcontroller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -310,9 +309,9 @@ func (r *reconciler) kyvernoClusterPolicyFactory(template *kubermaticv1.PolicyTe
 			}
 			kuberneteshelper.EnsureAnnotations(cp, annotations)
 
-			var spec kyvernov1.Spec
-			if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &spec); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal policySpec for ClusterPolicy %s: %w", template.Name, err)
+			spec, err := policySpecWithDefaults(template.Spec.PolicySpec.Raw, "ClusterPolicy")
+			if err != nil {
+				return nil, fmt.Errorf("failed to default policySpec for ClusterPolicy %s: %w", template.Name, err)
 			}
 			cp.Spec = spec
 			return cp, nil
@@ -345,9 +344,9 @@ func (r *reconciler) kyvernoPolicyFactory(template *kubermaticv1.PolicyTemplate,
 			}
 			kuberneteshelper.EnsureAnnotations(p, annotations)
 
-			var spec kyvernov1.Spec
-			if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &spec); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal policySpec for Policy %s: %w", template.Name, err)
+			spec, err := policySpecWithDefaults(template.Spec.PolicySpec.Raw, "Policy")
+			if err != nil {
+				return nil, fmt.Errorf("failed to default policySpec for Policy %s: %w", template.Name, err)
 			}
 			p.Spec = spec
 			return p, nil
