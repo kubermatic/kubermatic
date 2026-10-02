@@ -325,7 +325,7 @@ func externalEnvoyProxyObject() *unstructured.Unstructured {
 						"envoyDeployment": map[string]interface{}{
 							"replicas": int64(1),
 							"container": map[string]interface{}{
-								"image": "envoyproxy/envoy:distroless-v1.38.3",
+								"image": "envoyproxy/envoy:distroless-v1.38.4",
 							},
 						},
 						"envoyService": map[string]interface{}{
