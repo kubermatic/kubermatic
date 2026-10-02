@@ -58,6 +58,7 @@ data:
       },
       "datacenter": "dc1",
       "data_dir": "/consul/data",
+      "log_level": "INFO",
       "enable_debug": false,
       "domain": "consul",
       "limits": {
@@ -334,7 +335,7 @@ spec:
       annotations:
         "consul.hashicorp.com/connect-inject": "false"
         "consul.hashicorp.com/mesh-inject": "false"
-        "consul.hashicorp.com/config-checksum": 172f50008a43216944d1c0a35f72aaed1aca0489c93c7a2e0eec024dc343d0e2
+        "consul.hashicorp.com/config-checksum": 732be5b8ecaab1850eda3e3b9ebcdc81f1b5ef65fd9a3c2df36d5d8f4d3a6924
         "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": "extra-config"
         
     spec:
@@ -369,7 +370,7 @@ spec:
             name: release-name-consul-server-tmp-extra-config
       initContainers:
       - name: locality-init
-        image: hashicorp/consul-k8s-control-plane:1.9.2
+        image: hashicorp/consul-k8s-control-plane:1.9.11
         
 
         env:
@@ -397,10 +398,9 @@ spec:
           runAsUser: 100
       containers:
         - name: consul
-          image: "docker.io/hashicorp/consul:1.22.2"
+          image: "docker.io/hashicorp/consul:1.22.7"
           
 
-          imagePullPolicy: 
           env:
             - name: ADVERTISE_IP
               valueFrom:
@@ -529,7 +529,7 @@ metadata:
 spec:
   containers:
     - name: consul-test
-      image: "docker.io/hashicorp/consul:1.22.2"
+      image: "docker.io/hashicorp/consul:1.22.7"
       
 
       env:
