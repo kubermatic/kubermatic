@@ -600,7 +600,7 @@ spec:
             maxUnavailable: 1
           type: RollingUpdate
         container:
-          image: 'envoyproxy/envoy:distroless-v1.36.3'
+          image: 'envoyproxy/envoy:distroless-v1.36.6'
           resources:
             
             limits:
