@@ -6,10 +6,10 @@ metadata:
   name: release-name-loki-distributed-distributor
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
 spec:
@@ -28,10 +28,10 @@ metadata:
   name: release-name-loki-distributed-ingester
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
 spec:
@@ -50,10 +50,10 @@ metadata:
   name: release-name-loki-distributed
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 
@@ -66,10 +66,10 @@ metadata:
   name: release-name-loki-distributed
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
 data:
   config.yaml: |
@@ -126,6 +126,7 @@ data:
       reject_old_samples_max_age: 168h
       split_queries_by_interval: 15m
     memberlist:
+      cluster_label: ""
       join_members:
       - release-name-loki-distributed-memberlist
     query_range:
@@ -200,10 +201,10 @@ metadata:
   name: release-name-loki-distributed-runtime
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
 data:
   runtime.yaml: |
@@ -218,10 +219,10 @@ metadata:
   name: release-name-loki-distributed-compactor
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
 spec:
@@ -248,10 +249,10 @@ metadata:
   name: release-name-loki-distributed-distributor
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
 spec:
@@ -307,10 +308,10 @@ metadata:
   name: release-name-loki-distributed-ingester
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
 spec:
@@ -478,10 +479,10 @@ metadata:
   name: release-name-loki-distributed-querier
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
 spec:
@@ -508,10 +509,10 @@ metadata:
   name: release-name-loki-distributed-query-frontend-headless
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
     prometheus.io/service-monitor: "false"
@@ -545,10 +546,10 @@ metadata:
   name: release-name-loki-distributed-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
 spec:
@@ -607,10 +608,10 @@ metadata:
   name: release-name-loki-distributed-memberlist
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -632,10 +633,10 @@ kind: Service
 metadata:
   name: release-name-loki-distributed-table-manager
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: table-manager
 spec:
@@ -662,10 +663,10 @@ metadata:
   name: release-name-loki-distributed-distributor
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
     app.kubernetes.io/part-of: memberlist
@@ -684,7 +685,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -703,7 +704,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: distributor
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -777,10 +778,10 @@ metadata:
   name: release-name-loki-distributed-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
 spec:
@@ -798,7 +799,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -817,7 +818,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: query-frontend
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -890,10 +891,10 @@ kind: Deployment
 metadata:
   name: release-name-loki-distributed-ruler
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ruler
     app.kubernetes.io/part-of: memberlist
@@ -912,7 +913,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,tmp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -932,7 +933,7 @@ spec:
       terminationGracePeriodSeconds: 300
       containers:
         - name: ruler
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -1021,10 +1022,10 @@ kind: Deployment
 metadata:
   name: release-name-loki-distributed-table-manager
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: table-manager
 spec:
@@ -1038,7 +1039,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -1057,7 +1058,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: table-manager
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -1137,10 +1138,10 @@ metadata:
   name: release-name-loki-distributed-compactor
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
     app.kubernetes.io/part-of: memberlist
@@ -1160,7 +1161,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,temp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
@@ -1180,7 +1181,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: compactor
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -1267,10 +1268,10 @@ metadata:
   name: release-name-loki-distributed-ingester
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
     app.kubernetes.io/part-of: memberlist
@@ -1290,7 +1291,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -1319,7 +1320,7 @@ spec:
       terminationGracePeriodSeconds: 300
       containers:
         - name: ingester
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -1410,10 +1411,10 @@ metadata:
   name: release-name-loki-distributed-memcached-chunks
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: memcached-chunks
 spec:
@@ -1519,10 +1520,10 @@ metadata:
   name: release-name-loki-distributed-memcached-frontend
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: memcached-frontend
 spec:
@@ -1628,10 +1629,10 @@ metadata:
   name: release-name-loki-distributed-memcached-index-queries
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: memcached-index-queries
 spec:
@@ -1737,10 +1738,10 @@ metadata:
   name: release-name-loki-distributed-memcached-index-writes
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: memcached-index-writes
 spec:
@@ -1846,10 +1847,10 @@ metadata:
   name: release-name-loki-distributed-querier
   namespace: default
   labels:
-    helm.sh/chart: loki-distributed-0.78.0
+    helm.sh/chart: loki-distributed-0.80.6
     app.kubernetes.io/name: loki-distributed
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.9.2"
+    app.kubernetes.io/version: "2.9.13"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
     app.kubernetes.io/part-of: memberlist
@@ -1869,7 +1870,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        checksum/config: ed3f5ae8a9458d916d545b1eb294a49278ea39a5d50ac9e2a2af1412f95a7c81
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -1898,7 +1899,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: querier
-          image: docker.io/grafana/loki:2.9.2
+          image: docker.io/grafana/loki:2.9.13
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
