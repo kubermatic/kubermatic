@@ -69,8 +69,8 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 		}
 	}
 
-	if newCluster.Spec.ClusterNetwork.KonnectivityEnabled == nil { //nolint:staticcheck
-		newCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(true) //nolint:staticcheck
+	if newCluster.Spec.ClusterNetwork.KonnectivityEnabled == nil {
+		newCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(true)
 	}
 
 	// Freeze the global key configuration into the cluster. This has to happen on
