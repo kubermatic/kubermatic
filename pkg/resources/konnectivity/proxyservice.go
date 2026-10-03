@@ -36,6 +36,9 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL s
 			// because konnectivity proxy runs in sidecar in apiserver pod
 			se.Spec.Selector = resources.BaseAppLabels(resources.ApiserverDeploymentName, nil)
 
+			// Agents must reach the proxy sidecar before the API server Pod becomes Ready.
+			se.Spec.PublishNotReadyAddresses = true
+
 			if se.Annotations == nil {
 				se.Annotations = make(map[string]string)
 			}
