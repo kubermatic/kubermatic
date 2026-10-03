@@ -1069,7 +1069,9 @@ type MachineControllerSettings struct {
 	DeploymentSettings `json:",inline"`
 	// SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
 	// deletion is stuck longer than this duration, eviction is skipped and the node is
-	// force-deleted. Defaults to the machine-controller binary's built-in 2h when unset.
+	// force-deleted. Setting this to 0 disables the timeout: the machine then waits for
+	// eviction as long as its node is Ready and a schedulable target node exists.
+	// Defaults to the machine-controller binary's built-in 2h when unset.
 	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
 }
 
