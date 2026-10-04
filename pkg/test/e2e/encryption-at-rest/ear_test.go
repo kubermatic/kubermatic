@@ -26,6 +26,7 @@ import (
 	"flag"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -326,6 +327,7 @@ func (r *runner) ensureDataEncryption(
 	)
 
 	reg := regexp.MustCompile(regexPattern)
+	etcdKey := fmt.Sprintf("/registry/secrets/%s/%s", secret.Namespace, secret.Name)
 
 	err := wait.PollImmediateLog(
 		ctx, r.logger, defaultInterval, defaultTimeout*2,
@@ -340,17 +342,24 @@ func (r *runner) ensureDataEncryption(
 				"etcd",
 				"etcdctl",
 				"get",
-				fmt.Sprintf("/registry/secrets/%s/%s", secret.Namespace, secret.Name),
+				etcdKey,
 				"-w", "fields",
 			)
 			if err != nil {
 				return fmt.Errorf("failed to get data from etcd (stdout=%s, stderr=%s): %w", stdout, stderr, err), nil
 			}
+			// etcdctl prints warnings to stderr even if the command succeeds, for example
+			// about the ETCDCTL_API environment variable, which etcd 3.6+ does not know anymore.
 			if stderr != "" {
-				return fmt.Errorf("failed to get data from etcd (stdout=%s, stderr=%s)", stdout, stderr), nil
+				r.logger.Infof("stderr from etcdctl: %s", stderr)
 			}
 
 			r.logger.Infof("stdout from etcdctl: %s", stdout)
+
+			// an empty result must not be mistaken for an unencrypted secret
+			if !strings.Contains(stdout, etcdKey) {
+				return fmt.Errorf("etcd did not return the secret (stdout=%s, stderr=%s)", stdout, stderr), nil
+			}
 
 			encrypted := reg.MatchString(stdout)
 			if encrypted == shouldBeEncrypted {
