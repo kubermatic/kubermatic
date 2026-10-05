@@ -44,10 +44,7 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 	// mergo considers a zero value to be unset, so an explicit skipEvictionAfter: 0
 	// (which disables the eviction timeout) would be silently replaced by a
 	// ClusterTemplate or Seed default.
-	var explicitSkipEvictionAfter *metav1.Duration
-	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil {
-		explicitSkipEvictionAfter = &metav1.Duration{Duration: mc.SkipEvictionAfter.Duration}
-	}
+	explicitSkipEvictionAfter := copySkipEvictionAfter(spec)
 
 	// If a ClusterTemplate was configured for the Seed, the caller
 	// retrieved it for us already and we can use it as the primary
@@ -57,6 +54,11 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
 		}
 
+		// The Cluster did not set a value, so the template's value (if any) now takes
+		// precedence and must not be overwritten by the Seed default below.
+		if explicitSkipEvictionAfter == nil {
+			explicitSkipEvictionAfter = copySkipEvictionAfter(spec)
+		}
 	}
 
 	// Checking and applying each field of the ComponentSettings is tedious,
@@ -69,6 +71,16 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 
 	if explicitSkipEvictionAfter != nil && spec.ComponentsOverride.MachineController != nil {
 		spec.ComponentsOverride.MachineController.SkipEvictionAfter = explicitSkipEvictionAfter
+	}
+
+	return nil
+}
+
+// copySkipEvictionAfter returns a copy of the spec's skipEvictionAfter, or nil if unset.
+// A copy is needed because mergo writes into the metav1.Duration it finds in the spec.
+func copySkipEvictionAfter(spec *kubermaticv1.ClusterSpec) *metav1.Duration {
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil {
+		return &metav1.Duration{Duration: mc.SkipEvictionAfter.Duration}
 	}
 
 	return nil
