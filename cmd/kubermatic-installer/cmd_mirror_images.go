@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"iter"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -49,21 +48,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-type MirrorImagesOptions struct {
+type ImageCollectionOptions struct {
 	Options
 
-	Registry                  string
 	Config                    string
 	Versions                  kubermaticversion.Versions
 	VersionFilter             string
 	ProviderFilter            []string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
-	Archive                   bool
-	ArchivePath               string
-	LoadFrom                  string
-	DryRun                    bool
-	Insecure                  bool
 
 	AddonsPath  string
 	AddonsImage string
@@ -71,12 +64,34 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
+
+	// CABundle is the CA bundle that KKP resources are rendered with while their images are
+	// being enumerated. If empty, the bundle shipped with the kubermatic-operator chart plus
+	// the chart's static/extra-ca drop-ins are used, matching what the chart itself renders.
+	//
+	// Note that this does not influence how this command talks to registries: image copying
+	// goes through crane, which uses the host's system trust store (see --insecure to skip
+	// verification entirely).
+	CABundle string
+}
+
+type MirrorImagesOptions struct {
+	ImageCollectionOptions
+
+	Registry    string
+	Archive     bool
+	ArchivePath string
+	LoadFrom    string
+	DryRun      bool
+	Insecure    bool
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorImagesOptions{
-		HelmTimeout: 5 * time.Minute,
-		HelmBinary:  "helm",
+		ImageCollectionOptions: ImageCollectionOptions{
+			HelmTimeout: 5 * time.Minute,
+			HelmBinary:  "helm",
+		},
 	}
 
 	cmd := &cobra.Command{
@@ -115,13 +130,20 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
-	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, fmt.Sprintf("Cloud providers to mirror images for. Valid values are: %s. Can be specified multiple times. If not specified, images for all providers will be mirrored", strings.Join(allSupportedProviderNames(), ", ")))
-	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
+	addImageCollectionFlags(cmd, &opt.ImageCollectionOptions, "mirror")
+
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.Insecure, "insecure", false, "Insecure option to bypass HTTPS/TLS certificate verification")
+
+	return cmd
+}
+
+func addImageCollectionFlags(cmd *cobra.Command, opt *ImageCollectionOptions, verb string) {
+	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
+	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
+	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, fmt.Sprintf("Cloud providers to %s images for. Valid values are: %s. Can be specified multiple times. If not specified, images for all providers will be %sed", verb, strings.Join(allSupportedProviderNames(), ", "), verb))
+	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides and tag suffixes in the referenced KubermaticConfiguration to reuse a configuration that already specifies overrides (note that the development-only dockerTag override is still observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
 
@@ -130,9 +152,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
+	cmd.PersistentFlags().StringVar(&opt.CABundle, "ca-bundle", "", "Render KKP resources with this CA bundle instead of the one shipped with the kubermatic-operator chart (this does not affect how registries are contacted, see --insecure)")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x or 4.x binary to use for rendering charts")
-
-	return cmd
 }
 
 func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.KubermaticConfiguration, error) {
@@ -140,6 +161,10 @@ func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.Kub
 		return nil, errors.New("no target registry was passed")
 	}
 
+	return loadAndDefaultKubermaticConfiguration(&options.ImageCollectionOptions)
+}
+
+func loadAndDefaultKubermaticConfiguration(options *ImageCollectionOptions) (*kubermaticv1.KubermaticConfiguration, error) {
 	if options.AddonsImage != "" && options.AddonsPath != "" {
 		return nil, errors.New("--addons-image and --addons-path must not be set at the same time")
 	}
@@ -188,6 +213,7 @@ func clearRepositoryOverrides(config *kubermaticv1.KubermaticConfiguration) {
 	config.Spec.MasterController.DockerRepository = ""
 	config.Spec.SeedController.DockerRepository = ""
 	config.Spec.Webhook.DockerRepository = ""
+	config.Spec.Util.DockerRepository = ""
 	config.Spec.UserCluster.KubermaticDockerRepository = ""
 	config.Spec.UserCluster.DNATControllerDockerRepository = ""
 	config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
@@ -202,7 +228,7 @@ func clearRepositoryOverrides(config *kubermaticv1.KubermaticConfiguration) {
 	config.Spec.UserCluster.Addons.DockerTagSuffix = ""
 }
 
-func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorImagesOptions, kubermaticConfig *kubermaticv1.KubermaticConfiguration) (string, error) {
+func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *ImageCollectionOptions, kubermaticConfig *kubermaticv1.KubermaticConfiguration) (string, error) {
 	// if no local addons path is given, use the configured addons
 	// Docker image and extract the addons from there
 	addonsImage := options.AddonsImage
@@ -334,33 +360,42 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
+	imageSet, err := collectImages(ctx, logger, versions, kubermaticConfig, &options.ImageCollectionOptions)
 	if err != nil {
-		return fmt.Errorf("failed to load versions: %w", err)
+		return err
 	}
 
-	caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
+	return archiveOrCopyImages(ctx, logger, imageSet, options, userAgent)
+}
+
+func collectImages(ctx context.Context, logger *logrus.Logger, versions kubermaticversion.Versions, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *ImageCollectionOptions) (sets.Set[string], error) {
+	clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 	if err != nil {
-		return fmt.Errorf("failed to load CA bundle: %w", err)
+		return nil, fmt.Errorf("failed to load versions: %w", err)
+	}
+
+	caBundle, err := imageCollectionCABundle(options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CA bundle: %w", err)
 	}
 
 	if options.AddonsPath == "" {
 		options.AddonsPath, err = getAddonsPath(ctx, logger, options, kubermaticConfig)
 		if err != nil {
-			return fmt.Errorf("failed to get addons path: %w", err)
+			return nil, fmt.Errorf("failed to get addons path: %w", err)
 		}
 		defer os.RemoveAll(options.AddonsPath)
 	}
 
 	allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
 	if err != nil {
-		return fmt.Errorf("failed to load addons: %w", err)
+		return nil, fmt.Errorf("failed to load addons: %w", err)
 	}
 
 	// Parse and validate the provider filter
 	providerFilter, err := parseProviderFilter(options.ProviderFilter)
 	if err != nil {
-		return fmt.Errorf("failed to parse provider filter: %w", err)
+		return nil, fmt.Errorf("failed to parse provider filter: %w", err)
 	}
 
 	// Filter cloud specs based on the provider filter
@@ -379,7 +414,7 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 
 	imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix, cloudSpecs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	imageSet.Insert(imageList...)
 
@@ -392,23 +427,24 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 	// if we have a charts directory, we try to render the charts and add the images to our list
 	helmChartImages, err := collectHelmChartImages(ctx, logger, kubermaticConfig, clusterVersions, options)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	imageSet.Insert(sets.List(helmChartImages)...)
 
 	// get images from system and default applications
 	applicationImages, err := collectApplicationImages(logger, kubermaticConfig, options)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	imageSet.Insert(sets.List(applicationImages)...)
 
 	// finally, add some static images that are not covered by any of the above
 	imageSet.Insert(staticImages()...)
-	return archiveOrCopyImages(ctx, logger, imageSet, options, userAgent)
+
+	return imageSet, nil
 }
 
-func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, clusterVersions []*version.Version, options *MirrorImagesOptions) (sets.Set[string], error) {
+func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, clusterVersions []*version.Version, options *ImageCollectionOptions) (sets.Set[string], error) {
 	imageSet := sets.New[string]()
 
 	if options.ChartsDirectory == "" {
@@ -436,7 +472,7 @@ func collectHelmChartImages(ctx context.Context, logger *logrus.Logger, kubermat
 	return imageSet, nil
 }
 
-func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *MirrorImagesOptions) (sets.Set[string], error) {
+func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *ImageCollectionOptions) (sets.Set[string], error) {
 	imageSet := sets.New[string]()
 
 	helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
@@ -655,4 +691,19 @@ func resolveChartURL(chart *catalogv1alpha1.ChartConfig, version *catalogv1alpha
 
 	// use default Helm repository from application-catalog-manager
 	return catalogv1alpha1.DefaultHelmRepository
+}
+
+// imageCollectionCABundle returns the CA bundle that KKP resources are rendered with while their
+// images are enumerated. Unless an explicit --ca-bundle is given, this mirrors what the
+// kubermatic-operator chart renders from disk, i.e. the shipped bundle plus every drop-in in
+// static/extra-ca, so that the rendering input matches the installation.
+//
+// This bundle is not used to contact any registry; crane copies images using the host's system
+// trust store.
+func imageCollectionCABundle(options *ImageCollectionOptions) (*certificates.CABundle, error) {
+	if options.CABundle != "" {
+		return certificates.NewCABundleFromFile(options.CABundle)
+	}
+
+	return localCABundle(options.ChartsDirectory)
 }

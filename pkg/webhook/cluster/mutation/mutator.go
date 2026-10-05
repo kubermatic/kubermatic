@@ -75,8 +75,18 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 		return nil, field.InternalError(nil, err)
 	}
 
+	// The key configuration is immutable and only ever defaulted on creation.
+	// Defaulting also runs on updates, where the template would otherwise inject
+	// a key configuration into clusters that were created without one and make
+	// every unrelated update fail the immutability validation.
+	keyConfig := newCluster.Spec.KeyConfiguration.DeepCopy()
+
 	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, newCluster.Annotations, defaultTemplate, seed, config, provider); err != nil {
 		return nil, field.InternalError(nil, err)
+	}
+
+	if oldCluster != nil {
+		newCluster.Spec.KeyConfiguration = keyConfig
 	}
 
 	// perform operation-dependent mutations

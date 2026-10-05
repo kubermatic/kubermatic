@@ -119,7 +119,7 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
-	_, create := GetInternalKubeconfigReconciler("some-namespace", "some-name", "test-creator-cn", orgs, data, zap.NewNop().Sugar())()
+	_, create := GetInternalKubeconfigReconciler("some-namespace", "some-name", "test-creator-cn", orgs, data, zap.NewNop().Sugar(), triple.LegacyKeyConfigGetter)()
 	secret, err := create(&corev1.Secret{})
 	if err != nil {
 		t.Fatal(err)

@@ -24,11 +24,14 @@
 {{ $version = "v1.33.11" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.34" }}
-{{ $version = "v1.34.5" }}
+{{ $version = "v1.34.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.35" }}
-{{ $version = "v1.34.5" }}
+{{ $version = "v1.34.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.36" }}
-{{ $version = "v1.34.5" }}
+{{ $version = "v1.34.6" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.37" }}
+{{ $version = "v1.34.6" }}
 {{ end }}

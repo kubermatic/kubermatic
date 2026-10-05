@@ -184,6 +184,8 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	allErrs = append(allErrs, validateAuthenticationConfiguration(spec, parentFieldPath)...)
 
+	allErrs = append(allErrs, ValidateKeyConfiguration(spec.KeyConfiguration, parentFieldPath.Child("keyConfiguration"))...)
+
 	return allErrs
 }
 
@@ -336,6 +338,13 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 			specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
 		)...)
 	}
+
+	// The key configuration is frozen when the cluster is created.
+	allErrs = append(allErrs, ValidateKeyConfigurationUpdate(
+		oldCluster.Spec.KeyConfiguration,
+		newCluster.Spec.KeyConfiguration,
+		specPath.Child("keyConfiguration"),
+	)...)
 
 	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(

@@ -214,6 +214,11 @@ Prow config lives in 15 files under `.prow/` (`provider-*.yaml`, `tests.yaml`, `
 as `pre-kubermatic-e2e-<provider>-ubuntu-1.X` with `RELEASES_TO_TEST` set to the new minor, instead
 of renaming an existing job for the oldest minor.
 
+Update the `VERSION_TO_TEST` environment variable for the backup-related e2e jobs in
+`.prow/features.yaml` (`pre-kubermatic-etcd-launcher-e2e`, `pre-kubermatic-cluster-backup-e2e`)
+so the etcd and cluster backup suites exercise the new minor. The variable accepts a minor version
+like `v1.37` and resolves it to the latest supported patch release.
+
 The conformance-tester (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of exclusion
 filters for tests that cannot run in the CI environment. Check it; usually no change is needed.
 

@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap"
@@ -102,12 +103,44 @@ func ClusterVersion(log *zap.SugaredLogger) string {
 		log.Infow("Defaulting cluster version to DefaultKubernetesVersioning", "version", v)
 	}
 
+	v = resolveMinorVersion(log, v)
+
 	// consistently output a leading "v"
 	if v != "" && v[0] != 'v' {
 		v = "v" + v
 	}
 
 	return v
+}
+
+// resolveMinorVersion resolves a bare minor version like "v1.37" to the newest
+// supported patch release of that minor, so that patch release updates are
+// picked up without touching the Prow configuration. Full versions and
+// unsupported minors are returned unchanged.
+func resolveMinorVersion(log *zap.SugaredLogger, v string) string {
+	// full versions pass through; NewSemver also accepts bare minors by
+	// padding them, so an exact string comparison tells the two apart
+	if parsed, err := semver.NewSemver(v); err == nil && parsed.String() == strings.TrimPrefix(v, "v") {
+		return v
+	}
+
+	majorMinor := strings.TrimPrefix(v, "v")
+
+	var newest *semver.Semver
+	for i := range defaulting.DefaultKubernetesVersioning.Versions {
+		sv := &defaulting.DefaultKubernetesVersioning.Versions[i]
+		if sv.MajorMinor() == majorMinor && (newest == nil || sv.GreaterThan(newest)) {
+			newest = sv
+		}
+	}
+
+	if newest == nil {
+		return v
+	}
+
+	log.Infow("Resolved minor version to latest supported patch release", "minor", v, "version", newest.String())
+
+	return newest.String()
 }
 
 func ClusterSemver(log *zap.SugaredLogger) semver.Semver {
