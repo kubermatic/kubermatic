@@ -939,6 +939,26 @@ func TestDefaultSkipEvictionAfter(t *testing.T) {
 			expected: twoHours,
 		},
 		{
+			name:     "no cluster value: a zero from the cluster template is not overwritten by the seed default",
+			template: zero,
+			seed:     twoHours,
+			expected: zero,
+		},
+		{
+			name:     "explicit non-zero wins over both the cluster template and the seed default",
+			cluster:  fourHours,
+			template: twoHours,
+			seed:     twoHours,
+			expected: fourHours,
+		},
+		{
+			name:     "explicit zero wins over both the cluster template and the seed default",
+			cluster:  zero,
+			template: fourHours,
+			seed:     twoHours,
+			expected: zero,
+		},
+		{
 			name:     "no cluster value: the cluster template wins over the seed default",
 			template: fourHours,
 			seed:     twoHours,
