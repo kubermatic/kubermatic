@@ -57,6 +57,7 @@ var (
 
 	gte131, _ = semverlib.NewConstraint(">= 1.31")
 	lt135, _  = semverlib.NewConstraint("<= 1.34")
+	lt137, _  = semverlib.NewConstraint("< 1.37")
 )
 
 const (
@@ -441,7 +442,12 @@ func getApiserverFlags(
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
 
 	if data.IsAuthenticationConfigurationEnabled() {
-		featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
+		// Note: This feature gate is GA since Kubernetes 1.34 and was removed in 1.37,
+		// where setting it prevents the kube-apiserver from starting.
+		if lt137.Check(cluster.Status.Versions.Apiserver.Semver()) {
+			featureGates = append(featureGates, "StructuredAuthenticationConfiguration=true")
+		}
+
 		flags = append(flags, "--authentication-config", filepath.Join("/etc/kubernetes/authentication-config", resources.AuthenticationConfigurationKey))
 	}
 
