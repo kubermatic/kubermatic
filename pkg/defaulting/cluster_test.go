@@ -19,6 +19,7 @@ package defaulting
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -28,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -823,6 +825,144 @@ func TestDefaultAuditLogging(t *testing.T) {
 				t.Fatalf("DefaultClusterSpec returned error: %v", err)
 			}
 			assert.Equal(t, tc.expectedAuditLogging, tc.spec.AuditLogging)
+		})
+	}
+}
+
+func TestDefaultSkipEvictionAfter(t *testing.T) {
+	const dcName = "skip-eviction-test-dc"
+
+	// Durations are built fresh for every case: mergo writes into the metav1.Duration
+	// it finds in the destination, so sharing one pointer between the input and the
+	// expectation would make the comparison pass no matter what.
+	duration := func(d *time.Duration) *metav1.Duration {
+		if d == nil {
+			return nil
+		}
+		return &metav1.Duration{Duration: *d}
+	}
+
+	makeSeed := func(seedDefault *time.Duration) *kubermaticv1.Seed {
+		seed := &kubermaticv1.Seed{
+			Spec: kubermaticv1.SeedSpec{
+				Datacenters: map[string]kubermaticv1.Datacenter{
+					dcName: {
+						Spec: kubermaticv1.DatacenterSpec{
+							Fake: &kubermaticv1.DatacenterSpecFake{},
+						},
+					},
+				},
+			},
+		}
+		if seedDefault != nil {
+			seed.Spec.DefaultComponentSettings.MachineController = &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: duration(seedDefault),
+			}
+		}
+		return seed
+	}
+
+	makeSpec := func(clusterValue *time.Duration) *kubermaticv1.ClusterSpec {
+		spec := &kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: dcName,
+				ProviderName:   string(kubermaticv1.FakeCloudProvider),
+				Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+			},
+		}
+		if clusterValue != nil {
+			spec.ComponentsOverride.MachineController = &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: duration(clusterValue),
+			}
+		}
+		return spec
+	}
+
+	makeTemplate := func(templateValue *time.Duration) *kubermaticv1.ClusterTemplate {
+		if templateValue == nil {
+			return nil
+		}
+		template := &kubermaticv1.ClusterTemplate{}
+		template.Spec.ComponentsOverride.MachineController = &kubermaticv1.MachineControllerSettings{
+			SkipEvictionAfter: duration(templateValue),
+		}
+		return template
+	}
+
+	zero := ptr.To(time.Duration(0))
+	twoHours := ptr.To(2 * time.Hour)
+	fourHours := ptr.To(4 * time.Hour)
+
+	testCases := []struct {
+		name     string
+		cluster  *time.Duration
+		seed     *time.Duration
+		template *time.Duration
+		expected *time.Duration
+	}{
+		{
+			name:     "no cluster value: seed default applies",
+			seed:     twoHours,
+			expected: twoHours,
+		},
+		{
+			name:     "no cluster value: a zero seed default still applies",
+			seed:     zero,
+			expected: zero,
+		},
+		{
+			name:     "explicit zero is not overwritten by the seed default",
+			cluster:  zero,
+			seed:     twoHours,
+			expected: zero,
+		},
+		{
+			name:     "explicit zero survives when the seed has no default",
+			cluster:  zero,
+			expected: zero,
+		},
+		{
+			name:     "explicit non-zero still wins over the seed default",
+			cluster:  fourHours,
+			seed:     twoHours,
+			expected: fourHours,
+		},
+		{
+			name:     "explicit zero is not overwritten by a cluster template",
+			cluster:  zero,
+			template: twoHours,
+			expected: zero,
+		},
+		{
+			name:     "no cluster value: the cluster template applies",
+			template: twoHours,
+			expected: twoHours,
+		},
+		{
+			name:     "no cluster value: the cluster template wins over the seed default",
+			template: fourHours,
+			seed:     twoHours,
+			expected: fourHours,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+
+			spec := makeSpec(tc.cluster)
+			if err := DefaultClusterSpec(context.Background(), spec, nil, makeTemplate(tc.template), makeSeed(tc.seed), config, nil); err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+
+			mc := spec.ComponentsOverride.MachineController
+			if mc == nil {
+				t.Fatalf("expected a machineController block, got none")
+			}
+			assert.Equal(t, duration(tc.expected), mc.SkipEvictionAfter)
 		})
 	}
 }

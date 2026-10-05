@@ -1417,14 +1417,17 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 }
 
 // validateMachineControllerSettings guards the machineController component
-// overrides. A zero or negative duration would make machine-controller skip
-// eviction immediately on every machine deletion, force-deleting nodes while
-// ignoring PodDisruptionBudgets.
+// overrides. Zero is valid and disables the eviction timeout: machine-controller then
+// waits for eviction as long as the node is Ready and a schedulable target node
+// exists. A negative duration however would make it treat every deleting machine as
+// past the threshold, force-deleting nodes while ignoring PodDisruptionBudgets.
+// machine-controller only rejects negatives on the per-Machine annotation, not on the
+// -skip-eviction-after flag this field renders into, so the guard has to live here.
 func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 
-	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be zero (to disable the eviction timeout) or a positive duration"))
 	}
 
 	return allErrs
