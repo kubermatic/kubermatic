@@ -95,7 +95,7 @@ Scoping follows the ApplicationDefinition model: `enforced` versus `default`, pl
 
 A composer in the `operating-system-profile-synchronizer` package merges default profiles with matching extensions:
 
-1. Load the default profiles from the pinned OSM module. The defaults are embedded via `go:embed` (`deploy/osps/default`), and kubermatic already imports the module, so the composer reads the same bytes OSM's own defaults controller applies.
+1. Load the default profiles from the pinned OSM module. The defaults are embedded via `go:embed` (`deploy/osps/default`), and kubermatic already imports the module. The image tag and the module pin must name the same release (see Compatibility Guarantees), so the composer reads the same bytes OSM's own defaults controller applies.
 2. Select extensions by scope and by OSP target.
 3. Append additions into `bootstrapConfig` only. `beforeCommands` run before the default's bootstrap units, `afterCommands` after them. Command lists render as oneshot units.
 4. Reject collisions. A unit name or file path already present in the default is a hard error.
@@ -129,7 +129,7 @@ A customer who does not use extensions must observe nothing after the upgrade. E
 1. Zero matching extensions means the composer writes nothing. No object is created, updated or deleted.
 2. The composer labels the objects it writes (`kubermatic.k8c.io/composed-by: osp-extension-composer`) and refuses to adopt or overwrite an existing object of the same name that does not carry the label. A name collision surfaces as an error.
 3. The roll trigger selects MachineDeployments through the ownership label on the referenced object, never by annotation string alone.
-4. The go.mod module pin and the OSM image tag move forward together. The image is never reverted to match an older module.
+4. The go.mod module pin and the OSM image tag name the same OSM release, and both move forward together. Today they diverge: the module pins `v1.11.4` while the image deploys a master SHA whose embedded defaults differ in all six default profiles. Aligning the pins at the newer content is a prerequisite of this feature. The image is never reverted to an older release. The composer refuses to compose while the pins disagree, so a composed profile never claims defaults the deployed OSM does not carry.
 5. Composed names are reserved. An extension cannot derive onto a name that already exists as a hand-authored `CustomOperatingSystemProfile`.
 
 With no extension object present, every added component is inert. No composed profile exists, nothing propagates, no MachineDeployment is stamped. The default flow is unchanged: OSM applies the embedded defaults, and the datacenter map or OSM's mutation webhook selects `osp-<os>`.
