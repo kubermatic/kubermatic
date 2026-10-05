@@ -124,7 +124,7 @@ A validating webhook rejects unsafe extensions at write time. Unit names and fil
 
 ## Compatibility Guarantees
 
-A customer who does not use extensions must observe nothing after the upgrade. Each rule below is an acceptance criterion with a test:
+A user who does not use extensions must observe nothing after the upgrade. Each rule below is an acceptance criterion with a test:
 
 1. Zero matching extensions means the composer writes nothing. No object is created, updated or deleted.
 2. The composer labels the objects it writes (`kubermatic.k8c.io/composed-by: osp-extension-composer`) and refuses to adopt or overwrite an existing object of the same name that does not carry the label. A name collision surfaces as an error.
@@ -136,13 +136,33 @@ With no extension object present, every added component is inert. No composed pr
 
 ## Example Walkthrough
 
-Day one, from the admin's chair:
+A worked example, from the user's point of view. The user runs a seed with ubuntu worker nodes and wants the company root CA on every bootstrapped node.
 
-1. Apply the extension above. It adds the corp root CA for `osp-ubuntu`.
-2. The composed `CustomOperatingSystemProfile` `osp-ubuntu-ext` appears in the seed's `kubermatic` namespace.
-3. Set the datacenter's `DefaultOperatingSystemProfiles` for `ubuntu` to `osp-ubuntu-ext`. New MachineDeployments reference it.
+Day one:
 
-Upgrade day: KKP ships a release pinning a newer OSM. The module pin moved, so the composer reads the new embedded defaults on its next run. Same extension object, same name, new version. The synchronizer propagates, the roll trigger stamps, machines rotate. The admin does nothing.
+1. Save the extension from the Implementation section as `corp-trust-and-ntp.yaml` and apply it:
+
+```text
+kubectl apply -f corp-trust-and-ntp.yaml
+operatingsystemprofileextension.kubermatic.k8c.io/corp-trust-and-ntp created
+```
+
+2. The composer runs on the seed. The user reads the composed object:
+
+```text
+kubectl -n kubermatic get customoperatingsystemprofile osp-ubuntu-ext -o jsonpath='{.spec.version}'
+v1.2.3+ext.9f2e1a
+```
+
+The version reads as the default profile's version followed by a hash of the composed spec.
+
+3. Wire the datacenter once. Set `DefaultOperatingSystemProfiles` for `ubuntu` to `osp-ubuntu-ext`. Every new MachineDeployment then carries the profile annotation `osp-ubuntu-ext`.
+
+4. After a node bootstraps, the user verifies the addition on the node. The file `/usr/local/share/ca-certificates/corp-root.crt` exists, and `update-ca-certificates` ran as the after-command.
+
+Upgrade day. KKP ships a release pinning a newer OSM, and the default `osp-ubuntu` gains a kubelet fix at version `v1.2.4`. The user does nothing. On its next run the composer reads the new defaults, and the composed version moves to `v1.2.4+ext.4c7d2b`. The default side changed, so the hash changed, although the extension object is untouched. The synchronizer propagates, the roll trigger stamps the MachineDeployments that reference `osp-ubuntu-ext`, and machines rotate. A node bootstrapped after the roll carries the corp root CA and the kubelet fix.
+
+What the user never does on that day: re-merge the default, re-copy the profile, re-verify the extension against the new defaults, or touch the composed object.
 
 Internally, per composition run: load defaults from the module, select by scope and target, append with collision checks, derive the name and version, write the `CustomOperatingSystemProfile`, kind-swap and propagate on version change, OSM admission accepts the update, the osc controller re-renders the bootstrap secrets, the roll trigger stamps MachineDeployments, machines rotate.
 
