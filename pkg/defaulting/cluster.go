@@ -31,11 +31,48 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// applyTemplateAndSeedDefaults merges the ClusterTemplate (if any) and the Seed's
+// defaultComponentSettings into the Cluster spec.
+func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed) error {
+	// mergo considers a zero value to be unset, so an explicit skipEvictionAfter: 0
+	// (which disables the eviction timeout) would be silently replaced by a
+	// ClusterTemplate or Seed default.
+	var explicitSkipEvictionAfter *metav1.Duration
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil {
+		explicitSkipEvictionAfter = &metav1.Duration{Duration: mc.SkipEvictionAfter.Duration}
+	}
+
+	// If a ClusterTemplate was configured for the Seed, the caller
+	// retrieved it for us already and we can use it as the primary
+	// source for defaults.
+	if template != nil {
+		if err := mergo.Merge(spec, template.Spec); err != nil {
+			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+		}
+
+	}
+
+	// Checking and applying each field of the ComponentSettings is tedious,
+	// so we reuse mergo as well. Even though DefaultComponentSettings is
+	// deprecated, we cannot remove its handling here, as the template can
+	// be unconfigured (i.e. nil).
+	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
+		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	}
+
+	if explicitSkipEvictionAfter != nil && spec.ComponentsOverride.MachineController != nil {
+		spec.ComponentsOverride.MachineController.SkipEvictionAfter = explicitSkipEvictionAfter
+	}
+
+	return nil
+}
 
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
 // Defaults are taken from, in order:
@@ -66,21 +103,8 @@ func DefaultClusterSpec(
 		}
 	}
 
-	// If a ClusterTemplate was configured for the Seed, the caller
-	// retrieved it for us already and we can use it as the primary
-	// source for defaults.
-	if template != nil {
-		if err := mergo.Merge(spec, template.Spec); err != nil {
-			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
-		}
-	}
-
-	// Checking and applying each field of the ComponentSettings is tedious,
-	// so we reuse mergo as well. Even though DefaultComponentSettings is
-	// deprecated, we cannot remove its handling here, as the template can
-	// be unconfigured (i.e. nil).
-	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
-		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	if err := applyTemplateAndSeedDefaults(spec, template, seed); err != nil {
+		return err
 	}
 
 	// Give cloud providers a chance to default their spec.
