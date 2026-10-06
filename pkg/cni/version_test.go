@@ -33,7 +33,7 @@ func TestDeprecatedCiliumVersionsAreAllowedButNotSupported(t *testing.T) {
 		t.Fatalf("failed to get allowed Cilium versions: %v", err)
 	}
 
-	currentVersions := []string{"1.17.16", "1.18.10", "1.18.13", "1.19.4", "1.19.7"}
+	currentVersions := []string{"1.17.16", "1.18.13", "1.18.14", "1.19.7", "1.19.8"}
 	for _, version := range currentVersions {
 		if !supported.Has(version) {
 			t.Errorf("expected Cilium %s to be supported", version)
@@ -52,6 +52,8 @@ func TestDeprecatedCiliumVersionsAreAllowedButNotSupported(t *testing.T) {
 		"1.18.2",
 		"1.18.6",
 		"1.18.8",
+		"1.18.10",
+		"1.19.4",
 	}
 	for _, version := range deprecatedVersions {
 		if supported.Has(version) {
