@@ -1,14 +1,14 @@
 ---
 # Source: alertmanager/charts/alertmanager/templates/pdb.yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: alertmanager
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 spec:
@@ -25,10 +25,10 @@ kind: ServiceAccount
 metadata:
   name: alertmanager
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 automountServiceAccountToken: true
@@ -40,10 +40,10 @@ kind: ConfigMap
 metadata:
   name: alertmanager
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 data:
@@ -166,10 +166,10 @@ kind: Service
 metadata:
   name: alertmanager
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 spec:
@@ -189,10 +189,10 @@ kind: Service
 metadata:
   name: alertmanager-headless
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 spec:
@@ -221,10 +221,10 @@ kind: StatefulSet
 metadata:
   name: alertmanager
   labels:
-    helm.sh/chart: alertmanager-1.15.0
+    helm.sh/chart: alertmanager-1.43.3
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/version: "v0.34.1"
     app.kubernetes.io/managed-by: Helm
   namespace: default
 spec:
@@ -264,7 +264,7 @@ spec:
         fsGroup: 65534
       containers:
         - name: alertmanager-configmap-reload
-          image: "quay.io/prometheus-operator/prometheus-config-reloader:v0.66.0"
+          image: "quay.io/prometheus-operator/prometheus-config-reloader:v0.94.0"
           imagePullPolicy: "IfNotPresent"
           args:
             - --watched-dir=/etc/alertmanager
@@ -284,7 +284,7 @@ spec:
             runAsGroup: 65534
             runAsNonRoot: true
             runAsUser: 65534
-          image: "quay.io/prometheus/alertmanager:v0.28.0"
+          image: "quay.io/prometheus/alertmanager:v0.34.1"
           imagePullPolicy: IfNotPresent
           env:
             - name: POD_IP
@@ -341,7 +341,9 @@ spec:
             name: kubermatic-altermanager-templates
           name: templates
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1	
+      kind: PersistentVolumeClaim
+      metadata:
         name: storage
       spec:
         accessModes:
