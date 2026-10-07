@@ -13,8 +13,8 @@
 # limitations under the License.
 
 node-exporter:
-  # Check master values.yaml which are the default values for Chart version 4.44.0
-  # https://github.com/prometheus-community/helm-charts/blob/prometheus-node-exporter-4.44.0/charts/prometheus-node-exporter/values.yaml
+  # Check master values.yaml which are the default values for Chart version 4.59.0
+  # https://github.com/prometheus-community/helm-charts/blob/prometheus-node-exporter-4.59.0/charts/prometheus-node-exporter/values.yaml
   imagePullSecrets: []
   resources:
     requests:

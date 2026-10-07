@@ -136,6 +136,33 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 	}
 }
 
+func TestKubeVirtAcceleratorQuotaEnabled(t *testing.T) {
+	testCases := []struct {
+		name    string
+		enabled bool
+	}{
+		{
+			name: "disabled by default",
+		},
+		{
+			name:    "enabled",
+			enabled: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			templateData := NewTemplateDataBuilder().
+				WithKubeVirtAcceleratorQuota(tc.enabled).
+				Build()
+
+			if enabled := templateData.KubeVirtAcceleratorQuotaEnabled(); enabled != tc.enabled {
+				t.Fatalf("expected KubeVirt accelerator quota enabled=%t, got %t", tc.enabled, enabled)
+			}
+		})
+	}
+}
+
 func TestKubermaticAPIImage(t *testing.T) {
 	testCases := []struct {
 		name         string

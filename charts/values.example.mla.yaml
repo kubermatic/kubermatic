@@ -26,6 +26,16 @@ mlaSecrets:
     adminUser: admin
     adminPassword: strongpassword
 
+# Gateway API is the default ingress path as of KKP 2.31. IAP deployments are exposed via
+# HTTPRoutes attached to the seed Gateway. Each deployment's `ingress.host` below is reused
+# as the HTTPRoute hostname. In a separate seed, point gatewayName/gatewayNamespace at the
+# seed Gateway; set httpRoute.externalGateway=true to use a BYO Gateway controller.
+migrateGatewayAPI: true
+httpRoute:
+  externalGateway: false
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+
 iap:
   oidc_issuer_url: https://kkp.example.com/dex
   deployments:

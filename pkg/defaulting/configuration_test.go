@@ -23,6 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/validation"
 )
 
@@ -59,6 +60,54 @@ func TestDefaultConfigurationClearsLegacyGatewayClassNameWhenExternalGatewayIsSe
 	}
 }
 
+// TestDefaultConfigurationEnablesHTTPRouteGatewaySyncByDefault covers the 2.31
+// enforcement: since Gateway API is the default, cert-manager needs the
+// HTTPRouteGatewaySync feature gate to provision Certificates for HTTPRoutes.
+// Default it to true so cert-manager works out of the box.
+func TestDefaultConfigurationEnablesHTTPRouteGatewaySyncByDefault(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if !defaulted.Spec.FeatureGates[features.HTTPRouteGatewaySync] {
+		t.Fatalf("expected HTTPRouteGatewaySync feature gate to default to true, got %v", defaulted.Spec.FeatureGates[features.HTTPRouteGatewaySync])
+	}
+}
+
+// TestDefaultConfigurationPreservesExplicitHTTPRouteGatewaySyncFalse ensures an
+// admin who explicitly disabled the feature gate keeps that choice — the
+// defaulting only applies when the gate is unset.
+func TestDefaultConfigurationPreservesExplicitHTTPRouteGatewaySyncFalse(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+			},
+			FeatureGates: map[string]bool{
+				features.HTTPRouteGatewaySync: false,
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.FeatureGates[features.HTTPRouteGatewaySync] {
+		t.Fatalf("expected explicit HTTPRouteGatewaySync=false to be preserved, got true")
+	}
+}
+
 func TestDefaultConfigurationPreservesExplicitGatewayClassNameWhenExternalGatewayIsSet(t *testing.T) {
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
@@ -82,5 +131,36 @@ func TestDefaultConfigurationPreservesExplicitGatewayClassNameWhenExternalGatewa
 
 	if defaulted.Spec.Ingress.Gateway.ClassName != "my-custom-gatewayclass" {
 		t.Fatalf("expected explicit ClassName to be preserved so validation can reject the conflict, got %q", defaulted.Spec.Ingress.Gateway.ClassName)
+	}
+}
+
+func TestDefaultConfigurationDefaultsUtilImageRepository(t *testing.T) {
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kkp.example.com",
+			},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Util.DockerRepository != defaulting.DefaultUtilImageRepository {
+		t.Fatalf("expected util repository to be defaulted to %q, got %q", defaulting.DefaultUtilImageRepository, defaulted.Spec.Util.DockerRepository)
+	}
+
+	overridden := cfg.DeepCopy()
+	overridden.Spec.Util.DockerRepository = "registry.corp/kkp/util"
+
+	defaulted, err = defaulting.DefaultConfiguration(overridden, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("DefaultConfiguration returned error: %v", err)
+	}
+
+	if defaulted.Spec.Util.DockerRepository != "registry.corp/kkp/util" {
+		t.Fatalf("expected explicit util repository to be preserved, got %q", defaulted.Spec.Util.DockerRepository)
 	}
 }

@@ -92,18 +92,20 @@ func testAddonsCanBeApplied(t *testing.T, addons map[string]*addon.Addon) {
 		}
 
 		for _, provider := range providersToTest {
-			t.Run(fmt.Sprintf("%s@%s", addonName, provider), func(t *testing.T) {
-				testAddonCanBeApplied(t, addonName, provider, addons)
-			})
+			for _, variant := range addonVariants(addonName) {
+				t.Run(testName(addonName, variant, provider), func(t *testing.T) {
+					testAddonCanBeApplied(t, addonName, variant, provider, addons)
+				})
+			}
 		}
 	}
 }
 
-func testAddonCanBeApplied(t *testing.T, addonName string, provider kubermaticv1.ProviderType, allAddons map[string]*addon.Addon) {
+func testAddonCanBeApplied(t *testing.T, addonName string, variant string, provider kubermaticv1.ProviderType, allAddons map[string]*addon.Addon) {
 	_, client := createTestEnv(t)
 	ctx := context.Background()
 
-	installAddon(ctx, t, client, provider, addonName, allAddons)
+	installAddon(ctx, t, client, provider, addonName, variant, allAddons)
 }
 
 func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[string]*addon.Addon) {
@@ -116,9 +118,11 @@ func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[str
 		}
 
 		for _, provider := range providersToTest {
-			t.Run(fmt.Sprintf("%s@%s", addonName, provider), func(t *testing.T) {
-				testAddonCanBeUpgraded(t, addonName, provider, previousAddons, currentAddons)
-			})
+			for _, variant := range addonVariants(addonName) {
+				t.Run(testName(addonName, variant, provider), func(t *testing.T) {
+					testAddonCanBeUpgraded(t, addonName, variant, provider, previousAddons, currentAddons)
+				})
+			}
 		}
 	}
 
@@ -132,23 +136,25 @@ func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[str
 		}
 
 		for _, provider := range providersToTest {
-			t.Run(fmt.Sprintf("%s@%s", addonName, provider), func(t *testing.T) {
-				testAddonCanBeApplied(t, addonName, provider, currentAddons)
-			})
+			for _, variant := range addonVariants(addonName) {
+				t.Run(testName(addonName, variant, provider), func(t *testing.T) {
+					testAddonCanBeApplied(t, addonName, variant, provider, currentAddons)
+				})
+			}
 		}
 	}
 }
 
-func testAddonCanBeUpgraded(t *testing.T, addonName string, provider kubermaticv1.ProviderType, previousAddons, currentAddons map[string]*addon.Addon) {
+func testAddonCanBeUpgraded(t *testing.T, addonName string, variant string, provider kubermaticv1.ProviderType, previousAddons, currentAddons map[string]*addon.Addon) {
 	_, client := createTestEnv(t)
 	ctx := context.Background()
 
 	t.Log("Applying previous manifests…")
-	installAddon(ctx, t, client, provider, addonName, previousAddons)
+	installAddon(ctx, t, client, provider, addonName, variant, previousAddons)
 
 	if _, ok := currentAddons[addonName]; ok {
 		t.Log("Applying current manifests…")
-		installAddon(ctx, t, client, provider, addonName, currentAddons)
+		installAddon(ctx, t, client, provider, addonName, variant, currentAddons)
 	} else {
 		t.Log("Addon was deleted, no upgrade possible.")
 	}

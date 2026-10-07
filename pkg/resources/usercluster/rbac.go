@@ -128,6 +128,11 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 						"update",
 					},
 				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"resourcequotas"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
 				// This should be removed with KKP 2.23 when we remove the Migration for OSM.
 				{
 					APIGroups: []string{"apiextensions.k8s.io"},
@@ -156,7 +161,7 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 				},
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"policybindings"},
+					Resources: []string{"policybindings", "policybindings/status"},
 					Verbs:     []string{"*"},
 				},
 			}

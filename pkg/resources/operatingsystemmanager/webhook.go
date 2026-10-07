@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -34,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 var (
@@ -255,20 +257,31 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				}
 			}
 
-			newKP, err := triple.NewServerKeyPair(ca,
+			keyConfig, err := certificates.CertificateKeyConfig(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
+
+			newKP, err := triple.NewServerKeyPairWithConfig(ca,
 				commonName,
 				resources.OperatingSystemManagerWebhookServiceName,
 				data.Cluster().Status.NamespaceName,
 				"",
 				nil,
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
-				[]string{commonName})
+				[]string{commonName},
+				keyConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(newKP.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode the serving cert key: %w", err)
+			}
+
 			se.Data[resources.OperatingSystemManagerWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.OperatingSystemManagerWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.OperatingSystemManagerWebhookServingCertKeyKeyName] = keyPEM
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 

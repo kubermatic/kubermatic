@@ -29,7 +29,6 @@ import (
 var (
 	httpRouteGatewayNamePath      = yamled.Path{"httpRoute", "gatewayName"}
 	httpRouteGatewayNamespacePath = yamled.Path{"httpRoute", "gatewayNamespace"}
-	migrateGatewayAPIPath         = yamled.Path{"migrateGatewayAPI"}
 )
 
 // DefaultMasterHTTPRouteGatewayValues defaults master-cluster chart HTTPRoute parentRefs to
@@ -70,10 +69,6 @@ func shouldUseExternalMasterHTTPRouteGateway(config *kubermaticv1.KubermaticConf
 
 	gatewayConfig := config.Spec.Ingress.Gateway
 	if !gatewayConfig.UsesExternalGateway() {
-		return false
-	}
-
-	if migrateGatewayAPI, _ := helmValues.GetBool(migrateGatewayAPIPath); !migrateGatewayAPI {
 		return false
 	}
 

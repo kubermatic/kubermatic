@@ -21,6 +21,17 @@ cert-manager:
   fullnameOverride: cert-manager
   nameOverride: cert-manager
 
+  # Enable Gateway API integration so cert-manager can provision Certificates
+  # for HTTPRoutes. Combined with the KKP HTTPRouteGatewaySync feature gate
+  # (enabled by default in the KubermaticConfiguration), this lets cert-manager
+  # solve HTTP01 challenges through Gateway listeners instead of Ingress objects.
+  # cert-manager >= 1.15 accepts this via a Controller Configuration resource;
+  # the Helm subchart plumbs it through as controller args + config file.
+  config:
+    apiVersion: controller.config.cert-manager.io/v1alpha1
+    kind: ControllerConfiguration
+    enableGatewayAPI: true
+
   startupapicheck:
     enabled: false
 

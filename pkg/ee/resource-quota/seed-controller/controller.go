@@ -28,17 +28,22 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
+	"time"
 
 	"go.uber.org/zap"
 
 	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/machine/accelerator"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,10 +62,12 @@ import (
 var ControllerName = "kkp-resource-quota-seed-controller"
 
 type reconciler struct {
-	log        *zap.SugaredLogger
-	workerName string
-	recorder   events.EventRecorder
-	seedClient ctrlruntimeclient.Client
+	log               *zap.SugaredLogger
+	workerName        string
+	recorder          events.EventRecorder
+	seedClient        ctrlruntimeclient.Client
+	controllerVersion string
+	now               func() time.Time
 }
 
 func Add(
@@ -68,12 +75,14 @@ func Add(
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
+	controllerVersion string,
 ) error {
 	reconciler := &reconciler{
-		log:        log.Named(ControllerName),
-		workerName: workerName,
-		recorder:   mgr.GetEventRecorder(ControllerName),
-		seedClient: mgr.GetClient(),
+		log:               log.Named(ControllerName),
+		workerName:        workerName,
+		recorder:          mgr.GetEventRecorder(ControllerName),
+		seedClient:        mgr.GetClient(),
+		controllerVersion: controllerVersion,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -88,7 +97,7 @@ func Add(
 	return err
 }
 
-// Reconcile calculates the resource usage for a resource quota and sets the local usage.
+// Reconcile calculates Seed-local resource usage and accelerator accounting readiness.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
@@ -102,42 +111,43 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
-	err := r.reconcile(ctx, resourceQuota, log)
+	requeueAfter, err := r.reconcile(ctx, resourceQuota, log)
 	if err != nil {
 		r.recorder.Eventf(resourceQuota, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
-	return reconcile.Result{}, err
+	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.ResourceQuota, log *zap.SugaredLogger) error {
+func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.ResourceQuota, log *zap.SugaredLogger) (time.Duration, error) {
 	// If the controller is in worker-name mode, ignore all non-Cluster-RQ's
 	// (i.e. all RQ's that span multiple clusters), as it makes no sense to
 	// update an RQ's status with data that spans only a subset of subjects.
 	// As of now, only project RQ's exist and so there is no single-cluster-RQ.
 	if r.workerName != "" /* resourceQuota.Spec.Subject.Kind != "cluster" */ {
 		log.Debug("Ignoring request because worker-name is set.")
-		return nil
+		return 0, nil
 	}
 
 	// skip reconcile if resourceQuota is in delete state
 	if !resourceQuota.DeletionTimestamp.IsZero() {
 		log.Debug("resource quota is in deletion, skipping")
-		return nil
+		return 0, nil
 	}
 
 	projectIDReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{resourceQuota.Spec.Subject.Name})
 	if err != nil {
-		return fmt.Errorf("error creating project id req: %w", err)
+		return 0, fmt.Errorf("error creating project id req: %w", err)
 	}
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList,
 		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIDReq)}); err != nil {
-		return fmt.Errorf("failed listing clusters: %w", err)
+		return 0, fmt.Errorf("failed listing clusters: %w", err)
 	}
 
 	localUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
+	acceleratorAccountingActive := resourceQuota.Annotations[resources.AcceleratorAccountingEnabledAnnotation] == resources.AcceleratorAccountingEnabledAnnotationValue
 	for _, cluster := range clusterList.Items {
 		if cluster.Status.ResourceUsage != nil {
 			clusterUsage := cluster.Status.ResourceUsage
@@ -150,19 +160,25 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 			if clusterUsage.Storage != nil {
 				localUsage.Storage.Add(*clusterUsage.Storage)
 			}
+			if acceleratorAccountingActive && cluster.Spec.Cloud.Kubevirt != nil {
+				kubermaticv1.AddAcceleratorUsage(localUsage, clusterUsage.Accelerators)
+			}
 		}
 	}
 
-	if err = r.ensureLocalUsage(ctx, log, resourceQuota, localUsage); err != nil {
-		return err
+	localAccounting, requeueAfter := r.localAcceleratorAccounting(resourceQuota, clusterList.Items)
+
+	if err = r.ensureLocalStatus(ctx, log, resourceQuota, localUsage, localAccounting); err != nil {
+		return 0, err
 	}
 
-	return nil
+	return requeueAfter, nil
 }
 
-func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota,
-	localUsage *kubermaticv1.ResourceDetails) error {
-	if k8cequality.Semantic.DeepEqual(localUsage, resourceQuota.Status.LocalUsage) {
+func (r *reconciler) ensureLocalStatus(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota,
+	localUsage *kubermaticv1.ResourceDetails, localAccounting *kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus) error {
+	if k8cequality.Semantic.DeepEqual(localUsage, resourceQuota.Status.LocalUsage) &&
+		k8cequality.Semantic.DeepEqual(localAccounting, resourceQuota.Status.LocalAcceleratorAccounting) {
 		log.Debugw("local usage for resource quota is the same, not updating",
 			"cpu", localUsage.CPU.String(),
 			"memory", localUsage.Memory.String(),
@@ -176,14 +192,189 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 
 	return util.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.LocalUsage = *localUsage
+		rq.Status.LocalAcceleratorAccounting = localAccounting
 	})
+}
+
+func (r *reconciler) localAcceleratorAccounting(resourceQuota *kubermaticv1.ResourceQuota, clusters []kubermaticv1.Cluster) (*kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus, time.Duration) {
+	if resourceQuota.Annotations[resources.AcceleratorAccountingEnabledAnnotation] != resources.AcceleratorAccountingEnabledAnnotationValue {
+		return nil, 0
+	}
+
+	now := r.currentTime()
+	status := &kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus{}
+	if global := resourceQuota.Status.GlobalAcceleratorAccounting; global != nil {
+		status.ObservedAccountingRevision = global.ObservedAccountingRevision
+		status.ObservedQuotaDigest = global.ObservedQuotaDigest
+	}
+
+	relevantClusters := make([]kubermaticv1.Cluster, 0, len(clusters))
+	for i := range clusters {
+		if clusters[i].Spec.Cloud.Kubevirt != nil {
+			relevantClusters = append(relevantClusters, clusters[i])
+		}
+	}
+	sort.Slice(relevantClusters, func(i, j int) bool {
+		return relevantClusters[i].Name < relevantClusters[j].Name
+	})
+
+	if resourceQuota.Status.GlobalAcceleratorAccounting == nil {
+		status.Blockers = append(status.Blockers, kubermaticv1.AcceleratorAccountingBlocker{
+			Type:    kubermaticv1.AcceleratorAccountingBlockerTypeMissingReport,
+			Message: "the master accelerator accounting revision has not reached this Seed",
+		})
+		return status, resources.AcceleratorAccountingHeartbeatInterval
+	}
+
+	if len(relevantClusters) == 0 {
+		if previous := resourceQuota.Status.LocalAcceleratorAccounting; previous != nil &&
+			previous.ObservedAccountingRevision == status.ObservedAccountingRevision &&
+			previous.ObservedQuotaDigest == status.ObservedQuotaDigest &&
+			!previous.ObservedAt.IsZero() {
+			refreshAt := previous.ObservedAt.Add(resources.AcceleratorAccountingHeartbeatInterval)
+			if refreshAt.After(now) {
+				status.ObservedAt = previous.ObservedAt
+				status.Ready = true
+				return status, refreshAt.Sub(now)
+			}
+		}
+		status.ObservedAt = metav1.NewTime(now)
+		status.Ready = true
+		return status, resources.AcceleratorAccountingHeartbeatInterval
+	}
+
+	var oldestObservedAt time.Time
+	var nextExpiry time.Time
+	for i := range relevantClusters {
+		cluster := &relevantClusters[i]
+		observation := r.observeClusterAcceleratorAccounting(status, cluster, now)
+		status.LegacyMachinesWithoutFootprint += observation.legacyMachines
+		status.MachinesWithInvalidFootprint += observation.invalidMachines
+		status.Blockers = append(status.Blockers, observation.blockers...)
+		if !observation.observedAt.IsZero() && (oldestObservedAt.IsZero() || observation.observedAt.Before(oldestObservedAt)) {
+			oldestObservedAt = observation.observedAt
+		}
+		if !observation.expiresAt.IsZero() && (nextExpiry.IsZero() || observation.expiresAt.Before(nextExpiry)) {
+			nextExpiry = observation.expiresAt
+		}
+	}
+
+	if !oldestObservedAt.IsZero() {
+		status.ObservedAt = metav1.NewTime(oldestObservedAt)
+	}
+	status.Ready = len(status.Blockers) == 0
+	return status, accountingRequeueAfter(now, nextExpiry)
+}
+
+type clusterAcceleratorAccountingObservation struct {
+	legacyMachines  int32
+	invalidMachines int32
+	observedAt      time.Time
+	expiresAt       time.Time
+	blockers        []kubermaticv1.AcceleratorAccountingBlocker
+}
+
+func (r *reconciler) observeClusterAcceleratorAccounting(
+	expected *kubermaticv1.ResourceQuotaLocalAcceleratorAccountingStatus,
+	cluster *kubermaticv1.Cluster,
+	now time.Time,
+) clusterAcceleratorAccountingObservation {
+	result := clusterAcceleratorAccountingObservation{}
+	clusterStatus := cluster.Status.AcceleratorAccounting
+	if clusterStatus == nil {
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeNewCluster,
+			"the KubeVirt cluster has not published accelerator accounting status",
+			cluster.Name,
+		))
+		return result
+	}
+	if clusterStatus.ObservedAccountingRevision != expected.ObservedAccountingRevision {
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeRevisionMismatch,
+			"the KubeVirt cluster has not observed the current accounting revision",
+			cluster.Name,
+		))
+		return result
+	}
+	if clusterStatus.ObservedQuotaDigest != expected.ObservedQuotaDigest {
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeQuotaDigestMismatch,
+			"the KubeVirt cluster has not observed the current accelerator quota",
+			cluster.Name,
+		))
+		return result
+	}
+
+	result.legacyMachines = clusterStatus.MachinesWithoutFootprint
+	result.invalidMachines = clusterStatus.MachinesWithInvalidFootprint
+	result.observedAt = clusterStatus.ObservedAt.Time
+	result.expiresAt = result.observedAt.Add(resources.AcceleratorAccountingHeartbeatTimeout)
+	switch {
+	case clusterStatus.FootprintSchemaVersion != accelerator.SchemaVersionV1Alpha1:
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeUnsupportedFootprintSchema,
+			fmt.Sprintf("the KubeVirt cluster reports unsupported footprint schema %q", clusterStatus.FootprintSchemaVersion),
+			cluster.Name,
+		))
+	case clusterStatus.ControllerVersion == "" || (r.controllerVersion != "" && clusterStatus.ControllerVersion != r.controllerVersion):
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeIncompatibleControllerVersion,
+			fmt.Sprintf("the KubeVirt cluster reports controller version %q; expected %q", clusterStatus.ControllerVersion, r.controllerVersion),
+			cluster.Name,
+		))
+	}
+	if result.observedAt.IsZero() || !result.expiresAt.After(now) {
+		result.blockers = append(result.blockers, clusterAccountingBlocker(
+			kubermaticv1.AcceleratorAccountingBlockerTypeStaleHeartbeat,
+			"the KubeVirt cluster accelerator accounting heartbeat is stale",
+			cluster.Name,
+		))
+	}
+	if !clusterStatus.Ready {
+		if len(clusterStatus.Blockers) == 0 {
+			result.blockers = append(result.blockers, clusterAccountingBlocker(
+				kubermaticv1.AcceleratorAccountingBlockerTypeMissingReport,
+				"the KubeVirt cluster accelerator accounting report is not ready",
+				cluster.Name,
+			))
+		} else {
+			for _, blocker := range clusterStatus.Blockers {
+				blocker.ClusterName = cluster.Name
+				result.blockers = append(result.blockers, blocker)
+			}
+		}
+	}
+	return result
+}
+
+func clusterAccountingBlocker(blockerType kubermaticv1.AcceleratorAccountingBlockerType, message, clusterName string) kubermaticv1.AcceleratorAccountingBlocker {
+	return kubermaticv1.AcceleratorAccountingBlocker{
+		Type:        blockerType,
+		Message:     message,
+		ClusterName: clusterName,
+	}
+}
+
+func (r *reconciler) currentTime() time.Time {
+	if r.now != nil {
+		return r.now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+func accountingRequeueAfter(now, expiresAt time.Time) time.Duration {
+	if expiresAt.IsZero() || !expiresAt.After(now) {
+		return resources.AcceleratorAccountingHeartbeatInterval
+	}
+	return expiresAt.Sub(now)
 }
 
 func withClusterEventFilter() predicate.Predicate {
 	return predicate.Funcs{
-		// when cluster is created, no point to calculate yet as the machines are not created
 		CreateFunc: func(e event.CreateEvent) bool {
-			return false
+			cluster, ok := e.Object.(*kubermaticv1.Cluster)
+			return ok && cluster.Spec.Cloud.Kubevirt != nil
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldCluster, ok := e.ObjectOld.(*kubermaticv1.Cluster)
@@ -194,7 +385,10 @@ func withClusterEventFilter() predicate.Predicate {
 			if !ok {
 				return false
 			}
-			return !reflect.DeepEqual(oldCluster.Status.ResourceUsage, newCluster.Status.ResourceUsage)
+			return !reflect.DeepEqual(oldCluster.Status.ResourceUsage, newCluster.Status.ResourceUsage) ||
+				!reflect.DeepEqual(oldCluster.Status.AcceleratorAccounting, newCluster.Status.AcceleratorAccounting) ||
+				oldCluster.Labels[kubermaticv1.ProjectIDLabelKey] != newCluster.Labels[kubermaticv1.ProjectIDLabelKey] ||
+				(oldCluster.Spec.Cloud.Kubevirt == nil) != (newCluster.Spec.Cloud.Kubevirt == nil)
 		},
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			return true

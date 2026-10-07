@@ -69,10 +69,15 @@ type Addon struct {
 
 func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
-		client:      client,
-		log:         log,
-		versions:    kubermatic.GetFakeVersions(),
-		spec:        &kubermaticv1.ClusterSpec{},
+		client:   client,
+		log:      log,
+		versions: kubermatic.GetFakeVersions(),
+		spec: &kubermaticv1.ClusterSpec{
+			// kubernetes-dashboard is unmaintained upstream, do not waste CI resources on it
+			KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
+				Enabled: false,
+			},
+		},
 		annotations: map[string]string{},
 		labels:      map[string]string{},
 		ownerEmail:  "e2e@test.kubermatic.com",
@@ -421,6 +426,28 @@ func (j *ClusterJig) WaitForGatekeeperHealthy(ctx context.Context, timeout time.
 
 		if health.GatekeeperAudit == nil || *health.GatekeeperAudit != kubermaticv1.HealthStatusUp {
 			return fmt.Errorf("gatekeeperAudit is %v", formatOptionalHealth(health.GatekeeperAudit)), nil
+		}
+
+		return nil, nil
+	})
+}
+
+// WaitForKyvernoHealthy waits until all Kyverno controller deployments in the
+// seed cluster namespace are reported as healthy.
+func (j *ClusterJig) WaitForKyvernoHealthy(ctx context.Context, timeout time.Duration) error {
+	if j.clusterName == "" {
+		return errors.New("cluster jig has not created a cluster yet")
+	}
+
+	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
+		curCluster := kubermaticv1.Cluster{}
+		if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, &curCluster); err != nil {
+			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
+		}
+
+		health := curCluster.Status.ExtendedHealth.Kyverno
+		if health == nil || *health != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("kyverno is %v", formatOptionalHealth(health)), nil
 		}
 
 		return nil, nil

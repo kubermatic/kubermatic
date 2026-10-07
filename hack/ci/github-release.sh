@@ -88,12 +88,18 @@ function create_release {
 }
 
 # upload an archive from a file
-function upload_archive {
+function upload_asset {
   local file="$1"
+  local contentType="application/gzip"
+  if [[ "$file" == *.zip ]]; then
+    contentType="application/zip"
+  elif [[ "$file" == *.json ]]; then
+    contentType="application/json"
+  fi
   res=$(github_cli \
     "https://uploads.github.com/repos/$GIT_REPO/releases/$releaseID/assets?name=$(basename "$file")" \
     --header 'Accept: application/json' \
-    --header 'Content-Type: application/gzip' \
+    --header "Content-Type: $contentType" \
     --silent --data-binary "@$file")
 
   if echo "$res" | jq --exit-status '.' > /dev/null; then
@@ -142,9 +148,19 @@ function build_installer() {
   fi
 }
 
+function generate_sbom() {
+  local target="$1"
+  local outFile="$2"
+
+  echodate "Generating SBOM for $target..."
+  syft "$target" -o "spdx-json=$outFile"
+}
+
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
+  shift 2
+  local sboms=("$@")
 
   if [ "$GOOS" == "windows" ]; then
     echodate "Converting $archive to Zip..."
@@ -153,8 +169,14 @@ function ship_archive() {
 
   if ! $DRY_RUN; then
     echodate "Uploading $buildTarget archive..."
-    upload_archive "$archive"
+    upload_asset "$archive"
     rm -- "$archive"
+
+    for sbom in "${sboms[@]}"; do
+      echodate "Uploading $(basename "$sbom")..."
+      upload_asset "$sbom"
+      rm -- "$sbom"
+    done
   fi
 }
 
@@ -218,6 +240,15 @@ set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
 
+helmChartSbom="_dist/kubermatic-helmchart-$RELEASE_NAME.sbom.spdx.json"
+./hack/generate-helmchart-sbom.sh "$RELEASE_NAME" _dist
+
+if ! $DRY_RUN; then
+  echodate "Uploading helm charts SBOM..."
+  upload_asset "$helmChartSbom"
+  rm -- "$helmChartSbom"
+fi
+
 # CRDs since KKP 2.21 are not directly put into the charts/ directory
 # anymore, but into pkg/ so they can be embedded. In our Github archives
 # we still want and need them to be part of the operator chart.
@@ -232,6 +263,13 @@ for buildTarget in $RELEASE_PLATFORMS; do
 
   echodate "Compiling CE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ce build_installer
+
+  installerBinary="_build/kubermatic-installer"
+  if [ "$GOOS" == "windows" ]; then
+    installerBinary="_build/kubermatic-installer.exe"
+  fi
+  binarySbom="_dist/kubermatic-installer-ce-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
+  generate_sbom "$installerBinary" "$binarySbom"
 
   echodate "Creating CE archive..."
 
@@ -270,10 +308,17 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget"
+  ship_archive "$archive" "$buildTarget" "$binarySbom"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
+
+  installerBinary="_build/kubermatic-installer"
+  if [ "$GOOS" == "windows" ]; then
+    installerBinary="_build/kubermatic-installer.exe"
+  fi
+  binarySbom="_dist/kubermatic-installer-ee-$RELEASE_NAME-$buildTarget.sbom.spdx.json"
+  generate_sbom "$installerBinary" "$binarySbom"
 
   echodate "Creating EE archive..."
 
@@ -314,7 +359,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  ship_archive "$archive" "$buildTarget"
+  ship_archive "$archive" "$buildTarget" "$binarySbom"
 done
 
 echodate "Done."

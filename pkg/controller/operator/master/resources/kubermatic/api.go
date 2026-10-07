@@ -21,7 +21,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -224,22 +223,16 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.API.PProfEndpoint),
+				fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),
+				fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
+				fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
+				fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
 			}
 
 			if cfg.Spec.API.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
-			}
-
-			if cfg.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
-				args = append(
-					args,
-					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),
-					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
-					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
-					fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
-				)
 			}
 
 			if workerName != "" {

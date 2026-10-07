@@ -102,6 +102,9 @@ func namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler(clusterName s
 // namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network.
 func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kubermaticv1.Cluster, nameservers []string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
+		// The apiserver address is only populated once the control plane has been initialized. Until then we must
+		// not emit an IPBlock for it, since an empty address would result in an invalid "/32" CIDR being rejected
+		// by the apiserver. The policy gets updated with the apiserver rules once the address becomes available.
 		apiserverAddress := cluster.Status.Address.IP
 		return fmt.Sprintf("cluster-isolation-%s", cluster.Name), func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -127,15 +130,6 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 							},
 						},
 					},
-					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", apiserverAddress),
-								},
-							},
-						},
-					},
 				},
 				Ingress: []networkingv1.NetworkPolicyIngressRule{
 					{
@@ -147,16 +141,33 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 									},
 								},
 							},
-							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", apiserverAddress),
-								},
-							},
 						},
 					},
 				},
 			}
+
+			if apiserverAddress != "" {
+				apiserverCIDR := fmt.Sprintf("%s/32", apiserverAddress)
+				np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{
+								CIDR: apiserverCIDR,
+							},
+						},
+					},
+				})
+				np.Spec.Ingress[0].From = append(np.Spec.Ingress[0].From, networkingv1.NetworkPolicyPeer{
+					IPBlock: &networkingv1.IPBlock{
+						CIDR: apiserverCIDR,
+					},
+				})
+			}
+
 			for _, nameserver := range nameservers {
+				if nameserver == "" {
+					continue
+				}
 				np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
 					To: []networkingv1.NetworkPolicyPeer{
 						{

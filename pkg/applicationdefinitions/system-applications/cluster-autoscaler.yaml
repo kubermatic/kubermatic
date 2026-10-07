@@ -33,6 +33,13 @@ spec:
             chartVersion: 9.46.6
             url: oci://quay.io/kubermatic-mirror/helm-charts
       version: 1.32.0
+    - template:
+        source:
+          helm:
+            chartName: cluster-autoscaler
+            chartVersion: 9.59.0
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: 1.35.0
   defaultValuesBlock: |
     cloudProvider: clusterapi
     clusterAPIMode: incluster-incluster
@@ -74,6 +81,20 @@ spec:
         - update
         - watch
         - patch
+      # cluster-autoscaler 1.35 and newer always start DRA informers, since
+      # --enable-dynamic-resource-allocation defaults to true and cannot be turned off. Chart 9.46.6
+      # predates that and grants no resource.k8s.io access; upstream added the same rules in chart
+      # 9.54.0, so these can be dropped once the chart is bumped past it.
+      - apiGroups:
+        - resource.k8s.io
+        resources:
+        - deviceclasses
+        - resourceclaims
+        - resourceslices
+        verbs:
+        - get
+        - list
+        - watch
     - apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
       metadata:

@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: velero-11.3.2
 automountServiceAccountToken: true
+
 ---
 # Source: velero/charts/velero/templates/secret.yaml
 apiVersion: v1
@@ -62,6 +63,7 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
+
 ---
 # Source: velero/charts/velero/templates/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -82,6 +84,7 @@ rules:
     - "*"
   verbs:
     - "*"
+
 ---
 # Source: velero/charts/velero/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -103,6 +106,7 @@ roleRef:
   kind: Role
   name: release-name-velero-server
   apiGroup: rbac.authorization.k8s.io
+
 ---
 # Source: velero/charts/velero/templates/service.yaml
 apiVersion: v1
@@ -125,6 +129,7 @@ spec:
     name: velero
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: velero/charts/velero/templates/deployment.yaml
 apiVersion: apps/v1
@@ -252,6 +257,7 @@ spec:
                 values:
                 - stable
             weight: 100
+
 ---
 # Source: velero/charts/velero/templates/schedule.yaml
 apiVersion: velero.io/v1
@@ -289,6 +295,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: velero-11.3.2
 automountServiceAccountToken: true
+
 ---
 # Source: velero/charts/velero/templates/upgrade-crds/clusterrole-upgrade.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -316,6 +323,7 @@ rules:
     - update
     - get
     - list
+
 ---
 # Source: velero/charts/velero/templates/upgrade-crds/clusterrolebinding-upgrade.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -340,6 +348,8 @@ roleRef:
   kind: ClusterRole
   name: release-name-velero-upgrade-crds
   apiGroup: rbac.authorization.k8s.io
+
+
 ---
 # Source: velero/charts/velero/templates/upgrade-crds/upgrade-crds.yaml
 apiVersion: batch/v1
@@ -402,3 +412,4 @@ spec:
                 values:
                 - stable
             weight: 100
+

@@ -30,6 +30,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingk8siov1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -37,6 +38,80 @@ import (
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+// ValidatingAdmissionPolicyReconciler defines an interface to create/update ValidatingAdmissionPolicies.
+type ValidatingAdmissionPolicyReconciler = func(existing *admissionregistrationv1.ValidatingAdmissionPolicy) (*admissionregistrationv1.ValidatingAdmissionPolicy, error)
+
+// NamedValidatingAdmissionPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedValidatingAdmissionPolicyReconcilerFactory = func() (name string, reconciler ValidatingAdmissionPolicyReconciler)
+
+// ValidatingAdmissionPolicyObjectWrapper adds a wrapper so the ValidatingAdmissionPolicyReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func ValidatingAdmissionPolicyObjectWrapper(reconciler ValidatingAdmissionPolicyReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*admissionregistrationv1.ValidatingAdmissionPolicy))
+		}
+		return reconciler(&admissionregistrationv1.ValidatingAdmissionPolicy{})
+	}
+}
+
+// ReconcileValidatingAdmissionPolicies will create and update the ValidatingAdmissionPolicies coming from the passed ValidatingAdmissionPolicyReconciler slice.
+func ReconcileValidatingAdmissionPolicies(ctx context.Context, namedFactories []NamedValidatingAdmissionPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := ValidatingAdmissionPolicyObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &admissionregistrationv1.ValidatingAdmissionPolicy{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ValidatingAdmissionPolicy %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// ValidatingAdmissionPolicyBindingReconciler defines an interface to create/update ValidatingAdmissionPolicyBindings.
+type ValidatingAdmissionPolicyBindingReconciler = func(existing *admissionregistrationv1.ValidatingAdmissionPolicyBinding) (*admissionregistrationv1.ValidatingAdmissionPolicyBinding, error)
+
+// NamedValidatingAdmissionPolicyBindingReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedValidatingAdmissionPolicyBindingReconcilerFactory = func() (name string, reconciler ValidatingAdmissionPolicyBindingReconciler)
+
+// ValidatingAdmissionPolicyBindingObjectWrapper adds a wrapper so the ValidatingAdmissionPolicyBindingReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func ValidatingAdmissionPolicyBindingObjectWrapper(reconciler ValidatingAdmissionPolicyBindingReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*admissionregistrationv1.ValidatingAdmissionPolicyBinding))
+		}
+		return reconciler(&admissionregistrationv1.ValidatingAdmissionPolicyBinding{})
+	}
+}
+
+// ReconcileValidatingAdmissionPolicyBindings will create and update the ValidatingAdmissionPolicyBindings coming from the passed ValidatingAdmissionPolicyBindingReconciler slice.
+func ReconcileValidatingAdmissionPolicyBindings(ctx context.Context, namedFactories []NamedValidatingAdmissionPolicyBindingReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := ValidatingAdmissionPolicyBindingObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &admissionregistrationv1.ValidatingAdmissionPolicyBinding{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ValidatingAdmissionPolicyBinding %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
 
 // VerticalPodAutoscalerReconciler defines an interface to create/update VerticalPodAutoscalers.
 type VerticalPodAutoscalerReconciler = func(existing *autoscalingk8siov1.VerticalPodAutoscaler) (*autoscalingk8siov1.VerticalPodAutoscaler, error)

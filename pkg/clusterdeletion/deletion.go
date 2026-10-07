@@ -57,6 +57,10 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return err
 	}
 
+	if err := d.cleanupPolicyBindings(ctx, log, cluster); err != nil {
+		return err
+	}
+
 	// Delete Volumes and LB's inside the user cluster
 	if err := d.cleanupInClusterResources(ctx, log, cluster); err != nil {
 		return err

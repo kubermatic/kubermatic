@@ -34,10 +34,10 @@ import (
 )
 
 const (
-	imageName     = "grafana/agent"
-	tag           = "v0.29.0"
+	imageName     = "grafana/alloy"
+	tag           = "v1.19.2"
 	appName       = "mla-monitoring-agent"
-	containerName = "grafana-agent"
+	containerName = "grafana-alloy"
 
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
 	reloaderTag       = "v0.60.1"
@@ -105,10 +105,30 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
-						fmt.Sprintf("--config.file=%s/%s", configPath, configFileName),
-						"-server.http.address=0.0.0.0:9090",
-						"-disable-reporting",
-						fmt.Sprintf("-metrics.wal-directory=%s/agent", storagePath),
+						"run",
+						fmt.Sprintf("%s/%s", configPath, configFileName),
+						// the configuration is still in the Grafana Agent static mode format, which
+						// Alloy converts on startup; -config.expand-env keeps the ${HOSTNAME}
+						// expansion that makes the __replica__ external label unique per pod.
+						"--config.format=static",
+						"--config.extra-args=-config.expand-env",
+						// tolerate conversion warnings so that an unsupported directive in a
+						// user-provided custom scrape configuration cannot prevent Alloy from starting.
+						"--config.bypass-conversion-errors",
+						fmt.Sprintf("--server.http.listen-addr=0.0.0.0:%d", containerPort),
+						fmt.Sprintf("--storage.path=%s/alloy", storagePath),
+						"--disable-reporting",
+						"--stability.level=generally-available",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name: "HOSTNAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -139,7 +159,10 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 						SuccessThreshold:    1,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/-/healthy",
+								// Alloy's /-/healthy reports the health of every single component and is
+								// explicitly documented as unsuitable for a liveness probe: one component
+								// failing to scrape would restart the pod and stop all healthy pipelines.
+								Path:   "/-/ready",
 								Port:   intstr.FromInt(containerPort),
 								Scheme: corev1.URISchemeHTTP,
 							},

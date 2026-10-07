@@ -6,6 +6,93 @@
 - [v2.30.3](#v2303)
 - [v2.30.4](#v2304)
 - [v2.30.5](#v2305)
+- [v2.30.6](#v2306)
+- [v2.30.7](#v2307)
+
+## v2.30.7
+
+**GitHub release: [v2.30.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.7)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.35.8/v1.34.11 and set the default Kubernetes version to v1.34.11 ([#16300](https://github.com/kubermatic/kubermatic/pull/16300))
+
+#### Supported Versions
+
+- v1.35.8
+- v1.34.11
+
+### Cloud Providers
+
+#### Azure
+
+- Update the Azure cloud-controller-manager, cloud-node-manager, and the Azure Disk and Azure File CSI drivers to their latest upstream versions per supported Kubernetes minor. The controller-manager and node-manager images now come from the maintained mcr.microsoft.com/oss/v2 registry path (the previous /oss path was frozen at v1.34.3), clearing the base-image CVEs those stale images carried. Kubernetes 1.35 clusters now receive matching 1.35 controller-manager and node-manager images instead of 1.34 ones ([#16216](https://github.com/kubermatic/kubermatic/pull/16216))
+
+#### OpenStack
+
+- Update OpenStack Cinder CSI sidecar images (csi-attacher v4.12.0, csi-snapshotter v8.6.0, livenessprobe v2.19.0, csi-node-driver-registrar v2.17.0) to address known CVEs ([#16328](https://github.com/kubermatic/kubermatic/pull/16328))
+
+### Bugfixes
+
+- Migrate the user cluster MLA monitoring agent from the end-of-life grafana/agent v0.29.0 image to grafana/alloy v1.19.2 ([#16334](https://github.com/kubermatic/kubermatic/pull/16334))
+- Fix hardcoded datasource references in the mla-components Grafana dashboard by using a `$datasource` variable, and drop the unused Loki datasource ([#16313](https://github.com/kubermatic/kubermatic/pull/16313))
+- The Cluster Autoscaler application now grants the read access to resource.k8s.io that cluster-autoscaler 1.35 and newer require ([#16251](https://github.com/kubermatic/kubermatic/pull/16251))
+- Kubermatic-installer now passes --force-conflicts to Helm 4 only for releases that Helm applies server-side, fixing deploy failures on releases that were originally installed with Helm 3 ([#16210](https://github.com/kubermatic/kubermatic/pull/16210))
+
+### Updates
+
+- Update machine-controller to [v1.65.7](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.7) and operating-system-manager to [v1.10.9](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.9) ([#16348](https://github.com/kubermatic/kubermatic/pull/16348))
+- Update machine-controller to [v1.65.6](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.6) ([#16277](https://github.com/kubermatic/kubermatic/pull/16277))
+- Update operating-system-manager to [v1.10.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.8) ([#16283](https://github.com/kubermatic/kubermatic/pull/16283))
+- Add KubeLB CCM v1.5.0 support with updated permissions, CRDs and tenant proxy configuration ([#16336](https://github.com/kubermatic/kubermatic/pull/16336))
+- Update the metering version to v1.4.1, adding persistent storage usage to the JSON cluster report ([#16270](https://github.com/kubermatic/kubermatic/pull/16270))
+- Update the utility container image to 2.10.0 across all charts and controllers ([#16340](https://github.com/kubermatic/kubermatic/pull/16340))
+- Update util image version to 2.8.1 ([#16259](https://github.com/kubermatic/kubermatic/pull/16259))
+- Update the d3fk/s3cmd image to a current digest built on Alpine 3.24, resolving 62 CVEs inherited from the previously used end-of-life Alpine 3.17 base ([#16194](https://github.com/kubermatic/kubermatic/pull/16194))
+- Update Go version to v1.25.14 ([#16285](https://github.com/kubermatic/kubermatic/pull/16285))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Hide cluster backup options in Community Edition, where the feature is not supported ([#8240](https://github.com/kubermatic/dashboard/pull/8240))
+
+#### Updates
+
+- Update web-terminal image version to v1.12.1 ([#8275](https://github.com/kubermatic/dashboard/pull/8275))
+- Update chrome-headless to v1.9.4 and Go to v1.25.14 ([#8271](https://github.com/kubermatic/dashboard/pull/8271))
+
+## v2.30.6
+
+**GitHub release: [v2.30.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.6)**
+
+### New Features
+
+- The KubeVirt node defaults shown in the Custom Configuration path have been raised: primary disk 10G -> 25G, memory 2000 MB -> 4000 MB. CPU default is unchanged at 2 ([#8182](https://github.com/kubermatic/dashboard/pull/8182))
+
+### Design
+
+- Hide KubeVirt instance type tabs that have no options ([#8196](https://github.com/kubermatic/dashboard/pull/8196))
+
+### Bugfixes
+
+- Fix a bug where multiple GroupProjectBindings with the same group and project could be created. The admission webhook now rejects duplicate bindings at creation time and prevents  an existing binding from being updated into a conflicting group/project pair ([#16162](https://github.com/kubermatic/kubermatic/pull/16162))
+- Fix nodeport-proxy-envoy Prometheus annotations to include the standard `prometheus.io/path` metrics path annotation ([#16092](https://github.com/kubermatic/kubermatic/pull/16092))
+- Fix the kubevirt-network-controller emitting spurious "invalid NetworkPolicy" warning events and potentially panicking when reconciling cluster-isolation NetworkPolicies in default-deny mode before the cluster's apiserver address or DNS configuration were available ([#16074](https://github.com/kubermatic/kubermatic/pull/16074))
+- Fix UserProjectBindings being deleted before their User logs in for the first time ([#16131](https://github.com/kubermatic/kubermatic/pull/16131))
+- Kubermatic-installer now enables server-side apply with conflict forcing when running with Helm 4, fixing `deploy` failures caused by field-ownership conflicts (for example on the dockercfg Secret). With Helm 4 the deprecated `--atomic` flag is replaced by `--rollback-on-failure` ([#16138](https://github.com/kubermatic/kubermatic/pull/16138))
+- Add improvements for the handling of Kyverno PolicyBindings and generated Kyverno resources when PolicyTemplates are deleted, Kyverno is disabled, or clusters are deleted ([#16034](https://github.com/kubermatic/kubermatic/pull/16034))
+- Fix KubeLB option precedence so enforced datacenters always show the option regardless of the enabled flag ([#7999](https://github.com/kubermatic/dashboard/pull/7999))
+- Fix KubeVirt instancetype/preference dropdowns failing on KubeVirt 1.6.x+ infra clusters by listing via the v1beta1 API (v1alpha1 fallback retained for older clusters) ([#8202](https://github.com/kubermatic/dashboard/pull/8202))
+- Add some KubeLB Enhancements ([#7958](https://github.com/kubermatic/dashboard/pull/7958))
+
+### Updates
+
+- Add support for k8s patch releases v1.35.7/v1.34.10 ([#16166](https://github.com/kubermatic/kubermatic/pull/16166))
+- Update KubeLB CCM to v1.4.3 ([#16132](https://github.com/kubermatic/kubermatic/pull/16132))
+- Update Machine-controller to [v1.65.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.5) ([#16180](https://github.com/kubermatic/kubermatic/pull/16180))
+- Update machine-controller to v1.65.4 ([#16175](https://github.com/kubermatic/kubermatic/pull/16175))
+- Update MLA Gateway nginx image to v1.31.2-alpine ([#16084](https://github.com/kubermatic/kubermatic/pull/16084))
 
 ## v2.30.5
 

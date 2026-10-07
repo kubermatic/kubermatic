@@ -92,19 +92,20 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		// etcd
 		"etcd_disk_backend_defrag_duration_seconds_sum",
 		// kube-state-metrics
-		"kube_configmap_info",
+		"kube_node_info",
 		// user cluster kubelets
-		"kubelet_runtime_operations_duration_seconds_count",
+		"container_cpu_usage_seconds_total",
 		// machine-controller
 		"machine_controller_machines_total",
 		// kube controller-manager
 		"replicaset_controller_sorting_deletion_age_ratio_bucket",
 		// kube apiserver
-		"apiserver_request_total",
+		"apiserver_init_events_total",
 		// kube scheduler
 		"scheduler_schedule_attempts_total",
-		// cadvisor
-		"machine_cpu_cores",
+		// all the metrics for cadvisor are dropped
+		// // cadvisor
+		// "machine_cpu_cores",
 	)
 
 	fetched := sets.New(data.Data...)

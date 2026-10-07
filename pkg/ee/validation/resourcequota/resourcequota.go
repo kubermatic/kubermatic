@@ -31,6 +31,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	resourcequotadefaultcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/default-quota-controller"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,6 +48,9 @@ func ValidateCreate(ctx context.Context,
 	}
 	if incomingQuota == nil {
 		return nil
+	}
+	if err := validation.ValidateAcceleratorQuota(incomingQuota.Spec.Quota); err != nil {
+		return fmt.Errorf("invalid accelerator quota: %w", err)
 	}
 
 	currentQuotaList := &kubermaticv1.ResourceQuotaList{}
@@ -81,6 +85,9 @@ func ValidateUpdate(ctx context.Context,
 	}
 	if newQuota == nil {
 		return nil
+	}
+	if err := validation.ValidateAcceleratorQuota(newQuota.Spec.Quota); err != nil {
+		return fmt.Errorf("invalid accelerator quota: %w", err)
 	}
 
 	oldSubject := oldQuota.Spec.Subject

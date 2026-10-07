@@ -106,6 +106,7 @@ type TemplateData struct {
 	userClusterMLAEnabled                 bool
 	isKonnectivityEnabled                 bool
 	dra                                   bool
+	kubeVirtAcceleratorQuota              bool
 
 	tunnelingAgentIP string
 
@@ -325,6 +326,11 @@ func (td *TemplateDataBuilder) WithDRA(draEnabled bool) *TemplateDataBuilder {
 	return td
 }
 
+func (td *TemplateDataBuilder) WithKubeVirtAcceleratorQuota(enabled bool) *TemplateDataBuilder {
+	td.data.kubeVirtAcceleratorQuota = enabled
+	return td
+}
+
 // GetViewerToken returns the viewer token.
 func (d *TemplateData) GetViewerToken() (string, error) {
 	viewerTokenSecret := &corev1.Secret{}
@@ -472,6 +478,10 @@ func (d *TemplateData) KubeLBImageRepository() string {
 
 func (d *TemplateData) KubeLBImageTag() string {
 	return d.kubeLBImageTag
+}
+
+func (d *TemplateData) UtilImage() string {
+	return d.config.Spec.Util.DockerRepository + ":" + UtilVersion
 }
 
 func (d *TemplateData) MachineControllerImageTag() string {
@@ -1114,6 +1124,11 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 
 func (d *TemplateData) DRAEnabled() bool {
 	return d.dra
+}
+
+// KubeVirtAcceleratorQuotaEnabled returns whether KubeVirt accelerator quota accounting is enabled.
+func (d *TemplateData) KubeVirtAcceleratorQuotaEnabled() bool {
+	return d.kubeVirtAcceleratorQuota
 }
 
 func expandVariables(input string, vars map[string]string) string {

@@ -18,13 +18,213 @@ package usercluster
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kkpresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestAdminDisabledGatewayAPIProtection(t *testing.T) {
+	configWith := func(disabled bool) *kubermaticv1.KubermaticConfiguration {
+		return &kubermaticv1.KubermaticConfiguration{
+			Spec: kubermaticv1.KubermaticConfigurationSpec{
+				UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+					KubeLB: kubermaticv1.KubeLBConfiguration{DisableGatewayAPIProtection: disabled},
+				},
+			},
+		}
+	}
+	dcWith := func(disabled bool) *kubermaticv1.Datacenter {
+		return &kubermaticv1.Datacenter{
+			Spec: kubermaticv1.DatacenterSpec{
+				KubeLB: &kubermaticv1.KubeLBDatacenterSettings{DisableGatewayAPIProtection: disabled},
+			},
+		}
+	}
+
+	testCases := []struct {
+		name     string
+		config   *kubermaticv1.KubermaticConfiguration
+		dc       *kubermaticv1.Datacenter
+		expected bool
+	}{
+		{
+			name:     "nothing configured keeps the guard",
+			config:   configWith(false),
+			dc:       dcWith(false),
+			expected: false,
+		},
+		{
+			name:     "the KubermaticConfiguration disables it for every datacenter",
+			config:   configWith(true),
+			dc:       dcWith(false),
+			expected: true,
+		},
+		{
+			name:     "a single datacenter disables it",
+			config:   configWith(false),
+			dc:       dcWith(true),
+			expected: true,
+		},
+		{
+			// Neither level can re-enable what the other turned off.
+			name:     "both disabling it is still disabled",
+			config:   configWith(true),
+			dc:       dcWith(true),
+			expected: true,
+		},
+		{
+			// The common case.
+			name:     "missing kubeLB settings keep the guard",
+			config:   &kubermaticv1.KubermaticConfiguration{},
+			dc:       &kubermaticv1.Datacenter{},
+			expected: false,
+		},
+		{
+			name:     "nil configuration and datacenter keep the guard",
+			expected: false,
+		},
+		{
+			name:     "a nil configuration does not hide the datacenter setting",
+			dc:       dcWith(true),
+			expected: true,
+		},
+		{
+			name:     "a nil datacenter does not hide the configuration setting",
+			config:   configWith(true),
+			expected: true,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := adminDisabledGatewayAPIProtection(test.config, test.dc); got != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, got)
+			}
+		})
+	}
+}
+
+func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
+	testCases := []struct {
+		name         string
+		kubeVirt     bool
+		enabled      bool
+		wantArgument bool
+	}{
+		{
+			name:     "disabled",
+			kubeVirt: true,
+		},
+		{
+			name:         "enabled",
+			kubeVirt:     true,
+			enabled:      true,
+			wantArgument: true,
+		},
+		{
+			name:    "not rendered for another provider",
+			enabled: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := newDeploymentTestData(tc.kubeVirt, tc.enabled)
+			_, reconcile := DeploymentReconciler(data)()
+
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile user-cluster-controller deployment: %v", err)
+			}
+
+			hasArgument := deploymentContainsArgument(deployment, "-kubevirt-accelerator-quota")
+			if hasArgument != tc.wantArgument {
+				t.Fatalf("expected accelerator quota argument present=%t, got %t", tc.wantArgument, hasArgument)
+			}
+		})
+	}
+}
+
+func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
+	cloud := kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
+	datacenter := kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}
+	if kubeVirt {
+		cloud = kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{}}
+		datacenter = kubermaticv1.DatacenterSpec{Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{}}
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-cluster",
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: "test-project",
+			},
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud:          cloud,
+			ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				Services: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.16.0/20"}},
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: "cluster-test",
+			Address: kubermaticv1.ClusterAddress{
+				Port:         6443,
+				ExternalName: "test.example.com",
+				InternalName: "apiserver.cluster-test.svc.cluster.local",
+			},
+		},
+	}
+
+	return kkpresources.NewTemplateDataBuilder().
+		WithCluster(cluster).
+		WithDatacenter(&kubermaticv1.Datacenter{Spec: datacenter}).
+		WithSeed(&kubermaticv1.Seed{}).
+		WithKubermaticImage("quay.io/kubermatic/kubermatic").
+		WithVersions(kubermatic.GetFakeVersions()).
+		WithKonnectivityEnabled(true).
+		WithKubeVirtAcceleratorQuota(acceleratorQuotaEnabled).
+		Build()
+}
+
+func deploymentContainsArgument(deployment *appsv1.Deployment, argument string) bool {
+	for _, containers := range [][]corev1.Container{
+		deployment.Spec.Template.Spec.InitContainers,
+		deployment.Spec.Template.Spec.Containers,
+	} {
+		for _, container := range containers {
+			if slices.Contains(container.Args, argument) {
+				return true
+			}
+
+			for i := 1; i < len(container.Args); i++ {
+				if container.Args[i-1] != "-command" {
+					continue
+				}
+
+				wrappedCommand := struct {
+					Args []string `json:"args"`
+				}{}
+				if err := json.Unmarshal([]byte(container.Args[i]), &wrappedCommand); err == nil && slices.Contains(wrappedCommand.Args, argument) {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
 
 func TestGetLabelArgsValue(t *testing.T) {
 	testCases := []struct {

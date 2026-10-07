@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -212,5 +213,80 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
 			}
 		})
+	}
+}
+
+func TestReconcilePendingBindingIsNotDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	binding := test.CreateExpectedEditorBinding("James Bond", thunderball)
+
+	kubermaticFakeClient := fake.
+		NewClientBuilder().
+		WithObjects(binding, thunderball). // no matching User exists
+		Build()
+
+	target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
+
+	if err := target.reconcile(ctx, zap.NewNop().Sugar(), binding); err != nil {
+		t.Fatal(err)
+	}
+
+	updatedBinding := &kubermaticv1.UserProjectBinding{}
+	if err := kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name}, updatedBinding); err != nil {
+		t.Fatalf("expected pending binding to still exist, but got: %v", err)
+	}
+
+	if updatedBinding.Annotations[userResolvedAnnotation] == "true" {
+		t.Fatal("expected pending binding to not be marked as resolved")
+	}
+}
+
+func TestReconcileOrphanedBindingIsDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	binding := test.CreateExpectedEditorBinding("James Bond", thunderball)
+	binding.Annotations = map[string]string{userResolvedAnnotation: "true"}
+
+	kubermaticFakeClient := fake.
+		NewClientBuilder().
+		WithObjects(binding, thunderball). // no matching User exists anymore
+		Build()
+
+	target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
+
+	if err := target.reconcile(ctx, zap.NewNop().Sugar(), binding); err != nil {
+		t.Fatal(err)
+	}
+
+	err := kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name}, &kubermaticv1.UserProjectBinding{})
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected orphaned binding to be deleted, but got err: %v", err)
+	}
+}
+
+func TestReconcileMarksBindingAsResolved(t *testing.T) {
+	ctx := context.Background()
+
+	binding := test.CreateExpectedEditorBinding("James Bond", thunderball)
+
+	kubermaticFakeClient := fake.
+		NewClientBuilder().
+		WithObjects(binding, thunderball, jamesBond).
+		Build()
+
+	target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
+
+	if err := target.reconcile(ctx, zap.NewNop().Sugar(), binding); err != nil {
+		t.Fatal(err)
+	}
+
+	updatedBinding := &kubermaticv1.UserProjectBinding{}
+	if err := kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Name}, updatedBinding); err != nil {
+		t.Fatal(err)
+	}
+
+	if updatedBinding.Annotations[userResolvedAnnotation] != "true" {
+		t.Fatal("expected binding to be marked as resolved")
 	}
 }

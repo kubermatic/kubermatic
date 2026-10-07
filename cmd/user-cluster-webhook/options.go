@@ -59,7 +59,7 @@ func initApplicationOptions() (appOptions, error) {
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
 	flag.StringVar(&clusterName, "cluster-name", "", "Cluster name in which the webhook is running in")
-	flag.StringVar(&kubeVirtInfraNamespace, "kubevirt-infra-namespace", "", "KubeVirt infra-cluster namespace that holds the cluster's namespaced VirtualMachineInstancetypes; empty falls back to an unscoped lookup")
+	flag.StringVar(&kubeVirtInfraNamespace, "kubevirt-infra-namespace", "", "KubeVirt infra-cluster namespace that holds the cluster's namespaced VirtualMachineInstancetypes")
 	flag.Parse()
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)

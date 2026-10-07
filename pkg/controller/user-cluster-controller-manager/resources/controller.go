@@ -102,6 +102,7 @@ func Add(
 	konnectivityKeepaliveTime string,
 	ccmMigration bool,
 	ccmMigrationCompleted bool,
+	kubeVirtAcceleratorQuota bool,
 	kyvernoEnabled bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
@@ -134,6 +135,7 @@ func Add(
 		konnectivityKeepaliveTime: konnectivityKeepaliveTime,
 		ccmMigration:              ccmMigration,
 		ccmMigrationCompleted:     ccmMigrationCompleted,
+		kubeVirtAcceleratorQuota:  kubeVirtAcceleratorQuota,
 		kyvernoEnabled:            kyvernoEnabled,
 	}
 
@@ -268,6 +270,7 @@ type reconciler struct {
 	konnectivityKeepaliveTime string
 	ccmMigration              bool
 	ccmMigrationCompleted     bool
+	kubeVirtAcceleratorQuota  bool
 	kyvernoEnabled            bool
 
 	rLock                      *sync.Mutex

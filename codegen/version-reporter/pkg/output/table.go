@@ -20,6 +20,7 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 
 	"k8c.io/kubermatic/v2/codegen/version-reporter/pkg/config"
 
@@ -56,21 +57,29 @@ func FormatTable(cfg *config.Config, dest io.Writer) error {
 		return result
 	}
 
+	mergeCfg := tablewriter.NewConfigBuilder().
+		// merge identical adjacent cells vertically in the Product/Type columns,
+		// so repeated values collapse instead of printing on every row
+		Row().Merging().WithMode(tw.MergeVertical).ByColumnIndex([]int{0, 1}).Build().Build().Build()
+
 	table := tablewriter.NewWriter(dest)
-	table.SetHeader(columns)
-	table.SetAutoWrapText(false)
-	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Options(
+		tablewriter.WithHeader(columns),
+		tablewriter.WithHeaderAutoWrap(tw.WrapNone),
+		tablewriter.WithRowAutoWrap(tw.WrapNone),
+		tablewriter.WithConfig(mergeCfg),
+	)
 
 	for _, product := range cfg.Products {
 		for _, occ := range product.Occurrences {
 			row := []string{product.Name, occ.TypeName(), occ.String()}
-			table.Append(append(row, versionColumns(occ.Versions)...))
+			if err := table.Append(append(row, versionColumns(occ.Versions)...)); err != nil {
+				return err
+			}
 		}
 	}
 
-	table.Render()
-
-	return nil
+	return table.Render()
 }
 
 func getVersionSuperset(c *config.Config) []string {

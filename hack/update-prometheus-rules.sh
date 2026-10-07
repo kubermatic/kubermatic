@@ -50,3 +50,4 @@ done
 
 cd ..
 $promtool check rules ./*.yaml
+$promtool test rules tests/*.yaml

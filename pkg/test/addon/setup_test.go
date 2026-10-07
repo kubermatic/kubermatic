@@ -20,25 +20,28 @@ package addon
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/addon"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon/migrations"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func installAddon(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, provider kubermaticv1.ProviderType, addonName string, allAddons map[string]*addon.Addon) *kubermaticv1.Cluster {
+func installAddon(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, provider kubermaticv1.ProviderType, addonName string, variant string, allAddons map[string]*addon.Addon) *kubermaticv1.Cluster {
 	for _, required := range RequiredAddons[addonName] {
 		t.Logf("Installing required %s addon…", required)
-		installAddon(ctx, t, client, provider, required, allAddons)
+		installAddon(ctx, t, client, provider, required, "", allAddons)
 	}
 
 	cluster := loadCluster(t, provider)
-	setupClusterForAddon(t, cluster, addonName)
+	setupClusterForAddon(t, cluster, addonName, variant)
 
 	data := getTemplateData(t, cluster)
 
@@ -68,6 +71,34 @@ func installAddon(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 	return cluster
 }
 
-func setupClusterForAddon(t *testing.T, cluster *kubermaticv1.Cluster, addonName string) {
-	// NOP
+// addonVariants returns the cluster variants an addon needs to be tested with.
+// Most addons have a single, unnamed variant that uses the cluster fixture as-is.
+// Canal ships one manifest per CNI version, of which only the one matching the
+// cluster's CNI version is rendered, so it is tested once per supported version.
+func addonVariants(addonName string) []string {
+	if addonName == kubermaticv1.CNIPluginTypeCanal.String() {
+		versions, err := cni.GetSupportedCNIPluginVersions(kubermaticv1.CNIPluginTypeCanal)
+		if err == nil && versions.Len() > 0 {
+			return sets.List(versions)
+		}
+	}
+
+	return []string{""}
+}
+
+func testName(addonName string, variant string, provider kubermaticv1.ProviderType) string {
+	if variant == "" {
+		return fmt.Sprintf("%s@%s", addonName, provider)
+	}
+
+	return fmt.Sprintf("%s-%s@%s", addonName, variant, provider)
+}
+
+func setupClusterForAddon(t *testing.T, cluster *kubermaticv1.Cluster, addonName string, variant string) {
+	if addonName == kubermaticv1.CNIPluginTypeCanal.String() && variant != "" {
+		cluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCanal,
+			Version: variant,
+		}
+	}
 }

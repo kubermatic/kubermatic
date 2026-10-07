@@ -223,7 +223,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.34.9"),
+		Default: semver.NewSemverOrDie("v1.36.4"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -232,19 +232,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.33
-			newSemver("v1.33.0"),
-			newSemver("v1.33.2"),
-			newSemver("v1.33.3"),
-			newSemver("v1.33.5"),
-			newSemver("v1.33.6"),
-			newSemver("v1.33.7"),
-			newSemver("v1.33.8"),
-			newSemver("v1.33.9"),
-			newSemver("v1.33.10"),
-			newSemver("v1.33.11"),
-			newSemver("v1.33.12"),
-			newSemver("v1.33.13"),
 			// Kubernetes 1.34
 			newSemver("v1.34.1"),
 			newSemver("v1.34.2"),
@@ -255,6 +242,9 @@ var (
 			newSemver("v1.34.7"),
 			newSemver("v1.34.8"),
 			newSemver("v1.34.9"),
+			newSemver("v1.34.10"),
+			newSemver("v1.34.11"),
+			newSemver("v1.34.12"),
 			// Kubernetes 1.35
 			newSemver("v1.35.0"),
 			newSemver("v1.35.1"),
@@ -263,6 +253,16 @@ var (
 			newSemver("v1.35.4"),
 			newSemver("v1.35.5"),
 			newSemver("v1.35.6"),
+			newSemver("v1.35.7"),
+			newSemver("v1.35.8"),
+			newSemver("v1.35.9"),
+			// Kubernetes 1.36
+			newSemver("v1.36.3"),
+			newSemver("v1.36.4"),
+			newSemver("v1.36.5"),
+			// Kubernetes 1.37
+			newSemver("v1.37.0"),
+			newSemver("v1.37.1"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
@@ -272,11 +272,6 @@ var (
 				To:   "1.33.*",
 			},
 			// ======= 1.33 =======
-			{
-				// Allow to change to any patch version
-				From: "1.33.*",
-				To:   "1.33.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.33.*",
@@ -298,6 +293,28 @@ var (
 				// Allow to change to any patch version
 				From: "1.35.*",
 				To:   "1.35.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.35.*",
+				To:   "1.36.*",
+			},
+			// ======= 1.36 =======
+			{
+				// Allow to change to any patch version
+				From: "1.36.*",
+				To:   "1.36.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.36.*",
+				To:   "1.37.*",
+			},
+			// ======= 1.37 =======
+			{
+				// Allow to change to any patch version
+				From: "1.37.*",
+				To:   "1.37.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
@@ -511,6 +528,19 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		configCopy.Spec.FeatureGates[features.EtcdLauncher] = true
 	}
 
+	// Gateway API is the enforced default as of KKP 2.31. cert-manager requires
+	// the httproute-gateway-sync controller to project HTTPRoute hostnames onto
+	// Gateway listeners so it can provision Certificates. Default the feature
+	// gate to true so cert-manager works out of the box; users who explicitly
+	// set the gate to false in their KubermaticConfiguration are respected.
+	if _, httpRouteGatewaySyncSet := configCopy.Spec.FeatureGates[features.HTTPRouteGatewaySync]; !httpRouteGatewaySyncSet {
+		if configCopy.Spec.FeatureGates == nil {
+			configCopy.Spec.FeatureGates = make(map[string]bool)
+		}
+
+		configCopy.Spec.FeatureGates[features.HTTPRouteGatewaySync] = true
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultDashboardImage, "api.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -528,6 +558,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if err := defaultDockerRepo(&configCopy.Spec.Webhook.DockerRepository, DefaultKubermaticImage, "webhook.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultDockerRepo(&configCopy.Spec.Util.DockerRepository, DefaultUtilImageRepository, "util.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -709,7 +743,7 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 
 const DefaultBackupStoreContainer = `
 name: store-container
-image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
+image: d3fk/s3cmd@sha256:426f98fdc8a2c7d7a879eb0da57131e6eec4d239881448f23946216fe801b614
 command:
 - /bin/sh
 - -c
@@ -734,7 +768,7 @@ volumeMounts:
 
 const DefaultBackupDeleteContainer = `
 name: delete-container
-image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
+image: d3fk/s3cmd@sha256:426f98fdc8a2c7d7a879eb0da57131e6eec4d239881448f23946216fe801b614
 command:
 - /bin/sh
 - -c

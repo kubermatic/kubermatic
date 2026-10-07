@@ -163,6 +163,8 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
+	allErrs = append(allErrs, validateMachineControllerSettings(spec, parentFieldPath)...)
+
 	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
@@ -181,6 +183,8 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	allErrs = append(allErrs, validateAuthenticationConfiguration(spec, parentFieldPath)...)
+
+	allErrs = append(allErrs, ValidateKeyConfiguration(spec.KeyConfiguration, parentFieldPath.Child("keyConfiguration"))...)
 
 	return allErrs
 }
@@ -334,6 +338,13 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 			specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
 		)...)
 	}
+
+	// The key configuration is frozen when the cluster is created.
+	allErrs = append(allErrs, ValidateKeyConfigurationUpdate(
+		oldCluster.Spec.KeyConfiguration,
+		newCluster.Spec.KeyConfiguration,
+		specPath.Child("keyConfiguration"),
+	)...)
 
 	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
@@ -1412,6 +1423,23 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 	}
 
 	return nil
+}
+
+// validateMachineControllerSettings guards the machineController component
+// overrides. Zero is valid and disables the eviction timeout: machine-controller then
+// waits for eviction as long as the node is Ready and a schedulable target node
+// exists. A negative duration however would make it treat every deleting machine as
+// past the threshold, force-deleting nodes while ignoring PodDisruptionBudgets.
+// machine-controller only rejects negatives on the per-Machine annotation, not on the
+// -skip-eviction-after flag this field renders into, so the guard has to live here.
+func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be zero (to disable the eviction timeout) or a positive duration"))
+	}
+
+	return allErrs
 }
 
 // ValidateEventRateLimitConfig validates the EventRateLimitConfig settings.

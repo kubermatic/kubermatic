@@ -39,6 +39,197 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func TestKubeVirtAcceleratorQuotaEnabledForCluster(t *testing.T) {
+	const projectID = "project-a"
+
+	activeQuota := projectResourceQuota("quota-a", projectID, resources.AcceleratorAccountingEnabledAnnotationValue)
+
+	t.Run("community edition remains inactive", func(t *testing.T) {
+		r := &Reconciler{
+			Client: fake.NewClientBuilder().WithObjects(activeQuota.DeepCopy()).Build(),
+		}
+
+		active, err := r.kubeVirtAcceleratorQuotaEnabledForCluster(context.Background(), kubeVirtCluster("cluster-a", projectID))
+		require.NoError(t, err)
+		require.False(t, active)
+	})
+
+	testCases := []struct {
+		name           string
+		cluster        *kubermaticv1.Cluster
+		resourceQuotas []*kubermaticv1.ResourceQuota
+		wantActive     bool
+	}{
+		{
+			name:           "annotation absent does not activate project",
+			cluster:        kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{projectResourceQuota("quota-a", projectID, "")},
+		},
+		{
+			name:           "exact activation enables KubeVirt cluster",
+			cluster:        kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{activeQuota},
+			wantActive:     true,
+		},
+		{
+			name:           "annotation value is exact",
+			cluster:        kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{projectResourceQuota("quota-a", projectID, "True")},
+		},
+		{
+			name:           "non KubeVirt cluster remains inactive",
+			cluster:        awsCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{activeQuota},
+		},
+		{
+			name:           "missing project label remains inactive",
+			cluster:        kubeVirtCluster("cluster-a", ""),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{activeQuota},
+		},
+		{
+			name:    "missing synchronized quota remains inactive",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+		},
+		{
+			name:    "duplicate active project quotas do not block activation",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{
+				activeQuota,
+				projectResourceQuota("quota-b", projectID, resources.AcceleratorAccountingEnabledAnnotationValue),
+			},
+			wantActive: true,
+		},
+		{
+			name:    "malformed duplicate does not block valid activation",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{
+				activeQuota,
+				projectResourceQuota("quota-b", projectID, "True"),
+			},
+			wantActive: true,
+		},
+		{
+			name:    "terminating quota is inactive",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{func() *kubermaticv1.ResourceQuota {
+				quota := projectResourceQuota("quota-a", projectID, resources.AcceleratorAccountingEnabledAnnotationValue)
+				now := metav1.Now()
+				quota.DeletionTimestamp = &now
+				quota.Finalizers = []string{"test.kubermatic.io/cleanup"}
+				return quota
+			}()},
+		},
+		{
+			name:    "terminating duplicate does not block valid activation",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{
+				activeQuota,
+				func() *kubermaticv1.ResourceQuota {
+					quota := projectResourceQuota("quota-b", projectID, resources.AcceleratorAccountingEnabledAnnotationValue)
+					now := metav1.Now()
+					quota.DeletionTimestamp = &now
+					quota.Finalizers = []string{"test.kubermatic.io/cleanup"}
+					return quota
+				}(),
+			},
+			wantActive: true,
+		},
+		{
+			name:    "label-spoofed subject mismatch is ignored",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{func() *kubermaticv1.ResourceQuota {
+				quota := projectResourceQuota("quota-a", projectID, resources.AcceleratorAccountingEnabledAnnotationValue)
+				quota.Spec.Subject.Name = "project-b"
+				return quota
+			}()},
+		},
+		{
+			name:    "label-spoofed candidate does not block valid activation",
+			cluster: kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{
+				activeQuota,
+				func() *kubermaticv1.ResourceQuota {
+					quota := projectResourceQuota("quota-b", projectID, resources.AcceleratorAccountingEnabledAnnotationValue)
+					quota.Spec.Subject.Name = "project-b"
+					return quota
+				}(),
+			},
+			wantActive: true,
+		},
+		{
+			name:           "other project activation remains isolated",
+			cluster:        kubeVirtCluster("cluster-a", projectID),
+			resourceQuotas: []*kubermaticv1.ResourceQuota{projectResourceQuota("quota-b", "project-b", resources.AcceleratorAccountingEnabledAnnotationValue)},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			builder := fake.NewClientBuilder()
+			for _, quota := range tc.resourceQuotas {
+				builder.WithObjects(quota.DeepCopy())
+			}
+			r := &Reconciler{
+				Client: builder.Build(),
+				features: Features{
+					KubeVirtAcceleratorAccounting: true,
+				},
+			}
+
+			got, err := r.kubeVirtAcceleratorQuotaEnabledForCluster(context.Background(), tc.cluster)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantActive, got)
+		})
+	}
+}
+
+func projectResourceQuota(name, projectID, activationValue string) *kubermaticv1.ResourceQuota {
+	annotations := map[string]string(nil)
+	if activationValue != "" {
+		annotations = map[string]string{resources.AcceleratorAccountingEnabledAnnotation: activationValue}
+	}
+
+	return &kubermaticv1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectID,
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+			},
+			Annotations: annotations,
+		},
+		Spec: kubermaticv1.ResourceQuotaSpec{Subject: kubermaticv1.Subject{
+			Name: projectID,
+			Kind: kubermaticv1.ProjectSubjectKind,
+		}},
+	}
+}
+
+func kubeVirtCluster(name, projectID string) *kubermaticv1.Cluster {
+	labels := map[string]string{}
+	if projectID != "" {
+		labels[kubermaticv1.ProjectIDLabelKey] = projectID
+	}
+	return &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Labels: labels},
+		Spec: kubermaticv1.ClusterSpec{Cloud: kubermaticv1.CloudSpec{
+			Kubevirt: &kubermaticv1.KubevirtCloudSpec{},
+		}},
+	}
+}
+
+func awsCluster(name, projectID string) *kubermaticv1.Cluster {
+	return &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: kubermaticv1.ClusterSpec{Cloud: kubermaticv1.CloudSpec{
+			AWS: &kubermaticv1.AWSCloudSpec{},
+		}},
+	}
+}
+
 func TestCloudControllerManagerDeployment(t *testing.T) {
 	// these tests use openstack as an example for a provider that has
 	// a CCM; the logic tested here is independent of the provider itself

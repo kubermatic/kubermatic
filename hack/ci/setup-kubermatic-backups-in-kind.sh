@@ -138,7 +138,7 @@ MINIO_TLS_CERT=$(mktemp)
 
 # create CA certificate
 openssl genrsa -out "$CUSTOM_CA_KEY" 2048
-openssl req -x509 -new -nodes -subj "/C=DE/O=Kubermatic CI/CN=kubermatic-e2e-ca" -key "$CUSTOM_CA_KEY" -sha256 -days 30 -out "$CUSTOM_CA_CERT"
+openssl req -x509 -new -nodes -subj "/C=DE/O=Kubermatic CI/CN=kubermatic-e2e-ca" -key "$CUSTOM_CA_KEY" -sha256 -days 30 -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" -out "$CUSTOM_CA_CERT"
 
 # create private key, CSR and signed certificate for minio TLS
 openssl genrsa -out "$MINIO_TLS_KEY" 2048

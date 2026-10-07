@@ -163,6 +163,29 @@ couple of test Presets and Users and then runs the IPAM e2e tests.
 This script is used as a postsubmit job and updates the dev master
 cluster after every commit to main.
 
+## run-kyverno-e2e-tests.sh
+
+This script sets up an Enterprise Edition KKP installation in kind and runs
+the Kyverno integration e2e tests against a newly provisioned AWS user cluster.
+It uses the same Prow environment, AWS credentials, registry credentials and
+cluster exposer as the other feature e2e jobs. The suite covers controller and
+CRD installation, default and enforced policy assignment, cluster-wide and
+namespaced policy admission, binding updates, policy cleanup, disabling and
+re-enabling Kyverno, and user cluster deletion with active policies.
+
+To run the suite against an existing EE master/seed installation, set
+`KUBECONFIG` to a context with administrative access, set `AWS_E2E_TESTS_KEY_ID`
+and `AWS_E2E_TESTS_SECRET`, and choose an AWS datacenter configured on its Seed:
+
+```bash
+go test -count=1 -timeout 1h -tags e2e,ee -v ./pkg/test/e2e/kyverno \
+  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER"
+```
+
+The tests create their own project, cluster and policy resources and clean them
+up on completion. The master and seed must share the supplied Kubernetes
+context, as in the CI setup. Use `-ssh-pub-key` if worker SSH access is needed.
+
 ## run-mla-e2e-tests.sh
 
 This script sets up a local KKP installation in kind, deploys a
@@ -273,4 +296,3 @@ are valid Prometheus rules.
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
-

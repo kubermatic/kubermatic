@@ -172,6 +172,14 @@ echodate "Starting the deployment of User Cluster MLA..."
 MLA_HELM_VALUES_FILE="$(mktemp)"
 cat > "${MLA_HELM_VALUES_FILE}" << EOF
 cortex:
+  # a single ingester cannot satisfy the default replication factor of 3
+  # (writes need a quorum of 2 and fail with "at least 2 live replicas
+  # required"), so scale the factor down together with the replicas
+  config:
+    ingester:
+      lifecycler:
+        ring:
+          replication_factor: 1
   ingester:
     replicas: 1
   distributor:
@@ -182,6 +190,12 @@ cortex:
     replicas: 1
 
 loki-distributed:
+  loki:
+    structuredConfig:
+      ingester:
+        lifecycler:
+          ring:
+            replication_factor: 1
   ingester:
     replicas: 1
   distributor:

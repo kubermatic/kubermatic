@@ -40,12 +40,16 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
+func acceleratorAccountingSupported() bool {
+	return true
+}
+
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
 func setupControllers(ctrlCtx *controllerContext) error {
-	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount); err != nil {
+	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount, ctrlCtx.versions.GitVersion); err != nil {
 		return fmt.Errorf("failed to create resource quota controller: %w", err)
 	}
 

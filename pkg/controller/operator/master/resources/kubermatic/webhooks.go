@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -247,6 +248,66 @@ func ResourceQuotaValidatingWebhookConfigurationReconciler(ctx context.Context,
 					},
 				},
 			}
+
+			return hook, nil
+		}
+	}
+}
+
+func ResourceQuotaAcceleratorAccountingValidatingWebhookConfigurationReconciler(ctx context.Context,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	client ctrlruntimeclient.Client,
+) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
+		return common.ResourceQuotaAcceleratorAccountingAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.ClusterScope
+
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{{
+				Name:                    "accelerator-accounting.resourcequotas.kubermatic.k8c.io",
+				AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+				MatchPolicy:             &matchPolicy,
+				FailurePolicy:           &failurePolicy,
+				SideEffects:             &sideEffects,
+				TimeoutSeconds:          ptr.To[int32](30),
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					CABundle: ca,
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      common.WebhookServiceName,
+						Namespace: cfg.Namespace,
+						Path:      ptr.To(resources.AcceleratorAccountingWebhookPath),
+						Port:      ptr.To[int32](443),
+					},
+				},
+				ObjectSelector:    &metav1.LabelSelector{},
+				NamespaceSelector: &metav1.LabelSelector{},
+				MatchConditions: []admissionregistrationv1.MatchCondition{{
+					Name: "accounting-annotation-present",
+					Expression: fmt.Sprintf("(object != null && has(object.metadata.annotations) && %q in object.metadata.annotations) || "+
+						"(oldObject != null && has(oldObject.metadata.annotations) && %q in oldObject.metadata.annotations)",
+						resources.AcceleratorAccountingEnabledAnnotation, resources.AcceleratorAccountingEnabledAnnotation),
+				}},
+				Rules: []admissionregistrationv1.RuleWithOperations{{
+					Rule: admissionregistrationv1.Rule{
+						APIGroups:   []string{kubermaticv1.GroupName},
+						APIVersions: []string{"*"},
+						Resources:   []string{"resourcequotas"},
+						Scope:       &scope,
+					},
+					Operations: []admissionregistrationv1.OperationType{
+						admissionregistrationv1.Create,
+						admissionregistrationv1.Update,
+						admissionregistrationv1.Delete,
+					},
+				}},
+			}}
 
 			return hook, nil
 		}

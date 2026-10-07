@@ -133,15 +133,18 @@ func AWSCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v132:
-		return "v1.32.1"
 	case v133:
 		return "v1.33.2"
 	case v134:
 		return "v1.34.0"
 	case v135:
-		fallthrough
+		return "v1.35.2"
+	case v136:
+		// upstream never tagged v1.36.0; the 1.36 release is v1.36.1
+		return "v1.36.1"
+	case v137:
+		return "v1.37.0"
 	default:
-		return "v1.35.0"
+		return "v1.35.2"
 	}
 }

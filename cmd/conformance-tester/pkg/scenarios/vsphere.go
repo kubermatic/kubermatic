@@ -63,9 +63,10 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Username:  secrets.VSphere.Username,
-				Password:  secrets.VSphere.Password,
-				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
+				Username:     secrets.VSphere.Username,
+				Password:     secrets.VSphere.Password,
+				Datastore:    s.datacenter.Spec.VSphere.DefaultDatastore,
+				ResourcePool: "Resources",
 			},
 		},
 		Version: s.clusterVersion,

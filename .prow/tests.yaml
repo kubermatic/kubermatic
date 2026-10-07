@@ -21,7 +21,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-13
           command:
             - make
           args:
@@ -44,7 +44,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - make
             - test-integration
@@ -71,33 +71,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-13
           command:
             - ./hack/ci/verify.sh
           resources:
             requests:
               memory: 2Gi
               cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-
-  - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-1
-          command:
-            - make
-            - lint
-          resources:
-            requests:
-              memory: 10Gi
-              cpu: 3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -131,7 +111,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-13
           command:
             - ./hack/ci/test-github-release.sh
           resources:
@@ -151,7 +131,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -175,7 +155,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -202,7 +182,7 @@ presubmits:
       preset-docker-mirror: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - ./hack/ci/trivy-scan.sh
           env:
@@ -225,7 +205,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/release-utility-images.sh"
           env:
@@ -252,7 +232,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/run-addons-integration-test.sh"
           resources:
@@ -269,7 +249,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/lint-mirror-application-charts.sh"
           resources:
@@ -291,7 +271,7 @@ postsubmits:
       preset-docker-push-kubermatic-mirror: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-1
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
           command:
             - "./hack/ci/mirror-new-application-charts.sh"
           resources:

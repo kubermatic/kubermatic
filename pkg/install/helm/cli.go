@@ -33,6 +33,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
+// applyMethodServerSide is the value helm records on a release whose objects
+// were applied server-side.
+//
+// Helm's own constant is release.ApplyMethodServerSideApply in
+// helm.sh/helm/v4/pkg/release/v1, but this repo pins helm.sh/helm/v3, which has
+// no apply-method concept at all, and the installer drives the helm binary
+// rather than importing the SDK. Hence the mirror. Helm documents an empty value
+// as meaning client-side apply, so only ever compare against this value, never
+// against the client-side one.
+const applyMethodServerSide = "ssa"
+
 var (
 	minHelmVersionMajor uint64 = 3
 	maxHelmVersionMajor uint64 = 4
@@ -177,6 +188,18 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 		"--timeout", c.timeout.String(),
 	}
 
+	forcingConflicts := false
+
+	if c.version.Major() >= 4 {
+		// --force-conflicts is only valid under server-side apply, which Helm 4
+		// decides per release (see `serverSideApplyActive`). Passing it unconditionally
+		// makes Helm reject releases installed by Helm 3.
+		forcingConflicts = c.serverSideApplyActive(namespace, releaseName)
+		if forcingConflicts {
+			command = append(command, "--server-side=true", "--force-conflicts")
+		}
+	}
+
 	if valuesFile != "" {
 		command = append(command, "--values", valuesFile)
 	} else {
@@ -184,12 +207,94 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 	}
 
 	command = append(command, valuesToFlags(values)...)
-	command = append(command, flags...)
+	command = append(command, c.translateFlags(flags)...)
 	command = append(command, releaseName, chartDirectory)
 
-	_, err := c.run(namespace, command...)
+	if _, err := c.run(namespace, command...); err != nil {
+		// A field-ownership conflict is the one failure the operator cannot act on
+		// without knowing the release applies client-side, and therefore that the
+		// installer deliberately did not force conflicts. Say so, but only on the
+		// path where it is relevant.
+		if c.version.Major() >= 4 && !forcingConflicts {
+			return fmt.Errorf("%w (release %q applies client-side, so field conflicts were not forced; check `helm get metadata %s --namespace %s`)", err, releaseName, releaseName, namespace)
+		}
 
-	return err
+		return err
+	}
+
+	return nil
+}
+
+// releaseMetadata is the subset of `helm get metadata` output that decides how
+// the next operation on a release will be applied.
+type releaseMetadata struct {
+	Status string `json:"status"`
+	// ApplyMethod is empty when helm never recorded one, which is the case for
+	// every release installed by Helm 3.
+	ApplyMethod string `json:"applyMethod"`
+}
+
+// serverSideApplyActive reports whether the next Helm 4 operation on the given
+// release will apply server-side, and therefore whether --force-conflicts is a
+// legal flag to pass alongside it.
+func (c *cli) serverSideApplyActive(namespace string, releaseName string) bool {
+	metadata, err := c.releaseMetadata(namespace, releaseName)
+	if err != nil {
+		// The release cannot be read. Tell "not installed yet", where helm applies
+		// server-side, apart from a genuine read failure, where assuming an install
+		// would silently migrate a client-side release onto server-side apply and
+		// rewrite the full body of every object it manages.
+		release, listErr := c.GetRelease(namespace, releaseName)
+		if listErr == nil && release == nil {
+			return true
+		}
+
+		c.logger.Warnf("Cannot determine the apply method of release %q; deploying without field conflict resolution, so ownership conflicts will surface as errors: %v", releaseName, err)
+
+		return false
+	}
+
+	if ReleaseStatus(metadata.Status) == ReleaseStatusDeleted {
+		return true
+	}
+
+	c.logger.Debugf("Release %q has status %q and apply method %q", releaseName, metadata.Status, metadata.ApplyMethod)
+
+	return metadata.ApplyMethod == applyMethodServerSide
+}
+
+// releaseMetadata returns helm's record for the newest revision of a release.
+func (c *cli) releaseMetadata(namespace string, releaseName string) (*releaseMetadata, error) {
+	output, err := c.run(namespace, "get", "metadata", releaseName, "-o", "json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get release metadata: %w", err)
+	}
+
+	metadata := releaseMetadata{}
+	if err := json.NewDecoder(bytes.NewReader(output)).Decode(&metadata); err != nil {
+		return nil, fmt.Errorf("failed to parse Helm output: %w", err)
+	}
+
+	return &metadata, nil
+}
+
+// translateFlags maps Helm-3-era flags to their Helm 4 replacements.
+func (c *cli) translateFlags(flags []string) []string {
+	if c.version.Major() < 4 {
+		return flags
+	}
+
+	result := make([]string, 0, len(flags))
+	for _, flag := range flags {
+		// deprecated in Helm 4
+		if flag == "--atomic" {
+			flag = "--rollback-on-failure"
+		}
+
+		result = append(result, flag)
+	}
+
+	return result
 }
 
 func (c *cli) GetRelease(namespace string, name string) (*Release, error) {

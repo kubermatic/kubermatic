@@ -32,6 +32,10 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
+func acceleratorAccountingSupported() bool {
+	return false
+}
+
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return kubernetes.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }

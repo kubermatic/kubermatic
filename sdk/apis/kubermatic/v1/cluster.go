@@ -287,6 +287,21 @@ type ClusterSpec struct {
 	// This will not configure node level settings for container runtime used in user clusters; its only being used
 	// to configure container runtime settings of a particular user cluster.
 	ContainerRuntimeOpts *ContainerRuntimeOpts `json:"containerRuntimeOpts,omitempty"`
+
+	// Optional: KeyConfiguration selects the algorithm and size of the key material KKP
+	// generates for this cluster. It is copied from the KubermaticConfiguration when the
+	// cluster is created and is immutable afterwards, so that changing the global default
+	// never alters the key material of clusters that already exist. An empty value means
+	// RSA-2048, which is what KKP generated before this field was introduced.
+	//
+	// The field can only be set while the cluster is being created. Clusters that
+	// already exist keep the key material they were created with; rotating it is not
+	// supported yet, so moving a cluster to a different algorithm or size requires
+	// recreating it.
+	//
+	// The OpenVPN and MLA gateway CAs and their certificates are not covered by this
+	// setting; they are always ECDSA P-256.
+	KeyConfiguration *KeyConfiguration `json:"keyConfiguration,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -321,8 +336,20 @@ type KubeLB struct {
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM,
+	// and stops KKP from removing the upstream Gateway API safe-upgrades policy. Protection is also off when
+	// the KubermaticConfiguration or the datacenter disables it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
+}
+
+// KubeLBStatus is the observed state of the kubeLB integration.
+type KubeLBStatus struct {
+	// GatewayAPIProtected reports whether the policy that reserves the Gateway API CRDs for the kubeLB CCM
+	// is installed. No omitempty, so false stays visible.
+	// +optional
+	GatewayAPIProtected bool `json:"gatewayAPIProtected"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
@@ -597,6 +624,7 @@ const (
 	ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully ClusterConditionType = "DefaultApplicationsCreatedSuccessfully"
 	ClusterConditionOperatingSystemManagerMigratorControllerReconcilingSuccess   ClusterConditionType = "OperatingSystemManagerMigratorControllerReconciledSuccessfully"
 	ClusterConditionKubeLBControllerReconcilingSuccess                           ClusterConditionType = "KubeLBControllerReconciledSuccessfully"
+	ClusterConditionKubeLBGatewayAPIProtectionReconcilingSuccess                 ClusterConditionType = "KubeLBGatewayAPIProtectionReconciledSuccessfully"
 	ClusterConditionCNIControllerReconcilingSuccess                              ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                              ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess                       ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
@@ -698,6 +726,10 @@ type ClusterStatus struct {
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
 
+	// KubeLB contains the observed state of the kubeLB integration.
+	// +optional
+	KubeLB *KubeLBStatus `json:"kubelb,omitempty"`
+
 	// Deprecated: UserName contains the name of the owner of this cluster.
 	// This field is not actively used and will be removed in the future.
 	// +optional
@@ -734,6 +766,49 @@ type ClusterStatus struct {
 
 	// ResourceUsage shows the current usage of resources for the cluster.
 	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
+
+	// AcceleratorAccounting contains this cluster's accelerator footprint usage and
+	// readiness attestation. It is set only for relevant KubeVirt clusters in projects
+	// with accelerator accounting activated.
+	// +optional
+	AcceleratorAccounting *ClusterAcceleratorAccountingStatus `json:"acceleratorAccounting,omitempty"`
+}
+
+// ClusterAcceleratorAccountingStatus contains one KubeVirt cluster's accelerator
+// footprint capability, liveness, and readiness attestation.
+type ClusterAcceleratorAccountingStatus struct {
+	// ObservedAccountingRevision is the master-issued accounting revision this cluster observed.
+	ObservedAccountingRevision AcceleratorAccountingRevision `json:"observedAccountingRevision"`
+
+	// ObservedQuotaDigest is the canonical accelerator quota digest this cluster observed.
+	ObservedQuotaDigest AcceleratorQuotaDigest `json:"observedQuotaDigest"`
+
+	// FootprintSchemaVersion is the Machine footprint schema this controller can account.
+	FootprintSchemaVersion string `json:"footprintSchemaVersion"`
+
+	// ControllerVersion identifies the reporting controller implementation.
+	ControllerVersion string `json:"controllerVersion"`
+
+	// ObservedAt is the heartbeat time at which this cluster report was produced.
+	// +optional
+	ObservedAt metav1.Time `json:"observedAt,omitempty"`
+
+	// MachinesWithoutFootprint is the number of legacy Machines that predate trusted
+	// footprint capture.
+	// +kubebuilder:validation:Minimum=0
+	MachinesWithoutFootprint int32 `json:"machinesWithoutFootprint"`
+
+	// MachinesWithInvalidFootprint is the number of Machines whose footprint cannot be accounted.
+	// +kubebuilder:validation:Minimum=0
+	MachinesWithInvalidFootprint int32 `json:"machinesWithInvalidFootprint"`
+
+	// Ready is true when all Machines have a valid supported footprint and this report
+	// observes the current accounting revision and quota digest.
+	Ready bool `json:"ready"`
+
+	// Blockers contains actionable reasons why this cluster report is not ready.
+	// +optional
+	Blockers []AcceleratorAccountingBlocker `json:"blockers,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -947,7 +1022,7 @@ type ComponentSettings struct {
 	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
-	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
@@ -988,6 +1063,16 @@ type OSMControllerSettings struct {
 type ControllerSettings struct {
 	DeploymentSettings     `json:",inline"`
 	LeaderElectionSettings `json:"leaderElection,omitempty"`
+}
+
+type MachineControllerSettings struct {
+	DeploymentSettings `json:",inline"`
+	// SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
+	// deletion is stuck longer than this duration, eviction is skipped and the node is
+	// force-deleted. Setting this to 0 disables the timeout: the machine then waits for
+	// eviction as long as its node is Ready and a schedulable target node exists.
+	// Defaults to the machine-controller binary's built-in 2h when unset.
+	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
 }
 
 type DeploymentSettings struct {

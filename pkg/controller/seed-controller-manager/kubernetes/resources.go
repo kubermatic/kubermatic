@@ -290,6 +290,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
+	kubeVirtAcceleratorQuotaEnabled, err := r.kubeVirtAcceleratorQuotaEnabledForCluster(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine KubeVirt accelerator quota activation: %w", err)
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -325,7 +330,54 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
 		WithDRA(r.features.DynamicResourceAllocation).
+		WithKubeVirtAcceleratorQuota(kubeVirtAcceleratorQuotaEnabled).
 		Build(), nil
+}
+
+// kubeVirtAcceleratorQuotaEnabledForCluster reads the synchronized, admin-owned
+// project ResourceQuota. The central ResourceQuota webhook uses the global gate
+// to authorize first activation; later gate changes do not deactivate an
+// already accepted project.
+func (r *Reconciler) kubeVirtAcceleratorQuotaEnabledForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
+	if !r.features.KubeVirtAcceleratorAccounting || cluster.Spec.Cloud.Kubevirt == nil {
+		return false, nil
+	}
+
+	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if projectID == "" {
+		return false, nil
+	}
+
+	resourceQuotas := &kubermaticv1.ResourceQuotaList{}
+	if err := r.List(ctx, resourceQuotas, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectID,
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+	}); err != nil {
+		return false, fmt.Errorf("failed to list ResourceQuotas for Project %q: %w", projectID, err)
+	}
+
+	// Labels make the cache lookup efficient, but the subject is authoritative.
+	// Ignore forged, stale, duplicate, or malformed candidates so optional
+	// accelerator activation cannot block general cluster reconciliation.
+	for i := range resourceQuotas.Items {
+		resourceQuota := &resourceQuotas.Items[i]
+		if acceleratorAccountingActiveForProject(resourceQuota, projectID) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func acceleratorAccountingActiveForProject(resourceQuota *kubermaticv1.ResourceQuota, projectID string) bool {
+	return resourceQuota != nil &&
+		projectID != "" &&
+		resourceQuota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind &&
+		resourceQuota.Spec.Subject.Name == projectID &&
+		resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] == projectID &&
+		resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] == kubermaticv1.ProjectSubjectKind &&
+		resourceQuota.DeletionTimestamp.IsZero() &&
+		resourceQuota.Annotations[resources.AcceleratorAccountingEnabledAnnotation] == resources.AcceleratorAccountingEnabledAnnotationValue
 }
 
 // reconcileClusterNamespace will ensure that the cluster namespace is
@@ -549,31 +601,31 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	creators := []reconciling.NamedSecretReconcilerFactory{
 		cloudconfig.SecretReconciler(data, resources.CloudConfigSeedSecretName),
 		certificates.RootCAReconciler(data),
-		certificates.FrontProxyCAReconciler(),
+		certificates.FrontProxyCAReconciler(data),
 		resources.ImagePullSecretReconciler(r.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateReconciler(data),
 		etcd.TLSCertificateReconciler(data),
 		apiserver.EtcdClientCertificateReconciler(data),
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
-		apiserver.ServiceAccountKeyReconciler(),
+		apiserver.ServiceAccountKeyReconciler(data),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
-		resources.GetInternalKubeconfigReconciler(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerKubeconfigSecretName, resources.OperatingSystemManagerCertUsername, nil, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data, r.log),
-		resources.GetInternalKubeconfigReconciler(namespace, resources.VMwareCloudDirectorCSIKubeconfigSecretName, resources.VMwareCloudDirectorCSICertUsername, nil, data, r.log),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerKubeconfigSecretName, resources.OperatingSystemManagerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.VMwareCloudDirectorCSIKubeconfigSecretName, resources.VMwareCloudDirectorCSICertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		resources.AdminKubeconfigReconciler(data),
 		apiserver.TokenViewerReconciler(),
 		apiserver.TokenUsersReconciler(data),
 		resources.ViewerKubeconfigReconciler(data),
 
 		// OSM
-		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		operatingsystemmanager.TLSServingCertificateReconciler(data),
 	}
 
@@ -591,29 +643,29 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		)
 	}
 
 	if data.Cluster().Spec.IsKubeLBEnabled() {
 		creators = append(creators,
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeLBCCMKubeconfigSecretName, resources.KubeLBCCMCertUsername, nil, data, r.log),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeLBCCMKubeconfigSecretName, resources.KubeLBCCMCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		)
 	}
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators,
 			konnectivity.TLSServingCertificateReconciler(data),
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KonnectivityKubeconfigSecretName, resources.KonnectivityKubeconfigUsername, nil, data, r.log),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KonnectivityKubeconfigSecretName, resources.KonnectivityKubeconfigUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		)
 	} else {
 		creators = append(creators,
 			openvpn.CAReconciler(),
 			openvpn.TLSServingCertificateReconciler(data),
 			openvpn.InternalClientCertificateReconciler(data),
-			metricsserver.TLSServingCertSecretReconciler(data.GetRootCA),
-			resources.GetInternalKubeconfigReconciler(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data, r.log),
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data, r.log),
+			metricsserver.TLSServingCertSecretReconciler(data.GetRootCA, certificates.ClusterCertificateKeyConfigGetter(data)),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data)),
 		)
 	}
 
@@ -627,7 +679,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		creators = append(creators, resources.GetInternalKubeconfigReconciler(
-			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log,
+			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log, certificates.ClusterCertificateKeyConfigGetter(data),
 		))
 
 		if data.Cluster().Spec.Cloud.Kubevirt != nil {

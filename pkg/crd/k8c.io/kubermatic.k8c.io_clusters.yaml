@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
     kubermatic.k8c.io/location: master,seed
   name: clusters.kubermatic.k8c.io
 spec:
@@ -175,7 +175,9 @@ spec:
                                     description: Selects a key of a ConfigMap.
                                     properties:
                                       key:
-                                        description: The key to select.
+                                        description: |-
+                                          The key to select from the ConfigMap's Data field.
+                                          Keys in the BinaryData field are not currently propagated to container env vars.
                                         type: string
                                       name:
                                         default: ""
@@ -2941,6 +2943,14 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        skipEvictionAfter:
+                          description: |-
+                            SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
+                            deletion is stuck longer than this duration, eviction is skipped and the node is
+                            force-deleted. Setting this to 0 disables the timeout: the machine then waits for
+                            eviction as long as its node is Ready and a schedulable target node exists.
+                            Defaults to the machine-controller binary's built-in 2h when unset.
+                          type: string
                         tolerations:
                           description: Tolerations allows to override the scheduling tolerations for Pods.
                           items:
@@ -3948,11 +3958,95 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                keyConfiguration:
+                  description: |-
+                    Optional: KeyConfiguration selects the algorithm and size of the key material KKP
+                    generates for this cluster. It is copied from the KubermaticConfiguration when the
+                    cluster is created and is immutable afterwards, so that changing the global default
+                    never alters the key material of clusters that already exist. An empty value means
+                    RSA-2048, which is what KKP generated before this field was introduced.
+
+                    The field can only be set while the cluster is being created. Clusters that
+                    already exist keep the key material they were created with; rotating it is not
+                    supported yet, so moving a cluster to a different algorithm or size requires
+                    recreating it.
+
+                    The OpenVPN and MLA gateway CAs and their certificates are not covered by this
+                    setting; they are always ECDSA P-256.
+                  properties:
+                    certificates:
+                      description: |-
+                        Certificates configures the cluster-internal CAs and leaf certificates
+                        (etcd, apiserver, front-proxy and the component clients).
+                      properties:
+                        algorithm:
+                          description: Algorithm is the public-key algorithm. Empty means RSA.
+                          enum:
+                            - RSA
+                            - ECDSA
+                          type: string
+                        ecdsaCurve:
+                          description: |-
+                            ECDSACurve is the elliptic curve. Only valid when Algorithm is ECDSA.
+                            Empty means P256.
+                          enum:
+                            - P256
+                            - P384
+                          type: string
+                        rsaKeySize:
+                          description: |-
+                            RSAKeySize is the RSA modulus size in bits. Only valid when Algorithm
+                            is RSA or empty. Empty means the legacy default of 2048.
+                          enum:
+                            - 2048
+                            - 3072
+                            - 4096
+                          format: int32
+                          type: integer
+                      type: object
+                    serviceAccountKey:
+                      description: |-
+                        ServiceAccountKey configures the user-cluster service-account token
+                        signing key. This key is consumed by systems outside the cluster when
+                        they validate JWTs, so its algorithm and size are externally visible.
+                      properties:
+                        algorithm:
+                          description: Algorithm is the public-key algorithm. Empty means RSA.
+                          enum:
+                            - RSA
+                            - ECDSA
+                          type: string
+                        ecdsaCurve:
+                          description: |-
+                            ECDSACurve is the elliptic curve. Only valid when Algorithm is ECDSA.
+                            Empty means P256.
+                          enum:
+                            - P256
+                            - P384
+                          type: string
+                        rsaKeySize:
+                          description: |-
+                            RSAKeySize is the RSA modulus size in bits. Only valid when Algorithm
+                            is RSA or empty. Empty means the legacy default of 2048.
+                          enum:
+                            - 2048
+                            - 3072
+                            - 4096
+                          format: int32
+                          type: integer
+                      type: object
+                  type: object
                 kubelb:
                   description: |-
                     KubeLB holds the configuration for the kubeLB component.
                     Only available in Enterprise Edition.
                   properties:
+                    disableGatewayAPIProtection:
+                      description: |-
+                        DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM,
+                        and stops KKP from removing the upstream Gateway API safe-upgrades policy. Protection is also off when
+                        the KubermaticConfiguration or the datacenter disables it.
+                      type: boolean
                     enableGatewayAPI:
                       description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
                       type: boolean
@@ -4637,6 +4731,93 @@ spec:
             status:
               description: Status contains reconciliation information for the cluster.
               properties:
+                acceleratorAccounting:
+                  description: |-
+                    AcceleratorAccounting contains this cluster's accelerator footprint usage and
+                    readiness attestation. It is set only for relevant KubeVirt clusters in projects
+                    with accelerator accounting activated.
+                  properties:
+                    blockers:
+                      description: Blockers contains actionable reasons why this cluster report is not ready.
+                      items:
+                        description: |-
+                          AcceleratorAccountingBlocker describes an actionable reason why accelerator accounting
+                          is not ready. SeedName and ClusterName identify the affected scope when applicable.
+                        properties:
+                          clusterName:
+                            description: ClusterName identifies the affected user cluster when the blocker is cluster-specific.
+                            type: string
+                          count:
+                            description: Count is the number of affected objects when the blocker represents an aggregate.
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          message:
+                            description: Message contains human-readable details about the blocker.
+                            type: string
+                          seedName:
+                            description: SeedName identifies the affected Seed when the blocker is Seed-specific.
+                            type: string
+                          type:
+                            description: Type identifies the class of blocker.
+                            enum:
+                              - LegacyMachines
+                              - InvalidFootprints
+                              - UnsupportedFootprintSchema
+                              - IncompatibleControllerVersion
+                              - StaleHeartbeat
+                              - NewCluster
+                              - UnreachableSeed
+                              - MissingReport
+                              - RevisionMismatch
+                              - QuotaDigestMismatch
+                            type: string
+                        required:
+                          - type
+                        type: object
+                      type: array
+                    controllerVersion:
+                      description: ControllerVersion identifies the reporting controller implementation.
+                      type: string
+                    footprintSchemaVersion:
+                      description: FootprintSchemaVersion is the Machine footprint schema this controller can account.
+                      type: string
+                    machinesWithInvalidFootprint:
+                      description: MachinesWithInvalidFootprint is the number of Machines whose footprint cannot be accounted.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    machinesWithoutFootprint:
+                      description: |-
+                        MachinesWithoutFootprint is the number of legacy Machines that predate trusted
+                        footprint capture.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    observedAccountingRevision:
+                      description: ObservedAccountingRevision is the master-issued accounting revision this cluster observed.
+                      type: string
+                    observedAt:
+                      description: ObservedAt is the heartbeat time at which this cluster report was produced.
+                      format: date-time
+                      type: string
+                    observedQuotaDigest:
+                      description: ObservedQuotaDigest is the canonical accelerator quota digest this cluster observed.
+                      type: string
+                    ready:
+                      description: |-
+                        Ready is true when all Machines have a valid supported footprint and this report
+                        observes the current accounting revision and quota digest.
+                      type: boolean
+                  required:
+                    - controllerVersion
+                    - footprintSchemaVersion
+                    - machinesWithInvalidFootprint
+                    - machinesWithoutFootprint
+                    - observedAccountingRevision
+                    - observedQuotaDigest
+                    - ready
+                  type: object
                 address:
                   description: Address contains the IPs/URLs to access the cluster control plane.
                   properties:
@@ -4869,6 +5050,15 @@ spec:
                     type: string
                   description: InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
                   type: object
+                kubelb:
+                  description: KubeLB contains the observed state of the kubeLB integration.
+                  properties:
+                    gatewayAPIProtected:
+                      description: |-
+                        GatewayAPIProtected reports whether the policy that reserves the Gateway API CRDs for the kubeLB CCM
+                        is installed. No omitempty, so false stays visible.
+                      type: boolean
+                  type: object
                 lastProviderReconciliation:
                   description: |-
                     LastProviderReconciliation is the time when the cloud provider resources
@@ -4899,6 +5089,44 @@ spec:
                 resourceUsage:
                   description: ResourceUsage shows the current usage of resources for the cluster.
                   properties:
+                    accelerators:
+                      description: |-
+                        Accelerators holds provider-specific accelerator limits. An absent or empty list means
+                        that no accelerator limits are configured. A missing provider or provider/resource pair
+                        is unconstrained; this field is not an allowlist. The list is atomic so a future provider
+                        scope can participate in entry identity without redefining provider as the sole map key.
+                      items:
+                        description: AcceleratorQuota holds accelerator limits for one KKP infrastructure provider.
+                        properties:
+                          provider:
+                            description: |-
+                              Provider is the KKP infrastructure provider identifier, not the accelerator vendor.
+                              The alpha API supports only kubevirt.
+                            enum:
+                              - kubevirt
+                            type: string
+                          resources:
+                            additionalProperties:
+                              anyOf:
+                                - type: integer
+                                - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Resources contains provider-native accelerator resource names and their limits.
+                              KubeVirt resource names are exact deviceName values. A missing resource name is
+                              unconstrained, zero denies that resource, and a positive whole number sets its limit.
+                            type: object
+                        required:
+                          - provider
+                          - resources
+                        type: object
+                        x-kubernetes-validations:
+                          - message: accelerator quota resources must not be empty
+                            rule: self.resources.size() > 0
+                      maxItems: 1
+                      type: array
+                      x-kubernetes-list-type: atomic
                     cpu:
                       anyOf:
                         - type: integer

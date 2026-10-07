@@ -60,6 +60,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
@@ -67,6 +68,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -225,6 +227,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileAcceleratorFootprintAdmission(ctx, data); err != nil {
+		return err
+	}
+
 	if r.networkPolices {
 		if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
 			return err
@@ -299,6 +305,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx); err != nil {
 			return err
 		}
+	}
+
+	// KKP v2.29 and earlier created the external-admin-user with a cluster-admin
+	// binding in every user cluster. Newer versions no longer create it, so remove
+	// it from all clusters that still have it.
+	if err := r.ensureExternalAdminUserIsRemoved(ctx); err != nil {
+		return err
 	}
 
 	return nil
@@ -699,6 +712,66 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	return nil
 }
 
+// reconcileAcceleratorFootprintAdmission reconciles the mutating configuration before the
+// validating configuration. Kubernetes observes the two configuration kinds independently,
+// so project activation requires the documented operational rollout procedure.
+func (r *reconciler) reconcileAcceleratorFootprintAdmission(ctx context.Context, data reconcileData) error {
+	active, err := r.acceleratorFootprintAdmissionActive(ctx, data)
+	if err != nil {
+		return err
+	}
+	if !active {
+		return nil
+	}
+
+	if err := r.reconcileAcceleratorMutatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to reconcile Machine accelerator footprint mutation: %w", err)
+	}
+	if err := r.reconcileAcceleratorValidatingWebhookConfiguration(ctx, data); err != nil {
+		return fmt.Errorf("failed to install Machine accelerator footprint CREATE and UPDATE validation: %w", err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileAcceleratorValidatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileValidatingWebhookConfigurations(ctx,
+		[]reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
+func (r *reconciler) reconcileAcceleratorMutatingWebhookConfiguration(ctx context.Context, data reconcileData) error {
+	return reconciling.ReconcileMutatingWebhookConfigurations(ctx,
+		[]reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
+			machine.AcceleratorMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		}, "", r)
+}
+
+// acceleratorFootprintAdmissionActive makes activation sticky. Once either footprint webhook
+// exists, both remain reconciled so disabling the gate cannot make persisted footprints mutable.
+func (r *reconciler) acceleratorFootprintAdmissionActive(ctx context.Context, data reconcileData) (bool, error) {
+	if data.cloudProviderName != string(kubermaticv1.KubevirtCloudProvider) {
+		return false, nil
+	}
+	if r.kubeVirtAcceleratorQuota {
+		return true, nil
+	}
+
+	objects := []ctrlruntimeclient.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: machine.AcceleratorAdmissionWebhookName}},
+	}
+	for _, object := range objects {
+		if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(object), object); err == nil {
+			return true, nil
+		} else if !apierrors.IsNotFound(err) {
+			return false, fmt.Errorf("failed to determine KubeVirt accelerator footprint admission state: %w", err)
+		}
+	}
+
+	return false, nil
+}
+
 func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) error {
 	creatorsKubeSystem := []reconciling.NamedServiceReconcilerFactory{
 		coredns.ServiceReconciler(r.dnsClusterIP),
@@ -851,7 +924,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = append(creators, metricsserver.TLSServingCertSecretReconciler(
 			func() (*triple.KeyPair, error) {
 				return data.caCert, nil
-			}),
+			},
+			data.certificateKeyConfig),
 		)
 	}
 
@@ -861,21 +935,21 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 			if data.ccmMigration {
-				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert))
+				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert, data.certificateKeyConfig))
 			}
 		}
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
-				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 		}
 	}
 
 	if !data.cluster.Spec.DisableCSIDriver {
 		if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert, data.certificateKeyConfig))
 		}
 	}
 
@@ -1167,6 +1241,14 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 	return nil
 }
 
+// certificateKeyConfig resolves the key parameters that were frozen into the
+// cluster when it was created. It is a KeyConfigGetter, so an unusable
+// configuration surfaces as a reconcile error rather than a panic while the
+// reconciler list is assembled.
+func (d reconcileData) certificateKeyConfig() (triple.KeyConfig, error) {
+	return certificates.CertificateKeyConfig(d.cluster)
+}
+
 type reconcileData struct {
 	caCert            *triple.KeyPair
 	openVPNCACert     *resources.ECDSAKeyPair
@@ -1429,6 +1511,30 @@ func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureExternalAdminUserIsRemoved(ctx context.Context) error {
+	// Delete the binding first, so the ServiceAccount loses its cluster-admin
+	// permissions even if deleting the ServiceAccount fails.
+	for _, resource := range []ctrlruntimeclient.Object{
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.UserClusterLegacyExternalAdminUserClusterRoleBindingName,
+			},
+		},
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.UserClusterLegacyExternalAdminUserServiceAccountName,
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	} {
+		err := r.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure external-admin-user resources are removed/not present: %w", err)
 		}
 	}
 	return nil

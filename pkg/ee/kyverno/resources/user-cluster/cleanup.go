@@ -38,12 +38,10 @@ import (
 
 // ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno.
 func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Object {
-	resources := []ctrlruntimeclient.Object{
-		&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: cluster.Status.NamespaceName,
-			},
-		},
+	// Admission webhooks must go first; once their backing service or namespace is
+	// gone, fail-closed webhooks can block deletion of the remaining resources.
+	resources := WebhooksForDeletion()
+	resources = append(resources,
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kyverno",
@@ -56,22 +54,24 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
-	}
+	)
 
 	crds, err := KyvernoCRDs()
-	if err != nil {
-		return resources
+	if err == nil {
+		for _, crd := range crds {
+			resources = append(resources, &apiextensionsv1.CustomResourceDefinition{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: crd.Name,
+				},
+			})
+		}
 	}
 
-	for _, crd := range crds {
-		resources = append(resources, &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: crd.Name,
-			},
-		})
-	}
-
-	resources = append(resources, WebhooksForDeletion()...)
+	resources = append(resources, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cluster.Status.NamespaceName,
+		},
+	})
 
 	return resources
 }

@@ -14,7 +14,7 @@ name: CIS Benchmark
 #   k8s-versions: 1.32.0,1.33.0
 on:
   issues:
-    types: [opened, labeled]
+    types: [labeled]
 
 # Serialize runs per KKP version — multiple in-flight runs targeting the same
 # shared KKP cluster would race on projects + clusters.
@@ -29,7 +29,9 @@ jobs:
     # The cross-repo PAT (KKP_CONFORMANCE_CROSS_GH_TOKEN) + suite secrets
     # live in the `KKP` GitHub environment. Without this declaration the
     # env-scoped secrets resolve to empty strings.
-    environment: KKP
+    environment:
+      name: KKP
+      deployment: false
     permissions:
       contents: read
       issues: write
@@ -69,6 +71,12 @@ jobs:
           KKP_VERSION=$(extract "kkp-version")
           K8S_VERSIONS=$(extract "k8s-versions")
           K8S_VERSIONS=$(echo "$K8S_VERSIONS" | tr -d '[:space:]')
+
+          # Strip optional leading 'v' from KKP version and every K8S entry so
+          # every downstream user (release list, artifact filenames, docs
+          # paths, ack comment) sees canonical semver: 2.30.5 / 1.35.2.
+          KKP_VERSION=$(echo "$KKP_VERSION" | sed -E 's/^v//')
+          K8S_VERSIONS=$(echo "$K8S_VERSIONS" | sed -E 's/(^|,)v/\1/g')
 
           if [ -z "$KKP_VERSION" ] || [ -z "$K8S_VERSIONS" ]; then
             echo "Missing kkp-version or k8s-versions in issue body — aborting"
@@ -115,38 +123,54 @@ jobs:
           ref: main
           fetch-depth: 1
 
+      # conformance-ee publishes ginkgo images from main itself (its
+      # build-ginkgo-image.yml pushes :ginkgo-latest and :ginkgo-main-<sha12>),
+      # and the CLI derives :ginkgo-kkp<x.y.z> from the seed's KKP version with
+      # a fallback to :ginkgo-latest. None of those is right here: this run must
+      # test the conformance-ee main commit checked out above against the
+      # requested KKP version, so it builds its own throwaway tag and hands it
+      # to the CLI verbatim via --ginkgo-image (skipping version detection).
       - name: Resolve image tag
         run: |
           IMAGE_TAG="cis-${KKP_VERSION//./-}-${{ github.run_id }}"
           echo "IMAGE_TAG=${IMAGE_TAG}"                                  >> "$GITHUB_ENV"
           echo "IMAGE_REF=quay.io/kubermatic/conformance-ee:${IMAGE_TAG}" >> "$GITHUB_ENV"
 
+      # The workspace root is the conformance-ee checkout, not this repo, so
+      # the local ./.github/actions/setup composite action is not available
+      # here — set Go up directly from conformance-ee's go.mod.
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          check-latest: true
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Quay
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      # Single amd64 platform (the KKP seed runners are amd64). No GHA layer
+      # cache: the image is a throwaway tag built once per issue-triggered run,
+      # so the cache almost never hits, and exporting it made the whole job fail
+      # ("failed to reserve cache") after the image had already been pushed.
       - name: Build and push Docker image to Quay
-        run: |
-          docker build \
-            -f Dockerfile.ginkgo \
-            -t "${IMAGE_REF}" \
-            --push \
-            .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.ginkgo
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE_REF }}
 
       - name: Build Go binaries
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           make build
 
@@ -203,14 +227,22 @@ jobs:
         run: |
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --ginkgo-image "$IMAGE_REF" \
             --dry-run
 
       # ─── Run the suite ────────────────────────────────────────────────
+      # The ginkgo repo is private, so the CLI needs credentials to validate
+      # the image and to mint the in-cluster pull secret for it. Passing them
+      # explicitly rather than relying on the runner's ~/.docker/config.json.
       - name: Run conformance tests (CIS enabled)
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
         run: |
           mkdir -p _logs _reports
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
+            --ginkgo-image "$IMAGE_REF" \
             --quiet \
             --verbose-logs \
             2>&1 | tee "_logs/test-output-${KKP_VERSION}.txt"
@@ -279,8 +311,15 @@ jobs:
             echo "WARNING: Could not delete image tag ${IMAGE_TAG}"
           fi
 
-      # ─── Comment per-k8s status on the triggering issue ──────────────
-      - name: Comment status on trigger issue
+      # ─── Comment status on trigger issue + create failure issues ────
+      # Merged so the status comment can link the failure issue it just
+      # created. Order per k8s version:
+      #   1. If no report → post ⚠️ comment, skip.
+      #   2. If FAIL_COUNT == 0 → post ✅ pass comment.
+      #   3. If FAIL_COUNT > 0 → create failure issue first, then post ❌
+      #      comment carrying both the artifact link and the follow-up
+      #      issue URL.
+      - name: Comment status + open failure issues on trigger issue
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -289,42 +328,40 @@ jobs:
           IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
           for K8S in "${VERSIONS[@]}"; do
             JSON="_reports/cis-benchmark-${K8S}.json"
+            ISSUE_BODY="_reports/cis-issue-${K8S}.md"
+
             if [ ! -f "$JSON" ]; then
               gh issue comment "$ISSUE_NUMBER" \
                 --repo "$TRIGGER_ISSUE_REPO" \
                 --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ⚠️ no report produced — [view run](${ARTIFACT_URL})"
               continue
             fi
+
             FAIL_COUNT=$(jq '[.clusters[].results[] | select(.finalStatus=="Fail")] | length' "$JSON")
-            if [ "$FAIL_COUNT" -gt 0 ]; then
-              STATUS="❌ ${FAIL_COUNT} failure(s)"
-            else
-              STATUS="✅ pass"
+            if [ "$FAIL_COUNT" -eq 0 ]; then
+              gh issue comment "$ISSUE_NUMBER" \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ✅ pass — [conformance-reports](${ARTIFACT_URL})"
+              continue
+            fi
+
+            # Failures. Create the follow-up issue first so we can link it
+            # from the status comment.
+            FAILURE_ISSUE_URL=""
+            if [ -f "$ISSUE_BODY" ]; then
+              FAILURE_ISSUE_URL=$(gh issue create \
+                --repo "$TRIGGER_ISSUE_REPO" \
+                --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
+                --body-file "$ISSUE_BODY")
+            fi
+
+            STATUS_BODY="CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ❌ ${FAIL_COUNT} failure(s) — [conformance-reports](${ARTIFACT_URL})"
+            if [ -n "$FAILURE_ISSUE_URL" ]; then
+              STATUS_BODY="${STATUS_BODY} — tracked in ${FAILURE_ISSUE_URL}"
             fi
             gh issue comment "$ISSUE_NUMBER" \
               --repo "$TRIGGER_ISSUE_REPO" \
-              --body "CIS bench KKP \`${KKP_VERSION}\` / k8s \`${K8S}\`: ${STATUS} — [conformance-reports](${ARTIFACT_URL})"
-          done
-
-      # ─── Open failure-tracking issues (gated by Fail count > 0) ──────
-      - name: Open failure-tracking issues
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          IFS=',' read -ra VERSIONS <<< "$K8S_VERSIONS"
-          for K8S in "${VERSIONS[@]}"; do
-            JSON="_reports/cis-benchmark-${K8S}.json"
-            ISSUE_BODY="_reports/cis-issue-${K8S}.md"
-            [ -f "$JSON" ] && [ -f "$ISSUE_BODY" ] || continue
-            FAIL_COUNT=$(jq '[.clusters[].results[] | select(.finalStatus=="Fail")] | length' "$JSON")
-            [ "$FAIL_COUNT" -gt 0 ] || continue
-            gh issue create \
-              --repo "$TRIGGER_ISSUE_REPO" \
-              --title "CIS bench failures: KKP ${KKP_VERSION} / k8s ${K8S} (${FAIL_COUNT})" \
-              --body-file "$ISSUE_BODY" \
-              --label "area/security,area/cis,kind/bug"
+              --body "$STATUS_BODY"
           done
 
       # ─── Open docs PR in kubermatic/docs ──────────────────────────────

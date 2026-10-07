@@ -80,6 +80,7 @@ data:
             - spec
             - suspend
           name: resource_info
+
 ---
 # Source: kube-state-metrics/charts/kube-state-metrics/templates/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -248,6 +249,7 @@ rules:
   verbs:
   - list
   - watch
+
 ---
 # Source: kube-state-metrics/charts/kube-state-metrics/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -303,6 +305,7 @@ spec:
   selector:    
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: release-name
+
 ---
 # Source: kube-state-metrics/charts/kube-state-metrics/templates/deployment.yaml
 apiVersion: apps/v1

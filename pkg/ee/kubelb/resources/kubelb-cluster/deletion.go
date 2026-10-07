@@ -26,17 +26,8 @@ package resources
 
 import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// KubelbTenantGVK identifies the kubelb Tenant CR. We use the unstructured
-// client to avoid a compile-time dep on k8c.io/kubelb.
-var KubelbTenantGVK = schema.GroupVersionKind{
-	Group:   "kubelb.k8c.io",
-	Version: "v1alpha1",
-	Kind:    "Tenant",
-}
 
 func ResourcesForDeletion(name string) []ctrlruntimeclient.Object {
 	tenant := &unstructured.Unstructured{}

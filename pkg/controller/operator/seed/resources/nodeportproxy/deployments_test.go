@@ -74,6 +74,35 @@ func TestEnvoyDeploymentReconcilerReplicas(t *testing.T) {
 	}
 }
 
+func TestEnvoyDeploymentReconcilerPrometheusAnnotations(t *testing.T) {
+	t.Parallel()
+
+	seed := &kubermaticv1.Seed{}
+
+	_, reconcile := EnvoyDeploymentReconciler(&kubermaticv1.KubermaticConfiguration{}, seed, false, kubermatic.Versions{
+		KubermaticContainerTag: "v0.0.0-test",
+	})()
+
+	reconciled, err := reconcile(&appsv1.Deployment{})
+	if err != nil {
+		t.Fatalf("failed to reconcile deployment: %v", err)
+	}
+
+	annotations := reconciled.Spec.Template.Annotations
+	if annotations["prometheus.io/scrape"] != "true" {
+		t.Fatalf("expected prometheus scrape annotation to be true, got %q", annotations["prometheus.io/scrape"])
+	}
+	if annotations["prometheus.io/port"] != "8002" {
+		t.Fatalf("expected prometheus port annotation to be 8002, got %q", annotations["prometheus.io/port"])
+	}
+	if annotations["prometheus.io/path"] != "/stats/prometheus" {
+		t.Fatalf("expected prometheus path annotation to be /stats/prometheus, got %q", annotations["prometheus.io/path"])
+	}
+	if annotations["prometheus.io/metrics_path"] != "/stats/prometheus" {
+		t.Fatalf("expected prometheus metrics_path annotation to be /stats/prometheus, got %q", annotations["prometheus.io/metrics_path"])
+	}
+}
+
 func TestEnvoyDeploymentReconcilerAffinityUsesNameLabel(t *testing.T) {
 	t.Parallel()
 

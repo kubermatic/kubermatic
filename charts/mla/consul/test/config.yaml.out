@@ -20,6 +20,7 @@ spec:
       app: consul
       release: "release-name"
       component: server
+
 ---
 # Source: consul/charts/consul/templates/server-serviceaccount.yaml
 apiVersion: v1
@@ -33,6 +34,7 @@ metadata:
     heritage: Helm
     release: release-name
     component: server
+
 ---
 # Source: consul/charts/consul/templates/server-config-configmap.yaml
 # StatefulSet to run the actual Consul server cluster.
@@ -91,6 +93,7 @@ data:
     {
       "enable_central_service_config": true
     }
+
 ---
 # Source: consul/charts/consul/templates/server-tmp-extra-config-configmap.yaml
 # ConfigMap that is used as a temporary landing spot so that the container command
@@ -112,6 +115,7 @@ metadata:
 data:
   extra-from-values.json: |-
     {}
+    
 ---
 # Source: consul/charts/consul/templates/server-clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -130,6 +134,7 @@ rules:
   resources: ["nodes"]
   verbs:
   - get
+
 ---
 # Source: consul/charts/consul/templates/server-clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -150,6 +155,7 @@ subjects:
 - kind: ServiceAccount
   name: release-name-consul-server
   namespace: default
+
 ---
 # Source: consul/charts/consul/templates/server-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -164,6 +170,7 @@ metadata:
     release: release-name
     component: server
 rules: []
+
 ---
 # Source: consul/charts/consul/templates/server-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -184,6 +191,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: release-name-consul-server
+
 ---
 # Source: consul/charts/consul/templates/dns-service.yaml
 # Service for Consul DNS.
@@ -213,6 +221,7 @@ spec:
     app: consul
     release: "release-name"
     hasDNS: "true"
+
 ---
 # Source: consul/charts/consul/templates/server-service.yaml
 # Headless service for Consul server DNS entries. This service should only
@@ -275,6 +284,7 @@ spec:
     app: consul
     release: "release-name"
     component: server
+
 ---
 # Source: consul/charts/consul/templates/ui-service.yaml
 # UI Service for Consul Server
@@ -298,6 +308,7 @@ spec:
     - name: http
       port: 80
       targetPort: 8500
+
 ---
 # Source: consul/charts/consul/templates/server-statefulset.yaml
 # StatefulSet to run the actual Consul server cluster.
@@ -551,3 +562,4 @@ spec:
             fi
 
   restartPolicy: Never
+

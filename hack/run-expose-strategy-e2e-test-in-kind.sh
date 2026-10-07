@@ -215,7 +215,7 @@ spec:
 EOF
 
 retry 3 kubectl apply --filename $SEED_MANIFEST
-retry 5 check_seed_ready kubermatic "$SEED_NAME"
+retry 8 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5

@@ -60,7 +60,9 @@ func setupControllers(
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	namespace string,
 	kubeVirtInfraNamespace string,
+	kubeVirtAcceleratorQuota bool,
 	kyvernoEnabled bool,
+	kubeLBDisableGatewayAPIProtection bool,
 ) error {
 	return nil
 }

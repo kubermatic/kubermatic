@@ -114,6 +114,7 @@ func GetSecretReconcilerOperations(data *resources.TemplateData) []reconciling.N
 			resources.PrometheusClientCertificateCertSecretKey,
 			resources.PrometheusClientCertificateKeySecretKey,
 			data.GetRootCA,
+			certificates.ClusterCertificateKeyConfigGetter(data),
 		),
 	}
 }

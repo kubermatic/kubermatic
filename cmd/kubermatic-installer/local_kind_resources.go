@@ -44,6 +44,13 @@ nodes:
    - containerPort: 32394
      hostPort: 443`
 
+var kindConfigKubeOVNContent = `
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: "iptables"
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"`
+
 var kindKubermaticNamespace = corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "kubermatic",

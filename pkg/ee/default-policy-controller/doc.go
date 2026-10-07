@@ -29,6 +29,8 @@ PolicyBindings. The controller watches Cluster resources and manages
 PolicyBindings in the relevant cluster namespaces on Seed clusters.
 It also watches for PolicyTemplate resources as well and reconciles
 the affected Clusters, in case the PolicyTemplate is updated.
+PolicyTemplate deletion cleanup is handled by a dedicated reconciler that owns
+the PolicyTemplate finalizer used to remove referencing PolicyBindings.
 */
 
 package defaultpolicycontroller

@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
+	admingroupcontroller "k8c.io/kubermatic/v2/pkg/ee/admin-group-controller"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	storagelocationcontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller"
 	storagelocationsynccontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/sync-controller"
@@ -45,6 +46,10 @@ func addFlags(fs *flag.FlagSet) {
 }
 
 func setupControllers(ctrlCtx *controllerContext) error {
+	if err := admingroupcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount); err != nil {
+		return fmt.Errorf("failed to create admin-group controller: %w", err)
+	}
+
 	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
 		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
 	}

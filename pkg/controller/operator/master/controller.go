@@ -35,13 +35,13 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -62,7 +62,6 @@ func Add(
 	namespace string,
 	numWorkers int,
 	workerName string,
-	enableGatewayAPI bool,
 	httprouteWatchNamespaces []string,
 ) error {
 	reconciler := &Reconciler{
@@ -72,7 +71,6 @@ func Add(
 		log:                      log.Named(ControllerName),
 		workerName:               workerName,
 		versions:                 kubermatic.GetVersions(),
-		gatewayAPIEnabled:        enableGatewayAPI,
 		httprouteWatchNamespaces: httprouteWatchNamespaces,
 	}
 
@@ -137,27 +135,24 @@ func Add(
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
-		&networkingv1.Ingress{},
 		&policyv1.PodDisruptionBudget{},
 	}
 
-	if enableGatewayAPI {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-		exists, err := gatewayAPICRDExists(ctx, mgr.GetAPIReader())
-		if err != nil {
-			return fmt.Errorf("failed to check whether Gateway API CRD exists: %w", err)
-		}
-
-		if !exists {
-			return fmt.Errorf("--enable-gateway-api=true but Gateway API CRDs are not found.")
-		}
-
+	// Gateway API CRD installation is the installer's responsibility (handled by the
+	// envoy-gateway-controller chart). Only register Gateway/HTTPRoute watches when the
+	// CRDs are actually present; if they are absent (e.g. headless installation, which
+	// skips envoy-gateway-controller deployment), the operator skips Gateway resource
+	// reconciliation entirely without failing.
+	if exists, err := gatewayAPICRDExists(ctx, mgr.GetAPIReader()); err != nil {
+		log.Warnw("Failed to probe for Gateway API CRD; Gateway/HTTPRoute watches will not be registered", zap.Error(err))
+	} else if exists {
 		namespacedResources = append(namespacedResources, &gatewayapiv1.Gateway{}, &gatewayapiv1.HTTPRoute{})
-		log.Infow("Gateway API mode enabled, watching Gateway and HTTPRoute resources")
+		log.Infow("Watching Gateway and HTTPRoute resources")
 	} else {
-		log.Warn("In the future KKP releases, nginx-ingress-controller will be deprecated. Consider upgrading to Gateway API.")
+		log.Info("Gateway API CRDs are not installed; skipping Gateway/HTTPRoute watches. Gateway resources will not be reconciled.")
 	}
 
 	for _, t := range namespacedResources {
@@ -187,17 +182,25 @@ func Add(
 }
 
 func gatewayAPICRDExists(ctx context.Context, reader ctrlruntimeclient.Reader) (bool, error) {
-	crd := apiextensionsv1.CustomResourceDefinition{}
 	key := types.NamespacedName{Name: "gateways.gateway.networking.k8s.io"}
 
-	crdExists := true
-	if err := reader.Get(ctx, key, &crd); err != nil {
-		if !apierrors.IsNotFound(err) {
+	var lastErr error
+	err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		crd := apiextensionsv1.CustomResourceDefinition{}
+		if err := reader.Get(ctx, key, &crd); err != nil {
+			if apierrors.IsNotFound(err) {
+				lastErr = err
+				return false, nil
+			}
 			return false, fmt.Errorf("failed to probe for Gateway API CRD: %w", err)
 		}
-
-		crdExists = false
+		return true, nil
+	})
+	if err != nil {
+		if wait.Interrupted(err) && apierrors.IsNotFound(lastErr) {
+			return false, nil
+		}
+		return false, err
 	}
-
-	return crdExists, nil
+	return true, nil
 }

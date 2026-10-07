@@ -100,18 +100,6 @@ httpRoute:
 			wantName:      "kubermatic",
 			wantNamespace: "seed-ingress",
 		},
-		{
-			name: "skips when Gateway API migration is disabled",
-			values: `
-migrateGatewayAPI: false
-httpRoute:
-  gatewayName: kubermatic
-  gatewayNamespace: kubermatic
-`,
-			wantChanged:   false,
-			wantName:      "kubermatic",
-			wantNamespace: "kubermatic",
-		},
 	}
 
 	for _, tc := range testCases {
@@ -182,17 +170,6 @@ httpRoute:
 `,
 			wantName:      "dex-gateway",
 			wantNamespace: "dex-networking",
-		},
-		{
-			name: "migration disabled uses configured Helm values",
-			values: `
-migrateGatewayAPI: false
-httpRoute:
-  gatewayName: kubermatic
-  gatewayNamespace: kubermatic
-`,
-			wantName:      "kubermatic",
-			wantNamespace: "kubermatic",
 		},
 	}
 

@@ -1,0 +1,18 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  annotations:
+    nodeport-proxy.k8s.io/expose-namespaced: "true"
+  name: apiserver-external
+  namespace: cluster-de-test-01
+spec:
+  ports:
+  - name: secure
+    port: 443
+    protocol: TCP
+    targetPort: 6443
+  selector:
+    app: apiserver
+  type: NodePort
+status:
+  loadBalancer: {}
