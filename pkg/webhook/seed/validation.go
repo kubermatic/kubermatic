@@ -243,10 +243,12 @@ func validateDefaultAPIServerAllowedIPRanges(ctx context.Context, seed *kubermat
 
 // validateDefaultComponentSettings guards the seed-level defaults that the cluster
 // mutating webhook copies into every Cluster spec; an invalid value here would
-// make all cluster creation and updates on this seed fail admission.
+// make all cluster creation and updates on this seed fail admission. Zero is valid
+// for skipEvictionAfter and disables the eviction timeout; negatives are rejected for
+// the same reason as in validateMachineControllerSettings.
 func validateDefaultComponentSettings(seed *kubermaticv1.Seed) error {
-	if mc := seed.Spec.DefaultComponentSettings.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
-		return fmt.Errorf("spec.defaultComponentSettings.machineController.skipEvictionAfter must be a positive duration")
+	if mc := seed.Spec.DefaultComponentSettings.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration < 0 {
+		return fmt.Errorf("spec.defaultComponentSettings.machineController.skipEvictionAfter must be zero (to disable the eviction timeout) or a positive duration")
 	}
 
 	return nil
