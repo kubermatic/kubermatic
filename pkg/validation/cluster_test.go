@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
@@ -1467,6 +1469,72 @@ func TestValidateCoreDNSReplicas(t *testing.T) {
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
+		})
+	}
+}
+
+func TestValidateMachineControllerSettings(t *testing.T) {
+	tests := []struct {
+		name  string
+		spec  *kubermaticv1.ClusterSpec
+		valid bool
+	}{
+		{
+			name:  "no machineController override",
+			valid: true,
+			spec:  &kubermaticv1.ClusterSpec{},
+		},
+		{
+			name:  "machineController override without skipEvictionAfter",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{},
+				},
+			},
+		},
+		{
+			name:  "positive skipEvictionAfter",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						SkipEvictionAfter: &metav1.Duration{Duration: 4 * time.Hour},
+					},
+				},
+			},
+		},
+		{
+			name:  "zero skipEvictionAfter disables the eviction timeout",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						SkipEvictionAfter: &metav1.Duration{},
+					},
+				},
+			},
+		},
+		{
+			name:  "negative skipEvictionAfter",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						SkipEvictionAfter: &metav1.Duration{Duration: -time.Hour},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			errs := validateMachineControllerSettings(test.spec, &field.Path{})
+
+			if (len(errs) == 0) != test.valid {
+				t.Errorf("Expected valid to be %v, got errors: %v", test.valid, errs)
 			}
 		})
 	}

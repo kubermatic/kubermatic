@@ -33,6 +33,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/ptr"
@@ -241,6 +242,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		kubermaticImage:      defaulting.DefaultKubermaticImage,
 		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
 		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
+		// same as the default of the seed-controller-manager's -etcd-disk-size flag;
+		// Kubernetes 1.34+ rejects a zero storage request in the etcd volume claim template
+		etcdDiskSize: resource.MustParse("5Gi"),
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{

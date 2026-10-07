@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
@@ -54,6 +55,58 @@ func restoreKeySpecs(spec *kubermaticv1.ClusterSpec, own *kubermaticv1.KeyConfig
 	if own.Certificates != nil {
 		spec.KeyConfiguration.Certificates = own.Certificates
 	}
+}
+
+// applyTemplateAndSeedDefaults merges the ClusterTemplate (if any) and the Seed's
+// defaultComponentSettings into the Cluster spec.
+func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed) error {
+	// mergo considers a zero value to be unset, so an explicit skipEvictionAfter: 0
+	// (which disables the eviction timeout) would be silently replaced by a
+	// ClusterTemplate or Seed default.
+	explicitSkipEvictionAfter := copySkipEvictionAfter(spec)
+
+	// If a ClusterTemplate was configured for the Seed, the caller
+	// retrieved it for us already and we can use it as the primary
+	// source for defaults.
+	if template != nil {
+		ownKeyConfig := spec.KeyConfiguration.DeepCopy()
+
+		if err := mergo.Merge(spec, template.Spec); err != nil {
+			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+		}
+
+		restoreKeySpecs(spec, ownKeyConfig)
+
+		// The Cluster did not set a value, so the template's value (if any) now takes
+		// precedence and must not be overwritten by the Seed default below.
+		if explicitSkipEvictionAfter == nil {
+			explicitSkipEvictionAfter = copySkipEvictionAfter(spec)
+		}
+	}
+
+	// Checking and applying each field of the ComponentSettings is tedious,
+	// so we reuse mergo as well. Even though DefaultComponentSettings is
+	// deprecated, we cannot remove its handling here, as the template can
+	// be unconfigured (i.e. nil).
+	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
+		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	}
+
+	if explicitSkipEvictionAfter != nil && spec.ComponentsOverride.MachineController != nil {
+		spec.ComponentsOverride.MachineController.SkipEvictionAfter = explicitSkipEvictionAfter
+	}
+
+	return nil
+}
+
+// copySkipEvictionAfter returns a copy of the spec's skipEvictionAfter, or nil if unset.
+// A copy is needed because mergo writes into the metav1.Duration it finds in the spec.
+func copySkipEvictionAfter(spec *kubermaticv1.ClusterSpec) *metav1.Duration {
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil {
+		return &metav1.Duration{Duration: mc.SkipEvictionAfter.Duration}
+	}
+
+	return nil
 }
 
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
@@ -85,25 +138,8 @@ func DefaultClusterSpec(
 		}
 	}
 
-	// If a ClusterTemplate was configured for the Seed, the caller
-	// retrieved it for us already and we can use it as the primary
-	// source for defaults.
-	if template != nil {
-		ownKeyConfig := spec.KeyConfiguration.DeepCopy()
-
-		if err := mergo.Merge(spec, template.Spec); err != nil {
-			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
-		}
-
-		restoreKeySpecs(spec, ownKeyConfig)
-	}
-
-	// Checking and applying each field of the ComponentSettings is tedious,
-	// so we reuse mergo as well. Even though DefaultComponentSettings is
-	// deprecated, we cannot remove its handling here, as the template can
-	// be unconfigured (i.e. nil).
-	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
-		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	if err := applyTemplateAndSeedDefaults(spec, template, seed); err != nil {
+		return err
 	}
 
 	// Give cloud providers a chance to default their spec.
