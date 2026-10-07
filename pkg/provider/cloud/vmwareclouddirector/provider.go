@@ -317,13 +317,13 @@ func ListCatalogs(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorCata
 		return nil, fmt.Errorf("failed to get list catalog for organization %s: %w", auth.Organization, err)
 	}
 
-	var catlogArr apiv1.VMwareCloudDirectorCatalogList
+	var catalogArr apiv1.VMwareCloudDirectorCatalogList
 	for _, catalog := range catalogs {
-		catlogArr = append(catlogArr, apiv1.VMwareCloudDirectorCatalog{
+		catalogArr = append(catalogArr, apiv1.VMwareCloudDirectorCatalog{
 			Name: catalog.Name,
 		})
 	}
-	return catlogArr, nil
+	return catalogArr, nil
 }
 
 func ListTemplates(ctx context.Context, auth Auth, catalogName string) (apiv1.VMwareCloudDirectorTemplateList, error) {
