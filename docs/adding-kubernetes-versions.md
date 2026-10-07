@@ -51,6 +51,14 @@ Next, re-generate the Helm chart and documentation:
 As a last step, update the e2e jobs in the `.prow/` files (`provider-*.yaml`, `tests.yaml`) to use
 the most recent patch versions for all supported minor versions.
 
+E2e lanes resolve a minor to its latest supported patch (`RELEASES_TO_TEST` and
+`VERSION_TO_TEST` in the `.prow/` files), so merging a patch PR moves every lane of that
+minor to the new patch on its next run. Failures that first appear on a patch PR are often
+pre-existing minor-level regressions the shift exposed, not patch defects: on #16596
+(adding v1.37.1) the aws `1.37-ce` and `etcd-launcher-e2e` lanes failed on #16469's
+feature-gate regression surfacing at the new patch, while the patch itself was a three-line
+version-list change. Attribute lane failures before touching the PR.
+
 ## Adding/Removing Minor Releases
 
 Support for a new minor release is a cross-repo effort. Land the pieces in this order:
@@ -155,6 +163,13 @@ minor's tag and leave a comment (AWS did this for 1.36 in #15986).
   (cmd/etcd-launcher/pkg/etcd/cmd.go). Etcd 3.7 removed those flag names (only `--corrupt-check-time`
   exists), so before widening the constraint past 3.7, etcd-launcher must graduate its flags first;
   otherwise every etcd pod on the new version crashloops on startup.
+- feature gates: audit the gates KKP sets on user-cluster control-plane pods against the new
+  minor's removals, the same audit the kubelet flags get. kube-apiserver hard-fails on
+  unrecognized gates, but only on clusters where the conditional feature is enabled: 1.37
+  removed StructuredAuthenticationConfiguration, and apiservers crashlooped with
+  `unrecognized feature gate` on clusters with authentication configuration enabled until
+  #16642 fixed it (backported as #16654). The CI signature is the auth-config-enabled lanes
+  (the `*-1.X-ce` and `etcd-launcher-e2e` jobs) failing together while the plain lanes pass.
 - konnectivity: `NetworkProxyVersion` in `pkg/resources/konnectivity/sidecar.go`.
 - kubernetes-dashboard: `DashboardVersion` in `pkg/resources/kubernetes-dashboard/deployment.go`.
 - cluster-autoscaler: the `autoscalerImageTags` map in
