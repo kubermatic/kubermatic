@@ -1436,6 +1436,8 @@ golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91
 golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
 golang.org/x/mod v0.39.0 h1:UF5zwQdCRRUpHfyPwr7d4UrGiVeldIsogtzWVnczL74=
 golang.org/x/mod v0.39.0/go.mod h1:bvIbwjQ0HUFFf5AKukeeYQG4ZBUG9yxQbR9aEweIwYY=
+golang.org/x/mod v0.40.0 h1:hUv+3cXcdRHz08UmSiOob7sadHig73uo5bkXxQ/tvUs=
+golang.org/x/mod v0.40.0/go.mod h1:0/weTWkPWGBikyTWAX3dkjVztMmBA5hM0DH6BElSupE=
 golang.org/x/net v0.0.0-20180724234803-3673e40ba225/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180826012351-8a410e7b638d/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180906233101-161cd47e91fd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
@@ -1680,10 +1682,10 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8c.io/kubeone v1.12.3 h1:b+dmLJDsofUiDHzyUmR512wXnF5LDDI1KpHsS/BTbrY=
 k8c.io/kubeone v1.12.3/go.mod h1:saB47KgCNP2028b/ZHZlNal1p7xHqmVfc3LSj+WOW/A=
-k8c.io/machine-controller/sdk v1.66.3 h1:KZI6dUPUxA0M/2F5jA1afRnZGaabhJDqRf922aSjdjM=
-k8c.io/machine-controller/sdk v1.66.3/go.mod h1:/5eWTMcfa7mTQUQoqziaalViiHSVzqzy3fXjejT1qLg=
-k8c.io/operating-system-manager v1.11.4 h1:VDDqOTWjyDoWeOgxqe2taZyxI0/ostNxLsaLRRtSJqY=
-k8c.io/operating-system-manager v1.11.4/go.mod h1:dqhTOyJOcPc3IF252cFl7qY452H7EgYk0wXjH0N+0Ao=
+k8c.io/machine-controller/sdk v1.66.4 h1:u+RNMBV18kpevhPL/siMncd6oBG884rjCCi9q9qPiIc=
+k8c.io/machine-controller/sdk v1.66.4/go.mod h1:LAgQCX3ebTLS/3O3GORhAt62FbBIMGK4/ra12cpH6IY=
+k8c.io/operating-system-manager v1.11.7 h1:LPxKTZuMrsve5W2qAYXDNTSqd4F1jB+ZWYcUmU4mSHA=
+k8c.io/operating-system-manager v1.11.7/go.mod h1:olbt8QFnRZOaI8F6mJk22gRSETMJ+rqwLaNxuAd4siI=
 k8c.io/reconciler v0.5.0 h1:BHpelg1UfI/7oBFctqOq8sX6qzflXpl3SlvHe7e8wak=
 k8c.io/reconciler v0.5.0/go.mod h1:pT1+SVcVXJQeBJhpJBXQ5XW64QnKKeYTnVlQf0dGE0k=
 k8s.io/api v0.23.3/go.mod h1:w258XdGyvCmnBj/vGzQMj6kzdufJZVUwEM1U2fRJwSQ=
