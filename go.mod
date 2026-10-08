@@ -98,8 +98,8 @@ require (
 	helm.sh/helm/v3 v3.21.4
 	k8c.io/kubeone v1.12.3
 	k8c.io/kubermatic/sdk/v2 v2.28.1
-	k8c.io/machine-controller/sdk v1.66.3
-	k8c.io/operating-system-manager v1.11.4
+	k8c.io/machine-controller/sdk v1.66.4
+	k8c.io/operating-system-manager v1.11.7
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.37.0
 	k8s.io/apiextensions-apiserver v0.37.0
@@ -486,7 +486,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
-	golang.org/x/mod v0.39.0 // indirect
+	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
