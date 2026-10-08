@@ -281,7 +281,7 @@ groups:
         expr: |
           sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
             /
-          sum(node_memory_MemTotal_bytes{app="node-exporter"})
+          sum(node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"})
             > 1.5
         for: 5m
         labels:
