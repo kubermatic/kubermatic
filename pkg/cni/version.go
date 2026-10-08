@@ -29,7 +29,7 @@ import (
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.31",
-		kubermaticv1.CNIPluginTypeCilium: "1.18.10",
+		kubermaticv1.CNIPluginTypeCilium: "1.18.14",
 	}
 )
 
@@ -51,10 +51,10 @@ var (
 			"1.16.9",
 			"1.17.7",
 			"1.17.12",
-			"1.17.16",
+			"1.17.18",
 			"1.18.2",
 			"1.18.6",
-			"1.18.10",
+			"1.18.14",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -81,6 +81,8 @@ var (
 			"1.15.3",  // CVE-2024-47825 (Moderate Severity)
 			"1.15.10", // CVE-2025-32793 (Moderate Severity)
 			"1.16.6",  // CVE-2025-32793 (Moderate Severity)
+			"1.17.16", // CVE-2026-56742, CVE-2026-77531, CVE-2026-83620
+			"1.18.10", // CVE-2026-56742, CVE-2026-77531, CVE-2026-83620
 		),
 	}
 )
