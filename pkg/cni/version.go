@@ -29,7 +29,7 @@ import (
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.31",
-		kubermaticv1.CNIPluginTypeCilium: "1.19.7",
+		kubermaticv1.CNIPluginTypeCilium: "1.19.8",
 	}
 )
 
@@ -48,10 +48,10 @@ var (
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real semver
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.17.16",
-			"1.18.10",
 			"1.18.13",
-			"1.19.4",
+			"1.18.14",
 			"1.19.7",
+			"1.19.8",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -86,6 +86,8 @@ var (
 			"1.18.2",  // CVE-2025-64715, CVE-2026-26963, CVE-2026-33726, CVE-2026-41520
 			"1.18.6",  // CVE-2026-33726, CVE-2026-41520
 			"1.18.8",  // CVE-2026-41520
+			"1.18.10", // CVE-2026-56742, CVE-2026-77531, CVE-2026-83620
+			"1.19.4",  // CVE-2026-56742, CVE-2026-56743, CVE-2026-77531, CVE-2026-83620
 		),
 	}
 )
