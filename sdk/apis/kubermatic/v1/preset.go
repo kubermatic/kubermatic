@@ -244,24 +244,18 @@ type VMwareCloudDirector struct {
 	VDC string `json:"vdc"`
 	// The name of organization to use.
 	Organization string `json:"organization"`
-	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
-	//
-	// Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
-	OVDCNetwork string `json:"ovdcNetwork,omitempty"`
 	// OVDCNetworks is the list of organizational virtual data center networks that will be attached to the vApp and can be consumed the VMs.
 	OVDCNetworks []string `json:"ovdcNetworks,omitempty"`
 }
 
 func (s VMwareCloudDirector) IsValid() bool {
-	hasAnyNet := len(s.OVDCNetwork) > 0 || len(s.OVDCNetworks) > 0
-	hasBothNets := len(s.OVDCNetwork) > 0 && len(s.OVDCNetworks) > 0
 	hasCredentials := len(s.Username) > 0 && len(s.Password) > 0
 
 	return true &&
 		(hasCredentials || len(s.APIToken) > 0) &&
 		len(s.VDC) > 0 &&
 		len(s.Organization) > 0 &&
-		hasAnyNet && !hasBothNets
+		len(s.OVDCNetworks) > 0
 }
 
 type Baremetal struct {

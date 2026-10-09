@@ -88,8 +88,8 @@ func (p *Provider) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudS
 		return fmt.Errorf("failed to get organization VDC '%s': %w", client.Auth.VDC, err)
 	}
 
-	// Ensure that the network exists
-	if spec.VMwareCloudDirector.OVDCNetwork != "" || spec.VMwareCloudDirector.OVDCNetworks != nil {
+	// Ensure that the networks exist
+	if len(spec.VMwareCloudDirector.OVDCNetworks) > 0 {
 		_, err := getOrgVDCNetworks(vdc, *spec.VMwareCloudDirector)
 		if err != nil {
 			return fmt.Errorf("failed to get organization VDC networks '%s': %w", client.Auth.VDC, err)
@@ -161,10 +161,6 @@ func (p *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 func (p *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	if oldSpec.VMwareCloudDirector == nil || newSpec.VMwareCloudDirector == nil {
 		return errors.New("'VMwareCloudDirector' spec is empty")
-	}
-
-	if oldSpec.VMwareCloudDirector.OVDCNetwork != newSpec.VMwareCloudDirector.OVDCNetwork {
-		return fmt.Errorf("updating VMware Cloud Director OVDCNetwork is not supported (was %s, updated to %s)", oldSpec.VMwareCloudDirector.OVDCNetwork, newSpec.VMwareCloudDirector.OVDCNetwork)
 	}
 
 	if oldSpec.VMwareCloudDirector.OVDCNetworks != nil && newSpec.VMwareCloudDirector.OVDCNetworks != nil {
