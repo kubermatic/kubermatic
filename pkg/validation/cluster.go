@@ -192,7 +192,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 func validateAuthenticationConfiguration(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 
-	if spec.IsAuthenticationConfigurationEnabled() && spec.OIDC.IssuerURL != "" { //nolint:staticcheck
+	if spec.IsAuthenticationConfigurationEnabled() && spec.OIDC.IssuerURL != "" {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("authenticationConfiguration"), "authenticationConfiguration and oidc.issuerURL are mutually exclusive"))
 	}
 
@@ -507,8 +507,8 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 		}
 	}
 
-	if n.KonnectivityEnabled != nil && !*n.KonnectivityEnabled { //nolint:staticcheck
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("konnectivityEnabled"), n.KonnectivityEnabled, //nolint:staticcheck
+	if n.KonnectivityEnabled != nil && !*n.KonnectivityEnabled {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("konnectivityEnabled"), n.KonnectivityEnabled,
 			"Konnectivity can no longer be disabled"),
 		)
 	}
@@ -529,7 +529,7 @@ func validateProxyMode(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv
 			fmt.Sprintf("%s proxy mode is not valid for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCanal)))
 	}
 
-	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) { //nolint:staticcheck
+	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
 			fmt.Sprintf("%s proxy mode can be used only when Konnectivity is enabled", resources.EBPFProxyMode)))
 	}

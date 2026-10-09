@@ -210,7 +210,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
 	// It can be removed one release after deprecating OpenVPN.
-	if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled { //nolint:staticcheck
+	if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
 		if err := r.ensureOpenVPNSetupIsRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -278,7 +278,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		cbsl = nil
 	}
 
-	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
+	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	apiserverAltNames, err := r.listAPIServerAlternateNames(ctx, cluster)
 	if err != nil {
@@ -925,7 +925,7 @@ func oidcIssuerDestinations(ctx context.Context, c *kubermaticv1.Cluster, data *
 		return destinations, nil
 	}
 
-	issuerURL := c.Spec.OIDC.IssuerURL //nolint:staticcheck
+	issuerURL := c.Spec.OIDC.IssuerURL
 	if issuerURL == "" && enableOIDCAuthentication {
 		issuerURL = data.OIDCIssuerURL()
 	}
