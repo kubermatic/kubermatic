@@ -17,9 +17,15 @@ limitations under the License.
 package cni
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestDeprecatedCiliumVersionsAreAllowedButNotSupported(t *testing.T) {
@@ -67,5 +73,61 @@ func TestDeprecatedCiliumVersionsAreAllowedButNotSupported(t *testing.T) {
 	defaultVersion := GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium)
 	if !supported.Has(defaultVersion) {
 		t.Errorf("expected default Cilium version %s to be supported", defaultVersion)
+	}
+}
+
+func TestDefaultCNIVersionsAreSupported(t *testing.T) {
+	for cniType, defaultVersion := range defaultCNIPluginVersion {
+		if !supportedCNIPluginVersions[cniType].Has(defaultVersion) {
+			t.Errorf("default %s version %s is not a supported version", cniType, defaultVersion)
+		}
+	}
+}
+
+func TestSupportedAndDeprecatedCNIVersionsAreDisjoint(t *testing.T) {
+	for cniType, supported := range supportedCNIPluginVersions {
+		if both := supported.Intersection(deprecatedCNIPluginVersions[cniType]); both.Len() > 0 {
+			t.Errorf("%s versions %v are both supported and deprecated", cniType, sets.List(both))
+		}
+	}
+}
+
+// Canal is deployed as an addon with one manifest per version. A manifest is only
+// rendered if its version guard matches the cluster's CNI version, so a missing
+// file or a wrong guard leaves a cluster without any CNI.
+func TestCanalAddonManifestsMatchAllowedVersions(t *testing.T) {
+	const addonDir = "../../addons/canal"
+
+	allowed, err := GetAllowedCNIPluginVersions(kubermaticv1.CNIPluginTypeCanal)
+	if err != nil {
+		t.Fatalf("failed to get allowed Canal versions: %v", err)
+	}
+
+	files, err := filepath.Glob(filepath.Join(addonDir, "canal_v*.yaml"))
+	if err != nil {
+		t.Fatalf("failed to list Canal addon manifests: %v", err)
+	}
+
+	available := sets.New[string]()
+	for _, file := range files {
+		version := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(file), "canal_"), ".yaml")
+		available.Insert(version)
+
+		content, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatalf("failed to read %s: %v", file, err)
+		}
+
+		guard := fmt.Sprintf(`{{ if eq .Cluster.CNIPlugin.Version %q }}`, version)
+		if !strings.Contains(string(content), guard) {
+			t.Errorf("%s does not contain the version guard %s", file, guard)
+		}
+	}
+
+	if missing := allowed.Difference(available); missing.Len() > 0 {
+		t.Errorf("allowed Canal versions %v have no manifest in %s", sets.List(missing), addonDir)
+	}
+	if unknown := available.Difference(allowed); unknown.Len() > 0 {
+		t.Errorf("Canal manifests for versions %v exist in %s, but these versions are not allowed", sets.List(unknown), addonDir)
 	}
 }
