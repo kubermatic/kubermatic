@@ -43,7 +43,7 @@ import (
 const (
 	controllerName                 = "cluster_exposer_controller"
 	labelKey                       = "prow.k8s.io/id"
-	serviceIdentifyerAnnotationKey = "clusterexposer/service-name"
+	serviceIdentifierAnnotationKey = "clusterexposer/service-name"
 )
 
 type reconciler struct {
@@ -75,14 +75,14 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	)
 
 	outererServiceMapper := func(_ context.Context, a *corev1.Service) []reconcile.Request {
-		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
+		val, exists := a.GetAnnotations()[serviceIdentifierAnnotationKey]
 		if !exists {
 			return nil
 		}
 		split := strings.Split(val, "/")
 		if n := len(split); n != 2 {
 			log.Errorf("splitting value of key %q by `/` (%q) didn't yield two but %d results",
-				serviceIdentifyerAnnotationKey, val, n)
+				serviceIdentifierAnnotationKey, val, n)
 			return nil
 		}
 		return []reconcile.Request{{
@@ -178,7 +178,7 @@ func (r *reconciler) createOuterService(ctx context.Context, targetServiceName s
 			GenerateName: "cluster-exposer-",
 			Namespace:    "default",
 			Labels:       map[string]string{labelKey: r.jobID},
-			Annotations:  map[string]string{serviceIdentifyerAnnotationKey: targetServiceName},
+			Annotations:  map[string]string{serviceIdentifierAnnotationKey: targetServiceName},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{labelKey: r.jobID},
@@ -215,7 +215,7 @@ func (r *reconciler) createOuterService(ctx context.Context, targetServiceName s
 
 func getServiceFromServiceList(list *corev1.ServiceList, service types.NamespacedName) *corev1.Service {
 	for _, svc := range list.Items {
-		if svc.Annotations[serviceIdentifyerAnnotationKey] == service.String() {
+		if svc.Annotations[serviceIdentifierAnnotationKey] == service.String() {
 			return &svc
 		}
 	}

@@ -49,7 +49,7 @@ import (
 // setup is done, the cluster is no longer requeued.
 // We use a dedicated reconciler instead of a condition on the cluster object
 // because this is simply a performance optimization to avoid having to install
-// OSPs into all clustes whenever a cluster changes.
+// OSPs into all clusters whenever a cluster changes.
 type clusterInitReconciler struct {
 	seedClient                    ctrlruntimeclient.Client
 	log                           *zap.SugaredLogger

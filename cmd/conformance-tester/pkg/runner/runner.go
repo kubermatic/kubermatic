@@ -572,11 +572,11 @@ func (r *TestRunner) testCluster(
 
 	// Metrics availability can take forever so for these tests we need
 	// to try for longer than normal.
-	maxMetrixAttempts := 15
+	maxMetricsAttempts := 15
 
 	// Do prometheus metrics available test
 	if err := util.JUnitWrapper("[KKP] Test prometheus metrics availability", report, func() error {
-		return util.RetryN(5*time.Second, maxMetrixAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxMetricsAttempts, func(attempt int) error {
 			return tests.TestUserClusterMetrics(ctx, log, r.opts, cluster, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -585,7 +585,7 @@ func (r *TestRunner) testCluster(
 
 	// Do pod and node metrics availability test
 	if err := util.JUnitWrapper("[KKP] Test pod and node metrics availability", report, func() error {
-		return util.RetryN(5*time.Second, maxMetrixAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxMetricsAttempts, func(attempt int) error {
 			return tests.TestUserClusterPodAndNodeMetrics(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {

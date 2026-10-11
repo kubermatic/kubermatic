@@ -298,7 +298,7 @@ webhooks:
     timeoutSeconds: 30
 ```
 
-This is it, now all the validating requests will be sent to your webhook for ApplicatioDefinition resources with the label `local-test: "true"`. You can modify the webhook to match your needs.
+This is it, now all the validating requests will be sent to your webhook for ApplicationDefinition resources with the label `local-test: "true"`. You can modify the webhook to match your needs.
 
 **NOTE:** If your webhook configuration(ValidatingWebhookConfiguration or MutatingWebhookConfiguration) exists in the user cluster, you might need to add a network policy in the **user cluster namespace in seed** to allow the k8s API server to access the webhook. A general, not so nice and secure, example network policy is as follows:
 
