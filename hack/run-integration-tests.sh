@@ -46,7 +46,7 @@ if ! [ -x "$(command -v etcd)" ]; then
   TMP_DIR="$(mktemp -d)"
   PATH="$PATH:$TMP_DIR"
 
-  download_envtest "$TMP_DIR" "1.33.0"
+  download_envtest "$TMP_DIR" "1.37.0"
 fi
 
 # For the AWS tests, we need a localstack container running.

@@ -29,7 +29,7 @@ import (
 
 const (
 	OperatorDeploymentName = "flatcar-linux-update-operator"
-	operatorVersion        = "v0.9.0"
+	operatorVersion        = "v0.10.0"
 )
 
 var (
@@ -100,5 +100,5 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 }
 
 func operatorImage(imageRewriter registry.ImageRewriter) string {
-	return registry.Must(imageRewriter("ghcr.io/flatcar/flatcar-linux-update-operator:" + operatorVersion))
+	return registry.Must(imageRewriter("quay.io/kubermatic-mirror/images/flatcar/flatcar-linux-update-operator:" + operatorVersion))
 }

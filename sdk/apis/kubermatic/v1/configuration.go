@@ -116,6 +116,8 @@ type KubermaticConfigurationSpec struct {
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// Webhook configures the webhook.
 	Webhook KubermaticWebhookConfiguration `json:"webhook,omitempty"`
+	// Util configures the shared util toolbox image.
+	Util KubermaticUtilConfiguration `json:"util,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
@@ -287,6 +289,12 @@ type KubermaticWebhookConfiguration struct {
 	PodSchedulingConfigurations `json:",inline"`
 }
 
+// KubermaticUtilConfiguration configures the shared util toolbox image.
+type KubermaticUtilConfiguration struct {
+	// DockerRepository is the repository containing the Kubermatic util image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+}
+
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
 type KubermaticUserClusterConfiguration struct {
 	// KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
@@ -383,6 +391,10 @@ type KubeLBConfiguration struct {
 	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
+	// DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
+	// CRDs for the kubeLB CCM, and stops KKP from removing the upstream Gateway API safe-upgrades policy.
+	// Datacenters and clusters cannot re-enable it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 }
 
 // AdmissionPluginsConfiguration contains global settings for admission plugins.

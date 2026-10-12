@@ -262,6 +262,7 @@ var (
 			newSemver("v1.36.5"),
 			// Kubernetes 1.37
 			newSemver("v1.37.0"),
+			newSemver("v1.37.1"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.32 =======
@@ -557,6 +558,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if err := defaultDockerRepo(&configCopy.Spec.Webhook.DockerRepository, DefaultKubermaticImage, "webhook.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultDockerRepo(&configCopy.Spec.Util.DockerRepository, DefaultUtilImageRepository, "util.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 

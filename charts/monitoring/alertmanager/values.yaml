@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # See all the default upstream values here:
-# https://github.com/prometheus-community/helm-charts/blob/alertmanager-1.15.0/charts/alertmanager/values.yaml
+# https://github.com/prometheus-community/helm-charts/blob/alertmanager-1.43.3/charts/alertmanager/values.yaml
 # Below are adjusted values to mimic existing KKP alertmanager setup
 
 alertmanager:

@@ -186,8 +186,6 @@ spec:
         - InternalIP
         - --authentication-config
         - /etc/kubernetes/authentication-config/authentication-configuration.yaml
-        - --feature-gates
-        - StructuredAuthenticationConfiguration=true
         - --egress-selector-config-file
         - /etc/kubernetes/konnectivity/egress-selector-configuration.yaml
         command:

@@ -59,7 +59,7 @@ declare -A CHART_VERSIONS=(
   ["agentgateway"]="1.3.1"
   ["agentgateway-crds"]="1.3.1"
   ["cluster-autoscaler"]="9.59.0"
-  ["cilium"]="1.19.7"
+  ["cilium"]="1.19.8"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -77,7 +77,7 @@ declare -A CHART_VERSIONS=(
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
-  ["kueue"]="0.13.4"
+  ["kueue"]="0.19.6"
   ["mcp-server-kubernetes"]="2.9.9"
   ["velero"]="1.17.1"
 )
@@ -86,7 +86,7 @@ declare -A CHART_VERSIONS=(
 # above. Values are comma-separated version lists. This is consumed by the
 # postsubmit wrapper; direct script callers can still pass explicit versions.
 declare -A CHART_ADDITIONAL_VERSIONS=(
-  ["cilium"]="1.17.17,1.18.13"
+  ["cilium"]="1.17.17,1.18.14"
   # 9.46.6 stays listed in the cluster-autoscaler ApplicationDefinition for
   # installations created before 9.59.0 was offered.
   ["cluster-autoscaler"]="9.46.6"

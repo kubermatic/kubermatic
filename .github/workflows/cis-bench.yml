@@ -238,7 +238,10 @@ jobs:
         env:
           QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
           QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+        # The default run shell is `bash -e` without pipefail, so the CLI's
+        # exit code would be swallowed by `tee` and failed suites reported green.
         run: |
+          set -o pipefail
           mkdir -p _logs _reports
           ./bin/conformance-ee-cli \
             --config "$CONFORMANCE_TESTER_CONFIG_FILE" \
@@ -366,7 +369,7 @@ jobs:
 
       # ─── Open docs PR in kubermatic/docs ──────────────────────────────
       - name: Checkout kubermatic/docs
-        if: success()
+        if: ${{ !cancelled() }}
         uses: actions/checkout@v4
         with:
           repository: kubermatic/docs
@@ -375,7 +378,7 @@ jobs:
           fetch-depth: 1
 
       - name: Open docs PR in kubermatic/docs
-        if: success()
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
         run: |
@@ -450,7 +453,7 @@ jobs:
           echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
 
       - name: Comment docs PR link on trigger issue
-        if: success() && env.PR_URL != ''
+        if: ${{ !cancelled() && env.PR_URL != '' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

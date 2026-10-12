@@ -816,7 +816,7 @@ data:
             expr: |
               sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
                 /
-              sum(node_memory_MemTotal_bytes{app="node-exporter"})
+              sum(node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"})
                 > 1.5
             for: 5m
             labels:
@@ -901,28 +901,28 @@ data:
           - record: node:node_num_cpu:sum
             expr: |
               count by (node) (sum by (node, cpu) (
-                node_cpu_seconds_total{app="node-exporter"}
+                node_cpu_seconds_total{app_kubernetes_io_name="node-exporter"}
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               ))
           - record: :node_cpu_utilisation:avg1m
             expr: |
-              1 - avg(rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m]))
+              1 - avg(rate(node_cpu_seconds_total{app_kubernetes_io_name="node-exporter",mode="idle"}[1m]))
           - record: node:node_cpu_utilisation:avg1m
             expr: |
               1 - avg by (node) (
-                rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m])
+                rate(node_cpu_seconds_total{app_kubernetes_io_name="node-exporter",mode="idle"}[1m])
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:)
           - record: ":node_cpu_saturation_load1:"
             expr: |
-              sum(node_load1{app="node-exporter"})
+              sum(node_load1{app_kubernetes_io_name="node-exporter"})
               /
               sum(node:node_num_cpu:sum)
           - record: "node:node_cpu_saturation_load1:"
             expr: |
               sum by (node) (
-                node_load1{app="node-exporter"}
+                node_load1{app_kubernetes_io_name="node-exporter"}
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
@@ -938,20 +938,20 @@ data:
           - record: ":node_memory_utilisation:"
             expr: |
               1 -
-              sum(node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+              sum(node_memory_MemFree_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Cached_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Buffers_bytes{app_kubernetes_io_name="node-exporter"})
               /
-              sum(node_memory_MemTotal_bytes{app="node-exporter"})
+              sum(node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"})
           - record: node:node_memory_bytes_available:sum
             expr: |
               sum by (node) (
-                (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+                (node_memory_MemFree_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Cached_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Buffers_bytes{app_kubernetes_io_name="node-exporter"})
                 * on (namespace, pod) group_left(node)
                   node_namespace_pod:kube_pod_info:
               )
           - record: node:node_memory_bytes_total:sum
             expr: |
               sum by (node) (
-                node_memory_MemTotal_bytes{app="node-exporter"}
+                node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"}
                 * on (namespace, pod) group_left(node)
                   node_namespace_pod:kube_pod_info:
               )
@@ -963,20 +963,20 @@ data:
           - record: :node_memory_swap_io_bytes:sum_rate
             expr: |
               1e3 * sum(
-                (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
-                + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
+                (rate(node_vmstat_pgpgin{app_kubernetes_io_name="node-exporter"}[1m])
+                + rate(node_vmstat_pgpgout{app_kubernetes_io_name="node-exporter"}[1m]))
               )
           - record: "node:node_memory_utilisation:"
             expr: |
               1 -
               sum by (node) (
-                (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+                (node_memory_MemFree_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Cached_bytes{app_kubernetes_io_name="node-exporter"} + node_memory_Buffers_bytes{app_kubernetes_io_name="node-exporter"})
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
               /
               sum by (node) (
-                node_memory_MemTotal_bytes{app="node-exporter"}
+                node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"}
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
@@ -986,8 +986,8 @@ data:
           - record: node:node_memory_swap_io_bytes:sum_rate
             expr: |
               1e3 * sum by (node) (
-                (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
-                + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
+                (rate(node_vmstat_pgpgin{app_kubernetes_io_name="node-exporter"}[1m])
+                + rate(node_vmstat_pgpgout{app_kubernetes_io_name="node-exporter"}[1m]))
                 * on (namespace, pod) group_left(node)
                   node_namespace_pod:kube_pod_info:
               )
@@ -998,21 +998,21 @@ data:
               scalar(sum(node:node_memory_bytes_total:sum))
           - record: :node_disk_utilisation:avg_irate
             expr: |
-              avg(irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]))
+              avg(irate(node_disk_io_time_seconds_total{app_kubernetes_io_name="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]))
           - record: node:node_disk_utilisation:avg_irate
             expr: |
               avg by (node) (
-                irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m])
+                irate(node_disk_io_time_seconds_total{app_kubernetes_io_name="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m])
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
           - record: :node_disk_saturation:avg_irate
             expr: |
-              avg(irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3)
+              avg(irate(node_disk_io_time_weighted_seconds_total{app_kubernetes_io_name="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3)
           - record: node:node_disk_saturation:avg_irate
             expr: |
               avg by (node) (
-                irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3
+                irate(node_disk_io_time_weighted_seconds_total{app_kubernetes_io_name="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
@@ -1026,25 +1026,25 @@ data:
               max by (namespace, pod, device) (node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
           - record: :node_net_utilisation:sum_irate
             expr: |
-              sum(irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m])) +
-              sum(irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
+              sum(irate(node_network_receive_bytes_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m])) +
+              sum(irate(node_network_transmit_bytes_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]))
           - record: node:node_net_utilisation:sum_irate
             expr: |
               sum by (node) (
-                (irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m]) +
-                irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
+                (irate(node_network_receive_bytes_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]) +
+                irate(node_network_transmit_bytes_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]))
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
           - record: :node_net_saturation:sum_irate
             expr: |
-              sum(irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m])) +
-              sum(irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
+              sum(irate(node_network_receive_drop_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m])) +
+              sum(irate(node_network_transmit_drop_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]))
           - record: node:node_net_saturation:sum_irate
             expr: |
               sum by (node) (
-                (irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m]) +
-                irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
+                (irate(node_network_receive_drop_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]) +
+                irate(node_network_transmit_drop_total{app_kubernetes_io_name="node-exporter",device!~"veth.+"}[1m]))
               * on (namespace, pod) group_left(node)
                 node_namespace_pod:kube_pod_info:
               )
@@ -1056,11 +1056,11 @@ data:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 24 hours.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
             expr: |
-              predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
+              predict_linear(node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
               and
-              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
+              node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} < 0.4
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: warning
@@ -1071,11 +1071,11 @@ data:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
             expr: |
-              predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
+              predict_linear(node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
               and
-              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
+              node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} < 0.2
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: critical
@@ -1086,9 +1086,9 @@ data:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
             expr: |
-              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
+              node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 30m
             labels:
               severity: warning
@@ -1099,9 +1099,9 @@ data:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
             expr: |
-              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
+              node_filesystem_avail_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 10m
             labels:
               severity: critical
@@ -1112,9 +1112,9 @@ data:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
             expr: |
-              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
+              node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: critical
@@ -1125,11 +1125,11 @@ data:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
             expr: |
-              predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
+              predict_linear(node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
               and
-              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
+              node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} < 0.4
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: warning
@@ -1140,11 +1140,11 @@ data:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
             expr: |
-              predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
+              predict_linear(node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
               and
-              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
+              node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} < 0.2
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: critical
@@ -1155,9 +1155,9 @@ data:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
             expr: |
-              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
+              node_filesystem_files_free{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
               and
-              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+              node_filesystem_readonly{app_kubernetes_io_name="node-exporter",fstype=~"ext.|xfs"} == 0
             for: 1h
             labels:
               severity: warning

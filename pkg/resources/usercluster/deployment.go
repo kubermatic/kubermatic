@@ -73,6 +73,7 @@ type userclusterControllerData interface {
 	IsKonnectivityEnabled() bool
 	IsSSHKeysDisabled() bool
 	DC() *kubermaticv1.Datacenter
+	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
@@ -204,6 +205,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if data.Cluster().Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] {
 				args = append(args, "-enable-network-policies")
+			}
+
+			// Only the admin settings are passed as a flag. The per-cluster setting is read off the Cluster,
+			// so changing it needs no restart.
+			if adminDisabledGatewayAPIProtection(data.KubermaticConfiguration(), data.DC()) {
+				args = append(args, "-kubelb-disable-gateway-api-protection=true")
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -459,6 +466,16 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	}
 
 	return networkFlags
+}
+
+// adminDisabledGatewayAPIProtection reports whether the KubermaticConfiguration or the datacenter
+// disabled the Gateway API CRD protection. Either one disabling it is enough.
+func adminDisabledGatewayAPIProtection(config *kubermaticv1.KubermaticConfiguration, dc *kubermaticv1.Datacenter) bool {
+	if config != nil && config.Spec.UserCluster.KubeLB.DisableGatewayAPIProtection {
+		return true
+	}
+
+	return dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection
 }
 
 func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {

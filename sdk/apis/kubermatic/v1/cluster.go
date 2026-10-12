@@ -336,8 +336,20 @@ type KubeLB struct {
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// DisableGatewayAPIProtection disables the policy that reserves the Gateway API CRDs for the kubeLB CCM,
+	// and stops KKP from removing the upstream Gateway API safe-upgrades policy. Protection is also off when
+	// the KubermaticConfiguration or the datacenter disables it.
+	DisableGatewayAPIProtection bool `json:"disableGatewayAPIProtection,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
+}
+
+// KubeLBStatus is the observed state of the kubeLB integration.
+type KubeLBStatus struct {
+	// GatewayAPIProtected reports whether the policy that reserves the Gateway API CRDs for the kubeLB CCM
+	// is installed. No omitempty, so false stays visible.
+	// +optional
+	GatewayAPIProtected bool `json:"gatewayAPIProtected"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
@@ -612,6 +624,7 @@ const (
 	ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully ClusterConditionType = "DefaultApplicationsCreatedSuccessfully"
 	ClusterConditionOperatingSystemManagerMigratorControllerReconcilingSuccess   ClusterConditionType = "OperatingSystemManagerMigratorControllerReconciledSuccessfully"
 	ClusterConditionKubeLBControllerReconcilingSuccess                           ClusterConditionType = "KubeLBControllerReconciledSuccessfully"
+	ClusterConditionKubeLBGatewayAPIProtectionReconcilingSuccess                 ClusterConditionType = "KubeLBGatewayAPIProtectionReconciledSuccessfully"
 	ClusterConditionCNIControllerReconcilingSuccess                              ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                              ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess                       ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
@@ -712,6 +725,10 @@ type ClusterStatus struct {
 	// of the cluster control plane and worker nodes.
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
+
+	// KubeLB contains the observed state of the kubeLB integration.
+	// +optional
+	KubeLB *KubeLBStatus `json:"kubelb,omitempty"`
 
 	// Deprecated: UserName contains the name of the owner of this cluster.
 	// This field is not actively used and will be removed in the future.
@@ -1052,7 +1069,9 @@ type MachineControllerSettings struct {
 	DeploymentSettings `json:",inline"`
 	// SkipEvictionAfter overrides the machine-controller's eviction timeout: when a machine
 	// deletion is stuck longer than this duration, eviction is skipped and the node is
-	// force-deleted. Defaults to the machine-controller binary's built-in 2h when unset.
+	// force-deleted. Setting this to 0 disables the timeout: the machine then waits for
+	// eviction as long as its node is Ready and a schedulable target node exists.
+	// Defaults to the machine-controller binary's built-in 2h when unset.
 	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
 }
 

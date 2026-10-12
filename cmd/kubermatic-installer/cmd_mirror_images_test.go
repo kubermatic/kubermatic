@@ -161,6 +161,9 @@ func TestClearRepositoryOverrides(t *testing.T) {
 					Webhook: kubermaticv1.KubermaticWebhookConfiguration{
 						DockerRepository: "myreg.io/webhook",
 					},
+					Util: kubermaticv1.KubermaticUtilConfiguration{
+						DockerRepository: "myreg.io/util",
+					},
 					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
 						KubermaticDockerRepository:     "myreg.io/ucc",
 						DNATControllerDockerRepository: "myreg.io/dnat",
@@ -183,6 +186,7 @@ func TestClearRepositoryOverrides(t *testing.T) {
 				assert.Empty(t, c.Spec.MasterController.DockerRepository)
 				assert.Empty(t, c.Spec.SeedController.DockerRepository)
 				assert.Empty(t, c.Spec.Webhook.DockerRepository)
+				assert.Empty(t, c.Spec.Util.DockerRepository)
 				assert.Empty(t, c.Spec.UserCluster.KubermaticDockerRepository)
 				assert.Empty(t, c.Spec.UserCluster.DNATControllerDockerRepository)
 				assert.Empty(t, c.Spec.UserCluster.EtcdLauncherDockerRepository)

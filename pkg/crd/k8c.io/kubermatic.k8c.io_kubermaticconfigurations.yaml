@@ -7701,6 +7701,12 @@ spec:
                     kubelb:
                       description: KubeLB configures the kubeLB component.
                       properties:
+                        disableGatewayAPIProtection:
+                          description: |-
+                            DisableGatewayAPIProtection disables, for all user clusters, the policy that reserves the Gateway API
+                            CRDs for the kubeLB CCM, and stops KKP from removing the upstream Gateway API safe-upgrades policy.
+                            Datacenters and clusters cannot re-enable it.
+                          type: boolean
                         imageRepository:
                           description: |-
                             ImageRepository is used to override the KubeLB image repository.
@@ -7860,6 +7866,13 @@ spec:
                             This is intended for local or air-gapped setups where HTTPS is not available.
                           type: boolean
                       type: object
+                  type: object
+                util:
+                  description: Util configures the shared util toolbox image.
+                  properties:
+                    dockerRepository:
+                      description: DockerRepository is the repository containing the Kubermatic util image.
+                      type: string
                   type: object
                 versions:
                   description: Versions configures the available and default Kubernetes versions and updates.

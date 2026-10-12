@@ -382,7 +382,7 @@ spec:
               cpu: 300m
               memory: 256Mi
         - name: loki-sc-rules
-          image: docker.io/kiwigrid/k8s-sidecar:2.5.0
+          image: docker.io/kiwigrid/k8s-sidecar:2.5.4
           imagePullPolicy: IfNotPresent
           env:
             - name: METHOD

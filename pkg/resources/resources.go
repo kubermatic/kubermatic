@@ -432,6 +432,9 @@ const (
 	// RegistryQuay defines the image registry from coreos/redhat - quay.
 	RegistryQuay = "quay.io"
 
+	// UtilVersion defines the version of the shared util toolbox image.
+	UtilVersion = "2.10.0"
+
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
 	// TopologyKeyZone defines the topology key for the node's cloud provider zone.
@@ -663,11 +666,14 @@ const (
 	KubeOneOpenStack           = "openstack"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
-	KubeOneImageTag            = "v1.12.3"
-	KubeOneScript              = `
+	KubeOneImageTag            = "v1.14.3"
+	// KubeOneScript prepares the SSH agent for the KubeOne jobs. The agent socket is
+	// bound to /tmp because OpenSSH 10+ (KubeOne images >= v1.13) creates it under
+	// ~/.ssh/agent/ by default, and /root/.ssh is a read-only Secret mount in the jobs.
+	KubeOneScript = `
 #!/usr/bin/env bash
 
-eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
+eval ` + "`" + "ssh-agent -a /tmp/kubeone-agent.sock" + "`" + ` > /dev/null
 printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
@@ -1021,6 +1027,10 @@ const (
 	UserClusterLegacyPromtailSecretName             = "promtail"
 	UserClusterLegacyPromtailDaemonSetName          = "promtail"
 	UserClusterLegacyPromtailCertificatesSecretName = "promtail-certificates"
+
+	// Legacy external-admin-user resource names, used only for cleanup/migration purposes.
+	UserClusterLegacyExternalAdminUserServiceAccountName     = "external-admin-user"
+	UserClusterLegacyExternalAdminUserClusterRoleBindingName = "external-admin-user"
 )
 
 const (

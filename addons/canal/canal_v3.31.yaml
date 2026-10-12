@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Source: https://github.com/projectcalico/calico/blob/v3.31.3/manifests/canal.yaml
+# Source: https://github.com/projectcalico/calico/blob/v3.31.7/manifests/canal.yaml
 # Modifications:
 #   - templated cni_network_config ipam for dual-stack
+#   - added the bandwidth plugin to cni_network_config
 #   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR + CALICO_IPV6POOL_CIDR
 #   - CALICO_IPV4POOL_NAT_OUTGOING set to false (this NAT is already performed by flannel)
 #   - templated container image registry in all containers
-#   - removed the flexvolume installation as it does not work on Flatcar Linux & is only required for application policies
-#     (https://docs.projectcalico.org/reference/faq#are-the-calico-manifests-compatible-with-coreos)
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
-#   - added seccomp profile to calico-kube-controllers and calico-node
 #   - added custom network policy
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
@@ -94,7 +92,7 @@ data:
   cni_network_config: |-
     {
       "name": "k8s-pod-network",
-      "cniVersion": "0.3.1",
+      "cniVersion": "1.0.0",
       "plugins": [
         {
           "type": "calico",
@@ -151,7 +149,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: bgpconfigurations.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -272,7 +270,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: bgpfilters.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -426,7 +424,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: bgppeers.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -525,7 +523,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: blockaffinities.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -574,7 +572,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: caliconodestatuses.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -738,7 +736,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: clusterinformations.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -782,7 +780,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: felixconfigurations.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -1669,6 +1667,19 @@ spec:
                     pattern: ^.*
                     x-kubernetes-int-or-string: true
                   type: array
+                logActionRateLimit:
+                  description: |-
+                    LogActionRateLimit sets the rate of hitting a Log action. The value must be in the format "N/unit",
+                    where N is a number and unit is one of: second, minute, hour, or day. For example: "10/second" or "100/hour".
+                  pattern: ^[1-9]\d{0,3}/(?:second|minute|hour|day)$
+                  type: string
+                logActionRateLimitBurst:
+                  description:
+                    LogActionRateLimitBurst sets the rate limit burst of
+                    hitting a Log action when LogActionRateLimit is enabled.
+                  maximum: 9999
+                  minimum: 0
+                  type: integer
                 logDebugFilenameRegex:
                   description: |-
                     LogDebugFilenameRegex controls which source code files have their Debug log output included in the logs.
@@ -1681,9 +1692,17 @@ spec:
                     none to disable file logging. [Default: /var/log/calico/felix.log]"
                   type: string
                 logPrefix:
-                  description:
-                    "LogPrefix is the log prefix that Felix uses when rendering
-                    LOG rules. [Default: calico-packet]"
+                  description: |-
+                    LogPrefix is the log prefix that Felix uses when rendering LOG rules. It is possible to use the following specifiers
+                    to include extra information in the log prefix.
+                    - %t: Tier name.
+                    - %k: Kind (short names).
+                    - %n: Policy or profile name.
+                    - %p: Policy or profile name (namespace/name for namespaced kinds or just name for non namespaced kinds).
+                    Calico includes ": " characters at the end of the generated log prefix.
+                    Note that iptables shows up to 29 characters for the log prefix and nftables up to 127 characters. Extra characters are truncated.
+                    [Default: calico-packet]
+                  pattern: "^([a-zA-Z0-9%: /_-])*$"
                   type: string
                 logSeverityFile:
                   description:
@@ -2086,7 +2105,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: globalnetworkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2460,7 +2479,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: globalnetworksets.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2498,7 +2517,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: hostendpoints.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2563,7 +2582,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ipamblocks.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2642,7 +2661,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ipamconfigs.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2687,7 +2706,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ipamhandles.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2732,7 +2751,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ippools.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2804,7 +2823,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: ipreservations.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -2842,7 +2861,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: kubecontrollersconfigurations.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -3042,7 +3061,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: networkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -3408,7 +3427,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: networksets.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -3446,7 +3465,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: stagedglobalnetworkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -3822,7 +3841,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: stagedkubernetesnetworkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -4070,7 +4089,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: stagednetworkpolicies.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -4438,7 +4457,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: tiers.crd.projectcalico.org
 spec:
   group: crd.projectcalico.org
@@ -6692,6 +6711,14 @@ rules:
       - get
       - list
       - watch
+  # Namespaces are watched for LoadBalancer IP allocation with namespace selector support
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
   # Services are monitored for service LoadBalancer IP allocation
   - apiGroups: [""]
     resources:
@@ -6880,7 +6907,7 @@ rules:
       - get
       - list
       - watch
-   # Calico creates some tiers on startup.
+  # Calico creates some tiers on startup.
   - apiGroups: ["crd.projectcalico.org"]
     resources:
       - tiers
@@ -6991,9 +7018,9 @@ roleRef:
   kind: ClusterRole
   name: calico-kube-controllers
 subjects:
-- kind: ServiceAccount
-  name: calico-kube-controllers
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: calico-kube-controllers
+    namespace: kube-system
 ---
 # Source: calico/templates/calico-node-rbac.yaml
 # Bind the flannel ClusterRole to the canal ServiceAccount.
@@ -7006,9 +7033,9 @@ roleRef:
   kind: ClusterRole
   name: flannel
 subjects:
-- kind: ServiceAccount
-  name: canal
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: canal
+    namespace: kube-system
 ---
 # Source: calico/templates/calico-node-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7020,9 +7047,9 @@ roleRef:
   kind: ClusterRole
   name: calico-node
 subjects:
-- kind: ServiceAccount
-  name: canal
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: canal
+    namespace: kube-system
 ---
 # Source: calico/templates/calico-node-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7034,9 +7061,9 @@ roleRef:
   kind: ClusterRole
   name: calico-cni-plugin
 subjects:
-- kind: ServiceAccount
-  name: calico-cni-plugin
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: calico-cni-plugin
+    namespace: kube-system
 ---
 # Source: calico/templates/tier-getter.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7048,9 +7075,9 @@ roleRef:
   kind: ClusterRole
   name: calico-tier-getter
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: User
-  name: system:kube-controller-manager
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:kube-controller-manager
 ---
 # Source: calico/templates/calico-node.yaml
 # This manifest installs the canal container, as well
@@ -7100,14 +7127,14 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: '{{ Image "quay.io/calico/cni:v3.31.3" }}'
+          image: '{{ Image "quay.io/calico/cni:v3.31.7" }}'
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/install"]
           envFrom:
-          - configMapRef:
-              # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
-              name: kubernetes-services-endpoint
-              optional: true
+            - configMapRef:
+                # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
+                name: kubernetes-services-endpoint
+                optional: true
           env:
             # Set the serviceaccount name to use for the Calico CNI plugin.
             # We use canal-node instead of calico-node when using flannel networking.
@@ -7146,10 +7173,11 @@ spec:
           securityContext:
             privileged: true
         # This init container mounts the necessary filesystems needed by the BPF data plane
-        # i.e. bpf at /sys/fs/bpf and cgroup2 at /run/calico/cgroup. Calico-node initialisation is executed
-        # in best effort fashion, i.e. no failure for errors, to not disrupt pod creation in iptable mode.
-        - name: "mount-bpffs"
-          image: '{{ Image "quay.io/calico/node:v3.31.3" }}'
+        # i.e. bpf at /sys/fs/bpf and cgroup2 at /run/calico/cgroup. It also configures the initial
+        # networking to allow communication with the API Server. Calico-node initialization is executed
+        # in best effort fashion, i.e. no failure for errors, to not disrupt pod creation in iptables mode.
+        - name: "ebpf-bootstrap"
+          image: '{{ Image "quay.io/calico/node:v3.31.7" }}'
           imagePullPolicy: IfNotPresent
           command: ["calico-node", "-init", "-best-effort"]
           volumeMounts:
@@ -7175,13 +7203,13 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: '{{ Image "quay.io/calico/node:v3.31.3" }}'
+          image: '{{ Image "quay.io/calico/node:v3.31.7" }}'
           imagePullPolicy: IfNotPresent
           envFrom:
-          - configMapRef:
-              # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
-              name: kubernetes-services-endpoint
-              optional: true
+            - configMapRef:
+                # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
+                name: kubernetes-services-endpoint
+                optional: true
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -7257,13 +7285,13 @@ spec:
             preStop:
               exec:
                 command:
-                - /bin/calico-node
-                - -shutdown
+                  - /bin/calico-node
+                  - -shutdown
           livenessProbe:
             exec:
               command:
-              - /bin/calico-node
-              - -felix-live
+                - /bin/calico-node
+                - -felix-live
             periodSeconds: 10
             initialDelaySeconds: 10
             failureThreshold: 6
@@ -7298,6 +7326,13 @@ spec:
             # parent directory.
             - name: bpffs
               mountPath: /sys/fs/bpf
+            # Felix reads /sys/kernel/security/lockdown to detect kernel
+            # lockdown=confidentiality; under it, ftrace is disabled and Felix
+            # loads trace-printk-free BPF program variants. securityfs is a
+            # separate filesystem from /sys/fs, so it needs its own mount.
+            - name: sys-kernel-security
+              mountPath: /sys/kernel/security
+              readOnly: true
             - name: cni-log-dir
               mountPath: /var/log/calico/cni
               readOnly: true
@@ -7306,7 +7341,7 @@ spec:
         - name: kube-flannel
           image: '{{ Image "docker.io/flannel/flannel:v0.24.4" }}'
           imagePullPolicy: IfNotPresent
-          command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+          command: ["/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr"]
           securityContext:
             privileged: true
           env:
@@ -7329,11 +7364,11 @@ spec:
                   name: canal-config
                   key: masquerade
           volumeMounts:
-          - mountPath: /run/xtables.lock
-            name: xtables-lock
-            readOnly: false
-          - name: flannel-cfg
-            mountPath: /etc/kube-flannel/
+            - mountPath: /run/xtables.lock
+              name: xtables-lock
+              readOnly: false
+            - name: flannel-cfg
+              mountPath: /etc/kube-flannel/
       volumes:
         # Used by canal.
         - name: lib-modules
@@ -7359,7 +7394,13 @@ spec:
           hostPath:
             path: /sys/fs/bpf
             type: Directory
-        # mount /proc at /nodeproc to be used by mount-bpffs initContainer to mount root cgroup2 fs.
+        # securityfs, read by Felix to detect kernel lockdown=confidentiality.
+        # No type set (like nodeproc below) so nodes without securityfs still
+        # start; Felix treats an unreadable lockdown file as "not locked down".
+        - name: sys-kernel-security
+          hostPath:
+            path: /sys/kernel/security
+        # mount /proc at /nodeproc to be used by ebpf-bootstrap initContainer to mount root cgroup2 fs.
         - name: nodeproc
           hostPath:
             path: /proc
@@ -7426,7 +7467,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: calico-kube-controllers
-          image: '{{ Image "quay.io/calico/kube-controllers:v3.31.3" }}'
+          image: '{{ Image "quay.io/calico/kube-controllers:v3.31.7" }}'
           imagePullPolicy: IfNotPresent
           env:
             # Choose which controllers to run.
@@ -7437,8 +7478,8 @@ spec:
           livenessProbe:
             exec:
               command:
-              - /usr/bin/check-status
-              - -l
+                - /usr/bin/check-status
+                - -l
             periodSeconds: 10
             initialDelaySeconds: 10
             failureThreshold: 6
@@ -7446,8 +7487,8 @@ spec:
           readinessProbe:
             exec:
               command:
-              - /usr/bin/check-status
-              - -r
+                - /usr/bin/check-status
+                - -r
             periodSeconds: 10
           securityContext:
             runAsNonRoot: true

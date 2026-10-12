@@ -68,6 +68,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -304,6 +305,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx); err != nil {
 			return err
 		}
+	}
+
+	// KKP v2.29 and earlier created the external-admin-user with a cluster-admin
+	// binding in every user cluster. Newer versions no longer create it, so remove
+	// it from all clusters that still have it.
+	if err := r.ensureExternalAdminUserIsRemoved(ctx); err != nil {
+		return err
 	}
 
 	return nil
@@ -1503,6 +1511,30 @@ func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureExternalAdminUserIsRemoved(ctx context.Context) error {
+	// Delete the binding first, so the ServiceAccount loses its cluster-admin
+	// permissions even if deleting the ServiceAccount fails.
+	for _, resource := range []ctrlruntimeclient.Object{
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.UserClusterLegacyExternalAdminUserClusterRoleBindingName,
+			},
+		},
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.UserClusterLegacyExternalAdminUserServiceAccountName,
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	} {
+		err := r.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure external-admin-user resources are removed/not present: %w", err)
 		}
 	}
 	return nil
