@@ -101,9 +101,9 @@ require (
 	k8c.io/machine-controller/sdk v1.66.4
 	k8c.io/operating-system-manager v1.11.7
 	k8c.io/reconciler v0.5.0
-	k8s.io/api v0.37.0
+	k8s.io/api v0.37.1
 	k8s.io/apiextensions-apiserver v0.37.0
-	k8s.io/apimachinery v0.37.0
+	k8s.io/apimachinery v0.37.1
 	k8s.io/apiserver v0.37.0
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.7.1
 	k8s.io/cli-runtime v0.37.0
@@ -503,7 +503,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/kube-proxy v0.33.4 // indirect
 	k8s.io/kubelet v0.33.4 // indirect
-	k8s.io/streaming v0.37.0 // indirect
+	k8s.io/streaming v0.37.1 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go/v2 v2.6.2 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect
