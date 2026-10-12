@@ -127,7 +127,6 @@ loki.process "logs_default_kubernetes_pods_app_kubernetes_io_name" {
 loki.source.file "logs_default_kubernetes_pods_app_kubernetes_io_name" {
         targets               = local.file_match.logs_default_kubernetes_pods_app_kubernetes_io_name.targets
         forward_to            = [loki.process.logs_default_kubernetes_pods_app_kubernetes_io_name.receiver]
-        legacy_positions_file = "/run/grafana-agent/positions.yaml"
 }
 
 discovery.kubernetes "logs_default_kubernetes_pods_app" {
@@ -206,7 +205,6 @@ loki.process "logs_default_kubernetes_pods_app" {
 loki.source.file "logs_default_kubernetes_pods_app" {
         targets               = local.file_match.logs_default_kubernetes_pods_app.targets
         forward_to            = [loki.process.logs_default_kubernetes_pods_app.receiver]
-        legacy_positions_file = "/run/grafana-agent/positions.yaml"
 }
 
 discovery.kubernetes "logs_default_kubernetes_pods_direct_controllers" {
@@ -281,7 +279,6 @@ loki.process "logs_default_kubernetes_pods_direct_controllers" {
 loki.source.file "logs_default_kubernetes_pods_direct_controllers" {
         targets               = local.file_match.logs_default_kubernetes_pods_direct_controllers.targets
         forward_to            = [loki.process.logs_default_kubernetes_pods_direct_controllers.receiver]
-        legacy_positions_file = "/run/grafana-agent/positions.yaml"
 }
 
 discovery.kubernetes "logs_default_kubernetes_pods_indirect_controller" {
@@ -357,7 +354,6 @@ loki.process "logs_default_kubernetes_pods_indirect_controller" {
 loki.source.file "logs_default_kubernetes_pods_indirect_controller" {
         targets               = local.file_match.logs_default_kubernetes_pods_indirect_controller.targets
         forward_to            = [loki.process.logs_default_kubernetes_pods_indirect_controller.receiver]
-        legacy_positions_file = "/run/grafana-agent/positions.yaml"
 }
 
 discovery.kubernetes "logs_default_kubernetes_other" {
@@ -437,7 +433,6 @@ loki.process "logs_default_kubernetes_other" {
 loki.source.file "logs_default_kubernetes_other" {
         targets               = local.file_match.logs_default_kubernetes_other.targets
         forward_to            = [loki.process.logs_default_kubernetes_other.receiver]
-        legacy_positions_file = "/run/grafana-agent/positions.yaml"
 }
 
 loki.write "logs_default" {

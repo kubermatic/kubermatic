@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # For complete values available, see the values.yaml of upstream chart - please use correct tag
-# e.g. https://github.com/grafana/helm-charts/blob/loki-distributed-0.78.0/charts/loki-distributed/values.yaml
+# e.g. https://github.com/grafana/helm-charts/blob/loki-distributed-0.80.6/charts/loki-distributed/values.yaml
 
 loki-distributed:
   loki:
@@ -28,6 +28,11 @@ loki-distributed:
         lifecycler:
           ring:
             replication_factor: 3
+      # keep the memberlist cluster label empty: chart 0.80.6 defaults it to
+      # release.namespace, which splits gossip between 2.9.2 and 2.9.13 pods
+      # during the rolling upgrade
+      memberlist:
+        cluster_label: ""
       limits_config:
         reject_old_samples: false
       ruler:

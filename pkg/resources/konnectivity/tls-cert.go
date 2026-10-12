@@ -24,11 +24,13 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/keyutil"
 )
 
 type tlsServingCertReconcilerData interface {
@@ -93,7 +95,12 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				}
 			}
 
-			key, err := triple.NewPrivateKey()
+			keyConfig, err := certificates.CertificateKeyConfig(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
+
+			key, err := keyConfig.GenerateKey()
 			if err != nil {
 				return nil, fmt.Errorf("unable to create a server private key: %w", err)
 			}
@@ -109,7 +116,12 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
-			se.Data[resources.KonnectivityProxyTLSSecretName+".key"] = triple.EncodePrivateKeyPEM(key)
+			keyPEM, err := keyutil.MarshalPrivateKeyToPEM(key)
+			if err != nil {
+				return nil, fmt.Errorf("unable to encode the server private key: %w", err)
+			}
+
+			se.Data[resources.KonnectivityProxyTLSSecretName+".key"] = keyPEM
 			se.Data[resources.KonnectivityProxyTLSSecretName+".crt"] = triple.EncodeCertPEM(cert)
 
 			return se, nil

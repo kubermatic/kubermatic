@@ -1,6 +1,6 @@
 dependencies:
 - name: helm-exporter
   repository: https://shanestarcher.com/helm-charts/
-  version: 1.2.16+77ad21d
-digest: sha256:a08db99a37d0d69fc270c544ca2ce88c93fe1d4d0e9cb3a93a81d7d20032ebba
-generated: "2024-04-11T11:38:17.365464659+02:00"
+  version: 1.3.0+109c2ba
+digest: sha256:511a6cb2d062c7928ea0dd7ec96586827755f11676aa30261f0fc0b6493920f2
+generated: "2026-10-02T13:13:45.690315+03:00"

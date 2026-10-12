@@ -62,6 +62,7 @@ func setupControllers(
 	kubeVirtInfraNamespace string,
 	kubeVirtAcceleratorQuota bool,
 	kyvernoEnabled bool,
+	kubeLBDisableGatewayAPIProtection bool,
 ) error {
 	return nil
 }

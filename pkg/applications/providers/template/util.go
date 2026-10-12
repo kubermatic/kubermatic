@@ -166,11 +166,13 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 // autoscalerImageTags maps Kubernetes major.minor versions to the corresponding
 // cluster-autoscaler image tag that should be used for that version.
 var autoscalerImageTags = map[string]string{
-	"1.32": "v1.32.1",
 	"1.33": "v1.33.3",
 	"1.34": "v1.34.2",
 	"1.35": "v1.35.1",
-	"1.36": "v1.36.0",
+	"1.36": "v1.36.1",
+	// no 1.37 image exists yet (upstream branch is cluster-autoscaler-release-1.37);
+	// 1.37 reuses the newest 1.36 tag until it ships
+	"1.37": "v1.36.1",
 }
 
 // GetAutoscalerImageTag returns the cluster-autoscaler image tag for the given

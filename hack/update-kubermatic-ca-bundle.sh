@@ -21,4 +21,17 @@ source hack/lib.sh
 
 echodate "Updating CA bundle..."
 curl -Lo charts/kubermatic-operator/static/ca-bundle.pem https://curl.se/ca/cacert.pem
-echodate "Done."
+
+# The chart's golden master fixtures embed the CA bundle, so they have to be
+# regenerated whenever it changes. The render test rewrites the .yaml.out files
+# in place and then exits non-zero because they differ from what is committed,
+# which is exactly what we want here, so only that failure is tolerated.
+echodate "Regenerating the kubermatic-operator chart fixtures..."
+./charts/kubermatic-operator/test/test-render.sh || true
+
+# The drop-in tests do not depend on the fixtures and must pass against the
+# refreshed bundle.
+echodate "Testing the CA bundle drop-ins..."
+./charts/kubermatic-operator/test/test-extra-ca.sh
+
+echodate "Done. Updated .yaml.out files."

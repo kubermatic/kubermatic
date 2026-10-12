@@ -1,6 +1,131 @@
 # Kubermatic 2.31
 
+- [v2.31.2](#v2312)
+- [v2.31.1](#v2311)
 - [v2.31.0](#v2310)
+
+## v2.31.2
+
+**GitHub release: [v2.31.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.2)**
+
+### Breaking Changes
+
+This release contains changes that require additional attention, please read the following items carefully.
+
+- The `cluster` label of `kubermatic_addon_*` metrics now carries the full cluster name. action required: update custom dashboards or alerts that use the truncated value ([#16510](https://github.com/kubermatic/kubermatic/pull/16510))
+- Update KubeOne to v1.14.3, which supports Kubernetes 1.34 to 1.36. action required: upgrade KubeOne clusters on Kubernetes 1.32 or 1.33 to 1.34 before importing them ([#16597](https://github.com/kubermatic/kubermatic/pull/16597))
+- Remove the leftover `external-admin-user` ServiceAccount and its ClusterRoleBinding from user clusters created before v2.30. Replace it before upgrading if you use it ([#16613](https://github.com/kubermatic/kubermatic/pull/16613))
+- Update Envoy Gateway to v1.8.5. HTTP OIDC issuer URLs, SDS secret URLs without `unix://` and non-HTTPS Wasm registries are now rejected ([#16634](https://github.com/kubermatic/kubermatic/pull/16634))
+- Update cert-manager to v1.21.2. Remove the `prometheus.servicemonitor.targetPort`, `prometheus.servicemonitor.path` and `prometheus.podmonitor.path` Helm values, update scrape configs for the `http-metrics` port, and move Issuers using the `cert-manager` ServiceAccount to a dedicated one ([#16639](https://github.com/kubermatic/kubermatic/pull/16639))
+
+### API Changes
+
+- Add `skipEvictionAfter` to the machine-controller component settings of Clusters and Seeds to configure the node eviction timeout; `0` disables it ([#16475](https://github.com/kubermatic/kubermatic/pull/16475), [#16666](https://github.com/kubermatic/kubermatic/pull/16666))
+- Reserve the Gateway API CRDs for the KubeLB CCM to prevent kubelb-ccm crashes caused by incompatible Gateway API CRDs. Add `disableGatewayAPIProtection` to the KubermaticConfiguration, Datacenter and Cluster KubeLB settings to disable it ([#16663](https://github.com/kubermatic/kubermatic/pull/16663))
+
+### Supported Kubernetes Versions
+
+- Add support for Kubernetes v1.37 and set the default version to v1.36.4 ([#16595](https://github.com/kubermatic/kubermatic/pull/16595))
+- Add support for k8s patch releases v1.37.1/v1.36.5/v1.35.9/v1.34.12 ([#16643](https://github.com/kubermatic/kubermatic/pull/16643), [#16560](https://github.com/kubermatic/kubermatic/pull/16560))
+
+#### Supported Versions
+
+- v1.37.1
+- v1.36.5
+- v1.35.9
+- v1.34.12
+
+### New Features
+
+- Add Kueue v0.19.6 to the application catalog ([#16679](https://github.com/kubermatic/kubermatic/pull/16679))
+- Add CPU and memory usage alerts per node and per cluster ([#16541](https://github.com/kubermatic/kubermatic/pull/16541))
+- Propagate project-level KubeLB defaults to existing Tenants ([#16473](https://github.com/kubermatic/kubermatic/pull/16473))
+
+### Bugfixes
+
+- Fix node-exporter recording rules and node alerts not matching after the chart swap ([#16680](https://github.com/kubermatic/kubermatic/pull/16680))
+- Include the flatcar-linux-update-operator image in `kubermatic-installer mirror-images` ([#16606](https://github.com/kubermatic/kubermatic/pull/16606))
+- Fix Flatcar node auto-upgrades by updating flatcar-linux-update-operator to v0.10.0 ([#16608](https://github.com/kubermatic/kubermatic/pull/16608))
+- Show failed KubeOne job errors in the ExternalCluster status ([#16598](https://github.com/kubermatic/kubermatic/pull/16598))
+- Fix the KubeOne cluster upgrade status message growing with every reconcile ([#16603](https://github.com/kubermatic/kubermatic/pull/16603))
+- Fix user-cluster MLA Grafana dashboards rendering all series in grey on Grafana 13 ([#16555](https://github.com/kubermatic/kubermatic/pull/16555))
+- Fix policy bindings staying active after Kyverno is disabled ([#16528](https://github.com/kubermatic/kubermatic/pull/16528))
+- Fix PolicyBindings staying inactive when Kyverno policies contain server-defaulted fields ([#16482](https://github.com/kubermatic/kubermatic/pull/16482))
+
+### Updates
+
+- Update machine-controller to [v1.66.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.4) and operating-system-manager to [v1.11.7](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.7), fixing AWS Flatcar node initialization ([#16681](https://github.com/kubermatic/kubermatic/pull/16681), [#16526](https://github.com/kubermatic/kubermatic/pull/16526))
+- Add Cilium v1.18.14/v1.19.8 and set the default Cilium version to v1.19.8 ([#16683](https://github.com/kubermatic/kubermatic/pull/16683))
+- Update Canal to v3.29.7/v3.30.7/v3.31.7 ([#16671](https://github.com/kubermatic/kubermatic/pull/16671))
+- Update Envoy proxy to v1.38.4 ([#16651](https://github.com/kubermatic/kubermatic/pull/16651))
+- Update the helm-exporter chart to 1.3.0 ([#16635](https://github.com/kubermatic/kubermatic/pull/16635))
+- Update the user-cluster MLA consul chart to 1.9.11 ([#16633](https://github.com/kubermatic/kubermatic/pull/16633))
+- Update the seed MLA Loki rules sidecar to 2.5.4 ([#16661](https://github.com/kubermatic/kubermatic/pull/16661))
+- Update the user-cluster MLA logging agent to Grafana Alloy v1.19.2 ([#16363](https://github.com/kubermatic/kubermatic/pull/16363))
+- Pull MinIO images and charts from the Kubermatic mirror registry ([#16525](https://github.com/kubermatic/kubermatic/pull/16525), [#16515](https://github.com/kubermatic/kubermatic/pull/16515), [#16485](https://github.com/kubermatic/kubermatic/pull/16485))
+
+### Dashboard and API
+
+#### Cloud Providers
+
+##### Azure
+
+- Add support for Azure VMs with securityProfile TrustedLaunch ([#8313](https://github.com/kubermatic/dashboard/pull/8313))
+
+##### KubeVirt
+
+- Show KubeVirt instance type memory in binary units ([#8315](https://github.com/kubermatic/dashboard/pull/8315))
+
+#### Bugfixes
+
+- Allow cluster backup durations longer than 99 hours ([#8355](https://github.com/kubermatic/dashboard/pull/8355))
+- Fix OIDC kubeconfig, web terminal and Kubernetes dashboard login when the IdP enforces PKCE ([#8352](https://github.com/kubermatic/dashboard/pull/8352))
+- Fix empty rows in the admin static labels form ([#8325](https://github.com/kubermatic/dashboard/pull/8325))
+
+#### Updates
+
+- Update KKP Go dependencies ([#8374](https://github.com/kubermatic/dashboard/pull/8374))
+
+## v2.31.1
+
+**GitHub release: [v2.31.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.1)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.36.4/v1.35.8/v1.34.11 and set the default Kubernetes version to v1.35.8 ([#16293](https://github.com/kubermatic/kubermatic/pull/16293))
+
+#### Supported Versions
+
+- v1.36.4
+- v1.35.8
+- v1.34.11
+
+### Cloud Providers
+
+#### OpenStack
+
+- Update OpenStack Cinder CSI sidecar images (csi-attacher v4.12.0, csi-snapshotter v8.6.0, livenessprobe v2.19.0, csi-node-driver-registrar v2.17.0) to address known CVEs ([#16328](https://github.com/kubermatic/kubermatic/pull/16328))
+
+### Bugfixes
+
+- Migrate the user cluster MLA monitoring agent from the end-of-life grafana/agent v0.29.0 image to grafana/alloy v1.19.2 ([#16334](https://github.com/kubermatic/kubermatic/pull/16334))
+- Fix hardcoded datasource references in the mla-components Grafana dashboard by using a `$datasource` variable, and drop the unused Loki datasource ([#16313](https://github.com/kubermatic/kubermatic/pull/16313))
+
+### Updates
+
+- Update machine-controller to [v1.66.3](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.3) and operating-system-manager to [v1.11.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.4) ([#16350](https://github.com/kubermatic/kubermatic/pull/16350))
+- Add KubeLB CCM v1.5.0 support with updated permissions, CRDs and tenant proxy configuration ([#16336](https://github.com/kubermatic/kubermatic/pull/16336))
+- Add Cilium versions v1.18.13/v1.19.7 and set the default Cilium version to v1.19.7 ([#16311](https://github.com/kubermatic/kubermatic/pull/16311))
+- Update the utility container image to 2.10.0 across all charts and controllers ([#16337](https://github.com/kubermatic/kubermatic/pull/16337))
+- Update web-terminal image version to v1.13.1 ([#16294](https://github.com/kubermatic/kubermatic/pull/16294))
+- Update Go version to v1.26.7 ([#16284](https://github.com/kubermatic/kubermatic/pull/16284))
+
+### Dashboard and API
+
+#### Updates
+
+- Update web-terminal image to v1.13.1 ([#8272](https://github.com/kubermatic/dashboard/pull/8272))
+- Update chrome-headless image to v1.10.0 and Go to v1.26.7 ([#8270](https://github.com/kubermatic/dashboard/pull/8270))
 
 ## v2.31.0
 

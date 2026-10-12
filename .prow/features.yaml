@@ -48,6 +48,32 @@ presubmits:
             limits:
               memory: 18Gi
 
+  - name: pre-kubermatic-monitoring-e2e
+    optional: true
+    run_if_changed: "(go.mod|go.sum|charts/monitoring/|cmd/kubermatic-installer/|pkg/install/|.prow/|hack/ci/run-monitoring-e2e-test.sh)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
+          command:
+            - "./hack/ci/run-monitoring-e2e-test.sh"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 4Gi
+              cpu: 2
+
   - name: pre-kubermatic-konnectivity-e2e
     run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
     decorate: true
@@ -238,6 +264,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -277,8 +305,43 @@ presubmits:
             limits:
               memory: 6Gi
 
+  - name: pre-kubermatic-kyverno-e2e
+    run_if_changed: "(.*([kK]yverno|[pP]olicy[-_]?([tT]emplate|[bB]inding|catalog)|default-policy).*|.prow/)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
+          command:
+            - "./hack/ci/run-kyverno-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(.*([oO]pa|[gG]atekeeper|[cC]onstraint|allowed-registry).*|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -376,7 +439,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cluster-backup-e2e
-    run_if_changed: "pkg/ee/cluster-backup/"
+    run_if_changed: "pkg/ee/cluster-backup/|pkg/defaulting/configuration.go"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -397,6 +460,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSION_TO_TEST
+              value: v1.37
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
