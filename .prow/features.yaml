@@ -61,7 +61,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-13
+        - image: quay.io/kubermatic/build:go-1.26-node-22-kind-0.32-15
           command:
             - "./hack/ci/run-monitoring-e2e-test.sh"
           securityContext:
