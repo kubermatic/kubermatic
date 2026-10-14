@@ -122,9 +122,23 @@ metadata:
     storageclass.beta.kubernetes.io/is-default-class: "true"
   labels:
     kubernetes.io/cluster-service: "true"
-  name: cinder-csi
+  name: cinder-csi-delete
 provisioner: cinder.csi.openstack.org
-volumeBindingMode: WaitForFirstConsumer
+volumeBindingMode: Immediate 
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+apiVersion: storage.k8s.io/v1
+---
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "false"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: cinder-csi-retain
+provisioner: cinder.csi.openstack.org
+volumeBindingMode: Immediate 
+reclaimPolicy: Retain
 allowVolumeExpansion: true
 {{ end }}
 {{ else }}
