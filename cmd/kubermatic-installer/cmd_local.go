@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -59,12 +60,11 @@ import (
 )
 
 const (
-	nip                  = "nip.io"
-	sslip                = "sslip.io"
-	kkpDefaultLogin      = "kubermatic@example.com"
-	kkpDefaultPassword   = "password"
-	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
-	kindClusterName      = "kkp-cluster"
+	nip                = "nip.io"
+	sslip              = "sslip.io"
+	kkpDefaultLogin    = "kubermatic@example.com"
+	kkpDefaultPassword = "password"
+	kindClusterName    = "kkp-cluster"
 )
 
 var (
@@ -78,6 +78,14 @@ type LocalOptions struct {
 	HelmTimeout    time.Duration
 	Endpoint       string
 	KubeOVNEnabled bool
+	ClusterName    string
+	HostPorts      map[string]int
+	ImageOverrides map[string]string
+	Registry       string
+	VM             bool
+	VMCPUs         int
+	VMMemory       int
+	VMDisk         int
 }
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
@@ -119,41 +127,140 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
 			}
 
-			_, err := exec.LookPath("kind")
-			if err != nil {
-				logger.Fatalf("failed to find 'kind' binary: %v", err)
-			}
-			out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
-			if err != nil {
-				logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
-			}
-			submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
-			if len(submatch) != 2 {
-				logger.Fatalf("failed to parse 'kind' version, requires at least %v: %v", minSupportedKindVersion, string(out))
-			}
-			kindVersion, err := semver.NewSemver(submatch[1])
-			if err != nil {
-				logger.Fatalf("failed to process 'kind' semver %q, requires at least %v: %v", submatch[1], minSupportedKindVersion, string(out))
-			}
-			if kindVersion.LessThan(minSupportedKindVersion) {
-				logger.Fatalf("please update your 'kind' %v, requires at least %v", kindVersion, minSupportedKindVersion)
+			if opt.VM {
+				if _, err := exec.LookPath("limactl"); err != nil {
+					logger.Fatalf("failed to find 'limactl' binary, required by --vm: brew install lima")
+				}
+			} else {
+				_, err := exec.LookPath("kind")
+				if err != nil {
+					logger.Fatalf("failed to find 'kind' binary: %v", err)
+				}
+				out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
+				if err != nil {
+					logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
+				}
+				submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
+				if len(submatch) != 2 {
+					logger.Fatalf("failed to parse 'kind' version, requires at least %v: %v", minSupportedKindVersion, string(out))
+				}
+				kindVersion, err := semver.NewSemver(submatch[1])
+				if err != nil {
+					logger.Fatalf("failed to process 'kind' semver %q, requires at least %v: %v", submatch[1], minSupportedKindVersion, string(out))
+				}
+				if kindVersion.LessThan(minSupportedKindVersion) {
+					logger.Fatalf("please update your 'kind' %v, requires at least %v", kindVersion, minSupportedKindVersion)
+				}
 			}
 
-			_, err = exec.LookPath("helm")
-			if err != nil {
+			if _, err := exec.LookPath("helm"); err != nil {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
+			}
+
+			if opt.VM {
+				forwarded := map[int]string{
+					limaRegistryPort:    "registry",
+					vmKindAPIserverPort: "kind apiserver",
+				}
+				for _, key := range []string{"http", "https", "apiserver", "tunnel"} {
+					port := opt.hostPort(key)
+					if other, ok := forwarded[port]; ok {
+						logger.Fatalf("--host-ports %s=%d collides with the %s port forwarded into the lima VM", key, port, other)
+					}
+					forwarded[port] = key
+				}
+
+				if opt.Registry == "" {
+					opt.Registry = fmt.Sprintf("localhost:%d", limaRegistryPort)
+				}
+				if host, port, err := net.SplitHostPort(opt.Registry); err != nil || port != fmt.Sprintf("%d", limaRegistryPort) {
+					logger.Fatalf("--vm runs the registry inside the VM on port %d, use --registry %s:%d (default)", limaRegistryPort, host, limaRegistryPort)
+				}
 			}
 		},
 		RunE: localKindFunc(logger, &opt),
 	}
 	cmd.PersistentFlags().StringVar(&opt.Endpoint, "endpoint", "", "endpoint address for KKP installation (e.g. 10.0.0.5.nip.io), if this flag is left empty, the installer does best effort in auto-configuring from available network interfaces")
 	cmd.PersistentFlags().BoolVar(&opt.KubeOVNEnabled, "kube-ovn-enabled", false, "enables usage of kube-ovn instead of kindnet as the cni plugin")
+	cmd.PersistentFlags().StringVar(&opt.ClusterName, "name", kindClusterName, "name of the kind cluster to create or reuse")
+	cmd.PersistentFlags().StringToIntVar(&opt.HostPorts, "host-ports", defaultLocalHostPorts(), "host ports exposed on the machine, valid keys: http, https, apiserver, tunnel")
+	cmd.PersistentFlags().StringToStringVar(&opt.ImageOverrides, "image-override", nil, "override component images, valid keys: kubermatic (repository[:tag]; controllers use the repository and keep the build-time tag), api, ui (tag or repository[:tag]), addons (repository)")
+	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "local container registry (e.g. localhost:5000) that the kind cluster is configured to pull from via plain HTTP")
+	cmd.PersistentFlags().BoolVar(&opt.VM, "vm", false, "run the kind cluster inside a lima VM (requires limactl)")
+	cmd.PersistentFlags().IntVar(&opt.VMCPUs, "vm-cpus", 8, "number of CPUs of the lima VM (requires --vm)")
+	cmd.PersistentFlags().IntVar(&opt.VMMemory, "vm-memory", 16, "memory in GiB of the lima VM (requires --vm)")
+	cmd.PersistentFlags().IntVar(&opt.VMDisk, "vm-disk", 60, "disk size in GiB of the lima VM (requires --vm)")
+
+	for key := range opt.HostPorts {
+		switch key {
+		case "http", "https", "apiserver", "tunnel":
+		default:
+			logger.Fatalf("invalid --host-ports key %q, valid keys are http, https, apiserver, tunnel", key)
+		}
+	}
+
+	for key, value := range opt.ImageOverrides {
+		switch key {
+		case "kubermatic", "api", "ui", "addons":
+		default:
+			logger.Fatalf("invalid --image-override key %q, valid keys are kubermatic, api, ui, addons", key)
+		}
+		if key == "addons" && !strings.Contains(value, "/") {
+			logger.Fatalf("--image-override addons accepts a repository, e.g. localhost:5000/addons")
+		}
+	}
+
+	if opt.Registry != "" && !strings.Contains(opt.Registry, ":") {
+		logger.Fatalf("--registry must be given as host:port, e.g. localhost:5000")
+	}
+
 	return cmd
 }
 
-func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc) {
+func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc, *limaVM) {
+	appContext := context.Background()
+
+	var vm *limaVM
+	if opt.VM {
+		startedVM, err := prepareLimaVM(appContext, logger, opt)
+		if err != nil {
+			logger.Fatalf("failed to prepare the lima VM: %v", err)
+		}
+		vm = startedVM
+	}
+
+	registryCertsRoot := ""
+	if opt.Registry != "" {
+		registryCertsRoot = filepath.Join(dir, "containerd-certs.d")
+		registryCertsDir := filepath.Join(registryCertsRoot, opt.Registry)
+		if err := os.MkdirAll(registryCertsDir, 0755); err != nil {
+			logger.Fatalf("failed to create containerd certs directory for registry %q: %v", opt.Registry, err)
+		}
+		registryEndpoint := "http://" + opt.Registry
+		if vm != nil {
+			registryEndpoint = fmt.Sprintf("http://%s", net.JoinHostPort(vm.ip, strconv.Itoa(limaRegistryPort)))
+		} else if host := localInterfaceAddress(); host != nil {
+			if _, port, err := net.SplitHostPort(opt.Registry); err == nil && port != "" {
+				registryEndpoint = fmt.Sprintf("http://%s:%s", host.String(), port)
+			}
+		}
+		hostsToml := fmt.Sprintf("server = %q\n\n[host.%q]\n  capabilities = [\"pull\"]\n", registryEndpoint, registryEndpoint)
+		if err := os.WriteFile(filepath.Join(registryCertsDir, "hosts.toml"), []byte(hostsToml), 0644); err != nil {
+			logger.Fatalf("failed to write hosts.toml for registry %q: %v", opt.Registry, err)
+		}
+	}
+
+	// inside the VM the kind config must reference VM-local paths and a
+	// deterministic apiserver port that lima forwards to the host
+	kindCertsRoot := registryCertsRoot
+	apiServerPort := 0
+	if vm != nil {
+		kindCertsRoot = filepath.Join(vmRemoteDir, "containerd-certs.d")
+		apiServerPort = vmKindAPIserverPort
+	}
+
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
-	configContent := kindConfigContent
+	configContent := kindConfigContent(opt.HostPorts, kindCertsRoot, apiServerPort)
 	if opt.KubeOVNEnabled {
 		configContent += kindConfigKubeOVNContent
 		logger.Info("Disabling kindnet to deploy kube-ovn cni plugin")
@@ -162,42 +269,54 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Infof("Creating kind cluster %q…", kindClusterName)
+	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 
-	// start the manager in its own goroutine
-	appContext := context.Background()
-	clusterExists := false
-
-	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
-	if err == nil {
-		if strings.Contains(strings.TrimSpace(string(out)), kindClusterName) {
-			clusterExists = true
+	if vm != nil {
+		if err := vm.createKindCluster(appContext, logger, opt, kindConfig, registryCertsRoot); err != nil {
+			logger.Fatalf("%v", err)
 		}
-	}
-
-	if clusterExists {
-		logger.Infof("Kind cluster %q already exists, skipping creation...", kindClusterName)
+		if err := vm.extractKubeconfig(appContext, logger, kindKubeConfigPath); err != nil {
+			logger.Fatalf("%v", err)
+		}
 	} else {
-		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", kindClusterName, "--config", kindConfig).CombinedOutput()
+		logger.Infof("Creating kind cluster %q…", opt.ClusterName)
+
+		clusterExists := false
+
+		out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
+		if err == nil {
+			if strings.Contains(strings.TrimSpace(string(out)), opt.ClusterName) {
+				clusterExists = true
+			}
+		}
+
+		if clusterExists {
+			logger.Infof("Kind cluster %q already exists, skipping creation...", opt.ClusterName)
+		} else {
+			out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", opt.ClusterName, "--config", kindConfig).CombinedOutput()
+			if err != nil {
+				logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+			}
+		}
+
+		if out, err := exec.CommandContext(appContext, "kubectl", "config", "use-context", "kind-"+opt.ClusterName).CombinedOutput(); err != nil {
+			logger.Fatalf("failed to switch kubectl to context kind-%s: %v\n%v", opt.ClusterName, err, string(out))
+		}
+		kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
+		kindKubeConfig, err := os.Create(kindKubeConfigPath)
 		if err != nil {
-			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+			logger.Fatalf("failed to create 'kind' cluster kubeconfig: %v", err)
+		}
+		kubeconfigCmd.Stdout = kindKubeConfig
+		if err = kubeconfigCmd.Run(); err != nil {
+			logger.Fatalf("failed to write 'kind' cluster kubeconfig: %v", err)
+		}
+		if err := kindKubeConfig.Close(); err != nil {
+			logger.Fatalf("failed to close kind kubeconfig: %v", err)
 		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
-	kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
-	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
-	kindKubeConfig, err := os.Create(kindKubeConfigPath)
-	if err != nil {
-		logger.Fatalf("failed to create 'kind' cluster kubeconfig: %v", err)
-	}
-	kubeconfigCmd.Stdout = kindKubeConfig
-	if err = kubeconfigCmd.Run(); err != nil {
-		logger.Fatalf("failed to write 'kind' cluster kubeconfig: %v", err)
-	}
-	if err := kindKubeConfig.Close(); err != nil {
-		logger.Fatalf("failed to close 'kind' cluster kubeconfig: %v", err)
-	}
 
 	if err := flag.Set("kubeconfig", kindKubeConfigPath); err != nil {
 		logger.Fatalf("failed to close set kubeconfig path: %v", err)
@@ -233,7 +352,7 @@ func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntim
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
 		logger.Fatal("Timed out while waiting for Kubernetes client caches to synchronize.")
 	}
-	return mgr.GetClient(), cancel
+	return mgr.GetClient(), cancel, vm
 }
 
 func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, o ctrlruntimeclient.Object) {
@@ -320,20 +439,50 @@ func prepareYAMLFile(dir, basename string, modifier func(*yamled.Document) error
 	return outputFile, nil
 }
 
-func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
+func prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase string, imageOverrides map[string]string) (string, error) {
 	return prepareYAMLFile(dir, "kubermatic", func(doc *yamled.Document) error {
 		doc.Set(yamled.Path{"spec", "ingress", "domain"}, kkpEndpoint)
 		doc.Remove(yamled.Path{"spec", "ingress", "certificateIssuer"})
-		doc.Set(yamled.Path{"spec", "auth", "tokenIssuer"}, fmt.Sprintf("http://%v/dex", kkpEndpoint))
+		doc.Set(yamled.Path{"spec", "auth", "tokenIssuer"}, fmt.Sprintf("http://%v/dex", endpointBase))
 		doc.Set(yamled.Path{"spec", "auth", "issuerClientSecret"}, randomString(32))
 		doc.Set(yamled.Path{"spec", "auth", "issuerCookieKey"}, randomString(32))
 		doc.Set(yamled.Path{"spec", "auth", "serviceAccountKey"}, randomString(32))
+
+		if value, ok := imageOverrides["api"]; ok {
+			repository, tag, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				doc.Set(yamled.Path{"spec", "api", "dockerRepository"}, repository)
+			}
+			if tag != "" {
+				doc.Set(yamled.Path{"spec", "api", "dockerTag"}, tag)
+			}
+		}
+		if value, ok := imageOverrides["ui"]; ok {
+			repository, tag, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				doc.Set(yamled.Path{"spec", "ui", "dockerRepository"}, repository)
+			}
+			if tag != "" {
+				doc.Set(yamled.Path{"spec", "ui", "dockerTag"}, tag)
+			}
+		}
+		if value, ok := imageOverrides["addons"]; ok {
+			doc.Set(yamled.Path{"spec", "userCluster", "addons", "dockerRepository"}, value)
+		}
+		if value, ok := imageOverrides["kubermatic"]; ok {
+			repository, _, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				for _, component := range []string{"seedController", "masterController", "webhook"} {
+					doc.Set(yamled.Path{"spec", component, "dockerRepository"}, repository)
+				}
+			}
+		}
 
 		return nil
 	})
 }
 
-func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
+func prepareHelmValues(dir, kkpEndpoint, endpointBase string, imageOverrides map[string]string) (string, error) {
 	var imagePullSecret string
 
 	kubermaticFile := filepath.Join(dir, "kubermatic.example.yaml")
@@ -379,7 +528,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		// dex configuration
 		doc.Set(yamled.Path{"dex", "replicaCount"}, 1)
 		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
-		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
+		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", endpointBase))
 		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
 			"enabled": false,
 			"tls":     []map[string]interface{}{},
@@ -391,6 +540,16 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		// This ensures both configurations use the same value
 		if imagePullSecret != "" {
 			doc.Set(yamled.Path{"kubermaticOperator", "imagePullSecret"}, imagePullSecret)
+		}
+
+		if value, ok := imageOverrides["kubermatic"]; ok {
+			repository, tag, hasRepository := splitImageOverride(value)
+			if hasRepository {
+				doc.Set(yamled.Path{"kubermaticOperator", "image", "repository"}, repository)
+			}
+			if tag != "" {
+				doc.Set(yamled.Path{"kubermaticOperator", "image", "tag"}, tag)
+			}
 		}
 
 		clients, ok := doc.GetArray(yamled.Path{"dex", "config", "staticClients"})
@@ -410,7 +569,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 					}
 
 					u.Scheme = "http"
-					u.Host = kkpEndpoint
+					u.Host = endpointBase
 
 					doc.Set(yamled.Path{"dex", "config", "staticClients", i, "RedirectURIs", j}, u.String())
 				}
@@ -421,16 +580,29 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 	})
 }
 
-func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions) string {
-	kkpEndpoint := getLocalEndpoint(logger, opts)
-	logger.Infof("Installing KKP at %v…", kkpEndpoint) // TODO: prettify
+func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions, vm *limaVM) string {
+	kkpEndpoint := ""
+	if vm != nil && opts.Endpoint == "" {
+		if ip := net.ParseIP(vm.ip); ip != nil {
+			kkpEndpoint = ipToNip(ip)
+		} else {
+			logger.Fatalf("failed to determine the VM endpoint from IP %q, please use --endpoint flag", vm.ip)
+		}
+	} else {
+		kkpEndpoint = getLocalEndpoint(logger, opts)
+	}
+	endpointBase := kkpEndpoint
+	if httpPort := opts.hostPort("http"); httpPort != 80 {
+		endpointBase = fmt.Sprintf("%s:%d", kkpEndpoint, httpPort)
+	}
+	logger.Infof("Installing KKP at %v…", endpointBase) // TODO: prettify
 
-	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint)
+	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint, endpointBase, opts.ImageOverrides)
 	if err != nil {
 		logger.Fatalf("failed to prepare Kubermatic configuration: %v", err)
 	}
 
-	valuesPath, err := prepareHelmValues(dir, kkpEndpoint)
+	valuesPath, err := prepareHelmValues(dir, kkpEndpoint, endpointBase, opts.ImageOverrides)
 	if err != nil {
 		logger.Fatalf("failed to prepare Helm values: %v", err)
 	}
@@ -440,6 +612,9 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
 	ms := kubermaticmaster.NewStack(false)
+	if err := ensureKubermaticCRDs(opts.ChartsDirectory); err != nil {
+		logger.Fatalf("failed to ensure Kubermatic CRDs are available: %v", err)
+	}
 	k, uk, err := loadKubermaticConfiguration(kubermaticPath)
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
@@ -469,12 +644,12 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 
 	kubeconfig := filepath.Join(dir, "kube-config.yaml")
 	internalKubeconfig := filepath.Join(dir, "kube-config-internal.yaml")
-	kindSeedSecret := initKindSeedSecret(kubeClient, logger, kubeconfig, internalKubeconfig)
+	kindSeedSecret := initKindSeedSecret(kubeClient, logger, opts.ClusterName, kubeconfig, internalKubeconfig)
 	ensureResource(kubeClient, logger, &kindSeedSecret)
 	kindPreset := initKindPreset(logger, internalKubeconfig, opts.KubeOVNEnabled)
 	ensureResource(kubeClient, logger, &kindPreset)
 	ensureResource(kubeClient, logger, &kindLocalSeed)
-	return kkpEndpoint
+	return endpointBase
 }
 
 func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
@@ -490,7 +665,7 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 			logger.Fatal("Failed to find examples directory, please ensure it and the charts directory from the KKP download archive remain together with the kubermatic-installer.")
 		}
 
-		kubeClient, cancel := localKind(logger, exampleDir, opt)
+		kubeClient, cancel, vm := localKind(logger, exampleDir, opt)
 		defer cancel()
 
 		kubeconfig := filepath.Join(exampleDir, "kube-config.yaml")
@@ -502,14 +677,96 @@ func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 			installKubeOVN(logger, helmClient, *opt)
 		}
 		installKubevirt(logger, helmClient, *opt)
-		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, *opt)
+		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, *opt, vm)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
 		logger.Infof("  Default login:    %v", kkpDefaultLogin)
 		logger.Infof("  Default password: %v\n", kkpDefaultPassword)
-		logger.Infof("You can tear down the environment by %q", localKindTeardownCmd)
+		if vm != nil {
+			logger.Infof("You can use the cluster via: kubectl --kubeconfig %s get nodes", filepath.Join(exampleDir, "kube-config.yaml"))
+			logger.Infof("You can tear down the whole environment by %q", fmt.Sprintf("limactl delete -f %s", vm.instance))
+			logger.Infof("  or only the kind cluster by %q", fmt.Sprintf("limactl shell %s -- sg docker -c %q", vm.instance, "kind delete cluster -n "+opt.ClusterName))
+		} else {
+			logger.Infof("You can tear down the environment by %q", fmt.Sprintf("kind delete cluster -n %s", opt.ClusterName))
+		}
 		return nil
 	})
+}
+
+func ensureKubermaticCRDs(chartsDirectory string) error {
+	target := filepath.Join(chartsDirectory, "kubermatic-operator", "crd", "k8c.io")
+	source := filepath.Join("pkg", "crd", "k8c.io")
+
+	entries, err := os.ReadDir(source)
+	if err != nil {
+		if _, targetErr := os.ReadDir(target); targetErr == nil {
+			return nil
+		}
+
+		return fmt.Errorf("no CRDs available: chart directory %s is empty and source directory %s is unavailable: %w", target, source, err)
+	}
+
+	if err := os.MkdirAll(target, 0755); err != nil {
+		return fmt.Errorf("failed to create %s: %w", target, err)
+	}
+
+	copied := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(source, entry.Name()))
+		if err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(filepath.Join(target, entry.Name()), data, 0644); err != nil {
+			return err
+		}
+
+		copied++
+	}
+
+	if copied == 0 {
+		return fmt.Errorf("no CRD manifests found in %s", source)
+	}
+
+	return nil
+}
+
+func splitImageOverride(value string) (repository, tag string, hasRepository bool) {
+	slash := strings.LastIndex(value, "/")
+	if slash < 0 {
+		return "", value, false
+	}
+
+	rest := value[slash+1:]
+	if colon := strings.LastIndex(rest, ":"); colon >= 0 {
+		return value[:slash+1+colon], rest[colon+1:], true
+	}
+
+	return value, "", true
+}
+
+func localInterfaceAddress() net.IP {
+	gwip, err := gateway.DiscoverGateway()
+	if err != nil {
+		return nil
+	}
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil
+	}
+
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.Contains(gwip) {
+			return ipnet.IP
+		}
+	}
+
+	return nil
 }
 
 func getLocalEndpoint(logger *logrus.Logger, opts LocalOptions) string {
@@ -545,9 +802,9 @@ func ipToNip(ip net.IP) string {
 	return fmt.Sprintf("%v.%v", processedIP, sslip)
 }
 
-func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
+func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, clusterName, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
 	cpPod := corev1.Pod{}
-	key := ctrlruntimeclient.ObjectKey{Namespace: "kube-system", Name: "kube-apiserver-kkp-cluster-control-plane"}
+	key := ctrlruntimeclient.ObjectKey{Namespace: "kube-system", Name: fmt.Sprintf("kube-apiserver-%s-control-plane", clusterName)}
 	if err := kubeClient.Get(context.Background(), key, &cpPod); err != nil {
 		logger.Fatalf("Failed to get IP for kind control-plane pod: %v", err)
 	}
