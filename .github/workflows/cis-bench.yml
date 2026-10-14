@@ -116,7 +116,7 @@ jobs:
 
       # ─── Checkout conformance-ee (the suite source) ───────────────────
       - name: Checkout conformance-ee
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: kubermatic/conformance-ee
           token: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload conformance reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conformance-reports-cis-${{ env.KKP_VERSION }}-${{ github.run_id }}
           path: |
@@ -370,7 +370,7 @@ jobs:
       # ─── Open docs PR in kubermatic/docs ──────────────────────────────
       - name: Checkout kubermatic/docs
         if: ${{ !cancelled() }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: kubermatic/docs
           token: ${{ secrets.KKP_CONFORMANCE_CROSS_GH_TOKEN }}
