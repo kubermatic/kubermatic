@@ -264,20 +264,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 }
 
 func (r *reconciler) applyManagedValues(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
-	if IsSystemApplication(appDefinition) || isAdminPushed(appInstallation) {
+	if IsSystemApplication(appDefinition) {
 		return r.updateValuesBlock(ctx, appDefinition, appInstallation, workloadTolerations)
 	}
 	return nil
-}
-
-// isAdminPushed reports whether an admin marked the ApplicationDefinition default or enforced.
-// User-installed applications are left alone: tolerating the taint would let user workloads onto
-// the node pool it reserves.
-func isAdminPushed(appInstallation *appskubermaticv1.ApplicationInstallation) bool {
-	annotations := appInstallation.GetAnnotations()
-
-	return annotations[appskubermaticv1.ApplicationEnforcedAnnotation] == "true" ||
-		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] == "true"
 }
 
 // userClusterWorkloadTolerations returns this cluster's configured workload tolerations.
@@ -622,6 +612,10 @@ func handleAddonCleanup(ctx context.Context, applicationName string, seedCluster
 // updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place.
 func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation, workloadTolerations []corev1.Toleration) error {
 	appName := appDefinition.Name
+	getOverrideValues, exists := SystemAppsValuesGenerators[appName]
+	if !exists {
+		return nil
+	}
 
 	values, err := appInstallation.Spec.GetParsedValues()
 	if err != nil {
@@ -637,16 +631,7 @@ func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appsk
 		values = initialValues
 	}
 
-	var overrideValues map[string]any
-	if getOverrideValues, exists := SystemAppsValuesGenerators[appName]; exists {
-		overrideValues = getOverrideValues(appInstallation, r.overwriteRegistry, workloadTolerations)
-	} else {
-		overrideValues = generateApplicationTolerationValues(appName, workloadTolerations, values)
-	}
-
-	if len(overrideValues) == 0 {
-		return nil
-	}
+	overrideValues := getOverrideValues(appInstallation, r.overwriteRegistry, workloadTolerations)
 
 	if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 		return fmt.Errorf("failed to merge application values: %w", err)
