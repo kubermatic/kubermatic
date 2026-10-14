@@ -15,7 +15,7 @@
 apiVersion: v2
 name: consul
 version: 9.9.9-dev
-appVersion: 1.22.2
+appVersion: 1.22.7
 kubeVersion: ">=1.22.0-0"
 description: Official HashiCorp Consul Chart
 home: https://www.consul.io
@@ -26,4 +26,4 @@ sources:
 dependencies:
   - name: consul
     repository: https://helm.releases.hashicorp.com
-    version: 1.9.2
+    version: 1.9.11
