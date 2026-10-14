@@ -822,11 +822,10 @@ func TestValidateDefaultComponentSettings(t *testing.T) {
 			},
 		},
 		{
-			name: "rejects zero duration",
+			name: "accepts zero duration",
 			machineController: &kubermaticv1.MachineControllerSettings{
 				SkipEvictionAfter: &metav1.Duration{},
 			},
-			wantError: "skipEvictionAfter",
 		},
 		{
 			name: "rejects negative duration",

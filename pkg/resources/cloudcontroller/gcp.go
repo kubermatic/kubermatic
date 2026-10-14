@@ -186,7 +186,7 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 func getGCPInitContainer(data *resources.TemplateData) corev1.Container {
 	return corev1.Container{
 		Name:    "decode-sa",
-		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.10.0")),
+		Image:   registry.Must(data.RewriteImage(data.UtilImage())),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
@@ -219,8 +219,11 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v135:
 		return "v35.0.8"
 	case v136:
-		return "v36.0.7"
+		return "v36.2.4"
+	case v137:
+		// no v37 line upstream yet; fall through to the 1.36 tag
+		return "v36.2.4"
 	default:
-		return "v36.0.7"
+		return "v36.2.4"
 	}
 }

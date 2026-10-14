@@ -12,6 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Configures the CA bundle that KKP trusts. The bundle is rendered into the
+# "ca-bundle" ConfigMap, mounted into the kubermatic-operator and synchronized by
+# the operator into every seed and user cluster.
+#
+# In addition to the values below, PEM files placed in the chart's
+# static/extra-ca/ directory are appended to the bundle. This is convenient when
+# installing from an unpacked charts directory, but it has no effect when the
+# chart is pulled from a Helm repository or rendered by a GitOps tool; use the
+# values below in that case.
+caBundle:
+  # Replaces the CA bundle shipped with this chart (Mozilla root certificates
+  # from https://curl.se/ca/cacert.pem) entirely. Leave empty to keep it. Use
+  # this if KKP must trust your own PKI *only*; be aware that dropping the public
+  # root certificates breaks TLS to any endpoint they cover, e.g. public
+  # container registries or OIDC providers.
+  certificates: ""
+
+  # Appended to whichever bundle is in use, i.e. either the bundle shipped with
+  # this chart or the one configured above. Use this if KKP must trust your own
+  # PKI *in addition to* the public root certificates.
+  additionalCertificates: ""
+
 # Gateway API is the default and only supported ingress path as of KKP 2.31, so the
 # kubermatic-operator always watches and manages Gateway and HTTPRoute resources.
 # This value is deprecated and retained as a no-op for backwards compatibility.

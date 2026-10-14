@@ -19,7 +19,7 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12
+          version: v2.14
 
   golangci-sdk:
     name: lint sdk
@@ -34,10 +34,10 @@ jobs:
       # with the repository root's configuration.
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12
+          version: v2.14
           working-directory: sdk
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12
+          version: v2.14
           working-directory: sdk
           args: --config ../.golangci.yml

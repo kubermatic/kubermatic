@@ -6,13 +6,13 @@ metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.59.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.9.0"
+    app.kubernetes.io/version: "1.12.1"
 automountServiceAccountToken: false
 ---
 # Source: node-exporter/charts/node-exporter/templates/rbac-configmap.yaml
@@ -37,13 +37,13 @@ kind: ClusterRole
 metadata:
   name: node-exporter
   labels:
-    helm.sh/chart: node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.59.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.9.0"
+    app.kubernetes.io/version: "1.12.1"
 rules:
   - apiGroups: [ "authentication.k8s.io" ]
     resources:
@@ -59,13 +59,13 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.59.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.9.0"
+    app.kubernetes.io/version: "1.12.1"
   name: node-exporter
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -83,13 +83,13 @@ metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.59.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.9.0"
+    app.kubernetes.io/version: "1.12.1"
   annotations:
     prometheus.io/scrape: "true"
 spec:
@@ -112,13 +112,13 @@ metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.59.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.9.0"
+    app.kubernetes.io/version: "1.12.1"
 spec:
   selector:
     matchLabels:
@@ -136,13 +136,12 @@ spec:
         prometheus.io/port: "9100"
         prometheus.io/scrape: "true"
       labels:
-        helm.sh/chart: node-exporter-4.44.0
-        app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: metrics
-        app.kubernetes.io/part-of: node-exporter
-        app.kubernetes.io/name: node-exporter
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "1.9.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-exporter
+        app.kubernetes.io/part-of: node-exporter
+        app.kubernetes.io/version: 1.12.1
     spec:
       automountServiceAccountToken: true
       securityContext:
@@ -153,7 +152,7 @@ spec:
       serviceAccountName: node-exporter
       containers:
         - name: node-exporter
-          image: quay.io/prometheus/node-exporter:v1.9.0
+          image: quay.io/prometheus/node-exporter:v1.12.1
           imagePullPolicy: IfNotPresent
           args:
             - --path.procfs=/host/proc
@@ -161,6 +160,8 @@ spec:
             - --path.rootfs=/host/root
             - --path.udev.data=/host/root/run/udev/data
             - --web.listen-address=[$(HOST_IP)]:8100
+            - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+            - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
           securityContext:
             readOnlyRootFilesystem: true
           env:
@@ -218,7 +219,7 @@ spec:
             - name: kube-rbac-proxy-config
               mountPath: /etc/kube-rbac-proxy-config
           imagePullPolicy: IfNotPresent
-          image: "quay.io/brancz/kube-rbac-proxy:v0.18.2"
+          image: "quay.io/brancz/kube-rbac-proxy:v0.23.0"
           ports:
             - containerPort: 9100
               name: https

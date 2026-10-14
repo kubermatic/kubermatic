@@ -73,6 +73,22 @@ func TestGetFlags(t *testing.T) {
 				"-skip-eviction-after", "4h0m0s",
 			},
 		},
+		{
+			name:     "zero skip eviction override is passed through to disable the timeout",
+			features: map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: &metav1.Duration{},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+				"-node-external-cloud-provider",
+				"-skip-eviction-after", "0s",
+			},
+		},
 	}
 
 	for _, tc := range testcases {

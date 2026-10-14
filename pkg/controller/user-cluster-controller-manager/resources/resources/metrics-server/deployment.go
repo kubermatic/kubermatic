@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -58,9 +59,9 @@ const (
 )
 
 // TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics server.
-func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
+func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter, getKeyConfig triple.KeyConfigGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
-	return servingcerthelper.ServingCertSecretReconciler(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
+	return servingcerthelper.ServingCertSecretReconciler(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil, getKeyConfig)
 }
 
 // DeploymentReconciler returns the function to create and update the metrics server deployment.

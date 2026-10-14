@@ -29,4 +29,6 @@ spec:
     apiserverReplicas: 1
   featureGates:
     HeadlessInstallation: true
+    # headless installations skip the Gateway API CRDs that this controller needs
+    HTTPRouteGatewaySync: false
     EtcdLauncher: true

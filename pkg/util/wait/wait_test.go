@@ -19,6 +19,7 @@ package wait
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -56,6 +57,48 @@ func TestPollTimeout(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "transient") {
 		t.Fatalf("err should have returned the transient error message, but was: %v", err)
+	}
+}
+
+func TestPollTimeoutKeepsErrorFromBeforeDeadline(t *testing.T) {
+	executions := 0
+
+	err := Poll(context.Background(), 1*time.Millisecond, 50*time.Millisecond, func(ctx context.Context) (error, error) {
+		executions++
+		if executions == 1 {
+			return errors.New("2 of 3 nodes are ready"), nil
+		}
+
+		// simulate an API call that is still running when the timeout hits
+		<-ctx.Done()
+		return fmt.Errorf("client rate limiter Wait returned an error: %w", ctx.Err()), nil
+	})
+
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err should be a wrapped DeadlineExceeded, but is %+v", err)
+	}
+
+	if !strings.Contains(err.Error(), "2 of 3 nodes are ready") {
+		t.Fatalf("err should contain the last error from before the deadline, but was: %v", err)
+	}
+
+	if strings.Contains(err.Error(), "rate limiter") {
+		t.Fatalf("err should not contain the error caused by the expired context, but was: %v", err)
+	}
+}
+
+func TestPollTimeoutDuringFirstAttempt(t *testing.T) {
+	err := Poll(context.Background(), 1*time.Millisecond, 50*time.Millisecond, func(ctx context.Context) (error, error) {
+		<-ctx.Done()
+		return fmt.Errorf("client rate limiter Wait returned an error: %w", ctx.Err()), nil
+	})
+
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err should be a wrapped DeadlineExceeded, but is %+v", err)
+	}
+
+	if !strings.Contains(err.Error(), "rate limiter") {
+		t.Fatalf("err should fall back to the only error the condition returned, but was: %v", err)
 	}
 }
 

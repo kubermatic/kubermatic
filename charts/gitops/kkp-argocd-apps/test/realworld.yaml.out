@@ -64,7 +64,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: quay.io/minio/mc
+          image: 'quay.io/kubermatic-mirror/images/minio/mc:RELEASE.2024-03-13T23-51-57Z'
           command:
             - /bin/sh
             - -c

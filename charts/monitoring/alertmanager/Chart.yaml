@@ -15,7 +15,7 @@
 apiVersion: v2
 name: alertmanager
 version: 9.9.9-dev
-appVersion: v0.28.0
+appVersion: v0.34.1
 description: Alertmanager for Kubermatic
 keywords:
   - kubermatic
@@ -31,4 +31,4 @@ maintainers:
 dependencies:
 - name: alertmanager
   repository: https://prometheus-community.github.io/helm-charts
-  version: 1.15.0
+  version: 1.43.3

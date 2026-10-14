@@ -12,6 +12,38 @@
 - [v2.29.9](#v2299)
 - [v2.29.10](#v22910)
 - [v2.29.11](#v22911)
+- [v2.29.13](#v22913)
+
+## v2.29.13
+
+**GitHub release: [v2.29.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.13)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.12 ([#16550](https://github.com/kubermatic/kubermatic/pull/16550))
+
+#### Supported Versions
+
+- v1.34.12
+
+### Bugfixes
+
+- Fix Flatcar node auto-upgrades by updating flatcar-linux-update-operator to v0.10.0 ([#16610](https://github.com/kubermatic/kubermatic/pull/16610))
+- Fix PolicyBindings staying inactive when Kyverno policies contain server-defaulted fields ([#16619](https://github.com/kubermatic/kubermatic/pull/16619))
+
+### Updates
+
+- Pull MinIO images and charts from the Kubermatic mirror registry ([#16517](https://github.com/kubermatic/kubermatic/pull/16517))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Fix empty rows in the admin static labels form ([#8327](https://github.com/kubermatic/dashboard/pull/8327))
+
+#### Updates
+
+- Update web-terminal image version to v0.11.1 ([#8332](https://github.com/kubermatic/dashboard/pull/8332))
 
 ## v2.29.11
 

@@ -109,6 +109,14 @@ func (j *TestJig) WaitForGatekeeperHealthy(ctx context.Context, timeout time.Dur
 	return errors.New("no cluster created yet")
 }
 
+func (j *TestJig) WaitForKyvernoHealthy(ctx context.Context, timeout time.Duration) error {
+	if j.ClusterJig != nil {
+		return j.ClusterJig.WaitForKyvernoHealthy(ctx, timeout)
+	}
+
+	return errors.New("no cluster created yet")
+}
+
 func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
@@ -224,7 +232,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
 		AddSSHPublicKey(SSHPublicKey()).
-		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx22").Build())
+		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cpx22").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,

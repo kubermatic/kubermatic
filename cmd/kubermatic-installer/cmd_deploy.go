@@ -60,8 +60,15 @@ type DeployOptions struct {
 	Kubeconfig  string
 	KubeContext string
 
-	HelmBinary         string
-	HelmValues         []string
+	HelmBinary string
+	HelmValues []string
+
+	// CABundle and AdditionalCABundles are PEM files whose contents are injected into the
+	// kubermatic-operator chart's caBundle values, so that administrators do not have to
+	// wrap their certificates in a Helm values file by hand.
+	CABundle            string
+	AdditionalCABundles []string
+
 	HelmTimeout        time.Duration
 	SkipDependencies   bool
 	SkipSeedValidation sets.Set[string]
@@ -149,6 +156,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
 	cmd.PersistentFlags().StringSliceVar(&opt.HelmValues, "helm-values", nil, "full path to the Helm values.yaml used for customizing all charts (can be specified multiple times)")
+	cmd.PersistentFlags().StringVar(&opt.CABundle, "ca-bundle", "", "full path to a PEM file that replaces the CA bundle shipped with the kubermatic-operator chart")
+	cmd.PersistentFlags().StringSliceVar(&opt.AdditionalCABundles, "additional-ca-bundle", nil, "full path to a PEM file that is appended to the CA bundle (can be specified multiple times)")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
@@ -217,6 +226,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		helmValues, err := loadHelmValues(opt.HelmValues)
 		if err != nil {
 			return fmt.Errorf("failed to load Helm values: %w", err)
+		}
+
+		if err := applyCABundleFlags(logger, helmValues, opt.ChartsDirectory, opt.CABundle, opt.AdditionalCABundles); err != nil {
+			return fmt.Errorf("failed to apply CA bundle: %w", err)
 		}
 
 		deployOptions := stack.DeployOptions{

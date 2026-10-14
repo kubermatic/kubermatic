@@ -70,7 +70,7 @@ echodate "Downloading envtest binaries..."
 TMP_DIR="$(mktemp -d)"
 PATH="$PATH:$TMP_DIR"
 
-download_envtest "$TMP_DIR" "1.33.0"
+download_envtest "$TMP_DIR" "1.37.0"
 
 # restore addons at the previous release state
 currentAddons="$(mktemp -d)"

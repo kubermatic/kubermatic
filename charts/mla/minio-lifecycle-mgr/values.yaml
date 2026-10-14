@@ -16,7 +16,7 @@ lifecycleMgr:
   ## (which at the time corresponded to `latest`)
   ##
   image:
-    repository: docker.io/minio/mc
+    repository: quay.io/kubermatic-mirror/images/minio/mc
     tag: RELEASE.2024-03-13T23-51-57Z
     pullPolicy: IfNotPresent
   # list of image pull secret references, e.g.

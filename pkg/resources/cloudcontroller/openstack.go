@@ -121,6 +121,9 @@ func OpenStackCCMTag(version semver.Semver) (string, error) {
 		return "v1.35.0", nil
 	case v136:
 		return "v1.36.0", nil
+	case v137:
+		// no occm 2.37 line upstream yet; reuse the 1.36 tag
+		return "v1.36.0", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}

@@ -186,13 +186,15 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	allErrs = append(allErrs, validateAuthenticationConfiguration(spec, parentFieldPath)...)
 
+	allErrs = append(allErrs, ValidateKeyConfiguration(spec.KeyConfiguration, parentFieldPath.Child("keyConfiguration"))...)
+
 	return allErrs
 }
 
 func validateAuthenticationConfiguration(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 
-	if spec.IsAuthenticationConfigurationEnabled() && spec.OIDC.IssuerURL != "" { //nolint:staticcheck
+	if spec.IsAuthenticationConfigurationEnabled() && spec.OIDC.IssuerURL != "" {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("authenticationConfiguration"), "authenticationConfiguration and oidc.issuerURL are mutually exclusive"))
 	}
 
@@ -338,6 +340,13 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 			specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
 		)...)
 	}
+
+	// The key configuration is frozen when the cluster is created.
+	allErrs = append(allErrs, ValidateKeyConfigurationUpdate(
+		oldCluster.Spec.KeyConfiguration,
+		newCluster.Spec.KeyConfiguration,
+		specPath.Child("keyConfiguration"),
+	)...)
 
 	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
@@ -500,8 +509,8 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 		}
 	}
 
-	if n.KonnectivityEnabled != nil && !*n.KonnectivityEnabled { //nolint:staticcheck
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("konnectivityEnabled"), n.KonnectivityEnabled, //nolint:staticcheck
+	if n.KonnectivityEnabled != nil && !*n.KonnectivityEnabled {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("konnectivityEnabled"), n.KonnectivityEnabled,
 			"Konnectivity can no longer be disabled"),
 		)
 	}
@@ -522,7 +531,7 @@ func validateProxyMode(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv
 			fmt.Sprintf("%s proxy mode is not valid for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCanal)))
 	}
 
-	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) { //nolint:staticcheck
+	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
 			fmt.Sprintf("%s proxy mode can be used only when Konnectivity is enabled", resources.EBPFProxyMode)))
 	}
@@ -1419,14 +1428,17 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 }
 
 // validateMachineControllerSettings guards the machineController component
-// overrides. A zero or negative duration would make machine-controller skip
-// eviction immediately on every machine deletion, force-deleting nodes while
-// ignoring PodDisruptionBudgets.
+// overrides. Zero is valid and disables the eviction timeout: machine-controller then
+// waits for eviction as long as the node is Ready and a schedulable target node
+// exists. A negative duration however would make it treat every deleting machine as
+// past the threshold, force-deleting nodes while ignoring PodDisruptionBudgets.
+// machine-controller only rejects negatives on the per-Machine annotation, not on the
+// -skip-eviction-after flag this field renders into, so the guard has to live here.
 func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 
-	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration <= 0 {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be a positive duration"))
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil && mc.SkipEvictionAfter.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be zero (to disable the eviction timeout) or a positive duration"))
 	}
 
 	return allErrs

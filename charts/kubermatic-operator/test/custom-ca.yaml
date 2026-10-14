@@ -1,0 +1,58 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The bundle shipped with the chart is replaced by one certificate, and a second
+# certificate is appended to it.
+caBundle:
+  certificates: |
+    -----BEGIN CERTIFICATE-----
+    MIIDGzCCAgOgAwIBAgIUJn2kwOFfzaafgczmBIyMIK/hzNcwDQYJKoZIhvcNAQEL
+    BQAwHDEaMBgGA1UEAwwRa2twLWNoYXJ0LXRlc3QtY2EwIBcNMjYwOTE4MDMwOTIy
+    WhgPMjEyNjA4MjUwMzA5MjJaMBwxGjAYBgNVBAMMEWtrcC1jaGFydC10ZXN0LWNh
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5oR71snrLxnnjBfMOId/
+    47AtNlLNop0lwOXbnadXaKqSykNuWI6PqHExmk5fvBYJfMEIpHuHaWVBVpguTGkP
+    L5VOGiJ+jgeATZ2HoM0KIv7S6+QUfAwPwxhdJawIYJq8683ZLdyAcdPC/513QUdI
+    64KxditaiAh7UlqH3Z68hgK4SlaGgh4/0dGXRn8MfKXFFvpH//WyGfWdJYX9brc8
+    cVCjXcUtaHMfJ14Ua31xGxmqCDj9jwRJX86YR7CKWXdlHxkRIDBn9CGku+UUnhfV
+    +lAze1maylQuTTbVoofIj/3y9uCIoWmsK02BVpn72OHX4pPZLQiSYX19oO+oSvgL
+    1QIDAQABo1MwUTAdBgNVHQ4EFgQUB2dJKtHjwCk+oVg+KxKvmghdUZ4wHwYDVR0j
+    BBgwFoAUB2dJKtHjwCk+oVg+KxKvmghdUZ4wDwYDVR0TAQH/BAUwAwEB/zANBgkq
+    hkiG9w0BAQsFAAOCAQEANEoAa9PQ1k8g7xPlyelOY/h42QaC2KxxqsFjLq+F3JXB
+    brKLNPYMU9r3eZMgFUkWTLWioNavOWQPb44G+7tv04iDSWTZJ3Z8B7BAmFCPMGLY
+    b+2VEx7o2Yi65k0tNS846R+7+mC0q72LwSEdIRH8sjnLNd0QM5Stus5+9rG3ORC/
+    GM/2Fk5+0MkAozH+8EeeCdUSqj9yETrSmsu75FGiQCgNPkw9c3RfDKuKNjrh4Q0v
+    mg8uEw+QCGNj5+ysr3jmvMaSo5A/aJ96iPVJxfkQH3jT3I9ldE8qGjqbfyRf7u6W
+    VjhPV4pVN4vsMS0rDUe0aBw5wt9Bs2UxI07K9pcnbw==
+    -----END CERTIFICATE-----
+  additionalCertificates: |
+    -----BEGIN CERTIFICATE-----
+    MIIDMTCCAhmgAwIBAgIUUN3JW6gObDDYu9BX1iRv/H9olyYwDQYJKoZIhvcNAQEL
+    BQAwJzElMCMGA1UEAwwca2twLWNoYXJ0LXRlc3QtYWRkaXRpb25hbC1jYTAgFw0y
+    NjA5MTgwMzA5MjJaGA8yMTI2MDgyNTAzMDkyMlowJzElMCMGA1UEAwwca2twLWNo
+    YXJ0LXRlc3QtYWRkaXRpb25hbC1jYTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
+    AQoCggEBAJAeq7SrP13dPXCuAzovJygbWmq5m0KJwpOZ/HJWkq4pW8XOx0RVHbVt
+    qt8C4HsaaQyYc9v/S8SHuhCewGGwkcFs5Fq19zG20U7O8kH3KDL0iRlp7hJDVlj+
+    MT+zf8BbQMsBvcklGuK7EeYA1MaJszR1IVFQ3YboeMTDkSmV97LjnOpovcTsV1xB
+    /IaHGououC1DPi3eUZVMI6JEy7ThNt3yREH1oS9Umt8wqsm4O1nNoo7/Yx7lQ3et
+    5ZcWXhPIDUrO0rnqz6uiY65lNXOHHQKSgNVXzXIIqqhFvCKdHQGA7i0CP6NlbWeQ
+    3QQJc9pN4Pj8mCybsRW/5UP4SngSAX8CAwEAAaNTMFEwHQYDVR0OBBYEFNZJlPv3
+    lfZm0MCqqd4vAAzSTJ1dMB8GA1UdIwQYMBaAFNZJlPv3lfZm0MCqqd4vAAzSTJ1d
+    MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBADDhKZ0gDsVmSebH
+    vywyPZOrX/Luw2N5O0WhN/D0MUw7ouftVUQSUfspBTuRQOFO3bQONDowb6LgXX8U
+    xsqOHzcOb2vX4tmsWo2vVQKjemK8KHoaH9RyqAJj5zhZLcCafcZRoLN6FZyhVMU2
+    n9JYnJ+D9GLtIrBFfXwBcS+XKTGqLNEcrmmxODpUm46Mjx+G4MEQhaAN7WN4zXSm
+    FJvf4Tc2mUQi7OuxfO2Npynoi3z0B/GV4HhIopaS89HbGGER9wCELYx8dalDlfQX
+    A+GlE/RzzkHssDKLOPMTuJx3eabLWaCjQ+EwBlfEVYjZD4llCMHkam55Zt/LL40J
+    Z1qhO4s=
+    -----END CERTIFICATE-----

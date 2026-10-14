@@ -820,6 +820,9 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 			resources.BackupEtcdClientCertificateCertSecretKey,
 			resources.BackupEtcdClientCertificateKeySecretKey,
 			getCA,
+			func() (triple.KeyConfig, error) {
+				return certificates.CertificateKeyConfig(cluster)
+			},
 		),
 	}
 

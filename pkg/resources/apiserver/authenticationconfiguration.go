@@ -67,7 +67,7 @@ func AuthenticationConfigurationReconciler(data authenticationConfigurationRecon
 				},
 				JWT: []apiserverv1.JWTAuthenticator{},
 			}
-			oidcSettings := cluster.Spec.OIDC //nolint:staticcheck
+			oidcSettings := cluster.Spec.OIDC
 			seedAuthConf := data.AuthenticationConfigurationYAML()
 
 			if data.Cluster().Spec.Version.LessThan(semver.NewSemverOrDie("1.34.0")) {

@@ -140,9 +140,10 @@ func AWSCCMVersion(version semver.Semver) string {
 	case v135:
 		return "v1.35.2"
 	case v136:
-		// no 1.36 cloud-provider-aws release published to registry.k8s.io yet
-		// (v1.36.0 tag returns 404); fall through to the newest available (1.35.2).
-		fallthrough
+		// upstream never tagged v1.36.0; the 1.36 release is v1.36.1
+		return "v1.36.1"
+	case v137:
+		return "v1.37.0"
 	default:
 		return "v1.35.2"
 	}

@@ -111,12 +111,14 @@ func (r *reconciler) removePolicyBindingCleanupFinalizers(ctx context.Context, c
 	}
 
 	for _, binding := range bindings.Items {
-		if !kuberneteshelper.HasFinalizer(&binding, kubermaticv1.PolicyBindingCleanupFinalizer) {
-			continue
-		}
-
+		// The PolicyBinding controller may have removed its finalizer before
+		// shutdown interrupted its status update, so always mark the binding inactive.
 		if err := r.markPolicyBindingInactive(ctx, cluster, &binding); err != nil {
 			return err
+		}
+
+		if !kuberneteshelper.HasFinalizer(&binding, kubermaticv1.PolicyBindingCleanupFinalizer) {
+			continue
 		}
 
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, &binding, kubermaticv1.PolicyBindingCleanupFinalizer); err != nil {
