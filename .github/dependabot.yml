@@ -11,40 +11,61 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Dependabot configuration for kubermatic/kubermatic.
+# Policy: patch-level bumps of direct Go deps are automated (grouped);
+# minor/major work is manual and review-driven. Advisory-driven bump PRs
+# arrive for direct, non-ignored dependencies; everything else surfaces
+# as alerts only.
+# Structure kept from #16362/#16408: root + /sdk across main and the
+# three supported release branches; github-actions/docker on main only.
 
 version: 2
 updates:
+  # ── Go modules · root · main ─────────────────────────────────────────
   - package-ecosystem: gomod
     directory: "/"
     target-branch: main
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
+      day: monday
+    open-pull-requests-limit: 5
+    # Patch-level bumps of direct deps only. Minor/major updates are
+    # deliberate, review-driven work. The direct scope also narrows
+    # advisory-driven PRs to direct deps; indirect advisories surface as
+    # alerts. Switch to dependency-type "all" for full advisory coverage
+    # (with indirect patch churn in the weekly group).
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    # All minor/patch bumps land as ONE grouped PR per module per branch.
     groups:
-      # the etcd modules only build together at matching versions
-      etcd:
+      go-patches:
         patterns:
-          - "go.etcd.io/etcd/*"
-    labels:
-      - dependencies
-      - release-note-none
-      - docs/none
-      - test-issue/none
-      - ok-to-test
-
-  - package-ecosystem: gomod
-    directory: "/"
-    target-branch: release/v2.31
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 1
-    groups:
-      # the etcd modules only build together at matching versions
-      etcd:
-        patterns:
-          - "go.etcd.io/etcd/*"
+          - "*"
+        update-types:
+          - "patch"
     ignore:
+      # Go toolchain: pinned by builder images in kubermatic/infra; bump it
+      # there first (same rationale as the release-branch ignore in #16362).
       - dependency-name: "go"
+      # Kubernetes libraries ride the KKP support matrix and move with the
+      # coordinated K8s version bumps. Bare ignores also suppress alert-driven
+      # bump PRs for these; Dependabot alerts still fire independently.
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      # Internal k8c.io modules (machine-controller/sdk, OSM, ...) are
+      # release-skew coupled; bump them as part of release coordination.
+      - dependency-name: "k8c.io/*"
+      # Kyverno/Velero minors track their KKP support; patch bumps still
+      # flow. These guards also hold back minor/major advisory-driven
+      # bumps for the two; patch advisories still arrive.
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
     labels:
       - dependencies
       - release-note-none
@@ -52,52 +73,35 @@ updates:
       - test-issue/none
       - ok-to-test
 
-  - package-ecosystem: gomod
-    directory: "/"
-    target-branch: release/v2.30
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 1
-    groups:
-      # the etcd modules only build together at matching versions
-      etcd:
-        patterns:
-          - "go.etcd.io/etcd/*"
-    ignore:
-      - dependency-name: "go"
-    labels:
-      - dependencies
-      - release-note-none
-      - docs/none
-      - test-issue/none
-      - ok-to-test
-
-  - package-ecosystem: gomod
-    directory: "/"
-    target-branch: release/v2.29
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 1
-    groups:
-      # the etcd modules only build together at matching versions
-      etcd:
-        patterns:
-          - "go.etcd.io/etcd/*"
-    ignore:
-      - dependency-name: "go"
-    labels:
-      - dependencies
-      - release-note-none
-      - docs/none
-      - test-issue/none
-      - ok-to-test
-
+  # ── Go modules · /sdk · main ─────────────────────────────────────────
+  # Same policy as the root main entry.
   - package-ecosystem: gomod
     directory: "/sdk"
     target-branch: main
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
     labels:
       - dependencies
       - release-note-none
@@ -105,14 +109,140 @@ updates:
       - test-issue/none
       - ok-to-test
 
+  # ── Go modules · root · release/v2.31 ────────────────────────────────
+  # Maintenance mode: same policy as main (patch-only, grouped).
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.31
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  # ── Go modules · root · release/v2.30 ────────────────────────────────
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.30
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  # ── Go modules · root · release/v2.29 ────────────────────────────────
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: release/v2.29
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  # ── Go modules · /sdk · release/v2.31 ────────────────────────────────
   - package-ecosystem: gomod
     directory: "/sdk"
     target-branch: release/v2.31
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
     ignore:
       - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
     labels:
       - dependencies
       - release-note-none
@@ -120,14 +250,34 @@ updates:
       - test-issue/none
       - ok-to-test
 
+  # ── Go modules · /sdk · release/v2.30 ────────────────────────────────
   - package-ecosystem: gomod
     directory: "/sdk"
     target-branch: release/v2.30
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
     ignore:
       - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
     labels:
       - dependencies
       - release-note-none
@@ -135,14 +285,78 @@ updates:
       - test-issue/none
       - ok-to-test
 
+  # ── Go modules · /sdk · release/v2.29 ────────────────────────────────
   - package-ecosystem: gomod
     directory: "/sdk"
     target-branch: release/v2.29
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
+      day: monday
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      go-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
     ignore:
       - dependency-name: "go"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
+      - dependency-name: "k8c.io/*"
+      - dependency-name: "github.com/kyverno/kyverno"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "github.com/vmware-tanzu/velero"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "deps"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  # ── GitHub Actions · main ────────────────────────────────────────────
+  # Workflow action pins (cis-bench, golangci-lint), updated on main only.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+      - release-note-none
+      - docs/none
+      - test-issue/none
+      - ok-to-test
+
+  # ── Docker · main ────────────────────────────────────────────────────
+  # Base-image updates for every Dockerfile in the repo.
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/addons"
+      - "/cmd/*"
+      - "/hack/images/*"
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "docker"
     labels:
       - dependencies
       - release-note-none
