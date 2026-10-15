@@ -75,3 +75,59 @@ func TestTypedPredicate(t *testing.T) {
 		})
 	}
 }
+
+func TestTypedPredicateUpdate(t *testing.T) {
+	testCases := []struct {
+		name       string
+		workerName string
+		oldLabels  map[string]string
+		newLabels  map[string]string
+		expected   bool
+	}{
+		{
+			name:       "an update from a matching old object to an unmatched new object passes",
+			workerName: "dev2",
+			oldLabels:  map[string]string{kubermaticv1.WorkerNameLabelKey: "dev2"},
+			newLabels:  nil,
+			expected:   true,
+		},
+		{
+			name:       "an update from an unmatched old object to a matching new object passes",
+			workerName: "dev2",
+			oldLabels:  nil,
+			newLabels:  map[string]string{kubermaticv1.WorkerNameLabelKey: "dev2"},
+			expected:   true,
+		},
+		{
+			name:       "an update between two unmatched objects does not pass",
+			workerName: "dev2",
+			oldLabels:  nil,
+			newLabels:  nil,
+			expected:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			oldInstance := &kubermaticv1.ClusterTemplateInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "instance",
+					Labels: tc.oldLabels,
+				},
+			}
+			newInstance := &kubermaticv1.ClusterTemplateInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "instance",
+					Labels: tc.newLabels,
+				},
+			}
+
+			pred := TypedPredicate[*kubermaticv1.ClusterTemplateInstance](tc.workerName)
+
+			updateEvent := event.TypedUpdateEvent[*kubermaticv1.ClusterTemplateInstance]{ObjectOld: oldInstance, ObjectNew: newInstance}
+			if pred.UpdateFunc(updateEvent) != tc.expected {
+				t.Errorf("update event: expected match %t, got %t", tc.expected, !tc.expected)
+			}
+		})
+	}
+}

@@ -35,6 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -73,6 +74,11 @@ func Add(
 		Named(ControllerName).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
+			// allows registering this controller on more than one manager in
+			// the same process, which the two-manager integration test does
+			// to reproduce a shared seed; in production every manager is its
+			// own process and this option is inert
+			SkipNameValidation: ptr.To(true),
 		}).
 		For(&kubermaticv1.ClusterTemplateInstance{}, builder.WithPredicates(workerlabel.Predicate(workerName))).
 		Build(reconciler)
@@ -94,9 +100,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster template instance %s: %w", request.NamespacedName, err)
 	}
 
-	// mirror the worker-name guard the shared cluster wrapper applies to Cluster
-	// objects, so a manager only processes instances carrying its own worker name
-	if instance.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+	// the same worker-name ownership rule the watch predicate enforces, applied
+	// again here to guard against a stale cache delivering a foreign instance
+	if !workerlabel.Matches(r.workerName, instance.Labels) {
 		return reconcile.Result{}, nil
 	}
 
