@@ -33,7 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -48,12 +47,11 @@ const (
 )
 
 type reconciler struct {
-	log                     *zap.SugaredLogger
-	workerNameLabelSelector labels.Selector
-	workerName              string
-	recorder                events.EventRecorder
-	namespace               string
-	seedClient              ctrlruntimeclient.Client
+	log        *zap.SugaredLogger
+	workerName string
+	recorder   events.EventRecorder
+	namespace  string
+	seedClient ctrlruntimeclient.Client
 }
 
 func Add(
@@ -63,26 +61,20 @@ func Add(
 	namespace string,
 	numWorkers int,
 ) error {
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %w", err)
-	}
-
 	reconciler := &reconciler{
-		log:                     log.Named(ControllerName),
-		workerNameLabelSelector: workerSelector,
-		workerName:              workerName,
-		recorder:                mgr.GetEventRecorder(ControllerName),
-		namespace:               namespace,
-		seedClient:              mgr.GetClient(),
+		log:        log.Named(ControllerName),
+		workerName: workerName,
+		recorder:   mgr.GetEventRecorder(ControllerName),
+		namespace:  namespace,
+		seedClient: mgr.GetClient(),
 	}
 
-	_, err = builder.ControllerManagedBy(mgr).
+	_, err := builder.ControllerManagedBy(mgr).
 		Named(ControllerName).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
-		For(&kubermaticv1.ClusterTemplateInstance{}).
+		For(&kubermaticv1.ClusterTemplateInstance{}, builder.WithPredicates(workerlabel.Predicate(workerName))).
 		Build(reconciler)
 
 	return err
@@ -100,6 +92,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster template instance %s: %w", request.NamespacedName, err)
+	}
+
+	// mirror the worker-name guard the shared cluster wrapper applies to Cluster
+	// objects, so a manager only processes instances carrying its own worker name
+	if instance.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return reconcile.Result{}, nil
 	}
 
 	err := r.reconcile(ctx, instance, log)
