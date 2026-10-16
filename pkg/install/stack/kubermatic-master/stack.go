@@ -791,7 +791,7 @@ func httpRouteGatewayAcceptanceStatus(route *gatewayapiv1.HTTPRoute, gatewayName
 	}
 
 	for _, parentStatus := range route.Status.Parents {
-		if !gatewayutil.ParentReferenceMatchesGateway(route.Namespace, parentStatus.ParentRef, gatewayName) {
+		if !gatewayutil.ParentStatusMatchesGateway(route, parentStatus.ParentRef, gatewayName) {
 			continue
 		}
 
