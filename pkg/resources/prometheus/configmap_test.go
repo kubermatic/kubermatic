@@ -17,6 +17,7 @@ limitations under the License.
 package prometheus
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -128,6 +129,30 @@ func TestKonnectivityAgentAlertsRequireSchedulableNodes(t *testing.T) {
 		"KonnectivityAgentsUnhealthy": "15m",
 	}
 
+	var config struct {
+		ScrapeConfigs []struct {
+			JobName              string `json:"job_name"`
+			MetricRelabelConfigs []struct {
+				Action string `json:"action"`
+				Regex  string `json:"regex"`
+			} `json:"metric_relabel_configs"`
+		} `json:"scrape_configs"`
+	}
+	require.NoError(t, yaml.Unmarshal([]byte(cm.Data["prometheus.yaml"]), &config))
+
+	var ksmKeep *regexp.Regexp
+	for _, sc := range config.ScrapeConfigs {
+		if sc.JobName != "kube-state-metrics" {
+			continue
+		}
+		for _, mrc := range sc.MetricRelabelConfigs {
+			if mrc.Action == "keep" {
+				ksmKeep = regexp.MustCompile(mrc.Regex)
+			}
+		}
+	}
+	require.NotNil(t, ksmKeep, "kube-state-metrics keep filter not found")
+
 	found := 0
 	for _, group := range rules.Groups {
 		for _, rule := range group.Rules {
@@ -141,6 +166,11 @@ func TestKonnectivityAgentAlertsRequireSchedulableNodes(t *testing.T) {
 			require.Contains(t, rule.Expr, "and on(namespace)", rule.Alert)
 			require.Contains(t, rule.Expr, `kube_node_status_condition{condition="Ready",status="true"} == 1`, rule.Alert)
 			require.Contains(t, rule.Expr, "unless on(namespace, node) kube_node_spec_unschedulable == 1", rule.Alert)
+
+			// the gate silently opens if the scrape drops a metric it reads
+			for _, metric := range regexp.MustCompile(`kube_[a-z_]+`).FindAllString(rule.Expr, -1) {
+				require.True(t, ksmKeep.MatchString(metric), "%s: %s is dropped by the kube-state-metrics scrape", rule.Alert, metric)
+			}
 		}
 	}
 	require.Equal(t, len(expected), found)
