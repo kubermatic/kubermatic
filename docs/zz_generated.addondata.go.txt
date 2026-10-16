@@ -66,6 +66,8 @@ type ClusterData struct {
 	KubeVirtInfraVolumeSnapshotClasses []kubermaticv1.KubeVirtInfraVolumeSnapshotClass
 	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
 	DisableCSIDriver bool
+	// WorkloadTolerations are added to every addon workload automatically; templates need not render them.
+	WorkloadTolerations []corev1.Toleration
 }
 
 // ClusterAddress stores access and address information of a cluster.

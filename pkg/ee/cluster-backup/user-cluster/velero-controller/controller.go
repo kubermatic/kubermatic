@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -263,17 +264,19 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to reconcile Velero cloud credentials: %w", err)
 	}
 
+	tolerations := modifier.Tolerations(resources.GetUserClusterWorkloadTolerations(cluster.Spec.ComponentsOverride))
+
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		userclusterresources.DeploymentReconciler(data),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel, tolerations); err != nil {
 		return fmt.Errorf("failed to reconcile Velero Deployment: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		userclusterresources.DaemonSetReconciler(data),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel, tolerations); err != nil {
 		return fmt.Errorf("failed to reconcile Velero node-agent DaemonSet: %w", err)
 	}
 
