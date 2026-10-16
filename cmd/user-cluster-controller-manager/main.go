@@ -65,6 +65,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -311,6 +312,12 @@ func main() {
 
 	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
 
+	// The controllers only run on the leader, so their "reconciled successfully once"
+	// checks would keep standby replicas unready forever; let standbys pass them.
+	addReconciledCheck := func(name string, check healthz.Checker) error {
+		return mgr.AddReadyzCheck(name, userclustercontrollermanager.LeaderOnlyCheck(mgr.Elected(), check))
+	}
+
 	// Setup all Controllers
 	log.Info("registering controllers")
 	if err := usercluster.Add(mgr,
@@ -324,7 +331,7 @@ func main() {
 		uint32(runOp.openvpnServerPort),
 		uint32(runOp.kasSecurePort),
 		runOp.tunnelingAgentIP.IP,
-		mgr.AddReadyzCheck,
+		addReconciledCheck,
 		runOp.dnsClusterIP,
 		runOp.nodeLocalDNSCache,
 		runOp.opaIntegration,
@@ -377,7 +384,7 @@ func main() {
 		log.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr, log, mgr.AddReadyzCheck, isPausedChecker); err != nil {
+	if err := rbacusercluster.Add(mgr, log, addReconciledCheck, isPausedChecker); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered user RBAC controller")
