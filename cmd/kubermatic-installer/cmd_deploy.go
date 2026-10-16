@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -42,7 +43,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -263,7 +265,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		}
 
 		// prepare Kubernetes and Helm clients
-		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(opt.KubeContext)
+		ctrlConfig, err := loadKubeconfig(opt.Kubeconfig, opt.KubeContext)
 		if err != nil {
 			return fmt.Errorf("failed to get config: %w", err)
 		}
@@ -381,6 +383,34 @@ func greeting() string {
 	}
 
 	return greetings[rand.Intn(len(greetings))]
+}
+
+// loadKubeconfig loads the kubeconfig the same way Helm does when it is given
+// KUBECONFIG=<kubeconfig>, so that the installer and Helm always talk to the
+// same cluster. Like $KUBECONFIG, the value can be a list of files.
+func loadKubeconfig(kubeconfig string, kubeContext string) (*rest.Config, error) {
+	paths := filepath.SplitList(kubeconfig)
+
+	loadingRules := &clientcmd.ClientConfigLoadingRules{Precedence: paths}
+	if len(paths) == 1 {
+		// a single file has to exist, so that a typo is not reported as an empty configuration
+		loadingRules = &clientcmd.ClientConfigLoadingRules{ExplicitPath: paths[0]}
+	}
+
+	overrides := &clientcmd.ConfigOverrides{CurrentContext: kubeContext}
+
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides).ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig %q: %w", kubeconfig, err)
+	}
+
+	// keep controller-runtime's default of relying on API priority and fairness
+	// instead of client-side rate limiting
+	if config.QPS == 0 {
+		config.QPS = -1
+	}
+
+	return config, nil
 }
 
 func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (helm.Client, error) {
