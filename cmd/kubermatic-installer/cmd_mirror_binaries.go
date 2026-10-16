@@ -51,9 +51,9 @@ const (
 	KubeBinaryPath           = "release/%s/bin/linux/%s"
 	SHA256Exentsion          = ".sha256"
 	DefaultContainerdVersion = "v2.2.10"
-	DefaultRuncVersion = "v1.3.6"
-	ContainerdBaseURL  = "https://github.com/containerd/containerd/releases/download"
-	RuncBaseURL        = "https://github.com/opencontainers/runc/releases/download"
+	DefaultRuncVersion       = "v1.3.6"
+	ContainerdBaseURL        = "https://github.com/containerd/containerd/releases/download"
+	RuncBaseURL              = "https://github.com/opencontainers/runc/releases/download"
 	// Default output directory for binaries.
 	DefaultOutputDir = "/usr/share/nginx/html/"
 )
