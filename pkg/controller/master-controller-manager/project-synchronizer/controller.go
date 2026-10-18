@@ -163,6 +163,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
+	if err := r.deleteClusterBackupStorageLocations(ctx, log, project); err != nil {
+		return err
+	}
+
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		return ctrlruntimeclient.IgnoreNotFound(seedClient.Delete(ctx, project))
 	})
@@ -171,6 +175,31 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, project, cleanupFinalizer)
+}
+
+// deleteClusterBackupStorageLocations deletes the project's ClusterBackupStorageLocations
+// on the master cluster. Their copies on the seed clusters and their credential Secrets
+// are cleaned up by the CBSL sync controller and the Secrets' owner references.
+func (r *reconciler) deleteClusterBackupStorageLocations(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
+	cbsls := &kubermaticv1.ClusterBackupStorageLocationList{}
+	if err := r.masterClient.List(ctx, cbsls, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
+		return fmt.Errorf("failed to list ClusterBackupStorageLocations: %w", err)
+	}
+
+	for i := range cbsls.Items {
+		cbsl := &cbsls.Items[i]
+		if cbsl.DeletionTimestamp != nil {
+			continue
+		}
+
+		if err := r.masterClient.Delete(ctx, cbsl); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to delete ClusterBackupStorageLocation %s/%s: %w", cbsl.Namespace, cbsl.Name, err)
+		}
+
+		log.Infow("Deleted ClusterBackupStorageLocation of deleted project", "cbsl", ctrlruntimeclient.ObjectKeyFromObject(cbsl))
+	}
+
+	return nil
 }
 
 func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
