@@ -245,6 +245,8 @@ spec:
         app.kubernetes.io/name: alertmanager
         app.kubernetes.io/instance: release-name
       annotations:
+        prometheus.io/port: "9093"
+        prometheus.io/scrape: "true"
     spec:
       automountServiceAccountToken: true
       serviceAccountName: alertmanager
