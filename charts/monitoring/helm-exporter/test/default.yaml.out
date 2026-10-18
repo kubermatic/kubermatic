@@ -130,6 +130,8 @@ spec:
         app.kubernetes.io/instance: release-name
       annotations:
         checksum/config: 72a48a1f9d5415d8859074a7cc698388d3932bdf64735a315cd9233856fa6e6f
+        prometheus.io/port: "9571"
+        prometheus.io/scrape: "true"
     spec:
       serviceAccountName: release-name-helm-exporter
       securityContext:
