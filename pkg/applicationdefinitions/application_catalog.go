@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 
 	"go.uber.org/zap"
 
@@ -29,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	"sigs.k8s.io/yaml"
 )
@@ -211,6 +213,39 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.SystemApplications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.SystemApplications.PlainHTTP
 	}
+}
+
+// ValidateSystemApplicationDefinitions loads all embedded system ApplicationDefinition
+// files and validates each one.
+func ValidateSystemApplicationDefinitions() error {
+	files, err := GetSysAppDefFiles()
+	if err != nil {
+		return fmt.Errorf("failed to get system application definition files: %w", err)
+	}
+
+	return ValidateAppDefinitionFiles(files)
+}
+
+// ValidateAppDefinitionFiles defaults and validates each ApplicationDefinition from the
+// provided file list. It can be reused for both system and default catalog definitions.
+func ValidateAppDefinitionFiles(files []fs.File) error {
+	for _, file := range files {
+		b, err := io.ReadAll(file)
+		if err != nil {
+			return fmt.Errorf("failed to read ApplicationDefinition: %w", err)
+		}
+
+		appDef := &appskubermaticv1.ApplicationDefinition{}
+		if err := yaml.Unmarshal(b, appDef); err != nil {
+			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		if errs := validation.ValidateApplicationDefinitionSpec(*appDef); len(errs) > 0 {
+			return fmt.Errorf("invalid ApplicationDefinition %q: %w", appDef.Name, errs.ToAggregate())
+		}
+	}
+
+	return nil
 }
 
 func sha1Hex(s string) string {
