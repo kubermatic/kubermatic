@@ -635,3 +635,115 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 		}
 	}
 }
+
+func TestValidateAdditionalIssuerRedirectURLs(t *testing.T) {
+	testcases := []struct {
+		name  string
+		urls  []string
+		valid bool
+	}{
+		{
+			name:  "no URLs",
+			valid: true,
+		},
+		{
+			name:  "valid https URL",
+			urls:  []string{"https://kkp-proxy.example.com"},
+			valid: true,
+		},
+		{
+			name:  "valid http URL with port and path",
+			urls:  []string{"http://kkp.internal:8080/api/v2/auth/callback"},
+			valid: true,
+		},
+		{
+			name:  "multiple valid URLs",
+			urls:  []string{"https://kkp-proxy.example.com", "https://kkp-other.example.com/"},
+			valid: true,
+		},
+		{
+			name:  "unparsable URL",
+			urls:  []string{"https://kkp proxy.example.com"},
+			valid: false,
+		},
+		{
+			name:  "unsupported scheme",
+			urls:  []string{"ftp://x"},
+			valid: false,
+		},
+		{
+			name:  "missing scheme",
+			urls:  []string{"kkp-proxy.example.com"},
+			valid: false,
+		},
+		{
+			name:  "empty host",
+			urls:  []string{"https:///api/v2/auth/callback"},
+			valid: false,
+		},
+		{
+			name:  "two URLs in one entry",
+			urls:  []string{"https://a.example.com,https://b.example.com"},
+			valid: false,
+		},
+		{
+			name:  "comma in host",
+			urls:  []string{"https://a,b.example.com"},
+			valid: false,
+		},
+		{
+			name:  "URL with user info",
+			urls:  []string{"https://admin@kkp-proxy.example.com"},
+			valid: false,
+		},
+		{
+			name:  "URL with query",
+			urls:  []string{"https://kkp-proxy.example.com?foo=bar"},
+			valid: false,
+		},
+		{
+			name:  "URL with empty query",
+			urls:  []string{"https://kkp-proxy.example.com?"},
+			valid: false,
+		},
+		{
+			name:  "URL with fragment",
+			urls:  []string{"https://kkp-proxy.example.com#foo"},
+			valid: false,
+		},
+		{
+			name:  "one invalid URL among valid ones",
+			urls:  []string{"https://kkp-proxy.example.com", "ftp://x"},
+			valid: false,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateAdditionalIssuerRedirectURLs(tc.urls, field.NewPath("spec", "auth", "additionalIssuerRedirectURLs"))
+
+			if tc.valid != (len(errs) == 0) {
+				t.Fatalf("expected valid=%v, got errors: %v", tc.valid, errs.ToAggregate())
+			}
+		})
+	}
+}
+
+func TestValidateKubermaticConfigurationSpecAdditionalIssuerRedirectURLs(t *testing.T) {
+	spec := &kubermaticv1.KubermaticConfigurationSpec{
+		Auth: kubermaticv1.KubermaticAuthConfiguration{
+			AdditionalIssuerRedirectURLs: []string{"https://kkp-proxy.example.com", "ftp://x"},
+		},
+	}
+
+	errs := ValidateKubermaticConfigurationSpec(spec)
+
+	want := "spec.auth.additionalIssuerRedirectURLs[1]"
+	for _, err := range errs {
+		if err.Type == field.ErrorTypeInvalid && err.Field == want {
+			return
+		}
+	}
+
+	t.Fatalf("expected invalid error for %s, got %v", want, errs.ToAggregate())
+}
