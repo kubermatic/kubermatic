@@ -1667,6 +1667,16 @@ spec:
                     Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
                     feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
                   properties:
+                    additionalIssuerRedirectURLs:
+                      description: |-
+                        AdditionalIssuerRedirectURLs are extra URLs, besides IssuerRedirectURL, that the KKP dashboard
+                        login may use as OIDC redirect, e.g. when KKP is also reachable through reverse proxies on other
+                        hostnames. Only scheme, host and port are used; the dashboard picks the entry matching the browser's
+                        origin. Each URL's "/api/v2/auth/callback" must also be registered as a redirect URI of the
+                        IssuerClientID client in the OIDC provider.
+                      items:
+                        type: string
+                      type: array
                     clientID:
                       type: string
                     issuerClientID:
