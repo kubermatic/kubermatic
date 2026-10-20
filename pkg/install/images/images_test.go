@@ -19,9 +19,11 @@ package images
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -29,10 +31,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // These tests do not just verify that the Docker images can be extracted
@@ -181,6 +187,121 @@ func TestFilterCloudSpecs(t *testing.T) {
 						t.Errorf("unexpected provider %s in filtered results", spec.ProviderName)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestGetImagesFromManifest(t *testing.T) {
+	testCases := []struct {
+		name     string
+		manifest string
+		expected []string
+	}{
+		{
+			name: "Deployment",
+			manifest: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init
+          image: quay.io/kubermatic/util:2.10.0
+      containers:
+        - name: main
+          image: docker.io/envoyproxy/gateway:v1.8.5
+`,
+			expected: []string{"quay.io/kubermatic/util:2.10.0", "docker.io/envoyproxy/gateway:v1.8.5"},
+		},
+		{
+			name: "EnvoyProxy with an Envoy Deployment",
+			manifest: `
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: kubermatic-default-proxy
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 3
+        container:
+          image: 'envoyproxy/envoy:distroless-v1.38.4'
+`,
+			expected: []string{"envoyproxy/envoy:distroless-v1.38.4"},
+		},
+		{
+			name: "EnvoyProxy with an Envoy DaemonSet",
+			manifest: `
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: kubermatic-default-proxy
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDaemonSet:
+        container:
+          image: 'envoyproxy/envoy:distroless-v1.38.4'
+`,
+			expected: []string{"envoyproxy/envoy:distroless-v1.38.4"},
+		},
+		{
+			name: "EnvoyProxy without an image",
+			manifest: `
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: kubermatic-default-proxy
+spec:
+  provider:
+    type: Kubernetes
+`,
+			expected: nil,
+		},
+		{
+			name: "unknown custom object",
+			manifest: `
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: test
+spec:
+  selfSigned: {}
+`,
+			expected: nil,
+		},
+	}
+
+	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			manifests, err := yamlutil.ParseMultipleDocuments(strings.NewReader(tc.manifest))
+			if err != nil {
+				t.Fatalf("Failed to parse manifest: %v", err)
+			}
+			if len(manifests) != 1 {
+				t.Fatalf("Expected 1 manifest, got %d", len(manifests))
+			}
+
+			images, err := getImagesFromManifest(logrus.New(), serializer, manifests[0].Raw)
+			if err != nil {
+				t.Fatalf("Failed to get images: %v", err)
+			}
+
+			if len(images) == 0 && len(tc.expected) == 0 {
+				return
+			}
+
+			if !diff.DeepEqual(tc.expected, images) {
+				t.Fatalf("Images differ:\n%v", diff.ObjectDiff(tc.expected, images))
 			}
 		})
 	}
