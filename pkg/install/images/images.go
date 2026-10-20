@@ -78,6 +78,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -878,7 +879,17 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 	obj, err := runtime.Decode(decoder, b)
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
-			// We must skip custom objects. We try to look up the object info though to give a useful warning
+			// Custom objects are not part of the scheme. A few of them are known to
+			// reference container images, so they are inspected as unstructured objects.
+			images, known, err := getImagesFromCustomObject(b)
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse custom object: %w", err)
+			}
+			if known {
+				return images, nil
+			}
+
+			// We must skip all other custom objects. We try to look up the object info though to give a useful warning
 			metaFactory := &json.SimpleMetaFactory{}
 			if gvk, err := metaFactory.Interpret(b); err == nil {
 				log = log.WithField("gvk", gvk.String())
@@ -897,6 +908,38 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 	}
 
 	return images, nil
+}
+
+// getImagesFromCustomObject returns the images referenced by custom objects that
+// are not registered in the scheme. The second return value reports whether the
+// object's kind is known to this function.
+func getImagesFromCustomObject(b []byte) ([]string, bool, error) {
+	obj := &unstructured.Unstructured{}
+	if err := obj.UnmarshalJSON(b); err != nil {
+		return nil, false, err
+	}
+
+	gvk := obj.GroupVersionKind()
+
+	switch {
+	// The EnvoyProxy object (created by the envoy-gateway-controller chart) defines
+	// the image of the Envoy data plane, which Envoy Gateway deploys at runtime.
+	case gvk.Group == "gateway.envoyproxy.io" && gvk.Kind == "EnvoyProxy":
+		images := []string{}
+		for _, workload := range []string{"envoyDeployment", "envoyDaemonSet"} {
+			image, found, err := unstructured.NestedString(obj.Object, "spec", "provider", "kubernetes", workload, "container", "image")
+			if err != nil {
+				return nil, true, fmt.Errorf("failed to read %s image of EnvoyProxy %s: %w", workload, obj.GetName(), err)
+			}
+			if found && image != "" {
+				images = append(images, image)
+			}
+		}
+
+		return images, true, nil
+	}
+
+	return nil, false, nil
 }
 
 func getImagesFromObject(obj runtime.Object) []string {
