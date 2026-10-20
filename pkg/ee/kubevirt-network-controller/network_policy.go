@@ -31,8 +31,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -164,6 +166,10 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 				})
 			}
 
+			// Only allow DNS traffic to the nameservers, not every port on these hosts.
+			dnsPort := intstr.FromInt(53)
+			tcp := corev1.ProtocolTCP
+			udp := corev1.ProtocolUDP
 			for _, nameserver := range nameservers {
 				if nameserver == "" {
 					continue
@@ -174,6 +180,16 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 							IPBlock: &networkingv1.IPBlock{
 								CIDR: fmt.Sprintf("%s/32", nameserver),
 							},
+						},
+					},
+					Ports: []networkingv1.NetworkPolicyPort{
+						{
+							Protocol: &tcp,
+							Port:     &dnsPort,
+						},
+						{
+							Protocol: &udp,
+							Port:     &dnsPort,
 						},
 					},
 				})
