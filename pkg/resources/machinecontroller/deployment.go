@@ -18,6 +18,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -255,6 +256,10 @@ func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControlle
 	// 0 means "disabled"; passing it on would make machine-controller immediately delete every MachineSet-owned machine without a Node.
 	if overrides != nil && overrides.JoinClusterTimeout != nil && overrides.JoinClusterTimeout.Duration > 0 {
 		flags = append(flags, "-join-cluster-timeout", overrides.JoinClusterTimeout.Duration.String())
+	}
+
+	if overrides != nil && overrides.WorkerCount != nil {
+		flags = append(flags, "-worker-count", strconv.Itoa(int(*overrides.WorkerCount)))
 	}
 
 	return flags
