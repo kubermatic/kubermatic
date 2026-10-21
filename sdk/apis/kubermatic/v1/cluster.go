@@ -1085,6 +1085,13 @@ type MachineControllerSettings struct {
 	// defaultComponentSettings fill an unset value, so changing the default ClusterTemplate
 	// does not affect existing Clusters. Once set, the value is kept.
 	JoinClusterTimeout *metav1.Duration `json:"joinClusterTimeout,omitempty"`
+	// WorkerCount overrides the number of machine-controller workers that reconcile
+	// Machines concurrently. Raising it helps with providers whose machine creation
+	// blocks while the instance is provisioned, as a single worker then serializes
+	// all Machines of the cluster. Defaults to the machine-controller binary's
+	// built-in 1 when unset.
+	// +kubebuilder:validation:Minimum=1
+	WorkerCount *int32 `json:"workerCount,omitempty"`
 }
 
 type DeploymentSettings struct {
