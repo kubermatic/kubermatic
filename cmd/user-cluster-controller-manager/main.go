@@ -89,6 +89,7 @@ type controllerRunOptions struct {
 	ownerEmail                        string
 	updateWindowStart                 string
 	updateWindowLength                string
+	disableFlatcarUpdateOperator      bool
 	dnsClusterIP                      string
 	nodeLocalDNSCache                 bool
 	opaIntegration                    bool
@@ -153,6 +154,7 @@ func main() {
 	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
+	flag.BoolVar(&runOp.disableFlatcarUpdateOperator, "disable-flatcar-update-operator", false, "Do not deploy the flatcar-linux-update-operator and update-agent into the user cluster and remove them if present.")
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
 	flag.BoolVar(&runOp.opaEnableMutation, "enable-mutation", false, "Enable OPA experimental mutation in user cluster")
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
@@ -386,7 +388,7 @@ func main() {
 		Start:  runOp.updateWindowStart,
 		Length: runOp.updateWindowLength,
 	}
-	if err := flatcar.Add(mgr, runOp.overwriteRegistry, updateWindow, isPausedChecker); err != nil {
+	if err := flatcar.Add(mgr, runOp.overwriteRegistry, updateWindow, runOp.disableFlatcarUpdateOperator, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register the Flatcar controller", zap.Error(err))
 	}
 	log.Info("Registered Flatcar controller")
