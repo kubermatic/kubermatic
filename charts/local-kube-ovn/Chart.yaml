@@ -24,6 +24,6 @@ maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
 dependencies:
-  - repository: https://kubeovn.github.io/kube-ovn
+  - repository: oci://ghcr.io/kubeovn/charts
     name: kube-ovn
-    version: 1.15.9
+    version: v1.15.9
