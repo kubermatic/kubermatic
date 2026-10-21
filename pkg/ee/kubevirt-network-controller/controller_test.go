@@ -42,7 +42,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/events"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -253,6 +255,16 @@ func TestReconcile(t *testing.T) {
 									IPBlock: &networkingv1.IPBlock{
 										CIDR: "1.1.1.1/32",
 									},
+								},
+							},
+							Ports: []networkingv1.NetworkPolicyPort{
+								{
+									Protocol: ptr.To(corev1.ProtocolTCP),
+									Port:     ptr.To(intstr.FromInt(53)),
+								},
+								{
+									Protocol: ptr.To(corev1.ProtocolUDP),
+									Port:     ptr.To(intstr.FromInt(53)),
 								},
 							},
 						},
