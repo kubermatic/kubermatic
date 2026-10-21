@@ -1073,6 +1073,13 @@ type MachineControllerSettings struct {
 	// eviction as long as its node is Ready and a schedulable target node exists.
 	// Defaults to the machine-controller binary's built-in 2h when unset.
 	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
+	// WorkerCount overrides the number of machine-controller workers that reconcile
+	// Machines concurrently. Raising it helps with providers whose machine creation
+	// blocks while the instance is provisioned, as a single worker then serializes
+	// all Machines of the cluster. Defaults to the machine-controller binary's
+	// built-in 1 when unset.
+	// +kubebuilder:validation:Minimum=1
+	WorkerCount *int32 `json:"workerCount,omitempty"`
 }
 
 type DeploymentSettings struct {
