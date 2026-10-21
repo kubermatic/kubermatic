@@ -1,0 +1,75 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-kube-kubelet.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # client-go counts watch streams that the API server closes at its timeout as
+  # code="<error>"; on low-traffic clients these reconnects alone exceed 1% of all
+  # requests and must not raise an alert
+  - interval: 30s
+    input_series:
+      - series: 'rest_client_requests_total{job="pods",namespace="kubermatic",pod="kubermatic-api-abc",code="200"}'
+        values: '0+100x80'
+      - series: 'rest_client_requests_total{job="pods",namespace="kubermatic",pod="kubermatic-api-abc",code="<error>"}'
+        values: '0+3x80'
+      - series: 'rest_client_requests_total{job="kubelet",instance="node1",code="200"}'
+        values: '0+100x80'
+      - series: 'rest_client_requests_total{job="kubelet",instance="node1",code="<error>"}'
+        values: '0+3x80'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KubeClientErrors
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: KubeletClientErrors
+        exp_alerts: []
+
+  # real 5xx responses above 1% still raise the alerts
+  - interval: 30s
+    input_series:
+      - series: 'rest_client_requests_total{job="pods",namespace="kubermatic",pod="kubermatic-api-abc",code="200"}'
+        values: '0+100x80'
+      - series: 'rest_client_requests_total{job="pods",namespace="kubermatic",pod="kubermatic-api-abc",code="503"}'
+        values: '0+3x80'
+      - series: 'rest_client_requests_total{job="kubelet",instance="node1",code="200"}'
+        values: '0+100x80'
+      - series: 'rest_client_requests_total{job="kubelet",instance="node1",code="500"}'
+        values: '0+3x80'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KubeClientErrors
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: kubelet
+              namespace: kubermatic
+              pod: kubermatic-api-abc
+            exp_annotations:
+              message: The pod kubermatic/kubermatic-api-abc is experiencing 3% errors.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeclienterrors
+      - eval_time: 30m
+        alertname: KubeletClientErrors
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              resource: node1
+              service: kubelet
+              instance: node1
+            exp_annotations:
+              message: The kubelet on node1 is experiencing 3% errors.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletclienterrors

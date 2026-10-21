@@ -499,12 +499,16 @@ data:
               severity: warning
               resource: "{{ $labels.instance }}"
               service: kubelet
+          # Only 5xx responses count as errors. client-go also records requests that ended
+          # without a response as code="<error>", which includes every watch stream that the
+          # API server closes at its timeout; for clients with little traffic, these
+          # reconnects alone exceed the threshold.
           - alert: KubeletClientErrors
             annotations:
               message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletclienterrors
             expr: |
-              (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
+              (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
                 /
               sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
               * 100 > 1
@@ -519,7 +523,7 @@ data:
               message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeclienterrors
             expr: |
-              (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
+              (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
                 /
               sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
               * 100 > 1
