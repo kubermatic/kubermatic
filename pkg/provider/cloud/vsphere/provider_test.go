@@ -331,6 +331,8 @@ func (v *vSphereSimulator) setUp() {
 		v.t.Fatal(err)
 	}
 
+	// serve the REST API (tagging) in addition to the SOAP API
+	v.model.Service.RegisterEndpoints = true
 	v.server = v.model.Service.NewServer()
 }
 
