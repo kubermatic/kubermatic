@@ -14,15 +14,15 @@
 
 # Simplified Consul configuration for Kubermatic MLA stack
 # This file only contains overrides to the default Consul Helm chart values.
-# For complete default values, see: https://github.com/hashicorp/consul-k8s/blob/v1.9.2/charts/consul/values.yaml
+# For complete default values, see: https://github.com/hashicorp/consul-k8s/blob/v1.9.11/charts/consul/values.yaml
 
 consul:
   global:
-    # Use Consul 1.22.2 (latest stable as of chart v1.9.2)
-    image: "docker.io/hashicorp/consul:1.22.2"
+    # Use Consul 1.22.7 (latest stable as of chart v1.9.11)
+    image: "docker.io/hashicorp/consul:1.22.7"
     
-    # Add consul-dataplane image (required for v1.9.2)
-    imageConsulDataplane: "docker.io/hashicorp/consul-dataplane:1.9.0"
+    # Add consul-dataplane image (required for v1.9.11)
+    imageConsulDataplane: "docker.io/hashicorp/consul-dataplane:1.9.11"
     
     # Explicitly disable metrics (matches our use case: KV storage only)
     metrics:
