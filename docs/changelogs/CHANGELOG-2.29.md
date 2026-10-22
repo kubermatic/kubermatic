@@ -13,6 +13,15 @@
 - [v2.29.10](#v22910)
 - [v2.29.11](#v22911)
 - [v2.29.13](#v22913)
+- [v2.29.14](#v22914)
+
+## v2.29.14
+
+**GitHub release: [v2.29.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.14)**
+
+### Bugfixes
+
+- Fix the KubeVirt cluster isolation NetworkPolicy (namespaced mode with `networkPolicy.mode: deny`) allowing egress to all ports on the configured DNS nameservers. Egress to the nameservers is now restricted to 53/TCP and 53/UDP, and existing policies are updated automatically ([#16758](https://github.com/kubermatic/kubermatic/pull/16758))
 
 ## v2.29.13
 
