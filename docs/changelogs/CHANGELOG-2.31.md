@@ -1,8 +1,33 @@
 # Kubermatic 2.31
 
+- [v2.31.3](#v2313)
 - [v2.31.2](#v2312)
 - [v2.31.1](#v2311)
 - [v2.31.0](#v2310)
+
+## v2.31.3
+
+**GitHub release: [v2.31.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.3)**
+
+### Bugfixes
+
+- Fix the KubeVirt cluster isolation NetworkPolicy (namespaced mode with `networkPolicy.mode: deny`) allowing egress to all ports on the configured DNS nameservers. Egress to the nameservers is now restricted to 53/TCP and 53/UDP, and existing policies are updated automatically ([#16756](https://github.com/kubermatic/kubermatic/pull/16756))
+
+### Updates
+
+- Update to Go 1.26.10, which fixes CVE-2026-111943 in crypto/x509 ([#16763](https://github.com/kubermatic/kubermatic/pull/16763))
+- Update machine-controller to [v1.66.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.5) and operating-system-manager to [v1.11.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.8), both built with Go 1.26.10 ([#16764](https://github.com/kubermatic/kubermatic/pull/16764))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Fix OIDC token refresh failing with a custom CA bundle, which logged users out of the dashboard and web terminal ([#8388](https://github.com/kubermatic/dashboard/pull/8388))
+- Redirect to the project list when a project URL carries a missing, invalid or inaccessible project ID instead of showing an empty project ([#8395](https://github.com/kubermatic/dashboard/pull/8395))
+
+#### Updates
+
+- Update to Go 1.26.10, which fixes CVE-2026-111943 in crypto/x509 ([#8397](https://github.com/kubermatic/dashboard/pull/8397))
 
 ## v2.31.2
 
