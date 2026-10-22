@@ -9,6 +9,21 @@
 - [v2.30.6](#v2306)
 - [v2.30.7](#v2307)
 - [v2.30.8](#v2308)
+- [v2.30.9](#v2309)
+
+## v2.30.9
+
+**GitHub release: [v2.30.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.9)**
+
+### Bugfixes
+
+- Fix the KubeVirt cluster isolation NetworkPolicy (namespaced mode with `networkPolicy.mode: deny`) allowing egress to all ports on the configured DNS nameservers. Egress to the nameservers is now restricted to 53/TCP and 53/UDP, and existing policies are updated automatically ([#16757](https://github.com/kubermatic/kubermatic/pull/16757))
+
+### Dashboard and API
+
+#### Bugfixes
+
+- Redirect to the project list when a project URL carries a missing, invalid or inaccessible project ID instead of showing an empty project ([#8396](https://github.com/kubermatic/dashboard/pull/8396))
 
 ## v2.30.8
 
