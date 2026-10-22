@@ -1441,8 +1441,8 @@ golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
 golang.org/x/net v0.10.0/go.mod h1:0qNGK6F8kojg2nk9dLZ2mShWaEBan6FAoqfSigmmuDg=
 golang.org/x/net v0.20.0/go.mod h1:z8BVo6PvndSri0LbOE3hAn0apkU+1YvI6E70E9jsnvY=
-golang.org/x/net v0.59.0 h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues=
-golang.org/x/net v0.59.0/go.mod h1:2DA/G1UfVbCpQPeWTmMPGY7Cs2PkBkwu743bVX5PIVg=
+golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=
+golang.org/x/net v0.60.0/go.mod h1:2DA/G1UfVbCpQPeWTmMPGY7Cs2PkBkwu743bVX5PIVg=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.37.0 h1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98=
 golang.org/x/oauth2 v0.37.0/go.mod h1:IxwZNxUULJmpBFf9K/9NTMSIfZZuvuTy1gGxhigP/58=
@@ -1650,10 +1650,10 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8c.io/kubeone v1.12.3 h1:b+dmLJDsofUiDHzyUmR512wXnF5LDDI1KpHsS/BTbrY=
 k8c.io/kubeone v1.12.3/go.mod h1:saB47KgCNP2028b/ZHZlNal1p7xHqmVfc3LSj+WOW/A=
-k8c.io/machine-controller/sdk v1.66.4 h1:u+RNMBV18kpevhPL/siMncd6oBG884rjCCi9q9qPiIc=
-k8c.io/machine-controller/sdk v1.66.4/go.mod h1:LAgQCX3ebTLS/3O3GORhAt62FbBIMGK4/ra12cpH6IY=
-k8c.io/operating-system-manager v1.11.7 h1:LPxKTZuMrsve5W2qAYXDNTSqd4F1jB+ZWYcUmU4mSHA=
-k8c.io/operating-system-manager v1.11.7/go.mod h1:olbt8QFnRZOaI8F6mJk22gRSETMJ+rqwLaNxuAd4siI=
+k8c.io/machine-controller/sdk v1.66.5 h1:T0edl1QRZT6TC5NMPaF7QWWVN6pd5q3vzOV1SOTFtl8=
+k8c.io/machine-controller/sdk v1.66.5/go.mod h1:LAgQCX3ebTLS/3O3GORhAt62FbBIMGK4/ra12cpH6IY=
+k8c.io/operating-system-manager v1.11.8 h1:cLRKMGW3icnSGoHR3p64uy9jUyvMscCwvKa6cZfqbrQ=
+k8c.io/operating-system-manager v1.11.8/go.mod h1:nlu/QQ6bAd8+ETDYf+UySLpcCGYabagUstNLhtAlk38=
 k8c.io/reconciler v0.5.0 h1:BHpelg1UfI/7oBFctqOq8sX6qzflXpl3SlvHe7e8wak=
 k8c.io/reconciler v0.5.0/go.mod h1:pT1+SVcVXJQeBJhpJBXQ5XW64QnKKeYTnVlQf0dGE0k=
 k8s.io/api v0.23.3/go.mod h1:w258XdGyvCmnBj/vGzQMj6kzdufJZVUwEM1U2fRJwSQ=
