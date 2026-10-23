@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetFlags(t *testing.T) {
@@ -87,6 +88,38 @@ func TestGetFlags(t *testing.T) {
 				"-node-csr-approver",
 				"-node-external-cloud-provider",
 				"-skip-eviction-after", "0s",
+			},
+		},
+		{
+			name:     "worker count override is passed through",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				WorkerCount: ptr.To[int32](5),
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+				"-worker-count", "5",
+			},
+		},
+		{
+			name:     "skip eviction and worker count overrides are both passed through",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				SkipEvictionAfter: &metav1.Duration{Duration: 4 * time.Hour},
+				WorkerCount:       ptr.To[int32](3),
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+				"-skip-eviction-after", "4h0m0s",
+				"-worker-count", "3",
 			},
 		},
 	}
