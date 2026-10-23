@@ -36,10 +36,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.102.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.46.0
-	github.com/aws/smithy-go v1.28.1
+	github.com/aws/smithy-go v1.28.5
 	github.com/cert-manager/cert-manager v1.15.5
 	github.com/cilium/cilium v1.19.8
-	github.com/containerd/containerd/v2 v2.3.6
+	github.com/containerd/containerd/v2 v2.3.7
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.1.2
 	github.com/distribution/reference v0.6.0
@@ -47,7 +47,7 @@ require (
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/go-logr/zapr v1.3.0
-	github.com/go-test/deep v1.1.1
+	github.com/go-test/deep v1.1.2
 	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.21.9
