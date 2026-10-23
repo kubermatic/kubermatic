@@ -62,7 +62,7 @@ envoyProxy:
       # 2. String format (legacy): image as a single string "repo:tag"
       image:
         repository: "envoyproxy/envoy"
-        tag: "distroless-v1.38.3"
+        tag: "distroless-v1.38.4"
       resources:
         requests:
           cpu: 50m
