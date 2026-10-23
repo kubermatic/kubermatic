@@ -27,6 +27,7 @@ package synccontroller
 import (
 	"context"
 	"testing"
+	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 
@@ -37,6 +38,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -136,5 +139,66 @@ func TestSync(t *testing.T) {
 
 	if !equality.Semantic.DeepEqual(remoteCBSLSecret.Data, secret.Data) {
 		t.Fatalf("CBSL secret was created on remote seed, but data was not set correctly, should be %q, but is %q.", secret.Data, remoteCBSLSecret.Data)
+	}
+}
+
+func TestDeletion(t *testing.T) {
+	secret := &corev1.Secret{
+		Data: map[string][]byte{"accessKey": []byte("test")},
+	}
+	secret.Name = "test-cbsl-secret"
+	secret.Namespace = testNamespace
+
+	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
+	cbsl.Name = "test-location"
+	cbsl.Namespace = testNamespace
+	cbsl.Spec = velerov1.BackupStorageLocationSpec{
+		Provider: "test",
+		Credential: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{
+			Name: secret.Name,
+		}},
+	}
+
+	deletingCBSL := cbsl.DeepCopy()
+	deletingCBSL.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+	deletingCBSL.Finalizers = []string{cleanupFinalizer}
+
+	masterClient := fake.
+		NewClientBuilder().
+		WithObjects(deletingCBSL, secret).
+		Build()
+
+	seedClient := fake.
+		NewClientBuilder().
+		WithObjects(cbsl.DeepCopy(), secret.DeepCopy()).
+		Build()
+
+	rec := reconciler{
+		masterClient: masterClient,
+		seedClients:  kuberneteshelper.SeedClientMap{"remote": seedClient},
+		recorder:     &events.FakeRecorder{},
+		log:          kubermaticlog.Logger,
+	}
+
+	ctx := context.Background()
+
+	_, err := rec.Reconcile(ctx, reconcile.Request{
+		NamespacedName: ctrlruntimeclient.ObjectKeyFromObject(cbsl),
+	})
+	if err != nil {
+		t.Fatalf("Failed to reconcile CBSL: %v", err)
+	}
+
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cbsl), &kubermaticv1.ClusterBackupStorageLocation{}); !apierrors.IsNotFound(err) {
+		t.Fatalf("Expected CBSL on the seed to be deleted, but got: %v", err)
+	}
+
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(secret), &corev1.Secret{}); !apierrors.IsNotFound(err) {
+		t.Fatalf("Expected CBSL credential secret on the seed to be deleted, but got: %v", err)
+	}
+
+	// removing the last finalizer lets the fake client delete the master CBSL
+	if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cbsl), &kubermaticv1.ClusterBackupStorageLocation{}); !apierrors.IsNotFound(err) {
+		t.Fatalf("Expected CBSL on the master to be gone after its finalizer was removed, but got: %v", err)
 	}
 }

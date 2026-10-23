@@ -22,11 +22,15 @@ import (
 	"testing"
 	"time"
 
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
+
+	corev1 "k8s.io/api/core/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,6 +131,54 @@ func TestReconcile(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDeletionCleansUpClusterBackupStorageLocations(t *testing.T) {
+	ctx := context.Background()
+
+	projectCBSL := generateCBSL("project-location", projectName)
+	otherCBSL := generateCBSL("other-location", "other-project")
+
+	masterClient := fake.
+		NewClientBuilder().
+		WithObjects(generateProject(projectName, true, nil), projectCBSL, otherCBSL).
+		Build()
+
+	r := &reconciler{
+		log:          kubermaticlog.Logger,
+		recorder:     &events.FakeRecorder{},
+		masterClient: masterClient,
+		seedClients:  map[string]ctrlruntimeclient.Client{"test": fake.NewClientBuilder().Build()},
+	}
+
+	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: projectName}}
+	if _, err := r.Reconcile(ctx, request); err != nil {
+		t.Fatalf("reconciling failed: %v", err)
+	}
+
+	err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(projectCBSL), &kubermaticv1.ClusterBackupStorageLocation{})
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected ClusterBackupStorageLocation of the deleted project to be deleted, but got: %v", err)
+	}
+
+	if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(otherCBSL), &kubermaticv1.ClusterBackupStorageLocation{}); err != nil {
+		t.Fatalf("expected ClusterBackupStorageLocation of another project to remain, but got: %v", err)
+	}
+}
+
+func generateCBSL(name, projectID string) *kubermaticv1.ClusterBackupStorageLocation {
+	return &kubermaticv1.ClusterBackupStorageLocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "kubermatic",
+			Labels:    map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: velerov1.BackupStorageLocationSpec{
+			Credential: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "credential-" + name},
+			},
+		},
 	}
 }
 
