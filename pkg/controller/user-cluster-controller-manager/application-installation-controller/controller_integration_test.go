@@ -34,6 +34,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -432,9 +433,15 @@ func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.Applicatio
 		t.Fatalf("failed to create namespace")
 	}
 
+	// The controller reads workload tolerations from the Cluster on every reconcile.
+	cluster := generator.GenCluster("testcluster", "testcluster", "projectName", time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+	if err := client.Create(ctx, cluster); err != nil {
+		t.Fatalf("failed to create cluster: %s", err)
+	}
+
 	isClusterPausedFunc := func(ctx context.Context) (bool, error) { return false, nil }
 
-	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, ns.Name, "", applicationInstaller); err != nil {
+	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, ns.Name, cluster.Name, "", applicationInstaller); err != nil {
 		t.Fatalf("failed to add controller to manager: %s", err)
 	}
 

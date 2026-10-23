@@ -538,6 +538,13 @@ func (r *Reconciler) ensureAddonLabelOnManifests(
 		}
 		parsedUnstructuredObj.SetLabels(existingLabels)
 
+		if cluster != nil {
+			tolerations := resources.GetUserClusterWorkloadTolerations(cluster.Spec.ComponentsOverride)
+			if err := injectTolerations(parsedUnstructuredObj, tolerations); err != nil {
+				return nil, fmt.Errorf("failed to add tolerations to %s %q: %w", parsedUnstructuredObj.GetKind(), parsedUnstructuredObj.GetName(), err)
+			}
+		}
+
 		if addon.Name == csiAddonName {
 			var err error
 			parsedUnstructuredObj, err = r.addCSIRevisionLabels(ctx, cluster, parsedUnstructuredObj)
@@ -836,6 +843,60 @@ func (r *Reconciler) setAddonCondition(a *kubermaticv1.Addon, condType kubermati
 		a.Status.Conditions = map[kubermaticv1.AddonConditionType]kubermaticv1.AddonCondition{}
 	}
 	a.Status.Conditions[condType] = condition
+}
+
+// podSpecPaths lists where the workload kinds shipped by addons keep their PodSpec.
+var podSpecPaths = map[string][]string{
+	"Deployment":  {"spec", "template", "spec"},
+	"DaemonSet":   {"spec", "template", "spec"},
+	"StatefulSet": {"spec", "template", "spec"},
+	"ReplicaSet":  {"spec", "template", "spec"},
+	"Job":         {"spec", "template", "spec"},
+	"CronJob":     {"spec", "jobTemplate", "spec", "template", "spec"},
+}
+
+// injectTolerations appends tolerations to a workload manifest. Apply is client-side and tolerations
+// is an atomic list, so the addon's own entries must be kept here.
+func injectTolerations(obj *metav1unstructured.Unstructured, tolerations []corev1.Toleration) error {
+	if len(tolerations) == 0 {
+		return nil
+	}
+
+	// Custom resources can share a kind name with the built-in workloads.
+	group := obj.GroupVersionKind().Group
+	podSpecPath, ok := podSpecPaths[obj.GetKind()]
+	if !ok || (group != "apps" && group != "batch") {
+		return nil
+	}
+
+	path := append(append([]string{}, podSpecPath...), "tolerations")
+
+	rawExisting, _, err := metav1unstructured.NestedSlice(obj.Object, path...)
+	if err != nil {
+		return err
+	}
+
+	existing := make([]corev1.Toleration, len(rawExisting))
+	for i, raw := range rawExisting {
+		rawToleration, ok := raw.(map[string]any)
+		if !ok {
+			return fmt.Errorf("toleration %d is not an object", i)
+		}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(rawToleration, &existing[i]); err != nil {
+			return err
+		}
+	}
+
+	_, added := modifier.AppendTolerations(existing, tolerations)
+	for i := range added {
+		rawToleration, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&added[i])
+		if err != nil {
+			return err
+		}
+		rawExisting = append(rawExisting, rawToleration)
+	}
+
+	return metav1unstructured.SetNestedSlice(obj.Object, rawExisting, path...)
 }
 
 func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
