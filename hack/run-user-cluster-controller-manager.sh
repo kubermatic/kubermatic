@@ -77,6 +77,10 @@ if [[ "$(echo "${CLUSTER_RAW}" | jq -r '.spec.kyverno.enabled // false')" == "tr
   ARGS="$ARGS -kyverno-enabled"
 fi
 
+if [[ "$(echo "${CLUSTER_RAW}" | jq -r '.spec.disableFlatcarUpdateOperator // false')" == "true" ]]; then
+  ARGS="$ARGS -disable-flatcar-update-operator=true"
+fi
+
 if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
   if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then

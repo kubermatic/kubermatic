@@ -44,17 +44,20 @@ func EnsureAllDeleted(ctx context.Context, client ctrlruntimeclient.Client, oper
 		},
 		&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: operatorRoleName,
+				Name:      operatorRoleName,
+				Namespace: operatorNamespace,
 			},
 		},
 		&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: operatorRoleBindingName,
+				Name:      operatorRoleBindingName,
+				Namespace: operatorNamespace,
 			},
 		},
 		&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: agentRoleBindingName,
+				Name:      agentRoleBindingName,
+				Namespace: operatorNamespace,
 			},
 		},
 		&rbacv1.ClusterRole{

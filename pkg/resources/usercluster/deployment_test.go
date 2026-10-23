@@ -155,6 +155,43 @@ func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
 	}
 }
 
+func TestDisableFlatcarUpdateOperatorArgument(t *testing.T) {
+	const argument = "-disable-flatcar-update-operator=true"
+
+	testCases := []struct {
+		name         string
+		disabled     bool
+		wantArgument bool
+	}{
+		{
+			name: "operator enabled by default",
+		},
+		{
+			name:         "operator disabled",
+			disabled:     true,
+			wantArgument: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := newDeploymentTestData(false, false)
+			data.Cluster().Spec.DisableFlatcarUpdateOperator = tc.disabled
+			_, reconcile := DeploymentReconciler(data)()
+
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile user-cluster-controller deployment: %v", err)
+			}
+
+			hasArgument := deploymentContainsArgument(deployment, argument)
+			if hasArgument != tc.wantArgument {
+				t.Fatalf("expected %s present=%t, got %t", argument, tc.wantArgument, hasArgument)
+			}
+		})
+	}
+}
+
 func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
 	cloud := kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
 	datacenter := kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}

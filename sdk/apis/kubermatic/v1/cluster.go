@@ -272,6 +272,11 @@ type ClusterSpec struct {
 	// If this is true at the data center then it can't be over-written in the cluster configuration
 	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
 
+	// Optional: DisableFlatcarUpdateOperator stops KKP from deploying the flatcar-linux-update-operator and its
+	// update-agent into the user cluster and removes them if they are already installed. Set this when Flatcar OS
+	// updates are managed outside of KKP, for example by replacing node images.
+	DisableFlatcarUpdateOperator bool `json:"disableFlatcarUpdateOperator,omitempty"`
+
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
 
