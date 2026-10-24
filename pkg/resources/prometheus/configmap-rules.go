@@ -493,27 +493,40 @@ const prometheusRuleKonnectivity = `
     labels:
       kubermatic: federate
 
+  # agent alerts only fire when the cluster has at least one Ready and schedulable
+  # node; without one, no agent pod can run and zero agents is the expected state
+  # (no MachineDeployments, bootstrapping, cluster deletion).
   - alert: KonnectivityNoAgents
     annotations:
-      message: 'Cluster {{ $labels.cluster }} has no Konnectivity agents connected. New tunnels cannot be established.'
+      message: 'Cluster {{ $externalLabels.cluster }} has no Konnectivity agents connected. New tunnels cannot be established.'
     expr: |
       job:konnectivity_ready_backend_connections:count == 0
-    for: 2m
+      and on(namespace)
+      count by (namespace) (
+        kube_node_status_condition{condition="Ready",status="true"} == 1
+        unless on(namespace, node) kube_node_spec_unschedulable == 1
+      ) > 0
+    for: 5m
     labels:
       severity: critical
 
   - alert: KonnectivityAgentsUnhealthy
     annotations:
-      message: 'Cluster {{ $labels.cluster }} has only {{ $value }} Konnectivity agent(s) connected (expected: 2).'
+      message: 'Cluster {{ $externalLabels.cluster }} has only {{ $value }} Konnectivity agent(s) connected (expected: 2).'
     expr: |
       job:konnectivity_ready_backend_connections:count < 2
-    for: 3m
+      and on(namespace)
+      count by (namespace) (
+        kube_node_status_condition{condition="Ready",status="true"} == 1
+        unless on(namespace, node) kube_node_spec_unschedulable == 1
+      ) > 0
+    for: 15m
     labels:
       severity: warning
 
   - alert: KonnectivityHighDialFailureRate
     annotations:
-      message: 'Cluster {{ $labels.cluster }} has {{ $value | humanize }} dial failures/sec (reason: {{ $labels.reason }}). Check agent and node health.'
+      message: 'Cluster {{ $externalLabels.cluster }} has {{ $value | humanize }} dial failures/sec (reason: {{ $labels.reason }}). Check agent and node health.'
     expr: |
       job:konnectivity_dial_failure_rate:by_reason > 0.1
     for: 10m
