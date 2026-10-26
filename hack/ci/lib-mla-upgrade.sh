@@ -113,27 +113,29 @@ apply_seed() {
 }
 
 # deploy_mla_stacks runs one installer for KKP, the Seed and both MLA stacks.
-# Arguments: installer path, charts directory, operator values file, then
-# extra installer flags (for example --helm-binary helm3).
+# Arguments: step label (used in JUnit file names, so no slashes), installer
+# path, charts directory, operator values file, then extra installer flags
+# (for example --helm-binary helm3).
 deploy_mla_stacks() {
-  local installer="$1"
-  local charts="$2"
-  local operator_values="$3"
-  shift 3
+  local label="$1"
+  local installer="$2"
+  local charts="$3"
+  local operator_values="$4"
+  shift 4
 
-  TEST_NAME="Deploy KKP with ${installer}"
+  TEST_NAME="Deploy KKP (${label})"
   "$installer" deploy --disable-telemetry --charts-directory "$charts" --storageclass copy-default --config "$KUBERMATIC_CONFIG" --helm-values "$operator_values" "$@"
   retry 10 check_all_deployments_ready kubermatic
 
-  TEST_NAME="Apply Seed"
+  TEST_NAME="Apply Seed (${label})"
   apply_seed
   retry 9 check_all_deployments_ready kubermatic
 
-  TEST_NAME="Deploy seed-mla with ${installer}"
+  TEST_NAME="Deploy seed-mla (${label})"
   "$installer" deploy seed-mla --charts-directory "$charts" --config "$KUBERMATIC_CONFIG" --helm-values hack/ci/testdata/seed-mla-values.yaml "$@"
   retry 8 check_all_deployments_ready monitoring
 
-  TEST_NAME="Deploy usercluster-mla with ${installer}"
+  TEST_NAME="Deploy usercluster-mla (${label})"
   "$installer" deploy usercluster-mla --charts-directory "$charts" --config "$KUBERMATIC_CONFIG" --helm-values hack/ci/testdata/usercluster-mla-upgrade-values.yaml --helm-timeout 1500s "$@"
   retry 8 check_all_deployments_ready mla
 }

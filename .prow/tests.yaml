@@ -127,7 +127,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-3
+        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
           command:
             - "./hack/ci/verify-mla-chart-configs.sh"
           resources:

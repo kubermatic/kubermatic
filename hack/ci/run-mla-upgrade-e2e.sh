@@ -64,7 +64,7 @@ render_kubermatic_config "$KUBERMATIC_CONFIG"
 
 PREVIOUS_VALUES="$(mktemp)"
 write_operator_values "$PREVIOUS_VALUES" "${PREVIOUS_VERSION}"
-deploy_mla_stacks "${PREVIOUS_DIR}/kubermatic-installer" "${PREVIOUS_DIR}/charts" "$PREVIOUS_VALUES" --helm-binary "$KKP_PREVIOUS_HELM_BINARY"
+deploy_mla_stacks "previous release" "${PREVIOUS_DIR}/kubermatic-installer" "${PREVIOUS_DIR}/charts" "$PREVIOUS_VALUES" --helm-binary "$KKP_PREVIOUS_HELM_BINARY"
 
 # delete user clusters even when a step below fails, KKP's own cleanup may not
 # work after a broken upgrade
@@ -89,7 +89,7 @@ build_kkp_under_test
 
 PR_VALUES="$(mktemp)"
 write_operator_values "$PR_VALUES" "${KUBERMATIC_VERSION}"
-deploy_mla_stacks ./_build/kubermatic-installer charts "$PR_VALUES"
+deploy_mla_stacks "this branch" ./_build/kubermatic-installer charts "$PR_VALUES"
 
 TEST_NAME="Post-upgrade MLA checks"
 ginkgo_test mla_upgrade_post --tags mlaupgrade --label-filter post-upgrade --timeout 50m --no-color -v ./pkg/test/e2e/mlaupgrade -- \
