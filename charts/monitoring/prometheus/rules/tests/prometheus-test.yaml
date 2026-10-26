@@ -18,26 +18,28 @@ rule_files:
 evaluation_interval: 1m
 
 tests:
-  - interval: 1m
+  # 30s matches the seed scrape interval; with 1m, a [1m] range holds a single
+  # sample in Prometheus 3 (left-open ranges) and rate() returns nothing
+  - interval: 30s
     input_series:
       # Prometheus and Alertmanager are scraped by the "pods" job, which maps
       # pod labels via labelmap and sets namespace/pod target labels
       - series: 'prometheus_config_last_reload_successful{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090"}'
-        values: '0+0x30'
+        values: '0+0x60'
       - series: 'prometheus_rule_evaluation_failures_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",rule_group="g"}'
-        values: '0+60x30'
+        values: '0+30x60'
       - series: 'prometheus_remote_storage_samples_failed_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",remote_name="r",url="http://r"}'
-        values: '0+60x30'
+        values: '0+30x60'
       - series: 'prometheus_remote_storage_samples_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",remote_name="r",url="http://r"}'
-        values: '0+240x30'
+        values: '0+120x60'
       - series: 'alertmanager_config_last_reload_successful{job="pods",app_kubernetes_io_name="alertmanager",namespace="monitoring",pod="alertmanager-0",instance="10.0.0.2:9093"}'
-        values: '0+0x30'
+        values: '0+0x60'
       - series: 'alertmanager_notifications_failed_total{job="pods",app_kubernetes_io_name="alertmanager",namespace="monitoring",pod="alertmanager-0",instance="10.0.0.2:9093",integration="slack"}'
-        values: '0+1x30'
+        values: '0+1x60'
       # the user cluster MLA Cortex Alertmanager is scraped by the same job
       # and must not trigger the seed Alertmanager alerts
       - series: 'alertmanager_config_last_reload_successful{job="pods",app_kubernetes_io_name="cortex",namespace="mla",pod="cortex-alertmanager-0",instance="10.0.0.3:8080"}'
-        values: '0+0x30'
+        values: '0+0x60'
 
     alert_rule_test:
       - alertname: PromBadConfig
