@@ -44,7 +44,6 @@ fi
 export SEED_NAME="${SEED_NAME:-kubermatic}"
 export BUILD_ID="${BUILD_ID:-$(date +%s)}"
 export KIND_CLUSTER_NAME="$SEED_NAME"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_mla.yaml
 source hack/ci/setup-kind-cluster.sh
 
 for ns in kubermatic mla monitoring logging; do

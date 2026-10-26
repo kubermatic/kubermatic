@@ -12,8 +12,6 @@ values match the cluster's usage.
 | `pkg/test/e2e/metering` | The suite, build tag `metering`. |
 | `hack/ci/run-metering-e2e-tests.sh` | CI entry point, KKP EE in kind with an AWS user cluster. |
 
-The check IDs follow the scenario list in `METERING-E2E-SCENARIOS.md`.
-
 ## Requirements on the KKP installation
 
 - KKP EE, master and seed in one cluster.

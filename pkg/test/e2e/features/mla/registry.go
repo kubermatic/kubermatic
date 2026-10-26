@@ -63,7 +63,7 @@ const lastPriority = -1000
 // I is the input type of its check: mlatestkit.Input for user cluster checks,
 // mlatestkit.SeedInput for seed checks.
 type Feature[I any] struct {
-	// ID links the check to the feature list in the MLA test plan.
+	// ID is a short stable name for the check, used in labels and filters.
 	ID    string
 	Name  string
 	Scope Scope

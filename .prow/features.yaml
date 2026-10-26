@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/|hack/ci/.*mla.*)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/|hack/ci/(run-mla-e2e-tests|setup-kubermatic-mla-in-kind).sh|hack/ci/testdata/kubermatic_mla.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -51,7 +51,7 @@ presubmits:
   # seed MLA stack (charts/monitoring, charts/logging) in kind, no cloud; the
   # metric contract check needs a user cluster and runs in the upgrade job
   - name: pre-kubermatic-seed-mla-e2e
-    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|.prow/features.yaml)"
+    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|hack/ci/testdata/seed.yaml|.prow/features.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -87,7 +87,7 @@ presubmits:
   # metric contract the reports read and the report content; runs on changes to
   # metering itself, the collectors and the per-cluster Prometheus filters
   - name: pre-kubermatic-metering-e2e
-    run_if_changed: "(pkg/ee/metering/|pkg/collectors/|pkg/resources/prometheus/|pkg/util/s3/|pkg/validation/metering.go|pkg/webhook/seed/|pkg/controller/operator/(seed|common)/|sdk/apis/kubermatic/v1/datacenter.go|charts/minio/|pkg/test/e2e/(metering|features/metering|testkit/metering)/|hack/ci/(run-metering-e2e-tests|setup-kubermatic-in-kind).sh|hack/ci/testdata/(seed|metering_s3_creds).yaml|.prow/features.yaml)"
+    run_if_changed: "(pkg/ee/metering/|pkg/collectors/|pkg/resources/prometheus/|pkg/util/s3/|pkg/validation/metering.go|pkg/webhook/seed/|pkg/controller/operator/(seed|common)/|sdk/apis/kubermatic/v1/datacenter.go|charts/minio/|pkg/test/e2e/(metering|features/metering|testkit/metering)/|hack/ci/(run-metering-e2e-tests|setup-kubermatic-in-kind).sh|hack/ci/testdata/(kubermatic|seed|metering_s3_creds).yaml|.prow/features.yaml)"
     decorate: true
     decoration_config:
       timeout: 2h30m
@@ -126,7 +126,7 @@ presubmits:
   # MLA_UPGRADE_CLUSTER_VERSION must be a full Kubernetes version that both the
   # previous KKP minor and this branch support; bump it when either drops it
   - name: pre-kubermatic-mla-upgrade-e2e
-    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|.prow/features.yaml)"
+    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|hack/ci/testdata/seed.yaml|.prow/features.yaml)"
     decorate: true
     decoration_config:
       timeout: 2h30m

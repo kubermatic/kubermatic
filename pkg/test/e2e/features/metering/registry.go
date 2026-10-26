@@ -59,7 +59,7 @@ const lastPriority = -1000
 // Feature is one customer-facing metering behaviour and the check that
 // proves it.
 type Feature struct {
-	// ID links the check to the scenario list in METERING-E2E-SCENARIOS.md.
+	// ID is a short stable name for the check, used in labels and filters.
 	ID    string
 	Name  string
 	Scope Scope
