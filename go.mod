@@ -39,7 +39,7 @@ require (
 	github.com/aws/smithy-go v1.22.5
 	github.com/cert-manager/cert-manager v1.15.5
 	github.com/cilium/cilium v1.18.14
-	github.com/containerd/containerd/v2 v2.0.13
+	github.com/containerd/containerd/v2 v2.0.14
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.1.1
 	github.com/distribution/reference v0.6.0
@@ -47,7 +47,7 @@ require (
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/go-logr/zapr v1.3.0
-	github.com/go-test/deep v1.1.1
+	github.com/go-test/deep v1.1.2
 	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.8
@@ -78,9 +78,9 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.49.0
 	go.anx.io/go-anxcloud v0.7.9
-	go.etcd.io/etcd/api/v3 v3.6.5
-	go.etcd.io/etcd/client/pkg/v3 v3.6.5
-	go.etcd.io/etcd/client/v3 v3.6.5
+	go.etcd.io/etcd/api/v3 v3.6.14
+	go.etcd.io/etcd/client/pkg/v3 v3.6.14
+	go.etcd.io/etcd/client/v3 v3.6.14
 	go.etcd.io/etcd/etcdutl/v3 v3.6.4
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.55.0
