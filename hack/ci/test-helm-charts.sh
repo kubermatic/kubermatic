@@ -70,12 +70,12 @@ done
 
 # compares the golden renders against the PR base (PULL_BASE_SHA) and fails
 # on changes that `helm upgrade` cannot apply in place
-try "Checking immutable chart fields" go run ./hack/ci/check-chart-immutable-fields
+try "Checking immutable chart fields" ./hack/ci/check-chart-immutable-fields.sh
 
 if [[ $EXIT_CODE -eq 0 ]]; then
   echodate "All charts have been tested successfully."
 else
-  echodate "Some checks have failed. For golden file diffs, run the chart's test.sh to update them; for immutable field changes, see the hint printed by the check."
+  echodate "Some checks have failed. For golden file diffs, run the chart's test.sh to update them; for immutable field changes, see the output of the check."
 fi
 
 exit $EXIT_CODE

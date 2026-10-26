@@ -138,7 +138,7 @@ presubmits:
               memory: 2Gi
 
   - name: pre-kubermatic-test-helm-charts
-    run_if_changed: "(charts/|hack/ci/test-helm-charts.sh|hack/ci/check-chart-immutable-fields/|hack/ci/testdata/chart-immutable-allowlist.yaml)"
+    run_if_changed: "(charts/|hack/ci/test-helm-charts.sh|hack/ci/check-chart-immutable-fields.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
