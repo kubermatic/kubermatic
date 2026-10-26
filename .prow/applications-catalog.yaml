@@ -377,6 +377,51 @@ presubmits:
             limits:
               memory: 6Gi
 
+  - name: pre-kubermatic-appcatalog-kubeflow-trainer
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubeflow-trainer-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "kubeflow-trainer"
+            - name: APPLICATION_NAME
+              value: "kubeflow-trainer"
+            - name: APPLICATION_NAMESPACE
+              value: "kubeflow-system"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "kubeflow-trainer,jobset"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
   - name: pre-kubermatic-appcatalog-kubevirt
     run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubevirt-app.yaml|pkg/test/e2e/defaultappcatalog/application_test.go)"
     decorate: true
