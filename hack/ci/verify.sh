@@ -69,6 +69,7 @@ try "Verify license compatibility" ./hack/verify-licenses.sh
 try "Verify boilerplate" ./hack/verify-boilerplate.sh
 try "Verify Grafana dashboards" ./hack/verify-grafana-dashboards.sh
 try "Verify Prometheus rules" ./hack/verify-prometheus-rules.sh
+try "Verify MLA metric contract" ./hack/verify-mla-metric-contract.sh
 try "Verify User Cluster Prometheus rules" ./hack/ci/verify-user-cluster-prometheus-configs.sh
 try "Display Versioning Information" ./hack/versions-gen.sh
 try "Verify Go Version" ./hack/ci/verify-go-version.sh

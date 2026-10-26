@@ -28,6 +28,10 @@ run:
     - ipam
     - kubevirt
     - logout
+    - metering
+    - mla
+    - mlaupgrade
+    - seedmla
 
 linters:
   default: none
