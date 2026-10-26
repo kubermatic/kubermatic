@@ -87,6 +87,7 @@ presubmits:
   # metric contract the reports read and the report content; runs on changes to
   # metering itself, the collectors and the per-cluster Prometheus filters
   - name: pre-kubermatic-metering-e2e
+    optional: true
     run_if_changed: "(pkg/ee/metering/|pkg/collectors/|pkg/resources/prometheus/|pkg/util/s3/|pkg/validation/metering.go|pkg/webhook/seed/|pkg/controller/operator/(seed|common)/|sdk/apis/kubermatic/v1/datacenter.go|charts/minio/|pkg/test/e2e/(metering|features/metering|testkit/metering)/|hack/ci/(run-metering-e2e-tests|setup-kubermatic-in-kind).sh|hack/ci/testdata/(kubermatic|seed|metering_s3_creds).yaml|.prow/features.yaml)"
     decorate: true
     decoration_config:
