@@ -21,8 +21,9 @@ customer's point of view. They share one set of checks:
 - Seed suite: the `seed-mla` stack in namespaces `monitoring` and `logging`.
   Checks labelled `needs-user-cluster` need an MLA user cluster on the seed.
 - The user cluster suite turns user cluster MLA on in the Seed and in the
-  cluster before the first check. The `disruptive` check (U19) turns it off
-  again.
+  cluster before the first check. The `disruptive` check, which verifies that
+  disabling MLA removes the agents, the gateway and the Grafana org, turns it
+  off again.
 
 ## Running
 

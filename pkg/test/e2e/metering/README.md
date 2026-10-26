@@ -34,7 +34,8 @@ the reports under that prefix. Two things stay behind:
 - When the suite turned metering on itself, turning it off keeps the
   Prometheus PVC `storage-metering-prometheus-0`, as KKP does for every Seed.
 - The lifecycle rule of the CSV report stays in the bucket when no other
-  report has a retention, because of the bug M52 checks.
+  report has a retention, because the operator skips the lifecycle update in
+  that case (a known issue).
 
 ## Known issues
 
@@ -42,8 +43,10 @@ Checks labelled `known-issue` fail because of confirmed product bugs and are
 skipped in CI. The `KnownIssue` field of each entry in the registry says why.
 The biggest one: the Seed validating webhook selects namespaces labelled
 `app.kubernetes.io/name=<KKP namespace>`, and nothing sets that label, so the
-webhook never runs (M17). M10-webhook, M12 and M16 depend on it. Labelling
-the namespace by hand makes the webhook run.
+webhook never runs. The checks for rejecting invalid report settings, for
+deploying every report configuration the Seed accepts and for the Seed example
+in the metering docs depend on it. Labelling the namespace by hand makes the
+webhook run.
 
 ## How the report checks work
 
@@ -52,12 +55,13 @@ created by the test never shows up in them on the same day. The report checks
 therefore run the metering tool once with the CronJob's own pod template and
 an explicit `--start`/`--end` window that ends a few minutes before now, and
 compare every column with the documented queries evaluated at the same time.
-M30 runs the CronJobs as they are and only checks the keys, content types and
-headers.
+The check for the scheduled uploads runs the CronJobs as they are and only
+checks the keys, content types and headers.
 
 The column lists, JSON fields and queries are those of metering v1.4.1. A
 metering bump that renames, moves or removes a column or field, or changes
-how a value is computed, fails M31 to M34. Appending columns is allowed.
+how a value is computed, fails the report format and report value checks.
+Appending columns is allowed.
 
 ## Running
 
