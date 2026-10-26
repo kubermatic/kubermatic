@@ -31,10 +31,10 @@ import (
 	"time"
 
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	corev1 "k8s.io/api/core/v1"
 
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
