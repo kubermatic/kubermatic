@@ -49,7 +49,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+// DeployCertManager installs or upgrades the bundled cert-manager chart. It is used by the
+// master stack and, for separate seed clusters, by the seed stack. It does nothing if no
+// CertificateIssuer is configured in the KubermaticConfiguration.
+func DeployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, CertManagerChartName) {
 		logger.Infof("⭕ Skipping %s deployment.", CertManagerChartName)
 		return nil
