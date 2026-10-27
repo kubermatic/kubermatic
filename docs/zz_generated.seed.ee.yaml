@@ -150,8 +150,9 @@ spec:
           # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
           # at https://docs.hetzner.com/general/others/data-centers-and-connection/
           datacenter: ""
-          # Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
-          # For informational purposes only.
+          # Optional: Hetzner location code, e.g. "fsn1". It is used for worker nodes and as the
+          # default location of load balancers created by the Hetzner CCM. If empty, the location
+          # is derived from the datacenter name.
           location: ""
           # Network is the pre-existing Hetzner network in which the machines are running.
           # While machines can be in multiple networks, a single one must be chosen for the
