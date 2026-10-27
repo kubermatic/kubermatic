@@ -650,32 +650,17 @@ func CheckSeedGrafana(ctx context.Context, in SeedInput) error {
 
 // CheckSeedLogs verifies that seed pod logs reach the seed Loki.
 func CheckSeedLogs(ctx context.Context, in SeedInput) error {
-	loki, err := newServiceProxy(in.SeedConfig, loggingNamespace, seedLokiService, seedLokiPort)
+	loki, err := seedLoki(in)
 	if err != nil {
 		return err
 	}
 
 	err = wait.PollImmediate(ctx, 10*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		now := time.Now()
-		path := fmt.Sprintf("/loki/api/v1/query_range?query=%s&start=%d&end=%d&limit=10",
-			url.QueryEscape(`{namespace="kubermatic"}`),
-			now.Add(-10*time.Minute).UnixNano(),
-			now.UnixNano(),
-		)
-
-		code, body, err := loki.do(ctx, http.MethodGet, path, nil, nil)
+		found, err := lokiHasLines(ctx, loki, `{namespace="kubermatic"}`, time.Now().Add(-10*time.Minute))
 		if err != nil {
 			return err, nil
 		}
-		if code != http.StatusOK {
-			return fmt.Errorf("expected HTTP 200, got HTTP %d: %s", code, body), nil
-		}
-
-		response, err := parseLokiQueryResponse(string(body))
-		if err != nil {
-			return err, nil
-		}
-		if len(response.Data.Result) == 0 {
+		if !found {
 			return errors.New("no log lines from namespace kubermatic in the last 10 minutes"), nil
 		}
 

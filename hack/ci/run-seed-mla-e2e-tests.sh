@@ -48,14 +48,17 @@ echodate "Deploying the seed-mla stack..."
   --helm-values hack/ci/testdata/seed-mla-values.yaml
 
 retry 8 check_all_deployments_ready monitoring
-retry 8 check_all_deployments_ready logging
+# logging has no Deployments, only the Loki StatefulSet and the Alloy DaemonSet
+kubectl --namespace logging rollout status statefulset/loki --timeout 5m
+kubectl --namespace logging rollout status daemonset/alloy --timeout 5m
 
 echodate "Seed MLA is ready."
 
 TEST_NAME="Run seed MLA e2e tests"
 echodate "Running seed MLA tests..."
 
-ginkgo_test seed_mla_e2e --tags seedmla --procs 2 --timeout 30m --no-color -v ./pkg/test/e2e/seedmla -- \
+# this job creates no user cluster, the MLA upgrade job runs those checks
+ginkgo_test seed_mla_e2e --tags seedmla --procs 2 --timeout 30m --no-color -v --label-filter "!needs-user-cluster" ./pkg/test/e2e/seedmla -- \
   -kubeconfig "$KUBECONFIG"
 
 echodate "Tests completed successfully!"

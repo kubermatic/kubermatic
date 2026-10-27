@@ -82,7 +82,9 @@ func newLogger() *zap.SugaredLogger {
 	return rawLogger.Sugar()
 }
 
-var _ = ginkgo.Describe("MLA upgrade", ginkgo.Ordered, func() {
+// ContinueOnFailure keeps one failing post-upgrade check from hiding the
+// results of the others.
+var _ = ginkgo.Describe("MLA upgrade", ginkgo.Ordered, ginkgo.ContinueOnFailure, func() {
 	ginkgo.BeforeAll(func() {
 		gomega.Expect(stateFile).NotTo(gomega.BeEmpty(), "-upgrade-state-file is required")
 	})
@@ -134,6 +136,16 @@ var _ = ginkgo.Describe("MLA upgrade", ginkgo.Ordered, func() {
 		s.UpgradeState = *upgradeState
 		gomega.Expect(saveState(stateFile, s)).To(gomega.Succeed())
 	}, ginkgo.NodeTimeout(60*time.Minute))
+
+	// UP3 runs before UP1, because UP1 deletes the user cluster in its cleanup.
+	ginkgo.It("UP3 ships the user cluster control plane logs to seed Loki after the upgrade", ginkgo.Label("post-upgrade", "needs-seed-mla"), func(ctx ginkgo.SpecContext) {
+		seedClient, seedConfig, err := utils.GetClients()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		in := mlatestkit.SeedInput{SeedClient: seedClient, SeedConfig: seedConfig, Log: newLogger()}
+		gomega.Expect(mlatestkit.CheckControlPlaneLogs(ctx, in)).To(gomega.Succeed())
+		gomega.Expect(mlatestkit.CheckSeedLogDiscards(ctx, in)).To(gomega.Succeed())
+	}, ginkgo.NodeTimeout(15*time.Minute))
 
 	ginkgo.It("UP1 keeps user cluster MLA data and configuration through the upgrade", ginkgo.Label("post-upgrade"), func(ctx ginkgo.SpecContext) {
 		logger := newLogger()

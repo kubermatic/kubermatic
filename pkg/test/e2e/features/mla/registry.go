@@ -128,6 +128,9 @@ var SeedFeatures = []Feature[mlatestkit.SeedInput]{
 	{ID: "S5", Name: "routes an alert through Alertmanager to karma", Scope: ScopeSeedWide, Mode: ModeParallel, Doc: seedCustomizeDoc, Check: mlatestkit.CheckSeedAlertRouting},
 	{ID: "S6", Name: "serves healthy datasources and the shipped dashboards in seed Grafana", Scope: ScopeCluster, Mode: ModeParallel, Doc: seedCustomizeDoc, Check: mlatestkit.CheckSeedGrafana},
 	{ID: "S7", Name: "ships seed pod logs to Loki", Scope: ScopeCluster, Mode: ModeParallel, Doc: seedInstallDoc, Check: mlatestkit.CheckSeedLogs},
+	{ID: "S7-labels", Name: "ships logs of a pod with as many labels as a user cluster apiserver to Loki", Scope: ScopeCluster, Mode: ModeParallel, Doc: seedInstallDoc, Check: mlatestkit.CheckSeedLogLabelLimit},
+	{ID: "S7-controlplane", Name: "ships the logs of every user cluster control plane container to Loki", Scope: ScopeCluster, Mode: ModeParallel, NeedsUserCluster: true, Doc: seedInstallDoc, Check: mlatestkit.CheckControlPlaneLogs},
+	{ID: "S7-discards", Name: "rejects no log line because of its labels", Scope: ScopeCluster, Mode: ModeParallel, Doc: seedInstallDoc, Check: mlatestkit.CheckSeedLogDiscards},
 	{ID: "S8", Name: "probes through the blackbox exporter", Scope: ScopeCluster, Mode: ModeParallel, Doc: seedInstallDoc, Check: mlatestkit.CheckBlackboxExporter},
 }
 
