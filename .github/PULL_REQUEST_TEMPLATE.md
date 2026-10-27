@@ -2,6 +2,7 @@
 
 **Which issue(s) this PR fixes**:
 <!--optional, in `fixes #<issue number>` format, will close the issue(s) when PR gets merged-->
+<!--every non-trivial PR requires an issue that a maintainer has confirmed, see CONTRIBUTING.md ("Issues Before Pull Requests"); trivial fixes (typos, broken links) are exempt-->
 Fixes #
 
 **What type of PR is this?**
