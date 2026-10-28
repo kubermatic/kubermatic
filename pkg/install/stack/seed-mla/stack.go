@@ -510,6 +510,10 @@ func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntim
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
+	if err := ensureLokiSchemaBoundary(ctx, sublogger, kubeClient, chart.Directory, opt.HelmValues, time.Now()); err != nil {
+		return fmt.Errorf("failed to determine Loki schema configuration: %w", err)
+	}
+
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, LokiNamespace, LokiReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
