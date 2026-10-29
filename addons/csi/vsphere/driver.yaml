@@ -352,14 +352,16 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - vsphere-csi-controller
-              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - vsphere-csi-controller
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - args:
             - --fss-name=internal-feature-states.csi.vsphere.vmware.com
