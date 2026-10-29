@@ -23,7 +23,30 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
+
+func TestAPIDeploymentCABundle(t *testing.T) {
+	cfg := newTestConfig()
+	cfg.Spec.CABundle = corev1.TypedLocalObjectReference{Name: "custom-ca-bundle"}
+
+	_, create := APIDeploymentReconciler(cfg, "", kubermatic.GetFakeVersions())()
+	d, err := create(&appsv1.Deployment{})
+	if err != nil {
+		t.Fatalf("failed to reconcile deployment: %v", err)
+	}
+
+	for _, v := range d.Spec.Template.Spec.Volumes {
+		if v.Name == "ca-bundle" {
+			if v.ConfigMap == nil || v.ConfigMap.Name != "custom-ca-bundle" {
+				t.Fatalf("expected ca-bundle volume to use ConfigMap custom-ca-bundle, got %+v", v.ConfigMap)
+			}
+			return
+		}
+	}
+
+	t.Fatal("ca-bundle volume not found")
+}
 
 func TestAPIDeploymentScheduling(t *testing.T) {
 	versions := kubermatic.GetFakeVersions()
