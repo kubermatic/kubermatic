@@ -71,6 +71,9 @@ type ApplicationManager struct {
 
 	// ClusterName of the user-cluster
 	ClusterName string
+
+	// CABundleFile is an optional path to the KKP CA bundle (PEM-encoded) used to verify TLS certificates when downloading application sources.
+	CABundleFile string
 }
 
 func (a *ApplicationManager) GetAppCache() string {
@@ -79,7 +82,7 @@ func (a *ApplicationManager) GetAppCache() string {
 
 // DownloadSource the application's source using the appropriate provider into downloadDest and returns the full path to the sources.
 func (a *ApplicationManager) DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
-	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
+	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace, a.CABundleFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to initialize source provider: %w", err)
 	}
