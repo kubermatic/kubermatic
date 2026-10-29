@@ -83,3 +83,90 @@ func TestHTTPRouteReadinessForGateway(t *testing.T) {
 		t.Fatal("expected HTTPRoute status for another Gateway not to be ready")
 	}
 }
+
+func TestHTTPRouteAcceptedByKubeLBGateway(t *testing.T) {
+	gatewayName := types.NamespacedName{Namespace: "kubermatic", Name: "kubermatic"}
+	gatewayNamespace := gatewayapiv1.Namespace(gatewayName.Namespace)
+	tenantNamespace := gatewayapiv1.Namespace("tenant-abc")
+
+	newRoute := func(statusParentName string) *gatewayapiv1.HTTPRoute {
+		return &gatewayapiv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "kubermatic",
+				Namespace:  "kubermatic",
+				Generation: 1,
+			},
+			Spec: gatewayapiv1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayapiv1.CommonRouteSpec{
+					ParentRefs: []gatewayapiv1.ParentReference{
+						{
+							Name:      gatewayapiv1.ObjectName(gatewayName.Name),
+							Namespace: &gatewayNamespace,
+						},
+					},
+				},
+			},
+			Status: gatewayapiv1.HTTPRouteStatus{
+				RouteStatus: gatewayapiv1.RouteStatus{
+					Parents: []gatewayapiv1.RouteParentStatus{
+						{
+							ParentRef: gatewayapiv1.ParentReference{
+								Name:      gatewayapiv1.ObjectName(statusParentName),
+								Namespace: &tenantNamespace,
+							},
+							Conditions: []metav1.Condition{
+								{
+									Type:               string(gatewayapiv1.RouteConditionAccepted),
+									Status:             metav1.ConditionTrue,
+									ObservedGeneration: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	if !HTTPRouteAcceptedByGateway(newRoute("kubermatic-kubermatic"), gatewayName) {
+		t.Fatal("expected HTTPRoute accepted by the KubeLB copy of the Gateway to be ready")
+	}
+
+	if HTTPRouteAcceptedByGateway(newRoute("other-gateway"), gatewayName) {
+		t.Fatal("expected HTTPRoute status for another Gateway not to be ready")
+	}
+
+	route := newRoute("kubermatic-kubermatic")
+	route.Spec.ParentRefs[0].Name = "other-gateway"
+	if HTTPRouteAcceptedByGateway(route, gatewayName) {
+		t.Fatal("expected KubeLB status not to count when the HTTPRoute does not reference the Gateway")
+	}
+
+	route = newRoute("kubermatic-kubermatic")
+	route.Status.Parents[0].Conditions[0].Status = metav1.ConditionFalse
+	if HTTPRouteAcceptedByGateway(route, gatewayName) {
+		t.Fatal("expected HTTPRoute rejected by the KubeLB copy of the Gateway not to be ready")
+	}
+}
+
+func TestKubeLBGatewayName(t *testing.T) {
+	testCases := []struct {
+		gateway  types.NamespacedName
+		expected string
+	}{
+		{
+			gateway:  types.NamespacedName{Namespace: "kubermatic", Name: "kubermatic"},
+			expected: "kubermatic-kubermatic",
+		},
+		{
+			gateway:  types.NamespacedName{Namespace: "a-very-long-gateway-namespace-name", Name: "a-very-long-gateway-object-name"},
+			expected: "a-very-long-gateway-namespace-name-a-very-long-gateway-31aa",
+		},
+	}
+
+	for _, tc := range testCases {
+		if got := kubeLBGatewayName(tc.gateway); got != tc.expected {
+			t.Errorf("kubeLBGatewayName(%s) = %q, expected %q", tc.gateway, got, tc.expected)
+		}
+	}
+}
