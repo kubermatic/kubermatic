@@ -272,12 +272,10 @@ type ClusterSpec struct {
 	// If this is true at the data center then it can't be over-written in the cluster configuration
 	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
 
-	// Optional: DisableFlatcarUpdateOperator stops KKP from deploying the flatcar-linux-update-operator and its
-	// update-agent into the user cluster and removes them if they are already installed. Set this when Flatcar OS
-	// updates are managed outside of KKP, for example by replacing node images.
-	// This field overrides the datacenter, seed and global defaults: setting it to false keeps the operator even
-	// when an admin disabled it for a broader scope. If nil, the broadest declared admin setting applies.
-	DisableFlatcarUpdateOperator *bool `json:"disableFlatcarUpdateOperator,omitempty"`
+	// Optional: FlatcarUpdateOperator configures the flatcar-linux-update-operator for this cluster
+	// and overrides the datacenter, Seed and KubermaticConfiguration settings.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorSettings `json:"flatcarUpdateOperator,omitempty"`
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
@@ -500,6 +498,17 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 	return c.BackupConfig != nil &&
 		c.BackupConfig.BackupStorageLocation != nil &&
 		c.BackupConfig.BackupStorageLocation.Name != ""
+}
+
+// FlatcarUpdateOperatorSettings configures the flatcar-linux-update-operator. The same settings
+// exist on Cluster, datacenter, Seed and KubermaticConfiguration; the narrowest declared level
+// wins, with precedence cluster > datacenter > seed > global.
+type FlatcarUpdateOperatorSettings struct {
+	// Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+	// this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+	// outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
+	// +optional
+	Disabled *bool `json:"disabled,omitempty"`
 }
 
 // KyvernoSettings contains settings for the Kyverno component as part of the cluster control plane. This component is responsible for policy management.

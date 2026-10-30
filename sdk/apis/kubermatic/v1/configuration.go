@@ -340,7 +340,7 @@ type KubermaticUserClusterConfiguration struct {
 	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
 	// the installation. Seed, datacenter and cluster level settings override it.
 	// +optional
-	FlatcarUpdateOperator *FlatcarUpdateOperatorConfigurations `json:"flatcarUpdateOperator,omitempty"`
+	FlatcarUpdateOperator *FlatcarUpdateOperatorSettings `json:"flatcarUpdateOperator,omitempty"`
 	// AdmissionPlugins configures global admission plugin settings for all user clusters.
 	// +optional
 	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
