@@ -986,3 +986,94 @@ func TestDefaultSkipEvictionAfter(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultWorkerCount(t *testing.T) {
+	const dcName = "worker-count-test-dc"
+
+	makeSettings := func(workerCount *int32) *kubermaticv1.MachineControllerSettings {
+		if workerCount == nil {
+			return nil
+		}
+		return &kubermaticv1.MachineControllerSettings{WorkerCount: ptr.To(*workerCount)}
+	}
+
+	testCases := []struct {
+		name     string
+		cluster  *int32
+		seed     *int32
+		template *int32
+		expected *int32
+	}{
+		{
+			name:     "no value anywhere: machine-controller default applies",
+			expected: nil,
+		},
+		{
+			name:     "no cluster value: seed default applies",
+			seed:     ptr.To[int32](4),
+			expected: ptr.To[int32](4),
+		},
+		{
+			name:     "cluster value wins over the seed default",
+			cluster:  ptr.To[int32](8),
+			seed:     ptr.To[int32](4),
+			expected: ptr.To[int32](8),
+		},
+		{
+			name:     "no cluster value: the cluster template wins over the seed default",
+			template: ptr.To[int32](6),
+			seed:     ptr.To[int32](4),
+			expected: ptr.To[int32](6),
+		},
+		{
+			name:     "cluster value wins over both the cluster template and the seed default",
+			cluster:  ptr.To[int32](8),
+			template: ptr.To[int32](6),
+			seed:     ptr.To[int32](4),
+			expected: ptr.To[int32](8),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						dcName: {Spec: kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}},
+					},
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{MachineController: makeSettings(tc.seed)},
+				},
+			}
+
+			var template *kubermaticv1.ClusterTemplate
+			if tc.template != nil {
+				template = &kubermaticv1.ClusterTemplate{}
+				template.Spec.ComponentsOverride.MachineController = makeSettings(tc.template)
+			}
+
+			spec := &kubermaticv1.ClusterSpec{
+				Cloud: kubermaticv1.CloudSpec{
+					DatacenterName: dcName,
+					ProviderName:   string(kubermaticv1.FakeCloudProvider),
+					Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+				},
+				ComponentsOverride: kubermaticv1.ComponentSettings{MachineController: makeSettings(tc.cluster)},
+			}
+
+			if err := DefaultClusterSpec(context.Background(), spec, nil, template, seed, config, nil); err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+
+			var got *int32
+			if mc := spec.ComponentsOverride.MachineController; mc != nil {
+				got = mc.WorkerCount
+			}
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}

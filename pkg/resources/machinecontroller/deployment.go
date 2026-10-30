@@ -18,6 +18,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -250,6 +251,10 @@ func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControlle
 
 	if overrides != nil && overrides.SkipEvictionAfter != nil {
 		flags = append(flags, "-skip-eviction-after", overrides.SkipEvictionAfter.Duration.String())
+	}
+
+	if overrides != nil && overrides.WorkerCount != nil {
+		flags = append(flags, "-worker-count", strconv.Itoa(int(*overrides.WorkerCount)))
 	}
 
 	return flags
