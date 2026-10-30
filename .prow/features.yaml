@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/|hack/ci/(run-mla-e2e-tests|setup-kubermatic-mla-in-kind).sh|hack/ci/testdata/kubermatic_mla.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -48,22 +48,73 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: pre-kubermatic-monitoring-e2e
-    optional: true
-    run_if_changed: "(go.mod|go.sum|charts/monitoring/|cmd/kubermatic-installer/|pkg/install/|.prow/|hack/ci/run-monitoring-e2e-test.sh)"
+  # seed MLA stack (charts/monitoring, charts/logging) in kind, no cloud; the
+  # metric contract check needs a user cluster and runs in the upgrade job
+  - name: pre-kubermatic-seed-mla-e2e
+    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|hack/ci/testdata/seed.yaml|.prow/features.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
+      preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
           command:
-            - "./hack/ci/run-monitoring-e2e-test.sh"
+            - "./hack/ci/run-seed-mla-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 14Gi
+              cpu: 4
+            limits:
+              memory: 18Gi
+
+  # metering (EE) in kind with an AWS user cluster: the operator objects, the
+  # metric contract the reports read and the report content; runs on changes to
+  # metering itself, the collectors and the per-cluster Prometheus filters
+  - name: pre-kubermatic-metering-e2e
+    optional: true
+    run_if_changed: "(pkg/ee/metering/|pkg/collectors/|pkg/resources/prometheus/|pkg/util/s3/|pkg/validation/metering.go|pkg/webhook/seed/|pkg/controller/operator/(seed|common)/|sdk/apis/kubermatic/v1/datacenter.go|charts/minio/|pkg/test/e2e/(metering|features/metering|testkit/metering)/|hack/ci/(run-metering-e2e-tests|setup-kubermatic-in-kind).sh|hack/ci/testdata/(kubermatic|seed|metering_s3_creds).yaml|.prow/features.yaml)"
+    decorate: true
+    decoration_config:
+      timeout: 2h30m
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
+          command:
+            - "./hack/ci/run-metering-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           securityContext:
             privileged: true
           resources:
@@ -71,8 +122,49 @@ presubmits:
               memory: 4Gi
               cpu: 2
             limits:
-              memory: 4Gi
-              cpu: 2
+              memory: 6Gi
+
+  # MLA_UPGRADE_CLUSTER_VERSION must be a full Kubernetes version that both the
+  # previous KKP minor and this branch support; bump it when either drops it
+  - name: pre-kubermatic-mla-upgrade-e2e
+    run_if_changed: "(charts/(mla|monitoring|logging)/|pkg/install/stack/(seed|usercluster)-mla/|pkg/controller/seed-controller-manager/mla/|pkg/controller/user-cluster-controller-manager/resources/resources/mla/|pkg/test/e2e/(mla|seedmla|mlaupgrade|features/mla|testkit/mla)/|cmd/kubermatic-installer/|hack/ci/.*mla.*|hack/ci/testdata/seed.yaml|.prow/features.yaml)"
+    decorate: true
+    decoration_config:
+      timeout: 2h30m
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+      preset-vault: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
+          command:
+            - "./hack/ci/run-mla-upgrade-e2e.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: MLA_UPGRADE_CLUSTER_VERSION
+              value: "1.35.9"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 16Gi
+              cpu: 6
+            limits:
+              memory: 20Gi
 
   - name: pre-kubermatic-konnectivity-e2e
     run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
