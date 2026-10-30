@@ -346,6 +346,10 @@ type SeedSpec struct {
 	// These settings apply to all user clusters in this seed.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+	// this seed. Datacenter and cluster level settings override it.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorSettings `json:"flatcarUpdateOperator,omitempty"`
 }
 
 type KyvernoConfigurations struct {
@@ -612,6 +616,11 @@ type DatacenterSpec struct {
 	// in this datacenter.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+
+	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+	// this datacenter. It overrides the seed and global settings; cluster level settings override it.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorSettings `json:"flatcarUpdateOperator,omitempty"`
 }
 
 // knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.

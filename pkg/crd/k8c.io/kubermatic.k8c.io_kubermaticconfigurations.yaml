@@ -7622,6 +7622,18 @@ spec:
                     etcdVolumeSize:
                       description: EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
                       type: string
+                    flatcarUpdateOperator:
+                      description: |-
+                        FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+                        the installation. Seed, datacenter and cluster level settings override it.
+                      properties:
+                        disabled:
+                          description: |-
+                            Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+                            this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+                            outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
+                          type: boolean
+                      type: object
                     keyConfiguration:
                       description: |-
                         KeyConfiguration selects the algorithm and size of the key material KKP generates

@@ -595,6 +595,18 @@ spec:
                               fakeProperty:
                                 type: string
                             type: object
+                          flatcarUpdateOperator:
+                            description: |-
+                              FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+                              this datacenter. It overrides the seed and global settings; cluster level settings override it.
+                            properties:
+                              disabled:
+                                description: |-
+                                  Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+                                  this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+                                  outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
+                                type: boolean
+                            type: object
                           gcp:
                             description: GCP configures a Google Cloud Platform (GCP) datacenter.
                             properties:
@@ -3648,6 +3660,18 @@ spec:
                     - LoadBalancer
                     - Tunneling
                   type: string
+                flatcarUpdateOperator:
+                  description: |-
+                    FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+                    this seed. Datacenter and cluster level settings override it.
+                  properties:
+                    disabled:
+                      description: |-
+                        Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+                        this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+                        outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
+                      type: boolean
+                  type: object
                 kubeconfig:
                   description: |-
                     A reference to the Kubeconfig of this cluster. The Kubeconfig must

@@ -77,6 +77,21 @@ if [[ "$(echo "${CLUSTER_RAW}" | jq -r '.spec.kyverno.enabled // false')" == "tr
   ARGS="$ARGS -kyverno-enabled"
 fi
 
+SEED_RAW="$(kubectl get seed -n kubermatic -o json | jq -c '.items[0]')"
+DC_NAME="$(echo "${CLUSTER_RAW}" | jq -r '.spec.cloud.dc')"
+FLATCAR_DISABLED="$(
+  jq -n -r --arg dc "${DC_NAME}" \
+    --argjson cluster "${CLUSTER_RAW}" \
+    --argjson seed "${SEED_RAW}" '
+    [ $cluster.spec.flatcarUpdateOperator.disabled,
+      $seed.spec.datacenters[$dc].spec.flatcarUpdateOperator.disabled,
+      $seed.spec.flatcarUpdateOperator.disabled ]
+    | map(select(. != null)) | first // false'
+)"
+if [[ "${FLATCAR_DISABLED}" == "true" ]]; then
+  ARGS="$ARGS -disable-flatcar-update-operator=true"
+fi
+
 if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
   if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
