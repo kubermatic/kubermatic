@@ -46,7 +46,9 @@ build: $(CMD)
 .PHONY: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
 
-$(BUILD_DEST)/%: cmd/% download-gocache
+GO_SOURCES := $(shell find cmd pkg sdk codegen -name '*.go')
+
+$(BUILD_DEST)/%: $(GO_SOURCES) download-gocache
 	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
 .PHONY: install
@@ -156,3 +158,44 @@ check-dependencies:
 .PHONY: shfmt
 shfmt:
 	shfmt -w -sr -i 2 hack
+
+CLUSTER ?= kkp-cluster
+
+.PHONY: dev-use-image
+dev-use-image:
+	./hack/dev/use-image.sh $(TAG) $(CLUSTER) $(REPOSITORY)
+
+.PHONY: dev-debug
+dev-debug:
+	./hack/dev/debug.sh $(COMPONENT) $(CLUSTER)
+
+DEV_REGISTRY ?= localhost:5000
+DEV_TAG ?= dev1
+DEV_SHA = $(shell git rev-parse HEAD)
+
+.PHONY: dev-push
+dev-push:
+	GOOS=linux GOARCH=$(shell go env GOARCH) $(MAKE) build
+	docker build -t $(DEV_REGISTRY)/kubermatic:$(DEV_TAG) .
+	docker tag $(DEV_REGISTRY)/kubermatic:$(DEV_TAG) $(DEV_REGISTRY)/kubermatic:$(DEV_SHA)
+	docker push $(DEV_REGISTRY)/kubermatic:$(DEV_TAG)
+	docker push $(DEV_REGISTRY)/kubermatic:$(DEV_SHA)
+
+.PHONY: dev-push-addons
+dev-push-addons:
+	docker build -t $(DEV_REGISTRY)/addons:$(DEV_TAG) addons/
+	docker tag $(DEV_REGISTRY)/addons:$(DEV_TAG) $(DEV_REGISTRY)/addons:$(DEV_SHA)
+	docker push $(DEV_REGISTRY)/addons:$(DEV_TAG)
+	docker push $(DEV_REGISTRY)/addons:$(DEV_SHA)
+
+.PHONY: dev-stage
+dev-stage:
+	./hack/dev/stage.sh $(DIR)
+
+.PHONY: dev-seed-fake-cluster
+dev-seed-fake-cluster:
+	./hack/dev/seed-fake-cluster.sh $(NAME) $(CLUSTER)
+
+.PHONY: dev-teardown
+dev-teardown:
+	./hack/dev/teardown.sh $(CLUSTER) $(REGISTRY)
