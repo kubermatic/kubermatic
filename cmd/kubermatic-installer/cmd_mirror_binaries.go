@@ -50,6 +50,10 @@ const (
 	KubeBaseURLFormat        = "https://dl.k8s.io"
 	KubeBinaryPath           = "release/%s/bin/linux/%s"
 	SHA256Exentsion          = ".sha256"
+	DefaultContainerdVersion = "v2.2.10"
+	DefaultRuncVersion       = "v1.3.6"
+	ContainerdBaseURL        = "https://github.com/containerd/containerd/releases/download"
+	RuncBaseURL              = "https://github.com/opencontainers/runc/releases/download"
 	// Default output directory for binaries.
 	DefaultOutputDir = "/usr/share/nginx/html/"
 )
@@ -337,6 +341,115 @@ func downloadCNIPlugins(ctx context.Context, logger *logrus.Logger, binPath, hos
 	return nil
 }
 
+// downloadContainerd downloads the static containerd release tarball and its checksum, then verifies the integrity.
+func downloadContainerd(ctx context.Context, logger *logrus.Logger, baseURL, binPath, hostArch string) error {
+	// Get the containerd version from the environment or use default
+	containerdVersion := os.Getenv("CONTAINERD_VERSION")
+	if containerdVersion == "" {
+		containerdVersion = DefaultContainerdVersion
+	}
+	containerdVersion = "v" + strings.TrimPrefix(containerdVersion, "v")
+
+	containerdDir := filepath.Join(binPath, "containerd", "containerd", "releases", "download", containerdVersion)
+	if err := ensureCleanDir(containerdDir); err != nil {
+		return fmt.Errorf("failed to prepare containerd directory: %w", err)
+	}
+
+	logger.Debugf("⏳ Downloading containerd version %s...", containerdVersion)
+
+	// The release assets carry the version without the "v" prefix.
+	containerdFileName := fmt.Sprintf("containerd-static-%s-linux-%s.tar.gz", strings.TrimPrefix(containerdVersion, "v"), hostArch)
+	containerdURL := fmt.Sprintf("%s/%s/%s", baseURL, containerdVersion, containerdFileName)
+	containerdFilePath := filepath.Join(containerdDir, containerdFileName)
+
+	if err := downloadFromURL(ctx, containerdURL, containerdFilePath); err != nil {
+		return fmt.Errorf("failed to download containerd tarball (%s): %w", containerdVersion, err)
+	}
+
+	checksumFileName := containerdFileName + ".sha256sum"
+	checksumURL := fmt.Sprintf("%s/%s/%s", baseURL, containerdVersion, checksumFileName)
+	checksumFilePath := filepath.Join(containerdDir, checksumFileName)
+
+	if err := downloadAndVerifyChecksum(ctx, checksumURL, checksumFilePath, containerdFilePath); err != nil {
+		return err
+	}
+
+	logger.Debugf("✔ Successfully downloaded containerd version %s.", containerdVersion)
+	return nil
+}
+
+// downloadRunc downloads the runc binary and the release's checksum file, then verifies the integrity.
+func downloadRunc(ctx context.Context, logger *logrus.Logger, baseURL, binPath, hostArch string) error {
+	// Get the runc version from the environment or use default
+	runcVersion := os.Getenv("RUNC_VERSION")
+	if runcVersion == "" {
+		runcVersion = DefaultRuncVersion
+	}
+	runcVersion = "v" + strings.TrimPrefix(runcVersion, "v")
+
+	runcDir := filepath.Join(binPath, "opencontainers", "runc", "releases", "download", runcVersion)
+	if err := ensureCleanDir(runcDir); err != nil {
+		return fmt.Errorf("failed to prepare runc directory: %w", err)
+	}
+
+	logger.Debugf("⏳ Downloading runc version %s...", runcVersion)
+
+	runcFileName := "runc." + hostArch
+	runcURL := fmt.Sprintf("%s/%s/%s", baseURL, runcVersion, runcFileName)
+	runcFilePath := filepath.Join(runcDir, runcFileName)
+
+	if err := downloadFromURL(ctx, runcURL, runcFilePath); err != nil {
+		return fmt.Errorf("failed to download runc (%s): %w", runcVersion, err)
+	}
+
+	// runc publishes a single checksum file for all architectures.
+	checksumFileName := "runc.sha256sum"
+	checksumURL := fmt.Sprintf("%s/%s/%s", baseURL, runcVersion, checksumFileName)
+	checksumFilePath := filepath.Join(runcDir, checksumFileName)
+
+	if err := downloadFromURL(ctx, checksumURL, checksumFilePath); err != nil {
+		return fmt.Errorf("failed to download checksum: %w", err)
+	}
+
+	expectedChecksum, err := getChecksumForFile(checksumFilePath, runcFileName)
+	if err != nil {
+		return fmt.Errorf("failed to verify checksum for %s: %w", runcFilePath, err)
+	}
+	actualChecksum, err := getChecksumOfFile(runcFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to verify checksum for %s: %w", runcFilePath, err)
+	}
+	if expectedChecksum != actualChecksum {
+		return fmt.Errorf("checksum verification failed for %s: expected %s, got %s", runcFilePath, expectedChecksum, actualChecksum)
+	}
+
+	logger.Debugf("✔ Successfully downloaded runc version %s.", runcVersion)
+	return nil
+}
+
+// getChecksumForFile returns the checksum listed for fileName in a sha256sum file that covers several files,
+// one "<checksum>  <name>" or "<checksum> *<name>" entry per line.
+func getChecksumForFile(checksumFilePath, fileName string) (string, error) {
+	file, err := os.Open(checksumFilePath)
+	if err != nil {
+		return "", fmt.Errorf("unable to open file %s: %w", checksumFilePath, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) == 2 && strings.TrimPrefix(fields[1], "*") == fileName {
+			return fields[0], nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("failed to read checksum file %s: %w", checksumFilePath, err)
+	}
+
+	return "", fmt.Errorf("no checksum for %s found in %s", fileName, checksumFilePath)
+}
+
 // MirrorBinariesFunc is the main function for the mirror-binaries command.
 func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
@@ -371,6 +484,18 @@ func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) c
 				return fmt.Errorf("failed to download CNI plugins for %s: %w", arch, err)
 			}
 			logger.Infof("✅ CNI plugins download complete for %s.", arch)
+
+			logger.Debugf("⏳ Starting containerd download for %s...", arch)
+			if err := downloadContainerd(ctx, logger, ContainerdBaseURL, binPath, arch); err != nil {
+				return fmt.Errorf("failed to download containerd for %s: %w", arch, err)
+			}
+			logger.Infof("✅ containerd download complete for %s.", arch)
+
+			logger.Debugf("⏳ Starting runc download for %s...", arch)
+			if err := downloadRunc(ctx, logger, RuncBaseURL, binPath, arch); err != nil {
+				return fmt.Errorf("failed to download runc for %s: %w", arch, err)
+			}
+			logger.Infof("✅ runc download complete for %s.", arch)
 
 			logger.Debugf("⏳ Starting CRI tools download for all available Kubernetes versions (%s)...", arch)
 			for _, version := range versions {
