@@ -1,0 +1,118 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-prometheus.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # 30s matches the seed scrape interval; with 1m, a [1m] range holds a single
+  # sample in Prometheus 3 (left-open ranges) and rate() returns nothing
+  - interval: 30s
+    input_series:
+      # Prometheus and Alertmanager are scraped by the "pods" job, which maps
+      # pod labels via labelmap and sets namespace/pod target labels
+      - series: 'prometheus_config_last_reload_successful{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090"}'
+        values: '0+0x60'
+      - series: 'prometheus_rule_evaluation_failures_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",rule_group="g"}'
+        values: '0+30x60'
+      - series: 'prometheus_remote_storage_samples_failed_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",remote_name="r",url="http://r"}'
+        values: '0+30x60'
+      - series: 'prometheus_remote_storage_samples_total{job="pods",app_kubernetes_io_name="prometheus",namespace="monitoring",pod="prometheus-0",instance="10.0.0.1:9090",remote_name="r",url="http://r"}'
+        values: '0+120x60'
+      - series: 'alertmanager_config_last_reload_successful{job="pods",app_kubernetes_io_name="alertmanager",namespace="monitoring",pod="alertmanager-0",instance="10.0.0.2:9093"}'
+        values: '0+0x60'
+      - series: 'alertmanager_notifications_failed_total{job="pods",app_kubernetes_io_name="alertmanager",namespace="monitoring",pod="alertmanager-0",instance="10.0.0.2:9093",integration="slack"}'
+        values: '0+1x60'
+      # the user cluster MLA Cortex Alertmanager is scraped by the same job
+      # and must not trigger the seed Alertmanager alerts
+      - series: 'alertmanager_config_last_reload_successful{job="pods",app_kubernetes_io_name="cortex",namespace="mla",pod="cortex-alertmanager-0",instance="10.0.0.3:8080"}'
+        values: '0+0x60'
+
+    alert_rule_test:
+      - alertname: PromBadConfig
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              resource: pods/10.0.0.1:9090
+              service: prometheus
+              job: pods
+              app_kubernetes_io_name: prometheus
+              namespace: monitoring
+              pod: prometheus-0
+              instance: 10.0.0.1:9090
+            exp_annotations:
+              message: Prometheus failed to reload config.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-prombadconfig
+      - alertname: PromRuleFailures
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              resource: pods/10.0.0.1:9090
+              service: prometheus
+              job: pods
+              app_kubernetes_io_name: prometheus
+              namespace: monitoring
+              pod: prometheus-0
+              instance: 10.0.0.1:9090
+              rule_group: g
+            exp_annotations:
+              message: Prometheus failed to evaluate 1.0 rules/sec.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promrulefailures
+      - alertname: PromRemoteStorageFailures
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              resource: pods/10.0.0.1:9090
+              service: prometheus
+              job: pods
+              app_kubernetes_io_name: prometheus
+              namespace: monitoring
+              pod: prometheus-0
+              instance: 10.0.0.1:9090
+              remote_name: r
+              url: http://r
+            exp_annotations:
+              message: Prometheus failed to send 20.0% samples.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
+      - alertname: PromAlertmanagerBadConfig
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              resource: pods/10.0.0.2:9093
+              service: prometheus
+              job: pods
+              app_kubernetes_io_name: alertmanager
+              namespace: monitoring
+              pod: alertmanager-0
+              instance: 10.0.0.2:9093
+            exp_annotations:
+              message: Alertmanager failed to reload config.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
+      - alertname: PromAlertsFailed
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: prometheus
+              namespace: monitoring
+              resource: /
+            exp_annotations:
+              message: Alertmanager failed to send an alert.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promalertsfailed
