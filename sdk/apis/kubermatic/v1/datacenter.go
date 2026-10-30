@@ -346,6 +346,10 @@ type SeedSpec struct {
 	// These settings apply to all user clusters in this seed.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+	// this seed. Datacenter and cluster level settings override it.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorConfigurations `json:"flatcarUpdateOperator,omitempty"`
 }
 
 type KyvernoConfigurations struct {
@@ -359,6 +363,22 @@ type KyvernoConfigurations struct {
 	// though other clusters in the Seed will still have Kyverno enforced.
 	// +optional
 	Enforced *bool `json:"enforced,omitempty"`
+}
+
+// FlatcarUpdateOperatorConfigurations configures the flatcar-linux-update-operator for all user
+// clusters under a KubermaticConfiguration, a Seed or a single datacenter.
+type FlatcarUpdateOperatorConfigurations struct {
+	// Disabled is the default for user clusters in this scope. When true, KKP does not deploy the
+	// flatcar-linux-update-operator and its update-agent into those clusters and removes them if
+	// they are already installed.
+	// Individual clusters override this by setting spec.disableFlatcarUpdateOperator explicitly;
+	// the narrowest declared level wins, with precedence cluster > datacenter > seed > global.
+	// If nil, no preference is declared at this level and the next broader level decides. If
+	// nothing is declared anywhere, the operator is deployed to clusters that have Flatcar nodes.
+	// Clearing this field after the operator was removed makes KKP install it again on the next
+	// reconciliation.
+	// +optional
+	Disabled *bool `json:"disabled,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -612,6 +632,11 @@ type DatacenterSpec struct {
 	// in this datacenter.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+
+	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+	// this datacenter. It overrides the seed and global settings; cluster level settings override it.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorConfigurations `json:"flatcarUpdateOperator,omitempty"`
 }
 
 // knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.

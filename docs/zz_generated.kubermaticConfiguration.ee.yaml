@@ -632,6 +632,9 @@ spec:
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
+    # FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+    # the installation. Seed, datacenter and cluster level settings override it.
+    flatcarUpdateOperator: null
     # KeyConfiguration selects the algorithm and size of the key material KKP generates
     # for user clusters. The value is stamped into each Cluster when it is created; it
     # therefore only affects clusters created after it is changed, never existing ones.

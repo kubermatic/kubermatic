@@ -275,7 +275,9 @@ type ClusterSpec struct {
 	// Optional: DisableFlatcarUpdateOperator stops KKP from deploying the flatcar-linux-update-operator and its
 	// update-agent into the user cluster and removes them if they are already installed. Set this when Flatcar OS
 	// updates are managed outside of KKP, for example by replacing node images.
-	DisableFlatcarUpdateOperator bool `json:"disableFlatcarUpdateOperator,omitempty"`
+	// This field overrides the datacenter, seed and global defaults: setting it to false keeps the operator even
+	// when an admin disabled it for a broader scope. If nil, the broadest declared admin setting applies.
+	DisableFlatcarUpdateOperator *bool `json:"disableFlatcarUpdateOperator,omitempty"`
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
