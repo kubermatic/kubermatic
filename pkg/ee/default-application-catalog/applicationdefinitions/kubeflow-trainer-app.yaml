@@ -1,0 +1,53 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0”)
+#                   Copyright © 2025 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: kubeflow-trainer
+spec:
+  description: Kubernetes-native operator for distributed training and fine-tuning of AI models with PyTorch, JAX, DeepSpeed and more
+  displayName: Kubeflow Trainer
+  method: helm
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: kubeflow-trainer
+            chartVersion: 2.3.0
+            url: oci://ghcr.io/kubeflow/charts
+      version: v2.3.0
+  defaultNamespace:
+    name: kubeflow-system
+    create: true
+  defaultValuesBlock: |
+    nameOverride: "kubeflow-trainer"
+    fullnameOverride: "kubeflow-trainer"
+    # install the default ClusterTrainingRuntimes such as torch-distributed
+    runtimes:
+      defaultEnabled: true
+    # set to false if JobSet is already installed in the cluster
+    jobset:
+      install: true
+  documentationURL: https://www.kubeflow.org/docs/components/trainer/
+  sourceURL: https://github.com/kubeflow/trainer
+  logo: |-
+    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0ic3ZnMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMTMuMDkgMjEwLjg4OSI+CiAgPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDMwLjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDIuMS4xIEJ1aWxkIDEyMykgIC0tPgogIDxwYXRoIGQ9Ik01OS4yODYsNzEuNjI5bDQuNzI1LDExNy42NzMsODQuOTk5LTEwOC40NzZjMi42NjMtMy40MDQsNy41ODEtNC4wMDUsMTAuOTg1LTEuMzQyLjAyNi4wMjEuMDUzLjA0MS4wNzkuMDYybDUzLjAxNiw0Mi41NTEtMTcuMjg4LTc1LjYxNy0xMzYuNTE3LDI1LjE0OFoiIGZpbGw9IiM0Mjc5ZjQiLz4KICA8cGF0aCBkPSJNNjYuOTUsMjEwLjg4OWg3NS4zOThsLTQ2LjI5Ny0zNy4xNDYtMjkuMTAxLDM3LjE0NloiIGZpbGw9IiMwMDI4YWEiLz4KICA8cGF0aCBkPSJNMTU2LjQyMSw5Ni43MmwtNTAuNzExLDY0LjcwMyw1NC4wMyw0My4zNDYsNTEuMjUzLTY0LjI2NS01NC41NzItNDMuNzg0WiIgZmlsbD0iIzAxNGJkMSIvPgogIDxwYXRoIGQ9Ik00NS4wNjQsNjAuMjc3bC4wMTItLjAxMkw4OS42NjYsNC4zNDUsMTcuNzYsMzguOTc4LDAsMTE2Ljc4NXM0NS4wNjQtNTYuNTA4LDQ1LjA2NC01Ni41MDhaIiBmaWxsPSIjYmVkY2ZmIi8+CiAgPHBhdGggZD0iTS45OTEsMTQwLjY2Nmw0Ny43NjEsNTkuODg1LTQuNTUyLTExNC4wNzdTLjk5MSwxNDAuNjY2Ljk5MSwxNDAuNjY2WiIgZmlsbD0iIzZjYTFmZiIvPgogIDxwYXRoIGQ9Ik0xODEuOTI2LDMzLjExMkwxMTMuMTY2LDBsLTQyLjc5Myw1My42NjJzMTExLjU1My0yMC41NSwxMTEuNTUzLTIwLjU1WiIgZmlsbD0iI2ExYzNmZiIvPgo8L3N2Zz4=
+  logoFormat: svg+xml
