@@ -79,6 +79,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        - name: SSL_CERT_FILE
+          value: /opt/ca-bundle/ca-bundle.pem
         image: quay.io/kubermatic/kubermatic:v0.0.0-test
         name: usercluster-controller
         readinessProbe:
