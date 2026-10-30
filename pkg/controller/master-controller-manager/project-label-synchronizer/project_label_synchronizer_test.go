@@ -107,6 +107,56 @@ func TestReconciliation(t *testing.T) {
 		{
 			name: "Absent project is handled gracefully",
 		},
+		{
+			name:         "Label removed from project gets removed from cluster",
+			masterClient: namedProjectClientWithLabels(projectName, nil),
+			seedClient: namedClusterWithLabelsAndInherited("baz", map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectName,
+				"foo":                          "bar",
+			}, map[string]string{
+				"foo": "bar",
+			}),
+			expectedLabels: map[string]map[string]string{"baz": {
+				kubermaticv1.ProjectIDLabelKey: projectName,
+			}},
+			expectedInheritedLabels: map[string]map[string]string{"baz": {}},
+		},
+		{
+			name: "One of several inherited labels is removed from project",
+			masterClient: namedProjectClientWithLabels(projectName, map[string]string{
+				"other": "baz",
+			}),
+			seedClient: namedClusterWithLabelsAndInherited("baz", map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectName,
+				"foo":                          "bar",
+				"other":                        "baz",
+			}, map[string]string{
+				"foo":   "bar",
+				"other": "baz",
+			}),
+			expectedLabels: map[string]map[string]string{"baz": {
+				kubermaticv1.ProjectIDLabelKey: projectName,
+				"other":                        "baz",
+			}},
+			expectedInheritedLabels: map[string]map[string]string{"baz": {
+				"other": "baz",
+			}},
+		},
+		{
+			name:         "Manually changed label is not removed, but stops being tracked as inherited",
+			masterClient: namedProjectClientWithLabels(projectName, nil),
+			seedClient: namedClusterWithLabelsAndInherited("baz", map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectName,
+				"foo":                          "custom-value",
+			}, map[string]string{
+				"foo": "bar",
+			}),
+			expectedLabels: map[string]map[string]string{"baz": {
+				kubermaticv1.ProjectIDLabelKey: projectName,
+				"foo":                          "custom-value",
+			}},
+			expectedInheritedLabels: map[string]map[string]string{"baz": {}},
+		},
 	}
 
 	for idx := range testCases {
@@ -169,6 +219,18 @@ func namedClusterWithLabels(name string, labels map[string]string) ctrlruntimecl
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
+		},
+	}).Build()
+}
+
+func namedClusterWithLabelsAndInherited(name string, labels, inheritedLabels map[string]string) ctrlruntimeclient.Client {
+	return fake.NewClientBuilder().WithObjects(&kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Status: kubermaticv1.ClusterStatus{
+			InheritedLabels: inheritedLabels,
 		},
 	}).Build()
 }

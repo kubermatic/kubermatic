@@ -19,6 +19,7 @@ package projectlabelsynchronizer
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"go.uber.org/zap"
 
@@ -136,10 +137,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if len(project.Labels) == 0 {
-		log.Debug("Project has no labels, nothing to do")
-		return nil
-	}
+	// Labels that clusters in this project should currently inherit. This can be
+	// empty, e.g. if the project has no labels (anymore); reconciling still needs
+	// to happen in that case so that previously-inherited labels get removed again.
+	desiredInheritedLabels := getInheritedLabels(log, project.Labels)
 
 	workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
 	projectLabelRequirement, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
@@ -166,21 +167,24 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		filteredClusters := r.filterClustersByProjectID(log, project.Name, unfilteredClusters)
 		for _, cluster := range filteredClusters {
 			log := log.With("cluster", cluster.Name)
-			changed, newClusterLabels := getLabelsForCluster(log, cluster.ObjectMeta.DeepCopy().Labels, project.Labels)
-			if !changed {
+			changed, newClusterLabels := getLabelsForCluster(log, cluster.ObjectMeta.DeepCopy().Labels, cluster.Status.InheritedLabels, desiredInheritedLabels)
+			if changed {
+				oldCluster := cluster.DeepCopy()
+				cluster.Labels = newClusterLabels
+				log.Debug("Updating labels on cluster")
+				if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+					errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
+				}
+			} else {
 				log.Debug("Labels on cluster are already up to date")
-				continue
 			}
-			oldCluster := cluster.DeepCopy()
-			cluster.Labels = newClusterLabels
-			log.Debug("Updating labels on cluster")
-			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
-			}
-			if err := util.UpdateClusterStatus(ctx, seedClient, cluster, func(c *kubermaticv1.Cluster) {
-				c.Status.InheritedLabels = getInheritedLabels(project.Labels)
-			}); err != nil {
-				errs = append(errs, fmt.Errorf("failed to update status on cluster %q: %w", cluster.Name, err))
+
+			if !maps.Equal(cluster.Status.InheritedLabels, desiredInheritedLabels) {
+				if err := util.UpdateClusterStatus(ctx, seedClient, cluster, func(c *kubermaticv1.Cluster) {
+					c.Status.InheritedLabels = desiredInheritedLabels
+				}); err != nil {
+					errs = append(errs, fmt.Errorf("failed to update status on cluster %q: %w", cluster.Name, err))
+				}
 			}
 		}
 	}
@@ -208,42 +212,62 @@ func (r *reconciler) filterClustersByProjectID(
 	return result
 }
 
+// getLabelsForCluster returns the updated set of labels for a cluster, given its
+// current labels, the labels it previously inherited from its project (as recorded
+// in cluster.Status.InheritedLabels), and the labels it should currently inherit.
+//
+// Labels present in desiredInheritedLabels are set/updated on the cluster. Labels
+// that were previously inherited but are no longer desired get removed again,
+// unless their value was changed on the cluster in the meantime (in which case we
+// leave them alone, as someone else appears to manage that label now).
 func getLabelsForCluster(
 	log *zap.SugaredLogger,
 	clusterLabels map[string]string,
-	projectLabels map[string]string,
+	previouslyInheritedLabels map[string]string,
+	desiredInheritedLabels map[string]string,
 ) (changed bool, newClusterLabels map[string]string) {
-	// They shouldn't be nil as we skip projects without labels
-	// and need a label on the cluster to associate it to a project
-	// but better be safe than panicking.
 	if clusterLabels == nil {
 		clusterLabels = map[string]string{}
 	}
 	newClusterLabels = clusterLabels
 
-	for projectLabelKey, projectLabelValue := range projectLabels {
-		if kubermaticv1.ProtectedClusterLabels.Has(projectLabelKey) {
-			log.Infof("Project wants to set protected label %q on cluster, skipping", projectLabelKey)
+	for key, desiredValue := range desiredInheritedLabels {
+		if clusterLabels[key] == desiredValue {
+			log.Debugf("Label %q on cluster already has value of %q, nothing to do", key, desiredValue)
 			continue
 		}
-		if clusterLabels[projectLabelKey] == projectLabelValue {
-			log.Debugf("Label %q on cluster already has value of %q, nothing to do", projectLabelKey, projectLabelValue)
-			continue
-		}
-		log.Debugf("Setting label %q to value %q on cluster", projectLabelKey, projectLabelValue)
-		clusterLabels[projectLabelKey] = projectLabelValue
+		log.Debugf("Setting label %q to value %q on cluster", key, desiredValue)
+		clusterLabels[key] = desiredValue
 		changed = true
 	}
-	return
+
+	for key, previousValue := range previouslyInheritedLabels {
+		if _, stillDesired := desiredInheritedLabels[key]; stillDesired {
+			continue
+		}
+		if clusterLabels[key] != previousValue {
+			log.Debugf("Label %q was previously inherited from the project but has been changed on the cluster, leaving it alone", key)
+			continue
+		}
+		log.Debugf("Removing label %q from cluster, no longer set on project", key)
+		delete(clusterLabels, key)
+		changed = true
+	}
+
+	return changed, newClusterLabels
 }
 
-func getInheritedLabels(projectLabels map[string]string) map[string]string {
+// getInheritedLabels returns the subset of projectLabels that clusters of that
+// project should inherit, i.e. all labels minus the protected ones.
+func getInheritedLabels(log *zap.SugaredLogger, projectLabels map[string]string) map[string]string {
 	inheritedLabels := make(map[string]string)
 
 	for key, val := range projectLabels {
-		if !kubermaticv1.ProtectedClusterLabels.Has(key) {
-			inheritedLabels[key] = val
+		if kubermaticv1.ProtectedClusterLabels.Has(key) {
+			log.Infof("Project wants to set protected label %q on cluster, skipping", key)
+			continue
 		}
+		inheritedLabels[key] = val
 	}
 
 	return inheritedLabels
