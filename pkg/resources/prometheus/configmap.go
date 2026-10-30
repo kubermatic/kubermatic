@@ -390,7 +390,7 @@ scrape_configs:
   metric_relabel_configs:
   # Drop everything else except the explicitly mentioned
   - source_labels: [__name__]
-    regex: '^(up|kube_node_info|kube_node_status_condition)$'
+    regex: '^(up|kube_node_info|kube_node_status_condition|kube_node_spec_unschedulable)$'
     action: keep
 
 
