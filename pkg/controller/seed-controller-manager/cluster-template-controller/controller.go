@@ -33,9 +33,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -48,12 +48,11 @@ const (
 )
 
 type reconciler struct {
-	log                     *zap.SugaredLogger
-	workerNameLabelSelector labels.Selector
-	workerName              string
-	recorder                events.EventRecorder
-	namespace               string
-	seedClient              ctrlruntimeclient.Client
+	log        *zap.SugaredLogger
+	workerName string
+	recorder   events.EventRecorder
+	namespace  string
+	seedClient ctrlruntimeclient.Client
 }
 
 func Add(
@@ -63,26 +62,25 @@ func Add(
 	namespace string,
 	numWorkers int,
 ) error {
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %w", err)
-	}
-
 	reconciler := &reconciler{
-		log:                     log.Named(ControllerName),
-		workerNameLabelSelector: workerSelector,
-		workerName:              workerName,
-		recorder:                mgr.GetEventRecorder(ControllerName),
-		namespace:               namespace,
-		seedClient:              mgr.GetClient(),
+		log:        log.Named(ControllerName),
+		workerName: workerName,
+		recorder:   mgr.GetEventRecorder(ControllerName),
+		namespace:  namespace,
+		seedClient: mgr.GetClient(),
 	}
 
-	_, err = builder.ControllerManagedBy(mgr).
+	_, err := builder.ControllerManagedBy(mgr).
 		Named(ControllerName).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
+			// allows registering this controller on more than one manager in
+			// the same process, which the two-manager integration test does
+			// to reproduce a shared seed; in production every manager is its
+			// own process and this option is inert
+			SkipNameValidation: ptr.To(true),
 		}).
-		For(&kubermaticv1.ClusterTemplateInstance{}).
+		For(&kubermaticv1.ClusterTemplateInstance{}, builder.WithPredicates(workerlabel.Predicate(workerName))).
 		Build(reconciler)
 
 	return err
@@ -100,6 +98,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster template instance %s: %w", request.NamespacedName, err)
+	}
+
+	// the same worker-name ownership rule the watch predicate enforces, applied
+	// again here to guard against a stale cache delivering a foreign instance
+	if !workerlabel.Matches(r.workerName, instance.Labels) {
+		return reconcile.Result{}, nil
 	}
 
 	err := r.reconcile(ctx, instance, log)

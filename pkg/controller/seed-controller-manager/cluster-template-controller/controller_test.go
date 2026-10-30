@@ -27,7 +27,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,19 +36,21 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	workerSelector, err := workerlabel.LabelSelector("")
-	if err != nil {
-		t.Fatalf("failed to build worker-name selector: %v", err)
-	}
 	seedNamespace := "namespace"
 	projectName := generator.GenDefaultProject().Name
 
+	// an instance labeled for a different worker must not be processed by
+	// a reconciler with an empty worker name (the default single-manager setup)
+	dev2Instance := generator.GenClusterTemplateInstance(projectName, "ctID5", "bob@acme.com", 2)
+	dev2Instance.Labels[kubermaticv1.WorkerNameLabelKey] = "dev2"
+
 	testCases := []struct {
-		name                 string
-		namespacedName       types.NamespacedName
-		expectedClusters     []*kubermaticv1.Cluster
-		expectedGetErrStatus metav1.StatusReason
-		seedClient           ctrlruntimeclient.Client
+		name                    string
+		namespacedName          types.NamespacedName
+		expectedClusters        []*kubermaticv1.Cluster
+		expectedGetErrStatus    metav1.StatusReason
+		seedClient              ctrlruntimeclient.Client
+		verifyInstanceUntouched bool
 	}{
 		{
 			name: "scenario 1: generates new clusters according to the template instance object",
@@ -74,16 +75,29 @@ func TestReconcile(t *testing.T) {
 				).
 				Build(),
 		},
+		{
+			name: "scenario 2: instance with a foreign worker-name label is left untouched",
+			namespacedName: types.NamespacedName{
+				Name: dev2Instance.Name,
+			},
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects(
+					generator.GenClusterTemplate("ct5", "ctID5", projectName, kubermaticv1.UserClusterTemplateScope, "bob@acme.com"),
+					dev2Instance,
+				).
+				Build(),
+			verifyInstanceUntouched: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
-				namespace:               seedNamespace,
-				log:                     kubermaticlog.Logger,
-				workerNameLabelSelector: workerSelector,
-				seedClient:              tc.seedClient,
+				namespace:  seedNamespace,
+				log:        kubermaticlog.Logger,
+				seedClient: tc.seedClient,
 			}
 
 			request := reconcile.Request{NamespacedName: tc.namespacedName}
@@ -91,9 +105,22 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
+			if tc.verifyInstanceUntouched {
+				current := &kubermaticv1.ClusterTemplateInstance{}
+				if err := tc.seedClient.Get(ctx, tc.namespacedName, current); err != nil {
+					t.Fatalf("expected instance %s to still exist, but got: %v", tc.namespacedName.Name, err)
+				}
+				if current.Labels[kubermaticv1.WorkerNameLabelKey] != dev2Instance.Labels[kubermaticv1.WorkerNameLabelKey] {
+					t.Fatalf("expected instance to keep its worker-name label %q, got %q", dev2Instance.Labels[kubermaticv1.WorkerNameLabelKey], current.Labels[kubermaticv1.WorkerNameLabelKey])
+				}
+				if current.Spec.Replicas != dev2Instance.Spec.Replicas {
+					t.Fatalf("expected instance to keep its %d replicas, got %d", dev2Instance.Spec.Replicas, current.Spec.Replicas)
+				}
+			}
+
 			clusterTemplateLabelSelector := ctrlruntimeclient.MatchingLabels{kubermaticv1.ClusterTemplateInstanceLabelKey: tc.namespacedName.Name}
 			clusters := &kubermaticv1.ClusterList{}
-			err = tc.seedClient.List(ctx, clusters, clusterTemplateLabelSelector)
+			err := tc.seedClient.List(ctx, clusters, clusterTemplateLabelSelector)
 
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {

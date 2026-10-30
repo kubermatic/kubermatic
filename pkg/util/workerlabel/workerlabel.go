@@ -53,8 +53,15 @@ func Predicate(workerName string) predicate.Funcs {
 	return TypedPredicate[ctrlruntimeclient.Object](workerName)
 }
 
+// Matches returns whether an object with the given labels belongs to a
+// controller manager running with the given worker name. An empty worker
+// name matches objects that do not carry the worker-name label.
+func Matches(workerName string, labels map[string]string) bool {
+	return labels[kubermaticv1.WorkerNameLabelKey] == workerName
+}
+
 func TypedPredicate[T ctrlruntimeclient.Object](workerName string) predicate.TypedFuncs[T] {
 	return kubermaticpred.TypedFactory(func(object T) bool {
-		return object.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
+		return Matches(workerName, object.GetLabels())
 	})
 }
