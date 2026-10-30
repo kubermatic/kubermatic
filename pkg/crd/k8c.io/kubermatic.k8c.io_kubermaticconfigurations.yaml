@@ -7629,15 +7629,9 @@ spec:
                       properties:
                         disabled:
                           description: |-
-                            Disabled is the default for user clusters in this scope. When true, KKP does not deploy the
-                            flatcar-linux-update-operator and its update-agent into those clusters and removes them if
-                            they are already installed.
-                            Individual clusters override this by setting spec.disableFlatcarUpdateOperator explicitly;
-                            the narrowest declared level wins, with precedence cluster > datacenter > seed > global.
-                            If nil, no preference is declared at this level and the next broader level decides. If
-                            nothing is declared anywhere, the operator is deployed to clusters that have Flatcar nodes.
-                            Clearing this field after the operator was removed makes KKP install it again on the next
-                            reconciliation.
+                            Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+                            this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+                            outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
                           type: boolean
                       type: object
                     keyConfiguration:
