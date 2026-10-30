@@ -45,6 +45,7 @@ loki-distributed:
             s3forcepathstyle: true
             insecure: true
         alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless/api/prom/alertmanager/
+        enable_alertmanager_v2: true
       table_manager:
         creation_grace_period: 3h
         poll_interval: 10m
