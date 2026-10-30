@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -227,6 +228,10 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
 				fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 				fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
+			}
+
+			if len(cfg.Spec.Auth.AdditionalIssuerRedirectURLs) > 0 {
+				args = append(args, fmt.Sprintf("-oidc-issuer-additional-redirect-uris=%s", strings.Join(cfg.Spec.Auth.AdditionalIssuerRedirectURLs, ",")))
 			}
 
 			if cfg.Spec.API.DebugLog {

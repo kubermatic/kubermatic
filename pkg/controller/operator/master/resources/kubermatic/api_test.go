@@ -17,6 +17,8 @@ limitations under the License.
 package kubermatic
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -74,6 +76,57 @@ func TestAPIDeploymentScheduling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runSchedulingTest(t, tt, setSched, newCreator)
+		})
+	}
+}
+
+func TestAPIDeploymentAdditionalIssuerRedirectURLs(t *testing.T) {
+	const flag = "-oidc-issuer-additional-redirect-uris"
+
+	versions := kubermatic.GetFakeVersions()
+
+	tests := []struct {
+		name     string
+		urls     []string
+		wantArgs []string
+	}{
+		{
+			name: "no additional redirect URLs",
+		},
+		{
+			name:     "single additional redirect URL",
+			urls:     []string{"https://kkp-proxy.example.com"},
+			wantArgs: []string{flag + "=https://kkp-proxy.example.com"},
+		},
+		{
+			name:     "multiple additional redirect URLs",
+			urls:     []string{"https://kkp-proxy.example.com", "http://kkp.internal:8080"},
+			wantArgs: []string{flag + "=https://kkp-proxy.example.com,http://kkp.internal:8080"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := newTestConfig()
+			cfg.Spec.Auth.AdditionalIssuerRedirectURLs = tt.urls
+
+			_, creator := APIDeploymentReconciler(cfg, "", versions)()
+
+			deploy, err := creator(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("reconciler failed: %v", err)
+			}
+
+			var gotArgs []string
+			for _, arg := range deploy.Spec.Template.Spec.Containers[0].Args {
+				if strings.HasPrefix(arg, flag) {
+					gotArgs = append(gotArgs, arg)
+				}
+			}
+
+			if !slices.Equal(gotArgs, tt.wantArgs) {
+				t.Errorf("expected %v, got %v", tt.wantArgs, gotArgs)
+			}
 		})
 	}
 }
