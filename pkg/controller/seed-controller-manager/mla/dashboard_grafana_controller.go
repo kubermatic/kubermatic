@@ -35,8 +35,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -85,15 +87,57 @@ func newDashboardGrafanaReconciler(
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: a.GetNamespace()}}}
 	})
 
+	// this controller is the only one that writes dashboards, so a new or
+	// recreated Grafana org gets them by re-queueing every dashboard ConfigMap
+	enqueueAllGrafanaConfigMaps := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, _ ctrlruntimeclient.Object) []reconcile.Request {
+		return dashboardConfigMapRequests(ctx, log, client, dashboardGrafanaController.mlaNamespace)
+	})
+
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		Watches(&corev1.ConfigMap{}, enqueueGrafanaConfigMap, builder.WithPredicates(predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace))).
+		Watches(&kubermaticv1.Project{}, enqueueAllGrafanaConfigMaps, builder.WithPredicates(orgAnnotationChangedPredicate())).
 		Build(reconciler)
 
 	return err
+}
+
+func dashboardConfigMapRequests(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string) []reconcile.Request {
+	configMapList := &corev1.ConfigMapList{}
+	if err := client.List(ctx, configMapList, ctrlruntimeclient.InNamespace(namespace)); err != nil {
+		log.Errorw("Failed to list ConfigMaps", zap.Error(err))
+		return nil
+	}
+
+	var requests []reconcile.Request
+	for _, configMap := range configMapList.Items {
+		if strings.HasPrefix(configMap.Name, grafanaDashboardsConfigmapNamePrefix) {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}})
+		}
+	}
+
+	return requests
+}
+
+func orgAnnotationChangedPredicate() predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			_, ok := e.Object.GetAnnotations()[GrafanaOrgAnnotationKey]
+			return ok
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectOld.GetAnnotations()[GrafanaOrgAnnotationKey] != e.ObjectNew.GetAnnotations()[GrafanaOrgAnnotationKey]
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
 }
 
 func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

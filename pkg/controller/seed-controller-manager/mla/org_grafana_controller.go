@@ -29,7 +29,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,13 +115,11 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, grafanaClient, project)
-	if err != nil {
+	// dashboards for a new org are added by the grafana-dashboard controller,
+	// which watches the org annotation; a second writer here could re-add a
+	// dashboard after its ConfigMap was deleted
+	if _, err := r.orgGrafanaController.ensureOrganization(ctx, log, grafanaClient, project); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization: %w", err)
-	}
-
-	if err := r.orgGrafanaController.ensureDashboards(ctx, log, orgID, grafanaClient); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Dashboards: %w", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -131,7 +128,6 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 type orgGrafanaController struct {
 	ctrlruntimeclient.Client
 	clientProvider grafanaClientProvider
-	mlaNamespace   string
 
 	log *zap.SugaredLogger
 }
@@ -139,13 +135,11 @@ type orgGrafanaController struct {
 func newOrgGrafanaController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
-	mlaNamespace string,
 	clientProvider grafanaClientProvider,
 ) *orgGrafanaController {
 	return &orgGrafanaController{
 		Client:         client,
 		clientProvider: clientProvider,
-		mlaNamespace:   mlaNamespace,
 
 		log: log,
 	}
@@ -312,22 +306,6 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, grafanaClie
 	}
 
 	return &org, nil
-}
-
-func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint, grafanaClient *grafanasdk.Client) error {
-	configMapList := &corev1.ConfigMapList{}
-	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
-		return fmt.Errorf("Failed to list configmaps: %w", err)
-	}
-	for _, configMap := range configMapList.Items {
-		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
-			continue
-		}
-		if err := addDashboards(ctx, log, grafanaClient.WithOrgIDHeader(orgID), &configMap); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (r *orgGrafanaController) setOrgAnnotation(ctx context.Context, project *kubermaticv1.Project, orgID uint) error {

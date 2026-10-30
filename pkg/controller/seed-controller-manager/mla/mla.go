@@ -129,7 +129,7 @@ func Add(
 		return fmt.Errorf("failed to prepare Grafana client: %w", err)
 	}
 
-	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
+	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, clientProvider)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), clientProvider, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, clientProvider, httpClient, grafanaURL, grafanaHeader)
