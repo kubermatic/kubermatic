@@ -1,0 +1,48 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-helm-exporter.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      # helm-exporter is scraped by the "pods" job; its own namespace label
+      # clashes with the target label and becomes exported_namespace
+      - series: 'helm_chart_info{job="pods",app_kubernetes_io_name="helm-exporter",namespace="monitoring",pod="helm-exporter-abc",chart="cert-manager",release="cert-manager",version="v1.19.1",exported_namespace="cert-manager"}'
+        values: '4+0x30'
+      - series: 'helm_chart_info{job="pods",app_kubernetes_io_name="helm-exporter",namespace="monitoring",pod="helm-exporter-abc",chart="minio",release="minio",version="5.4.0",exported_namespace="minio"}'
+        values: '1+0x30'
+
+    alert_rule_test:
+      - alertname: HelmReleaseNotDeployed
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              resource: cert-manager
+              service: helm-exporter
+              job: pods
+              app_kubernetes_io_name: helm-exporter
+              namespace: monitoring
+              pod: helm-exporter-abc
+              chart: cert-manager
+              release: cert-manager
+              version: v1.19.1
+              exported_namespace: cert-manager
+            exp_annotations:
+              message: The Helm release `cert-manager` (`cert-manager` chart in namespace `cert-manager`) in version v1.19.1 has not been ready for more than 15 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-helmreleasenotdeployed
