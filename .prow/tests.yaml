@@ -198,7 +198,7 @@ presubmits:
 
   - name: pre-kubermatic-test-build-utility-images
     decorate: true
-    run_if_changed: "(hack/release-sidecar-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
+    run_if_changed: "(hack/release-utility-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-docker-mirror: "true"
