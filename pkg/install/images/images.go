@@ -673,6 +673,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		Enabled: true,
 	}
 
+	// HasCCM is wider than what cluster defaulting enables (e.g. Hetzner without a
+	// network), which only adds images, and the image list should rather have too many
 	if cloudcontroller.HasCCM(&fakeCluster.Spec) {
 		fakeCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	}

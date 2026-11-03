@@ -121,21 +121,30 @@ func TestGetImagesForVersionIncludesRuntimeImages(t *testing.T) {
 		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 	}
 
+	allAddons, err := addonutil.LoadAddonsFromDirectory("../../../addons")
+	if err != nil {
+		t.Fatalf("Failed to load addons: %v", err)
+	}
+
 	utilImage := config.Spec.Util.DockerRepository + ":" + resources.UtilVersion
 	kubeOneImage := resources.KubeOneImage + ":" + resources.KubeOneImageTag
 
 	testCases := []struct {
 		provider kubermaticv1.ProviderType
 		expected []string
+		// repositories matched without a tag, for addon images that are bumped often
+		expectedRepos []string
 	}{
 		{
-			// the KubeOne Jobs, the seed-proxy and the encryption Job do not depend on the provider
+			// util is shared by the KubeOne Jobs, the seed-proxy and the encryption Job, so
+			// this only proves util is listed, not which of them listed it
 			provider: kubermaticv1.BringYourOwnCloudProvider,
 			expected: []string{utilImage, kubeOneImage},
 		},
 		{
-			provider: kubermaticv1.AWSCloudProvider,
-			expected: []string{resources.RegistryK8S + "/provider-aws/cloud-controller-manager:" + cloudcontroller.AWSCCMVersion(clusterSemver)},
+			provider:      kubermaticv1.AWSCloudProvider,
+			expected:      []string{resources.RegistryK8S + "/provider-aws/cloud-controller-manager:" + cloudcontroller.AWSCCMVersion(clusterSemver)},
+			expectedRepos: []string{"public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver"},
 		},
 		{
 			provider: kubermaticv1.DigitaloceanCloudProvider,
@@ -154,7 +163,7 @@ func TestGetImagesForVersionIncludesRuntimeImages(t *testing.T) {
 				t.Fatalf("Expected 1 cloud spec for %q, got %d", tc.provider, len(cloudSpecs))
 			}
 
-			images, err := GetImagesForVersion(logrus.New(), clusterVersion, cloudSpecs[0], cniPlugin, true, config, nil, kubermatic.GetFakeVersions(), caBundle, "")
+			images, err := GetImagesForVersion(logrus.New(), clusterVersion, cloudSpecs[0], cniPlugin, true, config, allAddons, kubermatic.GetFakeVersions(), caBundle, "")
 			if err != nil {
 				t.Fatalf("Failed to get images: %v", err)
 			}
@@ -163,6 +172,19 @@ func TestGetImagesForVersionIncludesRuntimeImages(t *testing.T) {
 			for _, image := range tc.expected {
 				if !imageSet.Has(image) {
 					t.Errorf("Expected image %q to be listed, but it was not", image)
+				}
+			}
+
+			for _, repo := range tc.expectedRepos {
+				found := false
+				for _, image := range images {
+					if strings.HasPrefix(image, repo+":") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected an image from %q to be listed, but there was none", repo)
 				}
 			}
 		})
