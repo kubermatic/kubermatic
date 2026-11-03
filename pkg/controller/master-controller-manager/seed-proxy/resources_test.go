@@ -103,7 +103,7 @@ func TestSeedProxyDeploymentUtilImage(t *testing.T) {
 				t.Fatalf("failed to default configuration: %v", err)
 			}
 
-			_, reconciler := masterDeploymentReconciler(seed, secret, config)()
+			_, reconciler := MasterDeploymentReconciler(seed, secret, config)()
 
 			deployment, err := reconciler(&appsv1.Deployment{})
 			if err != nil {

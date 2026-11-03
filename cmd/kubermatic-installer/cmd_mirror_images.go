@@ -289,8 +289,8 @@ func allSupportedProviderNames() []string {
 	return names
 }
 
-// CollectImageMatrix aggregates images for all cluster versions, cloud providers, and CNI plugins,
-// including both Konnectivity and non-Konnectivity configurations.
+// CollectImageMatrix aggregates images for all cluster versions, cloud providers, and CNI plugins.
+// Only Konnectivity-enabled clusters are rendered, because Konnectivity can no longer be disabled.
 func CollectImageMatrix(
 	logger logrus.FieldLogger,
 	clusterVersions []*version.Version,

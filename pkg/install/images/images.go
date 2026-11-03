@@ -42,6 +42,8 @@ import (
 	ksemver "k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/cni"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
+	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
@@ -65,6 +67,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
+	"k8c.io/kubermatic/v2/pkg/resources/encryption"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -482,6 +485,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.MasterControllerManagerDeploymentReconciler(config, "", kubermaticVersions, nil))
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.UIDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.SeedControllerManagerDeploymentReconciler("", kubermaticVersions, config, seed))
+	deploymentReconcilers = append(deploymentReconcilers, seedproxy.MasterDeploymentReconciler(seed, &corev1.Secret{}, config))
 	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.EnvoyDeploymentReconciler(config, seed, false, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.UpdaterDeploymentReconciler(config, seed, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, vpa.AdmissionControllerDeploymentReconciler(config, kubermaticVersions))
@@ -559,6 +563,11 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
 	}
 
+	// these Jobs are created on demand by controllers and have no reconciler
+	encryptionJob := encryption.EncryptionJobCreator(templateData, templateData.Cluster(), &corev1.Secret{}, nil, "")
+	images = append(images, getImagesFromPodSpec(encryptionJob.Spec.Template.Spec)...)
+	images = append(images, kubeone.JobImages(templateData)...)
+
 	// Add images for Enterprise Edition addons/components.
 	additionalImages, err := getAdditionalImagesFromReconcilers(templateData)
 	if err != nil {
@@ -629,7 +638,10 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
+			AWS:                 &kubermaticv1.DatacenterSpecAWS{},
 			Azure:               &kubermaticv1.DatacenterSpecAzure{},
+			Digitalocean:        &kubermaticv1.DatacenterSpecDigitalocean{},
+			GCP:                 &kubermaticv1.DatacenterSpecGCP{},
 			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
 			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
 			Nutanix:             &kubermaticv1.DatacenterSpecNutanix{},
@@ -661,10 +673,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		Enabled: true,
 	}
 
-	if cloudSpec.Openstack != nil || cloudSpec.Hetzner != nil || cloudSpec.Azure != nil || cloudSpec.VSphere != nil || cloudSpec.Anexia != nil || cloudSpec.Kubevirt != nil {
-		if fakeCluster.Spec.Features == nil {
-			fakeCluster.Spec.Features = make(map[string]bool)
-		}
+	if cloudcontroller.HasCCM(&fakeCluster.Spec) {
 		fakeCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	}
 

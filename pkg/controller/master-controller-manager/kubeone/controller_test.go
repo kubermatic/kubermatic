@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -133,6 +134,63 @@ func TestKubeOneJobUtilImage(t *testing.T) {
 			image := job.Spec.Template.Spec.InitContainers[0].Image
 			if image != tc.expectedImage {
 				t.Fatalf("expected copy-ro-manifest init container image %q, got %q", tc.expectedImage, image)
+			}
+		})
+	}
+}
+
+// TestJobImagesMatchKubeOneJobs ensures that JobImages, which the installer uses to
+// list the images to mirror, stays in sync with the Jobs the controller creates.
+func TestJobImagesMatchKubeOneJobs(t *testing.T) {
+	externalCluster := &kubermaticv1.ExternalCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test"},
+		Spec: kubermaticv1.ExternalClusterSpec{
+			CloudSpec: kubermaticv1.ExternalClusterCloudSpec{
+				ProviderName: kubermaticv1.ExternalClusterKubeOneProvider,
+				KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{
+					ProviderName:         resources.KubeOneVSphere,
+					CredentialsReference: secretRef("credentials"),
+					SSHReference:         secretRef("ssh"),
+					ManifestReference:    secretRef("manifest"),
+				},
+			},
+		},
+	}
+
+	config, err := defaulting.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("failed to default configuration: %v", err)
+	}
+
+	data := resources.NewTemplateDataBuilder().
+		WithOverwriteRegistry("mirror.corp").
+		WithKubermaticConfiguration(config).
+		Build()
+
+	expected := sets.New(JobImages(data)...)
+
+	for _, action := range []string{ImportAction, UpgradeControlPlaneAction, MigrateContainerRuntimeAction} {
+		t.Run(action, func(t *testing.T) {
+			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "credentials", Namespace: resources.KubermaticNamespace}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "ssh", Namespace: resources.KubermaticNamespace}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "manifest", Namespace: resources.KubermaticNamespace}},
+			).Build()
+
+			r := &reconciler{Client: client, log: zap.NewNop().Sugar()}
+
+			job, err := r.generateKubeOneActionJob(context.Background(), r.log, data, externalCluster, action)
+			if err != nil {
+				t.Fatalf("failed to generate kubeone job: %v", err)
+			}
+
+			actual := sets.New[string]()
+			for _, container := range append(job.Spec.Template.Spec.InitContainers, job.Spec.Template.Spec.Containers...) {
+				actual.Insert(container.Image)
+			}
+
+			if !actual.Equal(expected) {
+				t.Errorf("JobImages returned %v, but the Job uses %v", sets.List(expected), sets.List(actual))
 			}
 		})
 	}
