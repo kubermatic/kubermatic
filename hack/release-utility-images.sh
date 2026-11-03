@@ -47,31 +47,27 @@ image_exists() {
 
 CHANGED_FILES=""
 if $DRY_RUN && [[ -n "${PULL_BASE_SHA:-}" ]]; then
-  CHANGED_FILES="$(git diff --name-only "$PULL_BASE_SHA...HEAD")"
+  CHANGED_FILES="$(git diff --name-only --no-renames "$PULL_BASE_SHA...HEAD")"
 fi
 
-# tests next to a sidecar's code do not end up in its image
+# tests, docs and OWNERS files are never copied into an image
 dir_changed() {
-  local files="$CHANGED_FILES"
-  if [[ "$1" == cmd/* ]]; then
-    files="$(grep -v '_test\.go$' <<< "$files" || true)"
-  fi
+  local files
+  files="$(grep -vE '(_test\.go|\.md|/OWNERS(_ALIASES)?)$' <<< "$CHANGED_FILES" || true)"
   grep -q "^$1/" <<< "$files"
 }
 
-# prints nothing if the directory does not exist on the PR base yet;
-# the local TAG keeps the base value away from the caller's TAG
+# prints nothing if the directory does not exist on the PR base yet
 base_tag() {
-  local TAG=""
-  # eval instead of source <(...), which reads nothing on bash 3.2 (macOS)
-  eval "$(git show "$PULL_BASE_SHA:$1/settings.sh" 2> /dev/null || true)"
-  echo "$TAG"
+  git show "$PULL_BASE_SHA:$1/settings.sh" 2> /dev/null | sed -nE 's/^TAG="?([^"# ]*)"?.*/\1/p' || true
 }
 
 # should_build decides if the image for directory $1 needs to be built.
 # Outside of presubmits it only checks the registry. In presubmits a changed
 # directory is always built, but must come with a TAG that is new compared to
-# the PR base and not yet published, or the postsubmit would never push it.
+# the PR base. On main the TAG must also not be published yet, or the
+# postsubmit would never push it; other branches may reuse a published TAG,
+# e.g. for reverts and backports.
 should_build() {
   local dir="$1" name="$2" image="$3"
 
@@ -82,8 +78,13 @@ should_build() {
     fi
 
     if image_exists "$image"; then
-      echodate "[$name] $dir/ changed, but $image exists already and would not be overwritten. Choose a new TAG in $dir/settings.sh."
-      exit 1
+      if [[ "${PULL_BASE_REF:-}" == "main" ]]; then
+        echodate "[$name] $dir/ changed, but $image exists already and would not be overwritten. Choose a new TAG in $dir/settings.sh."
+        exit 1
+      fi
+
+      echodate "[$name] Warning: $dir/ changed, but $image exists already and would not be overwritten, skipping."
+      return 1
     fi
 
     echodate "[$name] $dir/ changed in this PR, building $image."
