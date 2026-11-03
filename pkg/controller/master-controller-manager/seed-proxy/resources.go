@@ -219,7 +219,8 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, config *kubermaticv1.KubermaticConfiguration) reconciling.NamedDeploymentReconcilerFactory {
+// MasterDeploymentReconciler returns the reconciler for the seed-proxy Deployment in the master cluster.
+func MasterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, config *kubermaticv1.KubermaticConfiguration) reconciling.NamedDeploymentReconcilerFactory {
 	name := deploymentName(seed)
 
 	return func() (string, reconciling.DeploymentReconciler) {

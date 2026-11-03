@@ -129,6 +129,15 @@ type templateData interface {
 	UtilImage() string
 }
 
+// JobImages returns the container images of the Jobs that run KubeOne actions.
+func JobImages(data templateData) []string {
+	return []string{data.UtilImage(), kubeOneImage(data)}
+}
+
+func kubeOneImage(data templateData) string {
+	return registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", resources.KubeOneImage, resources.KubeOneImageTag)))
+}
+
 type reconciler struct {
 	ctrlruntimeclient.Client
 	log               *zap.SugaredLogger
@@ -1105,7 +1114,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					Containers: []corev1.Container{
 						{
 							Name:    "kubeone",
-							Image:   registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", resources.KubeOneImage, resources.KubeOneImageTag))),
+							Image:   kubeOneImage(data),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",
