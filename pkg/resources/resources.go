@@ -1613,6 +1613,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.MachineController != nil && componentSettings.MachineController.Resources != nil {
 		r[MachineControllerContainerName] = componentSettings.MachineController.Resources.DeepCopy()
 	}
+	if componentSettings.KubeLB != nil && componentSettings.KubeLB.Resources != nil {
+		r[KubeLBDeploymentName] = componentSettings.KubeLB.Resources.DeepCopy()
+	}
 
 	return r
 }

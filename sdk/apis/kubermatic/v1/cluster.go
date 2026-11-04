@@ -1025,6 +1025,9 @@ type ComponentSettings struct {
 	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
+	// KubeLB configures the KubeLB CCM deployed as part of the cluster control plane.
+	// Only available in Enterprise Edition.
+	KubeLB *DeploymentSettings `json:"kubelb,omitempty,omitcegenyaml"`
 }
 
 type APIServerSettings struct {

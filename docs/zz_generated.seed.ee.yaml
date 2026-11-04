@@ -617,6 +617,9 @@ spec:
       zoneAntiAffinity: ""
     # KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
     kubeStateMetrics: null
+    # KubeLB configures the KubeLB CCM deployed as part of the cluster control plane.
+    # Only available in Enterprise Edition.
+    kubelb: null
     # MachineController configures the Kubermatic machine-controller deployment.
     machineController: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
