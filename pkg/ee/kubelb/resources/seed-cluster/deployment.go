@@ -72,6 +72,7 @@ type kubeLBData interface {
 	DC() *kubermaticv1.Datacenter
 	KubeLBImageRepository() string
 	KubeLBImageTag() string
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter, kubeLB kubermaticv1.KubeLBConfiguration) *resources.TemplateData {
@@ -114,6 +115,18 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 			dep.Labels = resources.BaseAppLabels(resources.KubeLBDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
+
+			hostAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			zoneAntiAffinity := kubermaticv1.AntiAffinityType(kubermaticv1.AntiAffinityTypePreferred)
+			dep.Spec.Template.Spec.Tolerations = nil
+			if override := data.Cluster().Spec.ComponentsOverride.KubeLB; override != nil {
+				hostAntiAffinity = override.HostAntiAffinity
+				zoneAntiAffinity = override.ZoneAntiAffinity
+				if override.Replicas != nil {
+					dep.Spec.Replicas = override.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = override.Tolerations
+			}
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(resources.KubeLBDeploymentName, nil),
 			}
@@ -210,9 +223,20 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			// Only one replica is active at a time, additional replicas are standbys
+			// (the CCM runs with leader election enabled by default).
+			dep.Spec.Template.Spec.Affinity = nil
+			if dep.Spec.Replicas != nil && *dep.Spec.Replicas > 1 {
+				dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.KubeLBDeploymentName, hostAntiAffinity)
+				if data.SupportsFailureDomainZoneAntiAffinity() {
+					zoneAffinity := resources.FailureDomainZoneAntiAffinity(resources.KubeLBDeploymentName, zoneAntiAffinity)
+					dep.Spec.Template.Spec.Affinity = resources.MergeAffinities(dep.Spec.Template.Spec.Affinity, zoneAffinity)
+				}
 			}
 
 			return dep, nil
