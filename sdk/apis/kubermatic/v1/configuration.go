@@ -142,14 +142,21 @@ type KubermaticConfigurationSpec struct {
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
 type KubermaticAuthConfiguration struct {
-	ClientID                 string `json:"clientID,omitempty"`
-	TokenIssuer              string `json:"tokenIssuer,omitempty"`
-	IssuerRedirectURL        string `json:"issuerRedirectURL,omitempty"`
-	IssuerClientID           string `json:"issuerClientID,omitempty"`
-	IssuerClientSecret       string `json:"issuerClientSecret,omitempty"`
-	IssuerCookieKey          string `json:"issuerCookieKey,omitempty"`
-	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
-	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
+	ClientID          string `json:"clientID,omitempty"`
+	TokenIssuer       string `json:"tokenIssuer,omitempty"`
+	IssuerRedirectURL string `json:"issuerRedirectURL,omitempty"`
+	// AdditionalIssuerRedirectURLs are extra URLs, besides IssuerRedirectURL, that the KKP dashboard
+	// login may use as OIDC redirect, e.g. when KKP is also reachable through reverse proxies on other
+	// hostnames. Only scheme, host and port are used; the dashboard picks the entry matching the browser's
+	// origin. Each URL's "/api/v2/auth/callback" must also be registered as a redirect URI of the
+	// IssuerClientID client in the OIDC provider.
+	// +optional
+	AdditionalIssuerRedirectURLs []string `json:"additionalIssuerRedirectURLs,omitempty"` //nolint:tagliatelle
+	IssuerClientID               string   `json:"issuerClientID,omitempty"`
+	IssuerClientSecret           string   `json:"issuerClientSecret,omitempty"`
+	IssuerCookieKey              string   `json:"issuerCookieKey,omitempty"`
+	ServiceAccountKey            string   `json:"serviceAccountKey,omitempty"`
+	SkipTokenIssuerTLSVerify     bool     `json:"skipTokenIssuerTLSVerify,omitempty"`
 }
 
 // PodSchedulingConfigurations controls pod scheduling configurations.

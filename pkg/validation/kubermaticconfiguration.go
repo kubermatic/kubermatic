@@ -19,6 +19,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -50,6 +51,47 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 	allErrs = append(allErrs, ValidateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
 	allErrs = append(allErrs, ValidateKeyConfiguration(spec.UserCluster.KeyConfiguration, field.NewPath("spec", "userCluster", "keyConfiguration"))...)
+
+	allErrs = append(allErrs, ValidateAdditionalIssuerRedirectURLs(spec.Auth.AdditionalIssuerRedirectURLs, field.NewPath("spec", "auth", "additionalIssuerRedirectURLs"))...)
+
+	return allErrs
+}
+
+// ValidateAdditionalIssuerRedirectURLs validates spec.auth.additionalIssuerRedirectURLs.
+func ValidateAdditionalIssuerRedirectURLs(urls []string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for i, rawURL := range urls {
+		idxPath := fldPath.Index(i)
+
+		// the operator passes the entries comma-joined to the API, so a comma would split an entry
+		if strings.Contains(rawURL, ",") {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain a comma"))
+			continue
+		}
+
+		u, err := url.Parse(rawURL)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, fmt.Sprintf("failed to parse URL: %v", err)))
+			continue
+		}
+
+		if u.Scheme != "http" && u.Scheme != "https" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "scheme must be http or https"))
+		}
+
+		if u.Host == "" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "host must not be empty"))
+		}
+
+		if u.User != nil {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain user info"))
+		}
+
+		if u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain a query or fragment"))
+		}
+	}
 
 	return allErrs
 }
