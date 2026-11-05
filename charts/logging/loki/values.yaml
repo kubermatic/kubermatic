@@ -56,6 +56,10 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
+      # The start date of a schema period must never be earlier than the day Loki
+      # started writing with it, otherwise older data becomes unreadable. The
+      # kubermatic-installer adjusts this date when upgrading from Loki 2.x; set it
+      # explicitly to the upgrade day if you deploy this chart by other means.
       - from: 2026-05-13
         store: tsdb
         object_store: filesystem
