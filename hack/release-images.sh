@@ -67,16 +67,24 @@ generate_image_sbom() {
   syft "docker:$imageRef" -o "spdx-json=$outFile"
 }
 
+resolve_digest_ref() {
+  local imageRef="$1"
+
+  local repo="${imageRef%:*}"
+  local digest
+  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -er '.digest')"
+
+  echo "$repo@$digest"
+}
+
 declare -A ATTACHED_REFS
 
 attach_image_sbom() {
   local imageRef="$1"
   local sbomFile="$2"
 
-  local repo="${imageRef%:*}"
-  local digest
-  digest="$(oras manifest fetch --descriptor "$imageRef" | jq -er '.digest')"
-  local ref="$repo@$digest"
+  local ref
+  ref="$(resolve_digest_ref "$imageRef")"
   local key="$ref:$(basename "$sbomFile")"
 
   if [[ -n "${ATTACHED_REFS[$key]:-}" ]]; then
@@ -89,6 +97,39 @@ attach_image_sbom() {
     "$ref" "$sbomFile:application/spdx+json"
 
   ATTACHED_REFS[$key]=1
+}
+
+declare -A SIGNED_REFS
+
+# Keyless-signs the image (by digest) and attests its SBOM via cosign.
+# Signatures for a digest are created only once, even if multiple tags
+# point to it.
+sign_image() {
+  local imageRef="$1"
+  local sbomFile="${2:-}"
+
+  local ref
+  ref="$(resolve_digest_ref "$imageRef")"
+
+  if [[ -n "${SIGNED_REFS[$ref]:-}" ]]; then
+    echodate "Image $ref already signed, skipping duplicate for $imageRef..."
+    return
+  fi
+
+  ensure_sigstore_token
+
+  echodate "Signing $ref..."
+  cosign sign --yes "$ref"
+
+  if [ -n "$sbomFile" ]; then
+    echodate "Attesting SBOM $(basename "$sbomFile") for $ref..."
+    cosign attest --yes \
+      --type spdxjson \
+      --predicate "$sbomFile" \
+      "$ref"
+  fi
+
+  SIGNED_REFS[$ref]=1
 }
 
 # build Docker images
@@ -190,6 +231,12 @@ for arch in $ARCHITECTURES; do
   generate_image_sbom "$DOCKER_REPO/network-interface-manager:$PRIMARY_TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
 done
 
+# mint the signing token only now, right before pushing/signing,
+# as identity tokens expire after one hour
+if [ -z "${NO_PUSH:-}" ]; then
+  ensure_sigstore_token
+fi
+
 # for each given tag, tag and push the image
 for TAG in $ALL_TAGS; do
   if [ -z "$TAG" ]; then
@@ -208,18 +255,23 @@ for TAG in $ALL_TAGS; do
 
     docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
     attach_image_sbom "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
+    sign_image "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" "_dist/images/kubermatic$REPOSUFFIX.sbom.spdx.json"
 
     docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
     attach_image_sbom "$DOCKER_REPO/nodeport-proxy:$TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
+    sign_image "$DOCKER_REPO/nodeport-proxy:$TAG" "_dist/images/nodeport-proxy.sbom.spdx.json"
 
     docker push "$DOCKER_REPO/addons:$TAG"
     attach_image_sbom "$DOCKER_REPO/addons:$TAG" "_dist/images/addons.sbom.spdx.json"
+    sign_image "$DOCKER_REPO/addons:$TAG" "_dist/images/addons.sbom.spdx.json"
 
     docker push "$DOCKER_REPO/etcd-launcher:$TAG"
     attach_image_sbom "$DOCKER_REPO/etcd-launcher:$TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
+    sign_image "$DOCKER_REPO/etcd-launcher:$TAG" "_dist/images/etcd-launcher.sbom.spdx.json"
 
     docker push "$DOCKER_REPO/conformance-tests:$TAG"
     attach_image_sbom "$DOCKER_REPO/conformance-tests:$TAG" "_dist/images/conformance-tests.sbom.spdx.json"
+    sign_image "$DOCKER_REPO/conformance-tests:$TAG" "_dist/images/conformance-tests.sbom.spdx.json"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
@@ -228,17 +280,23 @@ for TAG in $ALL_TAGS; do
     docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
     for arch in $ARCHITECTURES; do
       attach_image_sbom "$DOCKER_REPO/user-ssh-keys-agent:$TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
+      sign_image "$DOCKER_REPO/user-ssh-keys-agent:$TAG-$arch" "_dist/images/user-ssh-keys-agent-$arch.sbom.spdx.json"
     done
+    sign_image "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
 
     docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
     for arch in $ARCHITECTURES; do
       attach_image_sbom "$DOCKER_REPO/kubeletdnat-controller:$TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
+      sign_image "$DOCKER_REPO/kubeletdnat-controller:$TAG-$arch" "_dist/images/kubeletdnat-controller-$arch.sbom.spdx.json"
     done
+    sign_image "$DOCKER_REPO/kubeletdnat-controller:$TAG"
 
     docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
     for arch in $ARCHITECTURES; do
       attach_image_sbom "$DOCKER_REPO/network-interface-manager:$TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
+      sign_image "$DOCKER_REPO/network-interface-manager:$TAG-$arch" "_dist/images/network-interface-manager-$arch.sbom.spdx.json"
     done
+    sign_image "$DOCKER_REPO/network-interface-manager:$TAG"
   fi
 done
 
