@@ -585,6 +585,52 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 	}
 }
 
+func TestAppendProxyFlagsStableOrder(t *testing.T) {
+	nodeSettings := &kubermaticv1.NodeSettings{
+		ProxySettings: kubermaticv1.ProxySettings{
+			HTTPProxy: kubermaticv1.NewProxyValue("http://proxy.example.com"),
+			NoProxy:   kubermaticv1.NewProxyValue("noproxy"),
+		},
+	}
+
+	want := []string{flagHTTPProxy, "http://proxy.example.com", flagNoProxy, "noproxy"}
+
+	// map iteration order is random, so a single run could pass by chance
+	for range 20 {
+		if got := appendProxyFlags(nil, nodeSettings, nil); !reflect.DeepEqual(got, want) {
+			t.Fatalf("appendProxyFlags() = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestAppendContainerRuntimeFlagsStableOrder(t *testing.T) {
+	td := resources.NewTemplateDataBuilder().
+		WithCluster(&kubermaticv1.Cluster{}).
+		WithDatacenter(&kubermaticv1.Datacenter{
+			Node: &kubermaticv1.NodeSettings{
+				ContainerRuntimeOpts: kubermaticv1.ContainerRuntimeOpts{
+					InsecureRegistries: []string{"registry.example.com"},
+					RegistryMirrors:    []string{"mirror.example.com"},
+					PauseImage:         "registry.example.com/pause:3.10.1",
+				},
+			},
+		}).
+		Build()
+
+	want := []string{
+		"-node-insecure-registries", "registry.example.com",
+		"-node-registry-mirrors", "mirror.example.com",
+		"-pause-image", "registry.example.com/pause:3.10.1",
+	}
+
+	// map iteration order is random, so a single run could pass by chance
+	for range 20 {
+		if got := appendContainerRuntimeFlags(nil, td); !reflect.DeepEqual(got, want) {
+			t.Fatalf("appendContainerRuntimeFlags() = %v, want %v", got, want)
+		}
+	}
+}
+
 func TestGetContainerdFlags(t *testing.T) {
 	tests := []struct {
 		name                         string

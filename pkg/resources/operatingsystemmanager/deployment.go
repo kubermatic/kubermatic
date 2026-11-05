@@ -18,6 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -350,8 +351,10 @@ func appendProxyFlags(flags []string, nodeSettings *kubermaticv1.NodeSettings, c
 		}
 	}
 
-	for flag, value := range flagsMap {
-		flags = append(flags, flag, value)
+	// sort the flags for a stable order, otherwise the Deployment would be updated
+	// whenever the map iteration order changes
+	for _, flag := range slices.Sorted(maps.Keys(flagsMap)) {
+		flags = append(flags, flag, flagsMap[flag])
 	}
 
 	return flags
@@ -484,8 +487,8 @@ func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData
 		}
 	}
 
-	for flag, value := range containerRuntimeFlags {
-		flags = append(flags, flag, value)
+	for _, flag := range slices.Sorted(maps.Keys(containerRuntimeFlags)) {
+		flags = append(flags, flag, containerRuntimeFlags[flag])
 	}
 
 	containerdFlags := containerdFlags(nodeSettings, data.Cluster())
