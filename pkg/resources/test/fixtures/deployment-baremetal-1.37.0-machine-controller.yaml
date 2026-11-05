@@ -37,7 +37,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver","-join-cluster-timeout","15m0s"]}'
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver"]}'
         - --crd-to-wait-for
         - cluster.k8s.io,v1alpha1,machines,kube-system
         command:

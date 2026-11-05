@@ -1076,7 +1076,7 @@ type MachineControllerSettings struct {
 	// JoinClusterTimeout makes the machine-controller delete machines that are owned by a
 	// MachineSet and have not joined the cluster within this duration, so that the owner
 	// re-creates them. Setting this to 0 explicitly disables the timeout (e.g. to opt out of
-	// a Seed-level default). Defaults to 15m when unset.
+	// a Seed-level default). When unset or 0, machines that fail to join are not replaced.
 	JoinClusterTimeout *metav1.Duration `json:"joinClusterTimeout,omitempty"`
 }
 

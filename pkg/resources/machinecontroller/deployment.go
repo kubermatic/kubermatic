@@ -18,7 +18,6 @@ package machinecontroller
 
 import (
 	"fmt"
-	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -156,7 +155,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 					Name:    resources.MachineControllerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    append(getFlags(data.Cluster().Spec.Features, overrides), getJoinClusterTimeoutFlags(overrides)...),
+					Args:    getFlags(data.Cluster().Spec.Features, overrides),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -235,11 +234,6 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 	}
 }
 
-// DefaultJoinClusterTimeout is how long a machine may take to join the cluster before
-// machine-controller replaces it, unless overridden on the Cluster or Seed.
-// This matches the default KubeOne uses.
-const DefaultJoinClusterTimeout = 15 * time.Minute
-
 func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControllerSettings) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -258,23 +252,10 @@ func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControlle
 		flags = append(flags, "-skip-eviction-after", overrides.SkipEvictionAfter.Duration.String())
 	}
 
+	// 0 means "disabled"; passing it on would make machine-controller delete every machine immediately.
+	if overrides != nil && overrides.JoinClusterTimeout != nil && overrides.JoinClusterTimeout.Duration > 0 {
+		flags = append(flags, "-join-cluster-timeout", overrides.JoinClusterTimeout.Duration.String())
+	}
+
 	return flags
-}
-
-// getJoinClusterTimeoutFlags returns the flags that make machine-controller replace machines
-// that do not join the cluster in time. The timeout defaults to DefaultJoinClusterTimeout and
-// is applied here at render time, so existing clusters pick it up on their next reconciliation
-// without requiring a Cluster spec change. An explicit 0 disables it; passing it on would make
-// machine-controller delete every machine immediately.
-func getJoinClusterTimeoutFlags(overrides *kubermaticv1.MachineControllerSettings) []string {
-	timeout := DefaultJoinClusterTimeout
-	if overrides != nil && overrides.JoinClusterTimeout != nil {
-		timeout = overrides.JoinClusterTimeout.Duration
-	}
-
-	if timeout <= 0 {
-		return nil
-	}
-
-	return []string{"-join-cluster-timeout", timeout.String()}
 }

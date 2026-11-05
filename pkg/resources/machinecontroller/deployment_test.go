@@ -89,52 +89,40 @@ func TestGetFlags(t *testing.T) {
 				"-skip-eviction-after", "0s",
 			},
 		},
+		{
+			name:     "join cluster timeout override is passed as duration",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{Duration: 25 * time.Minute},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+				"-join-cluster-timeout", "25m0s",
+			},
+		},
+		{
+			name:     "zero join cluster timeout adds no flag",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+			},
+		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			flags := getFlags(tc.features, tc.overrides)
-			if !slices.Equal(flags, tc.expected) {
-				t.Fatalf("expected %v, got %v", tc.expected, flags)
-			}
-		})
-	}
-}
-
-func TestGetJoinClusterTimeoutFlags(t *testing.T) {
-	testcases := []struct {
-		name      string
-		overrides *kubermaticv1.MachineControllerSettings
-		expected  []string
-	}{
-		{
-			name:     "no overrides uses the default",
-			expected: []string{"-join-cluster-timeout", "15m0s"},
-		},
-		{
-			name:      "empty machineController block uses the default",
-			overrides: &kubermaticv1.MachineControllerSettings{},
-			expected:  []string{"-join-cluster-timeout", "15m0s"},
-		},
-		{
-			name: "override is passed as duration",
-			overrides: &kubermaticv1.MachineControllerSettings{
-				JoinClusterTimeout: &metav1.Duration{Duration: 25 * time.Minute},
-			},
-			expected: []string{"-join-cluster-timeout", "25m0s"},
-		},
-		{
-			name: "zero disables the timeout",
-			overrides: &kubermaticv1.MachineControllerSettings{
-				JoinClusterTimeout: &metav1.Duration{},
-			},
-			expected: nil,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			flags := getJoinClusterTimeoutFlags(tc.overrides)
 			if !slices.Equal(flags, tc.expected) {
 				t.Fatalf("expected %v, got %v", tc.expected, flags)
 			}
