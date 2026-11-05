@@ -18,6 +18,7 @@ package images
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/sirupsen/logrus"
 
@@ -32,7 +33,7 @@ import (
 
 var serializer = json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
 
-func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]string, error) {
+func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]ImageContribution, error) {
 	credentials := resources.Credentials{}
 
 	addonData, err := addon.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
@@ -40,16 +41,22 @@ func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon,
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
-	var images []string
-	for addonName, addonObj := range addons {
-		addonImages, err := getImagesFromAddon(log.WithField("addon", addonName), addonObj, serializer, addonData)
+	addonNames := make([]string, 0, len(addons))
+	for addonName := range addons {
+		addonNames = append(addonNames, addonName)
+	}
+	slices.Sort(addonNames)
+
+	contributions := make([]ImageContribution, 0, len(addons))
+	for _, addonName := range addonNames {
+		addonImages, err := getImagesFromAddon(log.WithField("addon", addonName), addons[addonName], serializer, addonData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for addon %s: %w", addonName, err)
 		}
-		images = append(images, addonImages...)
+		contributions = append(contributions, ImageContribution{Origin: OriginAddon, Name: addonName, Images: addonImages})
 	}
 
-	return images, nil
+	return contributions, nil
 }
 
 func getImagesFromAddon(log logrus.FieldLogger, addonObj *addon.Addon, decoder runtime.Decoder, data *addon.TemplateData) ([]string, error) {
