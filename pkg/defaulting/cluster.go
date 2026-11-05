@@ -142,6 +142,12 @@ func DefaultClusterSpec(
 		return err
 	}
 
+	// mergo fills a nil pointer with the pointer of the template or Seed itself,
+	// so copy the value to keep the Cluster from sharing it with a cached object.
+	if workloads := spec.ComponentsOverride.UserClusterWorkloads; workloads != nil {
+		spec.ComponentsOverride.UserClusterWorkloads = workloads.DeepCopy()
+	}
+
 	// Give cloud providers a chance to default their spec.
 	if cloudProvider != nil {
 		if err := cloudProvider.DefaultCloudSpec(ctx, spec); err != nil {
