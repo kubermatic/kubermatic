@@ -98,14 +98,11 @@ func awsAdditionalResourceTags(tags map[string]string) string {
 }
 
 // mergeServiceAnnotations combines the traceability annotations with the
-// provider-specific ones the test already uses. For AWS clusters it also mirrors
+// provider-specific ones the test needs. For AWS clusters it also mirrors
 // the traceability values into the AWS additional-resource-tags annotation so
 // they become ELB tags visible in the AWS console.
 func mergeServiceAnnotations(traceability map[string]string, cluster *kubermaticv1.Cluster) map[string]string {
-	ann := map[string]string{
-		// preserved existing behavior; no-op on non-Hetzner providers
-		"load-balancer.hetzner.cloud/location": "nbg1",
-	}
+	ann := map[string]string{}
 	for k, v := range traceability {
 		ann[k] = v
 	}
