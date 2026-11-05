@@ -343,12 +343,12 @@ func (h HelmClient) shouldUpgrade(chartLoc string, currentRelease *release.Relea
 		return false, err
 	}
 
-	currentManifests, err := h.renderManifests(currentRelease.Chart, currentValues)
+	currentManifests, err := h.renderManifests(currentRelease.Chart, currentValues, currentRelease.Name)
 	if err != nil {
 		return false, err
 	}
 
-	newManifests, err := h.renderManifests(chart, newValues)
+	newManifests, err := h.renderManifests(chart, newValues, currentRelease.Name)
 	if err != nil {
 		return false, err
 	}
@@ -358,9 +358,9 @@ func (h HelmClient) shouldUpgrade(chartLoc string, currentRelease *release.Relea
 		!equality.Semantic.DeepEqual(currentManifests, newManifests), nil
 }
 
-func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values) (map[string]string, error) {
+func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values, releaseName string) (map[string]string, error) {
 	options := chartutil.ReleaseOptions{
-		Name:      chart.Name(),
+		Name:      releaseName,
 		Namespace: h.targetNamespace,
 		IsUpgrade: true,
 		IsInstall: false,
