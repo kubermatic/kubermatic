@@ -63,7 +63,7 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
 	assert.Nil(t, err)
 
-	orgGrafanaController := newOrgGrafanaController(dynamicClient, kubermaticlog.Logger, "mla", func(ctx context.Context) (*grafanasdk.Client, error) {
+	orgGrafanaController := newOrgGrafanaController(dynamicClient, kubermaticlog.Logger, func(ctx context.Context) (*grafanasdk.Client, error) {
 		return grafanaClient, nil
 	})
 	reconciler := orgGrafanaReconciler{
@@ -76,17 +76,6 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 }
 
 func TestOrgGrafanaReconcile(t *testing.T) {
-	var board struct {
-		Dashboard grafanasdk.Board `json:"dashboard"`
-		FolderID  int              `json:"folderId"`
-		Overwrite bool             `json:"overwrite"`
-	}
-
-	board.Overwrite = true
-	board.Dashboard.Title = "dashboard"
-	board.Dashboard.UID = "unique"
-	boardData, err := json.Marshal(board)
-	assert.Nil(t, err)
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -119,7 +108,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			},
 		},
 		{
-			name:        "create org for project with dashboards",
+			name:        "create org for project does not write dashboards",
 			requestName: "create",
 			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.Project{
@@ -152,11 +141,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 					name:     "create",
 					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "set dashboard",
-					request:  httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
