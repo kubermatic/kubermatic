@@ -30,6 +30,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -150,4 +151,15 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.Applications.InsecureSkipTLSVerify
 		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.Applications.PlainHTTP
 	}
+}
+
+// ValidateDefaultCatalogApplicationDefinitions loads all embedded default catalog
+// ApplicationDefinition files and validates each one.
+func ValidateDefaultCatalogApplicationDefinitions() error {
+	files, err := GetAppDefFiles()
+	if err != nil {
+		return fmt.Errorf("failed to get application definition files: %w", err)
+	}
+
+	return applicationdefinitions.ValidateAppDefinitionFiles(files)
 }
