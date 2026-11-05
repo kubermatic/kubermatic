@@ -32,5 +32,5 @@ maintainers:
 dependencies:
   - name: kube-state-metrics
     repository: https://prometheus-community.github.io/helm-charts
-    version: 5.30.0
+    version: 5.37.0
 
