@@ -208,9 +208,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return handleProviderError(err)
 			}
 
+			// UpdateClusterStatus refreshes the cluster object, so remember
+			// the provider status that the reconciliation produced.
+			providerStatus := cluster.Status.CloudProvider
+
 			// remember that we reconciled
 			err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.LastProviderReconciliation = metav1.Now()
+				c.Status.CloudProvider = providerStatus
 			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to set last reconcile timestamp: %w", err)
