@@ -44,7 +44,7 @@ type AlibabaCredentials struct {
 }
 
 func (c *AlibabaCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "alibaba-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Alibaba clusters")
+	fs.StringVar(&c.KKPDatacenter, "alibaba-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Alibaba clusters")
 }
 
 func (c *AlibabaCredentials) Parse() (err error) {
@@ -71,7 +71,7 @@ type AWSCredentials struct {
 }
 
 func (c *AWSCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "aws-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for AWS clusters")
+	fs.StringVar(&c.KKPDatacenter, "aws-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for AWS clusters")
 }
 
 func (c *AWSCredentials) Parse() (err error) {
@@ -97,7 +97,7 @@ type HetznerCredentials struct {
 }
 
 func (c *HetznerCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "hetzner-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Hetzner clusters")
+	fs.StringVar(&c.KKPDatacenter, "hetzner-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Hetzner clusters")
 }
 
 func (c *HetznerCredentials) Parse() (err error) {
@@ -126,7 +126,7 @@ type AzureCredentials struct {
 }
 
 func (c *AzureCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "azure-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Azure clusters")
+	fs.StringVar(&c.KKPDatacenter, "azure-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Azure clusters")
 }
 
 func (c *AzureCredentials) Parse() (err error) {
@@ -165,7 +165,7 @@ type OpenstackCredentials struct {
 }
 
 func (c *OpenstackCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "openstack-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Openstack clusters")
+	fs.StringVar(&c.KKPDatacenter, "openstack-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Openstack clusters")
 }
 
 func (c *OpenstackCredentials) Parse() (err error) {
@@ -206,7 +206,7 @@ type VSphereCredentials struct {
 }
 
 func (c *VSphereCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "vsphere-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for vSphere clusters")
+	fs.StringVar(&c.KKPDatacenter, "vsphere-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for vSphere clusters")
 }
 
 func (c *VSphereCredentials) Parse() (err error) {
@@ -232,7 +232,7 @@ type GCPCredentials struct {
 }
 
 func (c *GCPCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "gcp-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for GCP clusters")
+	fs.StringVar(&c.KKPDatacenter, "gcp-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for GCP clusters")
 }
 
 func (c *GCPCredentials) Parse() (err error) {
@@ -254,7 +254,7 @@ type DigitaloceanCredentials struct {
 }
 
 func (c *DigitaloceanCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "digitalocean-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Digitalocean clusters")
+	fs.StringVar(&c.KKPDatacenter, "digitalocean-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Digitalocean clusters")
 }
 
 func (c *DigitaloceanCredentials) Parse() (err error) {
@@ -274,7 +274,7 @@ type BYOCredentials struct {
 }
 
 func (c *BYOCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "byo-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for BYO clusters")
+	fs.StringVar(&c.KKPDatacenter, "byo-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for BYO clusters")
 }
 
 func (c *BYOCredentials) Parse() error {

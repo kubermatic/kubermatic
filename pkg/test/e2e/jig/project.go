@@ -62,6 +62,13 @@ func (j *ProjectJig) WithHumanReadableName(name string) *ProjectJig {
 	return j
 }
 
+// WithExistingProject makes the jig manage an existing project, for example
+// one an earlier test run created.
+func (j *ProjectJig) WithExistingProject(projectName string) *ProjectJig {
+	j.projectName = projectName
+	return j
+}
+
 func (j *ProjectJig) ProjectName() string {
 	return j.projectName
 }
