@@ -17,9 +17,8 @@ limitations under the License.
 package machinecontroller
 
 import (
-	"time"
-
 	"fmt"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
