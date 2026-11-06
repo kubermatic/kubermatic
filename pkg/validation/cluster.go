@@ -1439,6 +1439,10 @@ func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "skipEvictionAfter"), mc.SkipEvictionAfter.Duration, "must be zero (to disable the eviction timeout) or a positive duration"))
 	}
 
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.JoinClusterTimeout != nil && mc.JoinClusterTimeout.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "joinClusterTimeout"), mc.JoinClusterTimeout.Duration, "must be zero (to disable the join timeout) or a positive duration"))
+	}
+
 	return allErrs
 }
 
