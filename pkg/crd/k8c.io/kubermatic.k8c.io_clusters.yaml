@@ -4769,6 +4769,26 @@ spec:
                       description: URL under which the Apiserver is available
                       type: string
                   type: object
+                cloudProvider:
+                  description: |-
+                    CloudProvider holds state that the cloud provider reconciliation needs to remember between
+                    reconciliations, for example which cloud resources were created by KKP for this cluster.
+                  properties:
+                    vsphere:
+                      description: VSphere holds the status information of vSphere clusters.
+                      properties:
+                        managedTags:
+                          additionalProperties:
+                            items:
+                              type: string
+                            type: array
+                          description: |-
+                            ManagedTags maps a vSphere tag category ID to the IDs of the tags in that category that
+                            are managed (created or adopted) by KKP for this cluster. KKP only ever deletes tags that
+                            are listed here, so tags of other clusters or tags managed by other means are never touched.
+                          type: object
+                      type: object
+                  type: object
                 conditions:
                   additionalProperties:
                     properties:
