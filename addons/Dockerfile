@@ -17,4 +17,5 @@ LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-ADD ./ /addons/
+COPY ./ /addons/
+RUN chmod -R a+rX /addons/
