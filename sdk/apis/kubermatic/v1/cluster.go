@@ -1025,6 +1025,11 @@ type ComponentSettings struct {
 	MachineController *MachineControllerSettings `json:"machineController,omitempty"`
 	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
 	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
+	// KubeLB configures the KubeLB CCM deployed as part of the cluster control plane.
+	// Only available in Enterprise Edition.
+	KubeLB *DeploymentSettings `json:"kubelb,omitempty,omitcegenyaml"`
 }
 
 type APIServerSettings struct {
