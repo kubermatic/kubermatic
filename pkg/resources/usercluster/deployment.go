@@ -310,15 +310,22 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
-					Env: append(envVars, corev1.EnvVar{
-						Name: "NAMESPACE",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath:  "metadata.namespace",
-								APIVersion: "v1",
+					Env: append(envVars,
+						corev1.EnvVar{
+							Name: "NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath:  "metadata.namespace",
+									APIVersion: "v1",
+								},
 							},
 						},
-					}),
+						// Trust the CA bundle in addition to the system CAs, e.g. for Application Helm chart downloads.
+						corev1.EnvVar{
+							Name:  "SSL_CERT_FILE",
+							Value: fmt.Sprintf("/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
+						},
+					),
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
