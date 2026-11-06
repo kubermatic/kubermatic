@@ -2991,6 +2991,16 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        workerCount:
+                          description: |-
+                            WorkerCount overrides the number of machine-controller workers that reconcile
+                            Machines concurrently. Raising it helps with providers whose machine creation
+                            blocks while the instance is provisioned, as a single worker then serializes
+                            all Machines of the cluster. Defaults to the machine-controller binary's
+                            built-in 1 when unset.
+                          format: int32
+                          minimum: 1
+                          type: integer
                         zoneAntiAffinity:
                           description: |-
                             ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.

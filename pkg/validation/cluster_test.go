@@ -1527,6 +1527,39 @@ func TestValidateMachineControllerSettings(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "positive workerCount",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						WorkerCount: ptr.To[int32](4),
+					},
+				},
+			},
+		},
+		{
+			name:  "zero workerCount",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						WorkerCount: ptr.To[int32](0),
+					},
+				},
+			},
+		},
+		{
+			name:  "negative workerCount",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						WorkerCount: ptr.To[int32](-1),
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
