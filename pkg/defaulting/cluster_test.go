@@ -1015,6 +1015,7 @@ func TestDefaultJoinClusterTimeout(t *testing.T) {
 		{name: "explicit zero is not overwritten by a cluster template", cluster: zero, template: tenMinutes, expected: zero},
 		{name: "the cluster template wins over the seed default", template: twentyFive, seed: tenMinutes, expected: twentyFive},
 		{name: "a zero from the cluster template is not overwritten by the seed default", template: zero, seed: tenMinutes, expected: zero},
+		{name: "explicit non-zero wins over the cluster template", cluster: twentyFive, template: tenMinutes, expected: twentyFive},
 	}
 
 	for _, tc := range testCases {
