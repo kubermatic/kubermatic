@@ -19,7 +19,9 @@ package helm
 import (
 	"encoding/json"
 	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"testing"
 	"time"
@@ -490,6 +492,97 @@ func TestInstallChartPropagatesUpgradeFailure(t *testing.T) {
 			} else {
 				require.NotContains(t, err.Error(), "applies client-side")
 			}
+		})
+	}
+}
+
+func TestBuildChartDependenciesUsesPrivateRepositoryConfig(t *testing.T) {
+	testcases := []struct {
+		name      string
+		failRepos bool
+	}{
+		{
+			name: "repositories are added to a private config",
+		},
+		{
+			name:      "private config is removed when a repository cannot be added",
+			failRepos: true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			originalRunCmd := runCmd
+			t.Cleanup(func() {
+				runCmd = originalRunCmd
+			})
+
+			tmpDir := t.TempDir()
+			t.Setenv("TMPDIR", tmpDir)
+
+			chartDir := t.TempDir()
+			chartYAML := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+dependencies:
+  - name: dep
+    version: 1.0.0
+    repository: https://charts.example.com
+  - name: oci-dep
+    version: 1.0.0
+    repository: oci://registry.example.com/charts
+`
+			require.NoError(t, os.WriteFile(filepath.Join(chartDir, "Chart.yaml"), []byte(chartYAML), 0o600))
+
+			capturedArgs := [][]string{}
+			runCmd = func(cmd *exec.Cmd) ([]byte, error) {
+				capturedArgs = append(capturedArgs, append([]string{}, cmd.Args...))
+				if tc.failRepos && containsArg(cmd.Args, "add") {
+					return nil, errors.New("repository cannot be added")
+				}
+				return nil, nil
+			}
+
+			c := &cli{
+				binary:     "helm",
+				kubeconfig: "test-kubeconfig",
+				timeout:    30 * time.Second,
+				version:    *semverlib.MustParse("3.19.0"),
+				logger:     logrus.New(),
+			}
+
+			err := c.BuildChartDependencies(chartDir, nil)
+			if tc.failRepos {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			entries, err := os.ReadDir(tmpDir)
+			require.NoError(t, err)
+			require.Empty(t, entries, "the private repository config must be removed")
+
+			require.NotEmpty(t, capturedArgs)
+			configIdx := slices.Index(capturedArgs[0], "--repository-config")
+			require.NotEqual(t, -1, configIdx)
+
+			repoDir := filepath.Dir(capturedArgs[0][configIdx+1])
+			require.Equal(t, tmpDir, filepath.Dir(repoDir))
+
+			repoFlags := []string{
+				"--repository-config", filepath.Join(repoDir, "repositories.yaml"),
+				"--repository-cache", filepath.Join(repoDir, "cache"),
+			}
+
+			expectedArgs := [][]string{
+				append([]string{"helm", "--namespace", "default", "repo", "add", "dep-test-chart-0", "https://charts.example.com"}, repoFlags...),
+			}
+			if !tc.failRepos {
+				buildArgs := append([]string{"helm", "--namespace", "default", "dependency", "build"}, repoFlags...)
+				expectedArgs = append(expectedArgs, append(buildArgs, chartDir))
+			}
+
+			require.Equal(t, expectedArgs, capturedArgs)
 		})
 	}
 }
