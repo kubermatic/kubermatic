@@ -431,7 +431,6 @@ type NodePortProxyComponentEnvoy struct {
 	NodeportProxyComponent `json:",inline"`
 	// Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
 	// Defaults to 3.
-	// +kubebuilder:default:=3
 	// +kubebuilder:validation:Minimum:=1
 	Replicas            *int32                   `json:"replicas,omitempty"`
 	LoadBalancerService EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
