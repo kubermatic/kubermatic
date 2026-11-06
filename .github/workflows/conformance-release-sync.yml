@@ -2,13 +2,14 @@ name: Conformance Release Sync
 
 # Forwards release activity in this repository to kubermatic/conformance-ee:
 #
+#   * every push to main, which conformance-ee mirrors onto its own main
 #   * every push to a release/vX.Y branch, including the push that creates it
 #   * every vX.Y.Z[-prerelease] release tag
 #
 # conformance-ee owns the actual work (creating release/kkp-X.Y, bumping the KKP
-# modules in go.mod, building the ginkgo image). This workflow only resolves the
-# release context and hands it over, so the sync logic lives next to the code it
-# modifies.
+# modules and Go version in go.mod, building the ginkgo image). This workflow
+# only resolves the release context and hands it over, so the sync logic lives
+# next to the code it modifies.
 
 on:
   push:
@@ -16,13 +17,14 @@ on:
     # that is not exactly release/vMAJOR.MINOR, since only those map onto a
     # conformance-ee release/kkp-MAJOR.MINOR branch.
     branches:
+      - main
       - 'release/**'
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Release branch (release/v2.30) or release tag (v2.30.6) to sync'
+        description: 'main, a release branch (release/v2.30) or a release tag (v2.30.6) to sync'
         required: true
         type: string
 
@@ -62,7 +64,13 @@ jobs:
           # Decide from the ref's shape rather than github.ref_type: a manual run
           # is always dispatched from a branch, so ref_type would say "branch"
           # even when the operator asked to sync a tag.
-          if [[ "$REF" =~ ^release/v([0-9]+\.[0-9]+)$ ]]; then
+          if [ "$REF" = "main" ]; then
+            # main has no minor version of its own; conformance-ee maps it onto
+            # its own main branch.
+            MINOR=""
+            KKP_BRANCH="main"
+            KKP_TAG=""
+          elif [[ "$REF" =~ ^release/v([0-9]+\.[0-9]+)$ ]]; then
             MINOR="${BASH_REMATCH[1]}"
             KKP_BRANCH="$REF"
             KKP_TAG=""
@@ -74,7 +82,7 @@ jobs:
             # Feature branches under release/ and non-release tags are not an
             # error, there is simply nothing to sync. Skip quietly so pushes to
             # them do not show up as failed runs.
-            echo "::notice::'${REF}' is neither a release/vX.Y branch nor a vX.Y.Z[-prerelease] tag — nothing to sync."
+            echo "::notice::'${REF}' is not main, a release/vX.Y branch or a vX.Y.Z[-prerelease] tag — nothing to sync."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -103,7 +111,7 @@ jobs:
             echo "branch_created=${BRANCH_CREATED}"
           } >> "$GITHUB_OUTPUT"
 
-          echo "Syncing ${REF} (minor ${MINOR}, sha ${SHA}, tag '${KKP_TAG:-none}', branch_created ${BRANCH_CREATED})"
+          echo "Syncing ${REF} (minor ${MINOR:-none}, sha ${SHA}, tag '${KKP_TAG:-none}', branch_created ${BRANCH_CREATED})"
 
       - name: Trigger sync workflow in conformance-ee
         if: steps.ctx.outputs.skip == 'false'
@@ -125,7 +133,7 @@ jobs:
             --field branch_created="$BRANCH_CREATED" \
             --field source_repo="$GITHUB_REPOSITORY"
 
-          echo "Dispatched ${DEST_REPO} / ${DEST_WORKFLOW} for KKP ${KKP_MINOR}"
+          echo "Dispatched ${DEST_REPO} / ${DEST_WORKFLOW} for KKP ${KKP_BRANCH}"
 
       - name: Summarize the handover
         if: steps.ctx.outputs.skip == 'false'
