@@ -267,7 +267,7 @@ func DownloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	sp, err := providers.NewSourceProvider(ctx, kubermaticlog.NewDefault().Sugar(), nil, "", directory, appSource, "")
+	sp, err := providers.NewSourceProvider(ctx, kubermaticlog.NewDefault().Sugar(), nil, "", directory, appSource, "", "")
 	if err != nil {
 		return "", fmt.Errorf("failed to create app source provider: %w", err)
 	}

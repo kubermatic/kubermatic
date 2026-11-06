@@ -436,7 +436,7 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigPath, SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName}); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.namespace, runOp.overwriteRegistry, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigPath, SecretNamespace: runOp.namespace, ClusterName: runOp.clusterName, CABundleFile: runOp.caBundleFile}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")

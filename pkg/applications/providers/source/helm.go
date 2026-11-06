@@ -43,6 +43,10 @@ type HelmSource struct {
 
 	// SeedClient to seed cluster.
 	SeedClient ctrlruntimeclient.Client
+
+	// CABundleFile is an optional path to a PEM-encoded CA bundle used to verify
+	// the TLS certificate of the registry.
+	CABundleFile string
 }
 
 // DownloadSource downloads the chart into destination folder and return the full path to the chart.
@@ -58,6 +62,7 @@ func (h HelmSource) DownloadSource(destination string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	auth.CAFile = h.CABundleFile
 
 	// Namespace does not matter to downloading chart.
 	ns := "default"
