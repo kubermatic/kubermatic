@@ -83,6 +83,13 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 				return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
 			}
 		}
+
+		// On a separate seed, cert-manager is not part of the master stack, so it has to be
+		// managed here to not drift from the KKP release (needed e.g. for the Gateway API
+		// certificate shim on the seed Gateway).
+		if err := kubermaticmaster.DeployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+			return fmt.Errorf("failed to deploy cert-manager: %w", err)
+		}
 	}
 
 	if err := deployMinio(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
