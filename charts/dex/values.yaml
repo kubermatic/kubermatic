@@ -35,6 +35,11 @@ httpRoute:
 dex:
   replicaCount: 2
 
+  # Keeps Dex available during voluntary disruptions such as node drains.
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+
   ingress:
     # Gateway API (HTTPRoute) is used for routing as of KKP 2.31, so the upstream
     # Dex Ingress is disabled to avoid creating an invalid Ingress with empty hosts.
