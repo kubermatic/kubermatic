@@ -3938,6 +3938,18 @@ spec:
                     The available feature gates vary based on KKP version, Kubernetes version and Seed configuration.
                     Please consult the KKP documentation for specific feature gates.
                   type: object
+                flatcarUpdateOperator:
+                  description: |-
+                    Optional: FlatcarUpdateOperator configures the flatcar-linux-update-operator for this cluster
+                    and overrides the datacenter, Seed and KubermaticConfiguration settings.
+                  properties:
+                    disabled:
+                      description: |-
+                        Disabled keeps the flatcar-linux-update-operator and its update-agent out of user clusters in
+                        this scope and removes them if already installed. Use it when Flatcar OS updates are managed
+                        outside of KKP. If nil, the next broader level decides; clearing it reinstalls the operator.
+                      type: boolean
+                  type: object
                 humanReadableName:
                   description: HumanReadableName is the cluster name provided by the user.
                   type: string

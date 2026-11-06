@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/util/flatcar"
 	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -73,6 +74,7 @@ type userclusterControllerData interface {
 	IsKonnectivityEnabled() bool
 	IsSSHKeysDisabled() bool
 	DC() *kubermaticv1.Datacenter
+	Seed() *kubermaticv1.Seed
 	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
@@ -230,6 +232,10 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
+			}
+
+			if flatcarUpdateOperatorDisabled(data) {
+				args = append(args, "-disable-flatcar-update-operator=true")
 			}
 
 			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds != nil {
@@ -476,6 +482,26 @@ func adminDisabledGatewayAPIProtection(config *kubermaticv1.KubermaticConfigurat
 	}
 
 	return dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection
+}
+
+// flatcarUpdateOperatorDisabled resolves the Cluster, datacenter, Seed and KubermaticConfiguration
+// levels of the flatcar-linux-update-operator setting.
+func flatcarUpdateOperatorDisabled(data userclusterControllerData) bool {
+	var dcConf, seedConf, globalConf *kubermaticv1.FlatcarUpdateOperatorSettings
+
+	if dc := data.DC(); dc != nil {
+		dcConf = dc.Spec.FlatcarUpdateOperator
+	}
+
+	if seed := data.Seed(); seed != nil {
+		seedConf = seed.Spec.FlatcarUpdateOperator
+	}
+
+	if config := data.KubermaticConfiguration(); config != nil {
+		globalConf = config.Spec.UserCluster.FlatcarUpdateOperator
+	}
+
+	return flatcar.Resolve(data.Cluster().Spec.FlatcarUpdateOperator, dcConf, seedConf, globalConf).Disabled
 }
 
 func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {

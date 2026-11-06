@@ -337,6 +337,10 @@ type KubermaticUserClusterConfiguration struct {
 	// These settings apply to all user clusters unless overridden at seed or datacenter level.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// FlatcarUpdateOperator configures the flatcar-linux-update-operator for all user clusters in
+	// the installation. Seed, datacenter and cluster level settings override it.
+	// +optional
+	FlatcarUpdateOperator *FlatcarUpdateOperatorSettings `json:"flatcarUpdateOperator,omitempty"`
 	// AdmissionPlugins configures global admission plugin settings for all user clusters.
 	// +optional
 	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
