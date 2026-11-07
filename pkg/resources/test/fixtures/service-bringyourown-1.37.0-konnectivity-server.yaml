@@ -11,6 +11,7 @@ spec:
     port: 443
     protocol: TCP
     targetPort: 8132
+  publishNotReadyAddresses: true
   selector:
     app: apiserver
   type: NodePort
