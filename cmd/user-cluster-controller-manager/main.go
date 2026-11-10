@@ -47,6 +47,7 @@ import (
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
+	webterminalsecretcleanup "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/webterminal-secret-cleanup"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -405,6 +406,11 @@ func main() {
 		log.Fatalw("Failed to register role-cloner controller", zap.Error(err))
 	}
 	log.Info("Registered role-cloner controller")
+
+	if err := webterminalsecretcleanup.Add(log, mgr, isPausedChecker); err != nil {
+		log.Fatalw("Failed to register webterminal-secret-cleanup controller", zap.Error(err))
+	}
+	log.Info("Registered webterminal-secret-cleanup controller")
 
 	if runOp.ownerEmail != "" {
 		if err := ownerbindingcreator.Add(log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
