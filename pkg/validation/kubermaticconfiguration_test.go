@@ -637,10 +637,16 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 }
 
 func TestValidateAdditionalIssuerRedirectURLs(t *testing.T) {
+	const canonicalMsg = `must be written in canonical form as "https://kkp-proxy.example.com" (lower case, without the default port)`
+
 	testcases := []struct {
 		name  string
 		urls  []string
 		valid bool
+		// errMsg, if set, is the expected detail of the only error
+		errMsg string
+		// numErrs, if set, is the expected number of errors
+		numErrs int
 	}{
 		{
 			name:  "no URLs",
@@ -652,9 +658,74 @@ func TestValidateAdditionalIssuerRedirectURLs(t *testing.T) {
 			valid: true,
 		},
 		{
-			name:  "valid http URL with port and path",
-			urls:  []string{"http://kkp.internal:8080/api/v2/auth/callback"},
+			name:  "valid http URL with port",
+			urls:  []string{"http://kkp.internal:8080"},
 			valid: true,
+		},
+		{
+			name:  "valid IPv6 URL with port",
+			urls:  []string{"https://[2001:db8::1]:8443"},
+			valid: true,
+		},
+		{
+			name:   "URL with path",
+			urls:   []string{"http://kkp.internal:8080/api/v2/auth/callback"},
+			errMsg: "must not contain a path, only scheme, host and optional port",
+		},
+		{
+			name:   "upper-case scheme",
+			urls:   []string{"HTTPS://kkp-proxy.example.com"},
+			errMsg: canonicalMsg,
+		},
+		{
+			name:   "upper-case host",
+			urls:   []string{"https://KKP-Proxy.example.com"},
+			errMsg: canonicalMsg,
+		},
+		{
+			name:   "explicit default port",
+			urls:   []string{"https://kkp-proxy.example.com:443/"},
+			errMsg: canonicalMsg,
+		},
+		{
+			name:   "empty port",
+			urls:   []string{"https://kkp-proxy.example.com:"},
+			errMsg: canonicalMsg,
+		},
+		{
+			name:   "port out of range",
+			urls:   []string{"https://kkp-proxy.example.com:65536"},
+			errMsg: "port must be between 1 and 65535",
+		},
+		{
+			name:   "port zero",
+			urls:   []string{"https://kkp-proxy.example.com:0"},
+			errMsg: "port must be between 1 and 65535",
+		},
+		{
+			name:   "port with leading zeros",
+			urls:   []string{"https://kkp-proxy.example.com:0443"},
+			errMsg: "port must not have leading zeros",
+		},
+		{
+			name:   "trailing dot",
+			urls:   []string{"https://kkp-proxy.example.com."},
+			errMsg: "host must not end with a dot",
+		},
+		{
+			name:   "non-ASCII host",
+			urls:   []string{"https://kkp-pröxy.example.com"},
+			errMsg: "host must be ASCII, use the punycode form",
+		},
+		{
+			name:   "IPv6 zone",
+			urls:   []string{"https://[fe80::1%25eth0]"},
+			errMsg: "host must not contain an IPv6 zone",
+		},
+		{
+			name:    "canonical check is per entry",
+			urls:    []string{"ftp://x", "https://kkp-proxy.example.com:443"},
+			numErrs: 2,
 		},
 		{
 			name:  "multiple valid URLs",
@@ -724,6 +795,12 @@ func TestValidateAdditionalIssuerRedirectURLs(t *testing.T) {
 
 			if tc.valid != (len(errs) == 0) {
 				t.Fatalf("expected valid=%v, got errors: %v", tc.valid, errs.ToAggregate())
+			}
+			if tc.numErrs != 0 && len(errs) != tc.numErrs {
+				t.Fatalf("expected %d errors, got: %v", tc.numErrs, errs.ToAggregate())
+			}
+			if tc.errMsg != "" && (len(errs) != 1 || errs[0].Detail != tc.errMsg) {
+				t.Fatalf("expected the error %q, got: %v", tc.errMsg, errs.ToAggregate())
 			}
 		})
 	}
