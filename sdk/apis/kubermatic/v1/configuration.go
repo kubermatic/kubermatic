@@ -143,11 +143,15 @@ type KubermaticAuthConfiguration struct {
 	ClientID          string `json:"clientID,omitempty"`
 	TokenIssuer       string `json:"tokenIssuer,omitempty"`
 	IssuerRedirectURL string `json:"issuerRedirectURL,omitempty"`
-	// AdditionalIssuerRedirectURLs are extra URLs, besides IssuerRedirectURL, that the KKP dashboard
-	// login may use as OIDC redirect, e.g. when KKP is also reachable through reverse proxies on other
-	// hostnames. Only scheme, host and port are used; the dashboard picks the entry matching the browser's
-	// origin. Each URL's "/api/v2/auth/callback" must also be registered as a redirect URI of the
-	// IssuerClientID client in the OIDC provider.
+	// AdditionalIssuerRedirectURLs are extra origins, besides the one of IssuerRedirectURL, that the KKP
+	// dashboard may use for OIDC redirects, e.g. when KKP is also reachable through reverse proxies on other
+	// hostnames. The dashboard picks the entry that matches the browser's origin.
+	// Each entry must be an origin: scheme, host and optional port, in lower case, without the scheme's
+	// default port and without a path, e.g. "https://kkp-proxy.example.com" or "https://kkp.internal:8443".
+	// For each entry, register "<entry>/api/v2/auth/callback", "<entry>/api/v1/kubeconfig",
+	// "<entry>/api/v2/kubeconfig/secret" and "<entry>/api/v2/dashboard/login" as redirect URIs of the
+	// IssuerClientID client in the OIDC provider. Register the last three also at the OIDC provider of
+	// every Seed that sets its own oidcProviderConfiguration.
 	// +optional
 	AdditionalIssuerRedirectURLs []string `json:"additionalIssuerRedirectURLs,omitempty"` //nolint:tagliatelle
 	IssuerClientID               string   `json:"issuerClientID,omitempty"`
