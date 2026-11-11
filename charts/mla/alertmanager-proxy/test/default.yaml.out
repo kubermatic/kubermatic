@@ -468,7 +468,7 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: 'docker.io/envoyproxy/envoy:v1.29.2'
+          image: 'docker.io/envoyproxy/envoy:v1.37.8'
           args:
             - --config-path
             - /etc/envoy/envoy.yaml

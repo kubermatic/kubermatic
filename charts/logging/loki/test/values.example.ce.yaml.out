@@ -71,6 +71,7 @@ data:
           replication_factor: 1
     limits_config:
       max_cache_freshness_per_query: 10m
+      max_label_names_per_series: 40
       query_timeout: 300s
       reject_old_samples: true
       reject_old_samples_max_age: 144h
@@ -305,7 +306,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 08d83b7a1a77344ca3f9936c23216052e4cdd092d3773af1613559948e1d2db8
+        checksum/config: ef3317a3ee8eb63930a04dac796519ab8cdc12de4ea5145e0a3ac49a8393c4c8
         storage/size: "15Gi"
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
         prometheus.io/port: "3100"

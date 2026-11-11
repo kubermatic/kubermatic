@@ -8,7 +8,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
   name: release-name-grafana
   namespace: default
 
@@ -23,7 +23,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
 data:
   
   grafana.ini: |
@@ -4894,7 +4894,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
   name: release-name-grafana-clusterrole
 rules: []
 
@@ -4908,7 +4908,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
 subjects:
   - kind: ServiceAccount
     name: release-name-grafana
@@ -4929,7 +4929,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
 spec:
   clusterIP: None
   selector:
@@ -4952,7 +4952,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
 spec:
   type: ClusterIP
   ports:
@@ -4975,7 +4975,7 @@ metadata:
     helm.sh/chart: grafana-12.3.3
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "13.0.1-security-01"
+    app.kubernetes.io/version: "13.0.12"
 spec:
   replicas: 1
   selector:
@@ -4989,9 +4989,9 @@ spec:
         helm.sh/chart: grafana-12.3.3
         app.kubernetes.io/name: grafana
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "13.0.1-security-01"
+        app.kubernetes.io/version: "13.0.12"
       annotations:
-        checksum/config: 17d307c359dd4f4a24217c0e34582949680d0b684af67c70603ec211796292dd
+        checksum/config: f6f99f271bc8b8a28ddc424e5abfafb2d5a85eb1a43bfa910b8fa844372c76ee
         checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         kubectl.kubernetes.io/default-container: grafana
@@ -5031,7 +5031,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: grafana
-          image: "docker.io/grafana/grafana:13.0.1-security-01"
+          image: "docker.io/grafana/grafana:13.0.12"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

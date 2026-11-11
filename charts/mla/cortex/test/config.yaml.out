@@ -130,10 +130,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
 spec:
@@ -152,10 +152,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
 spec:
@@ -174,10 +174,10 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
 spec:
@@ -196,10 +196,10 @@ metadata:
   name: release-name-cortex-querier
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
 spec:
@@ -278,10 +278,10 @@ metadata:
   name: release-name-cortex
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     {}
@@ -295,10 +295,10 @@ metadata:
   name: release-name-cortex
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
 data:
   cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGNsdXN0ZXI6CiAgICBsaXN0ZW5fYWRkcmVzczogMC4wLjAuMDo5MDk0CiAgZGF0YV9kaXI6IC9kYXRhL2NvcnRleC9hbGVydC1kYXRhCiAgZW5hYmxlX2FwaTogdHJ1ZQogIGV4dGVybmFsX3VybDogL2FwaS9wcm9tL2FsZXJ0bWFuYWdlcgphbGVydG1hbmFnZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBhbGVydG1hbmFnZXIKICAgIGVuZHBvaW50OiBtaW5pbzo5MDAwCiAgICBpbnNlY3VyZTogdHJ1ZQphcGk6CiAgcHJvbWV0aGV1c19odHRwX3ByZWZpeDogL3Byb21ldGhldXMKICByZXNwb25zZV9jb21wcmVzc2lvbl9lbmFibGVkOiB0cnVlCmF1dGhfZW5hYmxlZDogdHJ1ZQpibG9ja3Nfc3RvcmFnZToKICBidWNrZXRfc3RvcmU6CiAgICBidWNrZXRfaW5kZXg6CiAgICAgIGVuYWJsZWQ6IHRydWUKICAgIGlnbm9yZV9kZWxldGlvbl9tYXJrX2RlbGF5OiAxaAogICAgc3luY19kaXI6IC9kYXRhCiAgczM6CiAgICBidWNrZXRfbmFtZTogY29ydGV4CiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKICB0c2RiOgogICAgY2xvc2VfaWRsZV90c2RiX3RpbWVvdXQ6IDM2NW0KICAgIGRpcjogL2RhdGEKICAgIGZsdXNoX2Jsb2Nrc19vbl9zaHV0ZG93bjogdHJ1ZQogICAgcmV0ZW50aW9uX3BlcmlvZDogMzY1bQogICAgd2FsX2NvbXByZXNzaW9uX3R5cGU6IHpzdGQKY29tcGFjdG9yOgogIGJsb2Nrc19mZXRjaF9jb25jdXJyZW5jeTogMTAKICBkYXRhX2RpcjogL2RhdGEvY29ydGV4L2NvbXBhY3RvcgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKZGlzdHJpYnV0b3I6CiAgaGFfdHJhY2tlcjoKICAgIGVuYWJsZV9oYV90cmFja2VyOiB0cnVlCiAgICBrdnN0b3JlOgogICAgICBjb25zdWw6CiAgICAgICAgaG9zdDogY29uc3VsLWNvbnN1bC1zZXJ2ZXI6ODUwMAogICAgICBzdG9yZTogY29uc3VsCiAgcG9vbDoKICAgIGhlYWx0aF9jaGVja19pbmdlc3RlcnM6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICBzaGFyZF9ieV9hbGxfbGFiZWxzOiB0cnVlCmZyb250ZW5kOgogIGxvZ19xdWVyaWVzX2xvbmdlcl90aGFuOiAxMHMKaW5nZXN0ZXI6CiAgbGlmZWN5Y2xlcjoKICAgIGZpbmFsX3NsZWVwOiAzMHMKICAgIGpvaW5fYWZ0ZXI6IDEwcwogICAgb2JzZXJ2ZV9wZXJpb2Q6IDEwcwogICAgcmluZzoKICAgICAga3ZzdG9yZToKICAgICAgICBzdG9yZTogbWVtYmVybGlzdAogICAgICByZXBsaWNhdGlvbl9mYWN0b3I6IDMKaW5nZXN0ZXJfY2xpZW50OgogIGdycGNfY2xpZW50X2NvbmZpZzoKICAgIG1heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MAogICAgbWF4X3NlbmRfbXNnX3NpemU6IDEwNDg1NzYwCmxpbWl0czoKICBhY2NlcHRfaGFfc2FtcGxlczogdHJ1ZQogIGVuZm9yY2VfbWV0cmljX25hbWU6IHRydWUKICBtYXhfbGFiZWxfbmFtZXNfcGVyX3NlcmllczogNDAKICBtYXhfcXVlcnlfbG9va2JhY2s6IDBzCiAgb3V0X29mX29yZGVyX3RpbWVfd2luZG93OiAxMG0KICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvYWN0aXZlLXF1ZXJ5LXRyYWNrZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIGRucytyZWxlYXNlLW5hbWUtY29ydGV4LXN0b3JlLWdhdGV3YXktaGVhZGxlc3M6OTA5NQpxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogZmFsc2UKICBjYWNoZV9yZXN1bHRzOiB0cnVlCiAgcmVzdWx0c19jYWNoZToKICAgIGNhY2hlOgogICAgICBtZW1jYWNoZWQ6CiAgICAgICAgZXhwaXJhdGlvbjogMWgKICAgICAgbWVtY2FjaGVkX2NsaWVudDoKICAgICAgICB0aW1lb3V0OiAxcwogIHNwbGl0X3F1ZXJpZXNfYnlfaW50ZXJ2YWw6IDI0aApydWxlcjoKICBlbmFibGVfYWxlcnRtYW5hZ2VyX2Rpc2NvdmVyeTogdHJ1ZQogIGVuYWJsZV9hcGk6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKcnVsZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBjb3J0ZXgtcnVsZXIKICAgIGVuZHBvaW50OiBtaW5pbzo5MDAwCiAgICBpbnNlY3VyZTogdHJ1ZQpydW50aW1lX2NvbmZpZzoKICBmaWxlOiAvZXRjL2NvcnRleC1ydW50aW1lLWNvbmZpZy9ydW50aW1lX2NvbmZpZy55YW1sCnNlcnZlcjoKICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgZ3JwY19zZXJ2ZXJfbWF4X2NvbmN1cnJlbnRfc3RyZWFtczogMTAwMDAKICBncnBjX3NlcnZlcl9tYXhfcmVjdl9tc2dfc2l6ZTogMTA0ODU3NjAKICBncnBjX3NlcnZlcl9tYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAKICBodHRwX2xpc3Rlbl9wb3J0OiA4MDgwCnN0b3JlX2dhdGV3YXk6CiAgc2hhcmRpbmdfZW5hYmxlZDogZmFsc2U=
@@ -523,10 +523,10 @@ metadata:
   name: release-name-cortex-alertmanager-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
   annotations:
@@ -564,10 +564,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
   annotations:
@@ -591,10 +591,10 @@ metadata:
   name: release-name-cortex-compactor
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
   annotations:
@@ -618,10 +618,10 @@ metadata:
   name: release-name-cortex-distributor-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
   annotations:
@@ -647,10 +647,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
   annotations:
@@ -674,10 +674,10 @@ metadata:
   name: release-name-cortex-ingester-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
   annotations:
@@ -702,10 +702,10 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
   annotations:
@@ -729,10 +729,10 @@ metadata:
   name: release-name-cortex-querier
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
   annotations:
@@ -756,10 +756,10 @@ metadata:
   name: release-name-cortex-query-frontend-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -785,10 +785,10 @@ metadata:
   name: release-name-cortex-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -816,10 +816,10 @@ metadata:
   name: release-name-cortex-ruler
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ruler
   annotations:
@@ -844,10 +844,10 @@ metadata:
   name: release-name-cortex-store-gateway-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
   annotations:
@@ -872,10 +872,10 @@ metadata:
   name: release-name-cortex-store-gateway
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
   annotations:
@@ -899,10 +899,10 @@ metadata:
   name: release-name-cortex-memberlist
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     {}
@@ -967,10 +967,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
     app.kubernetes.io/part-of: memberlist
@@ -991,15 +991,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: distributor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -1009,7 +1009,7 @@ spec:
         []
       containers:
         - name: distributor
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=distributor"
@@ -1084,10 +1084,10 @@ metadata:
   name: release-name-cortex-querier
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
   annotations:
@@ -1107,14 +1107,14 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: querier
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -1124,7 +1124,7 @@ spec:
         []
       containers:
         - name: querier
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=querier"
@@ -1191,6 +1191,7 @@ spec:
                 - key: app.kubernetes.io/component
                   operator: In
                   values:
+                  - ingester
                   - querier
               topologyKey: kubernetes.io/hostname
             weight: 100
@@ -1214,10 +1215,10 @@ metadata:
   name: release-name-cortex-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -1237,14 +1238,14 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: query-frontend
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1253,7 +1254,7 @@ spec:
         []
       containers:
         - name: query-frontend
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=query-frontend"
@@ -1322,10 +1323,10 @@ metadata:
   name: release-name-cortex-ruler
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ruler
     app.kubernetes.io/part-of: memberlist
@@ -1346,15 +1347,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: ruler
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage,tmp
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -1364,12 +1365,12 @@ spec:
         []
       containers:
         - name: rules
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ruler"
             - "-config.file=/etc/cortex/cortex.yaml"
-            - "-ruler.alertmanager-url=http://_http-metrics._tcp.cortex-alertmanager-headless.default.svc.cluster.local/api/prom/alertmanager/"
+            - "-ruler.alertmanager-url=http://_http-metrics._tcp.release-name-cortex-alertmanager-headless.default.svc.cluster.local/api/prom/alertmanager/"
             
             - "-blocks-storage.bucket-store.index-cache.backend=memcached"
             - "-blocks-storage.bucket-store.index-cache.memcached.addresses=dns+release-name-memcached-blocks-index.default.svc.cluster.local:11211"
@@ -1504,7 +1505,7 @@ spec:
       serviceAccountName: release-name-memcached-blocks-index
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.39
+          image: docker.io/memcached:1.6.45
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1556,7 +1557,7 @@ spec:
               mountPath: /tmp
               subPath: tmp-dir
         - name: metrics
-          image: docker.io/prom/memcached-exporter:v0.15.4
+          image: docker.io/prom/memcached-exporter:v0.17.0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1657,7 +1658,7 @@ spec:
       serviceAccountName: release-name-memcached-blocks-metadata
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.39
+          image: docker.io/memcached:1.6.45
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1709,7 +1710,7 @@ spec:
               mountPath: /tmp
               subPath: tmp-dir
         - name: metrics
-          image: docker.io/prom/memcached-exporter:v0.15.4
+          image: docker.io/prom/memcached-exporter:v0.17.0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1810,7 +1811,7 @@ spec:
       serviceAccountName: release-name-memcached-blocks
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.39
+          image: docker.io/memcached:1.6.45
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1862,7 +1863,7 @@ spec:
               mountPath: /tmp
               subPath: tmp-dir
         - name: metrics
-          image: docker.io/prom/memcached-exporter:v0.15.4
+          image: docker.io/prom/memcached-exporter:v0.17.0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -1962,7 +1963,7 @@ spec:
       serviceAccountName: release-name-memcached-frontend
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.39
+          image: docker.io/memcached:1.6.45
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -2011,7 +2012,7 @@ spec:
               mountPath: /tmp
               subPath: tmp-dir
         - name: metrics
-          image: docker.io/prom/memcached-exporter:v0.15.4
+          image: docker.io/prom/memcached-exporter:v0.17.0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -2059,10 +2060,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
     app.kubernetes.io/part-of: memberlist
@@ -2092,15 +2093,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: alertmanager
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -2133,7 +2134,7 @@ spec:
             name: release-name-cortex-runtime-config
       containers:
         - name: alertmanager
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=alertmanager"
@@ -2202,10 +2203,10 @@ metadata:
   name: release-name-cortex-compactor
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
     app.kubernetes.io/part-of: memberlist
@@ -2235,15 +2236,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: compactor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -2276,7 +2277,7 @@ spec:
             name: release-name-cortex-runtime-config
       containers:
         - name: compactor
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=compactor"
@@ -2318,15 +2319,14 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
     app.kubernetes.io/part-of: memberlist
   annotations:
-    {}
 spec:
   replicas: 3
   selector:
@@ -2335,7 +2335,7 @@ spec:
       app.kubernetes.io/instance: release-name
       app.kubernetes.io/component: ingester
   updateStrategy:
-    type: RollingUpdate          
+    type: RollingUpdate
   podManagementPolicy: "OrderedReady"
   serviceName: release-name-cortex-ingester-headless
   volumeClaimTemplates:
@@ -2352,15 +2352,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: ingester
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -2379,6 +2379,7 @@ spec:
                   operator: In
                   values:
                   - ingester
+                  - querier
               topologyKey: kubernetes.io/hostname
             weight: 100
       tolerations:
@@ -2393,7 +2394,7 @@ spec:
             name: release-name-cortex-runtime-config
       containers:
         - name: ingester
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ingester"
@@ -2456,10 +2457,10 @@ metadata:
   name: release-name-cortex-store-gateway
   namespace: default
   labels:
-    helm.sh/chart: cortex-3.0.0
+    helm.sh/chart: cortex-3.4.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.20.0"
+    app.kubernetes.io/version: "v1.21.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
     app.kubernetes.io/part-of: memberlist
@@ -2489,15 +2490,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-3.0.0
+        helm.sh/chart: cortex-3.4.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.20.0"
+        app.kubernetes.io/version: "v1.21.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: store-gateway
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: f4657405d0f3124c17f3a12cb68af4849195846b19fb060562c391329c938805
+        checksum/config: 634b477f1fd2fd657974aacf600ed749aa9b3b11202e61526d6618f5b35d75f1
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -2530,7 +2531,7 @@ spec:
             name: release-name-cortex-runtime-config
       containers:
         - name: store-gateway
-          image: "quay.io/cortexproject/cortex:v1.20.0"
+          image: "quay.io/cortexproject/cortex:v1.21.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=store-gateway"

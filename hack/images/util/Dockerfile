@@ -17,17 +17,19 @@ LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-    # https://dl.minio.io/client/mc/release/linux-amd64/
+    # https://github.com/minio/mc/releases
+    # update MC_SHA256 together with MC_VERSION, it is the digest of mc.linux-amd64.${MC_VERSION}
 ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
-    KUBECTL_VERSION=v1.37.0 \
+    MC_SHA256=01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891 \
+    KUBECTL_VERSION=v1.37.2 \
     # https://github.com/helm/helm/releases
-    HELM_VERSION=v3.21.4 \
+    HELM_VERSION=v3.22.1 \
     # https://github.com/hashicorp/vault/releases
-    VAULT_VERSION=2.1.0 \
+    VAULT_VERSION=2.2.1 \
     # https://github.com/jqlang/jq/releases
     JQ_VERSION=1.8.2 \
     # https://github.com/mikefarah/yq/releases
-    YQ_VERSION=4.53.6
+    YQ_VERSION=4.54.1
 
 # apk add only pulls patched versions for the packages named below; without this
   # the rest of the rootfs (openssl for example) stays on whatever the base shipped.
@@ -53,15 +55,16 @@ RUN curl --fail -LO https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSI
     mv jq-linux64 /usr/bin/jq && \
     jq -V
 
-RUN curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 && \
+RUN curl --fail -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 && \
     chmod +x /usr/bin/yq && \
     yq --version
 
-RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archive/mc.${MC_VERSION} && \
+RUN curl --fail -Lo /usr/bin/mc https://github.com/minio/mc/releases/download/${MC_VERSION}/mc.linux-amd64.${MC_VERSION} && \
+    echo "${MC_SHA256}  /usr/bin/mc" | sha256sum -c - && \
     chmod +x /usr/bin/mc && \
     mc --version
 
-RUN curl -Lo /usr/bin/kubectl https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl --fail -Lo /usr/bin/kubectl https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
     kubectl version --client
 
@@ -69,7 +72,7 @@ RUN curl --fail -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz |
     chmod +x /usr/local/bin/helm && \
     helm version --short
 
-RUN curl -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+RUN curl --fail -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip vault.zip && \
     rm vault.zip && \
     mv vault /usr/bin/vault && \

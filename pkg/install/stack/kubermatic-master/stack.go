@@ -197,7 +197,7 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	sublogger := log.Prefix(logger, "   ")
 
 	if opt.DisableTelemetry {
-		sublogger.Info("Telemetry creation has been disabled in the KubermaticConfiguration, skipping.")
+		sublogger.Info("Telemetry has been disabled via --disable-telemetry, skipping.")
 		return nil
 	}
 

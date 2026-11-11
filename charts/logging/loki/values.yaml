@@ -39,6 +39,11 @@ loki:
       # Otherwise Loki logs an error at startup: "failed to fast-join the memberlist".
       join_members: []
     limits_config:
+      # Loki 3 lowered the default from 30 to 15. Alloy turns every pod label
+      # into a stream label, and a user cluster apiserver pod carries one
+      # revision label per Secret and ConfigMap it mounts, so its streams
+      # reach about 30 labels and Loki would reject them.
+      max_label_names_per_series: 40
       reject_old_samples: true
       reject_old_samples_max_age: 144h
       retention_period: 720h

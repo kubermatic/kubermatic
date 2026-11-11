@@ -22,6 +22,12 @@ helm-exporter:
   image:
     pullPolicy: IfNotPresent
 
+  # the seed Prometheus discovers pods only, the upstream chart annotates just
+  # the Service
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9571"
+
   resources:
     requests:
       cpu: 50m

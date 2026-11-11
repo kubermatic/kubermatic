@@ -84,6 +84,11 @@ const (
 	// KubeVirtAcceleratorQuota enables accelerator quota accounting for KubeVirt Machines.
 	// This feature is alpha and disabled by default.
 	KubeVirtAcceleratorQuota = "KubeVirtAcceleratorQuota"
+
+	// WebTerminalServiceAccount if enabled runs the web terminal as a per-session ServiceAccount
+	// in the user cluster that impersonates the session user, instead of storing the user's
+	// OIDC tokens in the user cluster.
+	WebTerminalServiceAccount = "WebTerminalServiceAccount"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

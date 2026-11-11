@@ -19,6 +19,10 @@
 alertmanager:
   fullnameOverride: alertmanager
   replicaCount: 3
+  # picked up by the "pods" scrape job of the seed Prometheus
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9093"
   resources:
     limits:
       cpu: 200m

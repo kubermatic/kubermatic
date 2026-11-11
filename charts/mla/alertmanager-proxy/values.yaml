@@ -18,7 +18,7 @@ alertmanagerProxy:
     backendPort: 8080
     image:
       repository: "docker.io/envoyproxy/envoy"
-      tag: "v1.29.2"
+      tag: "v1.37.8"
     # list of image pull secret references, e.g.
     # imagePullSecrets:
     #   - name: docker-io-pull-secret

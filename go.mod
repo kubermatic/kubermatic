@@ -36,10 +36,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.102.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.46.0
-	github.com/aws/smithy-go v1.28.1
+	github.com/aws/smithy-go v1.28.7
 	github.com/cert-manager/cert-manager v1.15.5
 	github.com/cilium/cilium v1.19.8
-	github.com/containerd/containerd/v2 v2.3.6
+	github.com/containerd/containerd/v2 v2.3.7
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.1.2
 	github.com/distribution/reference v0.6.0
@@ -48,7 +48,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/go-logr/zapr v1.3.0
-	github.com/go-test/deep v1.1.1
+	github.com/go-test/deep v1.1.2
 	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.21.9
@@ -82,10 +82,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.49.0
 	go.anx.io/go-anxcloud v0.7.9
-	go.etcd.io/etcd/api/v3 v3.7.2
-	go.etcd.io/etcd/client/pkg/v3 v3.7.2
-	go.etcd.io/etcd/client/v3 v3.7.2
-	go.etcd.io/etcd/etcdutl/v3 v3.7.2
+	go.etcd.io/etcd/api/v3 v3.7.3
+	go.etcd.io/etcd/client/pkg/v3 v3.7.3
+	go.etcd.io/etcd/client/v3 v3.7.3
+	go.etcd.io/etcd/etcdutl/v3 v3.7.3
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.58.0
 	golang.org/x/oauth2 v0.37.0
@@ -253,13 +253,13 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/getsentry/sentry-go v0.46.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
-	github.com/go-chi/chi/v5 v5.3.0 // indirect
+	github.com/go-chi/chi/v5 v5.4.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zerologr v1.2.3 // indirect
@@ -459,8 +459,8 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	gitlab.com/gitlab-org/api/client-go v1.46.0 // indirect
 	go.etcd.io/bbolt v1.5.0 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.7.2 // indirect
-	go.etcd.io/etcd/server/v3 v3.7.2 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.7.3 // indirect
+	go.etcd.io/etcd/server/v3 v3.7.3 // indirect
 	go.etcd.io/raft/v3 v3.7.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.67.0 // indirect
@@ -492,7 +492,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect

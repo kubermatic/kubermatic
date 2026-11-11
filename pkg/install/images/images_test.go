@@ -28,9 +28,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -94,6 +97,97 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	if _, _, err := CopyImages(context.Background(), log, true, true, sets.List(imageSet), "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
+	}
+}
+
+// TestGetImagesForVersionIncludesRuntimeImages checks images that KKP only uses in
+// Jobs or provider specific workloads, which are easy to miss in the image list.
+func TestGetImagesForVersionIncludesRuntimeImages(t *testing.T) {
+	config, err := defaulting.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("Failed to default KubermaticConfiguration: %v", err)
+	}
+
+	clusterVersion := &version.Version{Version: config.Spec.Versions.Default.Semver()}
+	clusterSemver := *config.Spec.Versions.Default
+
+	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")
+	if err != nil {
+		t.Fatalf("Failed to load CA bundle: %v", err)
+	}
+
+	cniPlugin := &kubermaticv1.CNIPluginSettings{
+		Type:    kubermaticv1.CNIPluginTypeCilium,
+		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+	}
+
+	allAddons, err := addonutil.LoadAddonsFromDirectory("../../../addons")
+	if err != nil {
+		t.Fatalf("Failed to load addons: %v", err)
+	}
+
+	utilImage := config.Spec.Util.DockerRepository + ":" + resources.UtilVersion
+	kubeOneImage := resources.KubeOneImage + ":" + resources.KubeOneImageTag
+
+	testCases := []struct {
+		provider kubermaticv1.ProviderType
+		expected []string
+		// repositories matched without a tag, for addon images that are bumped often
+		expectedRepos []string
+	}{
+		{
+			// util is shared by the KubeOne Jobs, the seed-proxy and the encryption Job, so
+			// this only proves util is listed, not which of them listed it
+			provider: kubermaticv1.BringYourOwnCloudProvider,
+			expected: []string{utilImage, kubeOneImage},
+		},
+		{
+			provider:      kubermaticv1.AWSCloudProvider,
+			expected:      []string{resources.RegistryK8S + "/provider-aws/cloud-controller-manager:" + cloudcontroller.AWSCCMVersion(clusterSemver)},
+			expectedRepos: []string{"public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver"},
+		},
+		{
+			provider: kubermaticv1.DigitaloceanCloudProvider,
+			expected: []string{resources.RegistryDocker + "/digitalocean/digitalocean-cloud-controller-manager:" + cloudcontroller.DigitaloceanCCMVersion(clusterSemver)},
+		},
+		{
+			provider: kubermaticv1.GCPCloudProvider,
+			expected: []string{resources.RegistryK8S + "/cloud-provider-gcp/cloud-controller-manager:" + cloudcontroller.GCPCCMVersion(clusterSemver)},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(string(tc.provider), func(t *testing.T) {
+			cloudSpecs := GetFilteredCloudSpecs(sets.New(string(tc.provider)))
+			if len(cloudSpecs) != 1 {
+				t.Fatalf("Expected 1 cloud spec for %q, got %d", tc.provider, len(cloudSpecs))
+			}
+
+			images, err := GetImagesForVersion(logrus.New(), clusterVersion, cloudSpecs[0], cniPlugin, true, config, allAddons, kubermatic.GetFakeVersions(), caBundle, "")
+			if err != nil {
+				t.Fatalf("Failed to get images: %v", err)
+			}
+
+			imageSet := sets.New(images...)
+			for _, image := range tc.expected {
+				if !imageSet.Has(image) {
+					t.Errorf("Expected image %q to be listed, but it was not", image)
+				}
+			}
+
+			for _, repo := range tc.expectedRepos {
+				found := false
+				for _, image := range images {
+					if strings.HasPrefix(image, repo+":") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected an image from %q to be listed, but there was none", repo)
+				}
+			}
+		})
 	}
 }
 

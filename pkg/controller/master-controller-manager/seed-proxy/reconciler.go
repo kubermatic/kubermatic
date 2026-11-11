@@ -320,7 +320,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 	}
 
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
-		masterDeploymentReconciler(seed, secret, config),
+		MasterDeploymentReconciler(seed, secret, config),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r); err != nil {

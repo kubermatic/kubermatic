@@ -1,0 +1,42 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-kube-kubelet.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      # kubelet exposes kubelet_running_pods; the old kubelet_running_pod_count
+      # name is gone from all supported Kubernetes versions
+      - series: 'kubelet_running_pods{job="kubelet",instance="node1"}'
+        values: '105+0x30'
+      - series: 'kubelet_running_pods{job="kubelet",instance="node2"}'
+        values: '20+0x30'
+
+    alert_rule_test:
+      - alertname: KubeletTooManyPods
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              resource: node1
+              service: kubelet
+              job: kubelet
+              instance: node1
+            exp_annotations:
+              message: Kubelet node1 is running 105 pods, close to the limit of 110.
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubelettoomanypods

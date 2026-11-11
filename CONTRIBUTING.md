@@ -81,6 +81,26 @@ are very busy and read the mailing lists.
 
 Due to their public nature, GitHub and mailing lists are not appropriate places for reporting vulnerabilities. If you suspect you have found a security vulnerability, please do not file a GitHub issue, but instead email security@kubermatic.com with the full details, including steps to reproduce the issue.
 
+## Issues Before Pull Requests
+
+Pull requests that arrive without any prior discussion cost the maintainers
+more time than the change is worth, and are usually closed. Follow this
+process for every non-trivial change:
+
+- Open an issue first. Describe the problem, how you plan to solve it, and why.
+- Wait for a maintainer to confirm the issue before you start working on a
+  pull request. An open issue alone is not enough, a maintainer must have
+  responded that the change is wanted.
+- Link the confirmed issue in your pull request.
+
+Trivial fixes (typos, broken links, small factual corrections in the
+documentation) do not need an issue. If you are not sure whether your change
+is trivial, open an issue and ask.
+
+This applies to all contributions, including AI-assisted ones. AI assistance
+is welcome, but the human submitting the pull request is responsible for the
+change and must be able to explain and defend every part of it.
+
 ## Getting Started
 
 - Fork the repository on GitHub
@@ -91,6 +111,9 @@ Due to their public nature, GitHub and mailing lists are not appropriate places 
 
 This is a rough outline of what a contributor's workflow looks like:
 
+- Open an issue describing the problem and your proposed change, and get a
+  maintainer's confirmation before starting work (unless the change is
+  trivial, see above).
 - Create a topic branch from where you want to base your work (usually main).
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
