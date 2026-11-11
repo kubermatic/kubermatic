@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -236,4 +237,37 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 			server.Close()
 		})
 	}
+}
+
+func TestDashboardConfigMapRequests(t *testing.T) {
+	client := fake.NewClientBuilder().WithObjects(
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: grafanaDashboardsConfigmapNamePrefix + "-a", Namespace: "mla"}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: grafanaDashboardsConfigmapNamePrefix + "-b", Namespace: "mla"}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "other", Namespace: "mla"}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: grafanaDashboardsConfigmapNamePrefix + "-c", Namespace: "elsewhere"}},
+	).Build()
+
+	requests := dashboardConfigMapRequests(context.Background(), kubermaticlog.Logger, client, "mla")
+
+	assert.ElementsMatch(t, []reconcile.Request{
+		{NamespacedName: types.NamespacedName{Name: grafanaDashboardsConfigmapNamePrefix + "-a", Namespace: "mla"}},
+		{NamespacedName: types.NamespacedName{Name: grafanaDashboardsConfigmapNamePrefix + "-b", Namespace: "mla"}},
+	}, requests)
+}
+
+func TestOrgAnnotationChangedPredicate(t *testing.T) {
+	project := func(annotations map[string]string) *kubermaticv1.Project {
+		return &kubermaticv1.Project{ObjectMeta: metav1.ObjectMeta{Name: "p", Annotations: annotations}}
+	}
+	withOrg := func(id string) *kubermaticv1.Project {
+		return project(map[string]string{GrafanaOrgAnnotationKey: id})
+	}
+	p := orgAnnotationChangedPredicate()
+
+	assert.True(t, p.Create(event.CreateEvent{Object: withOrg("1")}), "create with org")
+	assert.False(t, p.Create(event.CreateEvent{Object: project(nil)}), "create without org")
+	assert.True(t, p.Update(event.UpdateEvent{ObjectOld: project(nil), ObjectNew: withOrg("1")}), "org set")
+	assert.True(t, p.Update(event.UpdateEvent{ObjectOld: withOrg("1"), ObjectNew: withOrg("2")}), "org recreated")
+	assert.False(t, p.Update(event.UpdateEvent{ObjectOld: withOrg("1"), ObjectNew: withOrg("1")}), "org unchanged")
+	assert.False(t, p.Delete(event.DeleteEvent{Object: withOrg("1")}), "delete")
 }
