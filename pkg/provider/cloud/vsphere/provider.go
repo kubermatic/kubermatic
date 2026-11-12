@@ -31,6 +31,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -84,8 +86,9 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to create REST client session: %w", err)
 	}
 
+	var managedTags sets.Set[string]
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		cluster, err = reconcileTags(ctx, restSession, cluster, update)
+		cluster, managedTags, err = reconcileTags(ctx, restSession, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
 		}
@@ -122,6 +125,12 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
+	}
+
+	// The cluster object might have been refreshed by the updates above, so the managed tags are
+	// recorded last. The cloud controller persists the status after the reconciliation.
+	if managedTags != nil {
+		setManagedTags(cluster, managedTags)
 	}
 
 	return cluster, nil
@@ -253,7 +262,7 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
+		if err := cleanupClusterTags(ctx, restSession, cluster); err != nil {
 			return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
 		}
 	}
