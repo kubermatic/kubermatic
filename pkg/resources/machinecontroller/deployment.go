@@ -252,5 +252,10 @@ func getFlags(features map[string]bool, overrides *kubermaticv1.MachineControlle
 		flags = append(flags, "-skip-eviction-after", overrides.SkipEvictionAfter.Duration.String())
 	}
 
+	// 0 means "disabled"; passing it on would make machine-controller immediately delete every MachineSet-owned machine without a Node.
+	if overrides != nil && overrides.JoinClusterTimeout != nil && overrides.JoinClusterTimeout.Duration > 0 {
+		flags = append(flags, "-join-cluster-timeout", overrides.JoinClusterTimeout.Duration.String())
+	}
+
 	return flags
 }
