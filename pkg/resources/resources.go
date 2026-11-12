@@ -189,6 +189,12 @@ const (
 	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 	// WEBTerminalImage is the name of the image used for the web terminal tool pod.
 	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.12.0"
+	// WebTerminalAppLabelValue is the app label value of the web terminal resources.
+	WebTerminalAppLabelValue = "webterminal"
+	// WebTerminalKubeconfigSecretPrefix is the name prefix of the web terminal kubeconfig Secret.
+	WebTerminalKubeconfigSecretPrefix = "kubeconfig-"
+	// WebTerminalUserAnnotationKey is the annotation that holds the user's email on the web terminal kubeconfig Secret.
+	WebTerminalUserAnnotationKey = "user"
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
