@@ -1089,10 +1089,29 @@ func TestMutatorJoinClusterTimeoutSeedDefault(t *testing.T) {
 			expected:   &metav1.Duration{},
 		},
 		{
-			name:       "updating a cluster without a value prefers the default cluster template over the seed default",
+			name:       "a new cluster prefers the default cluster template over the seed default",
+			newCluster: genCluster(nil),
+			template:   &metav1.Duration{Duration: 25 * time.Minute},
+			expected:   &metav1.Duration{Duration: 25 * time.Minute},
+		},
+		{
+			name:       "a new cluster keeps a zero from the default cluster template",
+			newCluster: genCluster(nil),
+			template:   &metav1.Duration{},
+			expected:   &metav1.Duration{},
+		},
+		{
+			name:       "updating a cluster without a value ignores the default cluster template and picks up the seed default",
 			oldCluster: genCluster(nil),
 			newCluster: genCluster(nil),
 			template:   &metav1.Duration{Duration: 25 * time.Minute},
+			expected:   seedDefault,
+		},
+		{
+			name:       "updating a cluster keeps the value it got from the default cluster template on creation",
+			oldCluster: genCluster(&metav1.Duration{Duration: 25 * time.Minute}),
+			newCluster: genCluster(&metav1.Duration{Duration: 25 * time.Minute}),
+			template:   &metav1.Duration{Duration: 40 * time.Minute},
 			expected:   &metav1.Duration{Duration: 25 * time.Minute},
 		},
 	}

@@ -81,6 +81,13 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 	// every unrelated update fail the immutability validation.
 	keyConfig := newCluster.Spec.KeyConfiguration.DeepCopy()
 
+	// The default ClusterTemplate sets joinClusterTimeout on creation only, so that
+	// changing the template does not affect clusters that already exist. The Seed's
+	// defaultComponentSettings still fill an unset value on updates.
+	if oldCluster != nil {
+		defaultTemplate = withoutJoinClusterTimeout(defaultTemplate)
+	}
+
 	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, newCluster.Annotations, defaultTemplate, seed, config, provider); err != nil {
 		return nil, field.InternalError(nil, err)
 	}
@@ -97,6 +104,24 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 	}
 
 	return newCluster, fieldErr
+}
+
+// withoutJoinClusterTimeout returns the template without its machine-controller
+// joinClusterTimeout. The template is copied before it is changed.
+func withoutJoinClusterTimeout(template *kubermaticv1.ClusterTemplate) *kubermaticv1.ClusterTemplate {
+	if template == nil {
+		return nil
+	}
+
+	mc := template.Spec.ComponentsOverride.MachineController
+	if mc == nil || mc.JoinClusterTimeout == nil {
+		return template
+	}
+
+	template = template.DeepCopy()
+	template.Spec.ComponentsOverride.MachineController.JoinClusterTimeout = nil
+
+	return template
 }
 
 func (m *Mutator) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
