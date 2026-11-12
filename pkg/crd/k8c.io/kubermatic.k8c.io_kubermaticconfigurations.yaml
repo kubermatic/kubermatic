@@ -1669,6 +1669,13 @@ spec:
                   properties:
                     clientID:
                       type: string
+                    clientSecret:
+                      description: |-
+                        ClientSecret is the secret of the OIDC client used for logging into the dashboard (clientID).
+                        It is required when clientID differs from issuerClientID. If clientID and issuerClientID are
+                        identical, both refer to the same OIDC client, so clientSecret is ignored and
+                        issuerClientSecret is used instead.
+                      type: string
                     issuerClientID:
                       type: string
                     issuerClientSecret:

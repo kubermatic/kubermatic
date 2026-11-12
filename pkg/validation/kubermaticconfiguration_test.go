@@ -17,11 +17,13 @@ limitations under the License.
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -633,5 +635,81 @@ func TestValidateExternalGatewayConfigurationForbidsManagedGatewayFields(t *test
 		if !found {
 			t.Fatalf("expected forbidden error for %s, got %v", path, errs.ToAggregate())
 		}
+	}
+}
+
+func TestValidateAuthConfiguration(t *testing.T) {
+	testcases := []struct {
+		name     string
+		auth     kubermaticv1.KubermaticAuthConfiguration
+		headless bool
+		wantErr  bool
+	}{
+		{
+			name: "single client (defaults), no clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermaticIssuer",
+				IssuerClientID: "kubermaticIssuer",
+			},
+		},
+		{
+			name: "single client with explicit clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermaticIssuer",
+				ClientSecret:   "secret",
+				IssuerClientID: "kubermaticIssuer",
+			},
+		},
+		{
+			name: "separate clients with clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermatic",
+				ClientSecret:       "secret",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+		},
+		{
+			name: "separate clients without clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermatic",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			wantErr: true,
+		},
+		{
+			name: "separate clients without clientSecret, headless installation",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermatic",
+				IssuerClientID: "kubermaticIssuer",
+			},
+			headless: true,
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := &kubermaticv1.KubermaticConfigurationSpec{Auth: tt.auth}
+			if tt.headless {
+				spec.FeatureGates = map[string]bool{features.HeadlessInstallation: true}
+			}
+
+			err := ValidateAuthConfiguration(spec)
+			if tt.wantErr {
+				if err == nil || err.Field != "spec.auth.clientSecret" {
+					t.Fatalf("Expected an error on spec.auth.clientSecret, got: %v", err)
+				}
+
+				// the message must name both ways out
+				for _, hint := range []string{"set spec.auth.clientSecret", `set spec.auth.clientID to "kubermaticIssuer"`} {
+					if !strings.Contains(err.Error(), hint) {
+						t.Errorf("Expected the error to contain %q, got: %v", hint, err)
+					}
+				}
+			} else if err != nil {
+				t.Fatalf("Expected no error, got: %v", err)
+			}
+		})
 	}
 }

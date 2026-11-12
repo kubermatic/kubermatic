@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestAPIDeploymentScheduling(t *testing.T) {
@@ -74,6 +75,79 @@ func TestAPIDeploymentScheduling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runSchedulingTest(t, tt, setSched, newCreator)
+		})
+	}
+}
+
+func TestAPIDeploymentOIDCAuthenticatorClientSecret(t *testing.T) {
+	versions := kubermatic.GetFakeVersions()
+
+	tests := []struct {
+		name string
+		auth kubermaticv1.KubermaticAuthConfiguration
+		want string
+	}{
+		{
+			name: "same client, no clientSecret: uses issuerClientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermaticIssuer",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			want: "issuer-secret",
+		},
+		{
+			name: "same client: clientSecret is ignored, one client has one secret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermaticIssuer",
+				ClientSecret:       "<placeholder>",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			want: "issuer-secret",
+		},
+		{
+			name: "separate clients: uses clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermatic",
+				ClientSecret:       "login-secret",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			want: "login-secret",
+		},
+		{
+			name: "separate clients, no clientSecret: never reuses issuerClientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermatic",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{}
+			cfg.Spec.Auth = tt.auth
+			cfg.Spec.API.PProfEndpoint = ptr.To(":6600")
+
+			_, creator := APIDeploymentReconciler(cfg, "", versions)()
+			dep, err := creator(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile deployment: %v", err)
+			}
+
+			want := "-oidc-authenticator-client-secret=" + tt.want
+
+			for _, arg := range dep.Spec.Template.Spec.Containers[0].Args {
+				if arg == want {
+					return
+				}
+			}
+
+			t.Errorf("expected argument %q, got %v", want, dep.Spec.Template.Spec.Containers[0].Args)
 		})
 	}
 }

@@ -209,7 +209,12 @@ spec:
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
-    clientID: kubermaticIssuer
+    clientID: kubermatic
+    # ClientSecret is the secret of the OIDC client used for logging into the dashboard (clientID).
+    # It is required when clientID differs from issuerClientID. If clientID and issuerClientID are
+    # identical, both refer to the same OIDC client, so clientSecret is ignored and
+    # issuerClientSecret is used instead.
+    clientSecret: ""
     issuerClientID: kubermaticIssuer
     issuerClientSecret: ""
     issuerCookieKey: ""

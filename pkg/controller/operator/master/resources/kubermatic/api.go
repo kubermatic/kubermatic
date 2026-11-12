@@ -216,6 +216,7 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
+				fmt.Sprintf("-oidc-authenticator-client-secret=%s", authenticatorClientSecret(cfg)),
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
 				fmt.Sprintf("-domain=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
@@ -279,6 +280,27 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 			return d, nil
 		}
 	}
+}
+
+// authenticatorClientSecret returns the secret of the OIDC client used for the
+// dashboard login (spec.auth.clientID).
+//
+// If the login client is the same client as the issuer client (a single-client
+// setup, as used by installations created before spec.auth.clientSecret
+// existed), there is only one OIDC client and therefore only one valid secret:
+// issuerClientSecret. spec.auth.clientSecret is ignored then, so that a
+// leftover or placeholder value cannot break the login.
+//
+// If the two clients differ, issuerClientSecret belongs to another client and
+// must not be reused; the (validated) clientSecret is the only option then.
+func authenticatorClientSecret(cfg *kubermaticv1.KubermaticConfiguration) string {
+	auth := cfg.Spec.Auth
+
+	if auth.ClientID == auth.IssuerClientID {
+		return auth.IssuerClientSecret
+	}
+
+	return auth.ClientSecret
 }
 
 func APIPDBReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {

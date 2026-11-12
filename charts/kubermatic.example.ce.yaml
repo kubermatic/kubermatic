@@ -59,7 +59,23 @@ spec:
 
   # These secret keys configure the way components communicate with Dex.
   auth:
-    clientID: kubermaticIssuer
+    # The dashboard login and the OIDC flows of user clusters (kubeconfig download,
+    # kubeconfig secret, Kubernetes Dashboard) use two separate Dex clients, so a
+    # token issued for one of them is not accepted for the other.
+    #
+    # clientID is the client used for logging into the KKP dashboard.
+    clientID: kubermatic
+
+    # This must match the secret configured for the "kubermatic" client from the
+    # dex clients in values.yaml. The dashboard login uses the OIDC authorization
+    # code flow, which requires a client secret.
+    #
+    # To keep a single client for both purposes instead, set clientID to the same
+    # value as issuerClientID (kubermaticIssuer). It is then the same OIDC client,
+    # so clientSecret is ignored and issuerClientSecret is used for the login.
+    clientSecret: <dex-kubermatic-oauth-secret-here>
+
+    # issuerClientID is the client used for the OIDC flows of user clusters.
     issuerClientID: kubermaticIssuer
     # When using letsencrypt-prod replace with "false"
     skipTokenIssuerTLSVerify: true
@@ -67,8 +83,8 @@ spec:
 
     # This must match the secret configured for the kubermaticIssuer client from
     # the dex clients in values.yaml.
-    # Required for logging into the KKP dashboard and for the OIDC kubeconfig
-    # endpoints ("enableOIDCKubeconfig: true" in KubermaticSetting).
+    # Required for the OIDC kubeconfig endpoints ("enableOIDCKubeconfig: true" in
+    # KubermaticSetting) and the other OIDC flows of user clusters.
     issuerClientSecret: <dex-kubermatic-issuer-oauth-secret-here>
 
     # these need to be randomly generated. Those can be generated on the

@@ -142,7 +142,12 @@ type KubermaticConfigurationSpec struct {
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
 type KubermaticAuthConfiguration struct {
-	ClientID                 string `json:"clientID,omitempty"`
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret is the secret of the OIDC client used for logging into the dashboard (clientID).
+	// It is required when clientID differs from issuerClientID. If clientID and issuerClientID are
+	// identical, both refer to the same OIDC client, so clientSecret is ignored and
+	// issuerClientSecret is used instead.
+	ClientSecret             string `json:"clientSecret,omitempty"`
 	TokenIssuer              string `json:"tokenIssuer,omitempty"`
 	IssuerRedirectURL        string `json:"issuerRedirectURL,omitempty"`
 	IssuerClientID           string `json:"issuerClientID,omitempty"`

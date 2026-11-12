@@ -42,7 +42,8 @@ import (
 const (
 	DefaultPProfEndpoint                          = ":6600"
 	DefaultEtcdVolumeSize                         = "5Gi"
-	DefaultAuthClientID                           = "kubermaticIssuer"
+	DefaultAuthClientID                           = "kubermatic"
+	DefaultAuthIssuerClientID                     = "kubermaticIssuer"
 	DefaultIngressClass                           = "nginx"
 	DefaultIngressName                            = "kubermatic"
 	DefaultGatewayName                            = "kubermatic"
@@ -502,7 +503,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if auth.IssuerClientID == "" {
-		auth.IssuerClientID = DefaultAuthClientID
+		auth.IssuerClientID = DefaultAuthIssuerClientID
 		logger.Debugw("Defaulting field", "field", "auth.issuerClientID", "value", auth.IssuerClientID)
 	}
 
