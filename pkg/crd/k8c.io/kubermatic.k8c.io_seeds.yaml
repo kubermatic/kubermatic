@@ -2771,6 +2771,20 @@ spec:
                             - preferred
                             - required
                           type: string
+                        joinClusterTimeout:
+                          description: |-
+                            JoinClusterTimeout makes the machine-controller delete machines that are owned by a
+                            MachineSet, whose cloud instance exists but has no matching Node, and that are older
+                            than this duration (counted from the machine's creation), so that the MachineSet
+                            re-creates them. This also applies to a machine whose Node was deleted after it had
+                            joined. Machines whose instance could not be created are not affected.
+                            Setting this to 0 explicitly disables the timeout (e.g. to opt out of a Seed-level
+                            default). When unset or 0, such machines are not replaced.
+                            A new Cluster without its own value gets the value of the Seed's default ClusterTemplate,
+                            or else the Seed's defaultComponentSettings. On later updates only the Seed's
+                            defaultComponentSettings fill an unset value, so changing the default ClusterTemplate
+                            does not affect existing Clusters. Once set, the value is kept.
+                          type: string
                         replicas:
                           description: Replicas allows to override the number of desired Pods for the Deployment.
                           format: int32

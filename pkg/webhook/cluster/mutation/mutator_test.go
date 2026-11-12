@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
@@ -927,4 +928,133 @@ func (r rawClusterGen) Do() *kubermaticv1.Cluster {
 	}
 
 	return &c
+}
+
+func TestMutatorJoinClusterTimeoutSeedDefault(t *testing.T) {
+	seedDefault := &metav1.Duration{Duration: 15 * time.Minute}
+
+	genCluster := func(joinClusterTimeout *metav1.Duration) *kubermaticv1.Cluster {
+		cluster := rawClusterGen{
+			Name: "foo",
+			CloudSpec: kubermaticv1.CloudSpec{
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+				DatacenterName: "hetzner-dc",
+				Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+			},
+			ExternalCloudProvider: true,
+			CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: "v3.20",
+			},
+		}.Do()
+		if joinClusterTimeout != nil {
+			cluster.Spec.ComponentsOverride.MachineController = &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: joinClusterTimeout.DeepCopy(),
+			}
+		}
+
+		return cluster
+	}
+
+	tests := []struct {
+		name       string
+		oldCluster *kubermaticv1.Cluster
+		newCluster *kubermaticv1.Cluster
+		template   *metav1.Duration
+		expected   *metav1.Duration
+	}{
+		{
+			name:       "a new cluster inherits the seed default",
+			newCluster: genCluster(nil),
+			expected:   seedDefault,
+		},
+		{
+			name:       "updating an existing cluster without a value picks up the seed default",
+			oldCluster: genCluster(nil),
+			newCluster: genCluster(nil),
+			expected:   seedDefault,
+		},
+		{
+			name:       "updating a cluster keeps its explicit zero",
+			oldCluster: genCluster(&metav1.Duration{}),
+			newCluster: genCluster(&metav1.Duration{}),
+			expected:   &metav1.Duration{},
+		},
+		{
+			name:       "a new cluster prefers the default cluster template over the seed default",
+			newCluster: genCluster(nil),
+			template:   &metav1.Duration{Duration: 25 * time.Minute},
+			expected:   &metav1.Duration{Duration: 25 * time.Minute},
+		},
+		{
+			name:       "a new cluster keeps a zero from the default cluster template",
+			newCluster: genCluster(nil),
+			template:   &metav1.Duration{},
+			expected:   &metav1.Duration{},
+		},
+		{
+			name:       "updating a cluster without a value ignores the default cluster template and picks up the seed default",
+			oldCluster: genCluster(nil),
+			newCluster: genCluster(nil),
+			template:   &metav1.Duration{Duration: 25 * time.Minute},
+			expected:   seedDefault,
+		},
+		{
+			name:       "updating a cluster keeps the value it got from the default cluster template on creation",
+			oldCluster: genCluster(&metav1.Duration{Duration: 25 * time.Minute}),
+			newCluster: genCluster(&metav1.Duration{Duration: 25 * time.Minute}),
+			template:   &metav1.Duration{Duration: 40 * time.Minute},
+			expected:   &metav1.Duration{Duration: 25 * time.Minute},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testSeed := seed.DeepCopy()
+			testSeed.Spec.DefaultComponentSettings.MachineController = &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: seedDefault.DeepCopy(),
+			}
+
+			clientBuilder := fake.NewClientBuilder()
+			if tt.template != nil {
+				testSeed.Spec.DefaultClusterTemplate = defaultingTemplateName
+				clientBuilder = clientBuilder.WithObjects(&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      defaultingTemplateName,
+						Namespace: testSeed.Namespace,
+						Labels:    map[string]string{"scope": kubermaticv1.SeedTemplateScope},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							MachineController: &kubermaticv1.MachineControllerSettings{
+								JoinClusterTimeout: tt.template.DeepCopy(),
+							},
+						},
+					},
+				})
+			}
+
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(&config)
+			if err != nil {
+				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
+			}
+
+			mutator := NewMutator(clientBuilder.Build(), configGetter, test.NewSeedGetter(testSeed), nil)
+			mutator.disableProviderMutation = true
+
+			mutatedCluster, mutateErr := mutator.Mutate(context.Background(), tt.oldCluster, tt.newCluster)
+			if mutateErr != nil {
+				t.Fatalf("Request should have succeeded, but failed: %v", mutateErr)
+			}
+
+			var got *metav1.Duration
+			if mc := mutatedCluster.Spec.ComponentsOverride.MachineController; mc != nil {
+				got = mc.JoinClusterTimeout
+			}
+
+			if !diff.DeepEqual(tt.expected, got) {
+				t.Errorf("Unexpected joinClusterTimeout:\n%v", diff.ObjectDiff(tt.expected, got))
+			}
+		})
+	}
 }

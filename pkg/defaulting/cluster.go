@@ -45,6 +45,7 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 	// (which disables the eviction timeout) would be silently replaced by a
 	// ClusterTemplate or Seed default.
 	explicitSkipEvictionAfter := copySkipEvictionAfter(spec)
+	explicitJoinClusterTimeout := copyJoinClusterTimeout(spec)
 
 	// If a ClusterTemplate was configured for the Seed, the caller
 	// retrieved it for us already and we can use it as the primary
@@ -58,6 +59,9 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 		// precedence and must not be overwritten by the Seed default below.
 		if explicitSkipEvictionAfter == nil {
 			explicitSkipEvictionAfter = copySkipEvictionAfter(spec)
+		}
+		if explicitJoinClusterTimeout == nil {
+			explicitJoinClusterTimeout = copyJoinClusterTimeout(spec)
 		}
 	}
 
@@ -73,6 +77,10 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 		spec.ComponentsOverride.MachineController.SkipEvictionAfter = explicitSkipEvictionAfter
 	}
 
+	if explicitJoinClusterTimeout != nil && spec.ComponentsOverride.MachineController != nil {
+		spec.ComponentsOverride.MachineController.JoinClusterTimeout = explicitJoinClusterTimeout
+	}
+
 	return nil
 }
 
@@ -81,6 +89,16 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 func copySkipEvictionAfter(spec *kubermaticv1.ClusterSpec) *metav1.Duration {
 	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.SkipEvictionAfter != nil {
 		return &metav1.Duration{Duration: mc.SkipEvictionAfter.Duration}
+	}
+
+	return nil
+}
+
+// copyJoinClusterTimeout returns a copy of the spec's joinClusterTimeout, or nil if unset,
+// for the same reason as copySkipEvictionAfter.
+func copyJoinClusterTimeout(spec *kubermaticv1.ClusterSpec) *metav1.Duration {
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.JoinClusterTimeout != nil {
+		return &metav1.Duration{Duration: mc.JoinClusterTimeout.Duration}
 	}
 
 	return nil
