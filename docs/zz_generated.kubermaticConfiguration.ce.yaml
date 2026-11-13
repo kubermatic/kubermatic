@@ -209,6 +209,16 @@ spec:
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
+    # AdditionalIssuerRedirectURLs are extra origins, besides the one of IssuerRedirectURL, that the KKP
+    # dashboard may use for OIDC redirects, e.g. when KKP is also reachable through reverse proxies on other
+    # hostnames. The dashboard picks the entry that matches the browser's origin.
+    # Each entry must be an origin: scheme, host and optional port, in lower case, without the scheme's
+    # default port and without a path, e.g. "https://kkp-proxy.example.com" or "https://kkp.internal:8443".
+    # For each entry, register "<entry>/api/v2/auth/callback", "<entry>/api/v1/kubeconfig",
+    # "<entry>/api/v2/kubeconfig/secret" and "<entry>/api/v2/dashboard/login" as redirect URIs of the
+    # IssuerClientID client in the OIDC provider. Register the last three also at the OIDC provider of
+    # every Seed that sets its own oidcProviderConfiguration.
+    additionalIssuerRedirectURLs: null
     clientID: kubermaticIssuer
     issuerClientID: kubermaticIssuer
     issuerClientSecret: ""
