@@ -986,3 +986,82 @@ func TestDefaultSkipEvictionAfter(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultJoinClusterTimeout(t *testing.T) {
+	const dcName = "join-timeout-test-dc"
+
+	duration := func(d *time.Duration) *metav1.Duration {
+		if d == nil {
+			return nil
+		}
+		return &metav1.Duration{Duration: *d}
+	}
+
+	zero := ptr.To(time.Duration(0))
+	tenMinutes := ptr.To(10 * time.Minute)
+	twentyFive := ptr.To(25 * time.Minute)
+
+	testCases := []struct {
+		name     string
+		cluster  *time.Duration
+		seed     *time.Duration
+		template *time.Duration
+		expected *time.Duration
+	}{
+		{name: "no cluster value: seed default applies", seed: tenMinutes, expected: tenMinutes},
+		{name: "no seed default and no cluster value: stays unset"},
+		{name: "explicit zero is not overwritten by the seed default", cluster: zero, seed: tenMinutes, expected: zero},
+		{name: "explicit non-zero wins over the seed default", cluster: twentyFive, seed: tenMinutes, expected: twentyFive},
+		{name: "explicit zero is not overwritten by a cluster template", cluster: zero, template: tenMinutes, expected: zero},
+		{name: "the cluster template wins over the seed default", template: twentyFive, seed: tenMinutes, expected: twentyFive},
+		{name: "a zero from the cluster template is not overwritten by the seed default", template: zero, seed: tenMinutes, expected: zero},
+		{name: "explicit non-zero wins over the cluster template", cluster: twentyFive, template: tenMinutes, expected: twentyFive},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						dcName: {Spec: kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}},
+					},
+				},
+			}
+			if tc.seed != nil {
+				seed.Spec.DefaultComponentSettings.MachineController = &kubermaticv1.MachineControllerSettings{JoinClusterTimeout: duration(tc.seed)}
+			}
+
+			spec := &kubermaticv1.ClusterSpec{
+				Cloud: kubermaticv1.CloudSpec{
+					DatacenterName: dcName,
+					ProviderName:   string(kubermaticv1.FakeCloudProvider),
+					Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+				},
+			}
+			if tc.cluster != nil {
+				spec.ComponentsOverride.MachineController = &kubermaticv1.MachineControllerSettings{JoinClusterTimeout: duration(tc.cluster)}
+			}
+
+			var template *kubermaticv1.ClusterTemplate
+			if tc.template != nil {
+				template = &kubermaticv1.ClusterTemplate{}
+				template.Spec.ComponentsOverride.MachineController = &kubermaticv1.MachineControllerSettings{JoinClusterTimeout: duration(tc.template)}
+			}
+
+			if err := DefaultClusterSpec(context.Background(), spec, nil, template, seed, config, nil); err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+
+			var got *metav1.Duration
+			if mc := spec.ComponentsOverride.MachineController; mc != nil {
+				got = mc.JoinClusterTimeout
+			}
+			assert.Equal(t, duration(tc.expected), got)
+		})
+	}
+}

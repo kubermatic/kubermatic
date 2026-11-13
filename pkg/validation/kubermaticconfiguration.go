@@ -19,8 +19,11 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"strconv"
 	"strings"
+	"unicode"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/distribution/reference"
@@ -55,6 +58,8 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 	allErrs = append(allErrs, ValidateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
 	allErrs = append(allErrs, ValidateKeyConfiguration(spec.UserCluster.KeyConfiguration, field.NewPath("spec", "userCluster", "keyConfiguration"))...)
+
+	allErrs = append(allErrs, ValidateAdditionalIssuerRedirectURLs(spec.Auth.AdditionalIssuerRedirectURLs, field.NewPath("spec", "auth", "additionalIssuerRedirectURLs"))...)
 
 	return allErrs
 }
@@ -95,6 +100,110 @@ func SeparateLoginClientID(spec *kubermaticv1.KubermaticConfigurationSpec) strin
 	}
 
 	return spec.Auth.ClientID
+}
+
+// ValidateAdditionalIssuerRedirectURLs validates spec.auth.additionalIssuerRedirectURLs.
+func ValidateAdditionalIssuerRedirectURLs(urls []string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for i, rawURL := range urls {
+		idxPath := fldPath.Index(i)
+
+		// the operator passes the entries comma-joined to the API, so a comma would split an entry
+		if strings.Contains(rawURL, ",") {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain a comma"))
+			continue
+		}
+
+		u, err := url.Parse(rawURL)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, fmt.Sprintf("failed to parse URL: %v", err)))
+			continue
+		}
+		entryErrs := len(allErrs)
+
+		if u.Scheme != "http" && u.Scheme != "https" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "scheme must be http or https"))
+		}
+
+		if u.Host == "" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "host must not be empty"))
+		}
+
+		if u.User != nil {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain user info"))
+		}
+
+		if u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+			allErrs = append(allErrs, field.Invalid(idxPath, rawURL, "must not contain a query or fragment"))
+		}
+
+		// the canonical spelling is only checked for an otherwise valid entry
+		if len(allErrs) == entryErrs {
+			if msg := validateCanonicalOrigin(rawURL, u); msg != "" {
+				allErrs = append(allErrs, field.Invalid(idxPath, rawURL, msg))
+			}
+		}
+	}
+
+	return allErrs
+}
+
+// validateCanonicalOrigin checks that rawURL is an origin (scheme, host and optional port), optionally
+// followed by "/", in the canonical spelling the KKP API matches the browser origin against. The OIDC
+// provider compares redirect URIs byte for byte, so any other spelling would be rejected there. The
+// rules and messages are the same as the API's -oidc-issuer-additional-redirect-uris flag check.
+func validateCanonicalOrigin(rawURL string, u *url.URL) string {
+	if u.Path != "" && u.Path != "/" {
+		return "must not contain a path, only scheme, host and optional port"
+	}
+	if port := u.Port(); port != "" {
+		n, err := strconv.Atoi(port)
+		if err != nil || n < 1 || n > 65535 {
+			return "port must be between 1 and 65535"
+		}
+		// browsers send the port without leading zeros, so "0443" could never match
+		if port != strconv.Itoa(n) {
+			return "port must not have leading zeros"
+		}
+	}
+	host := u.Hostname()
+	if strings.HasSuffix(host, ".") {
+		return "host must not end with a dot"
+	}
+	if strings.Contains(host, "%") {
+		return "host must not contain an IPv6 zone"
+	}
+	for _, r := range host {
+		if r > unicode.MaxASCII {
+			return "host must be ASCII, use the punycode form"
+		}
+	}
+
+	// url.Parse lower-cases the scheme, so compare against the raw input
+	if canonical := canonicalOrigin(u); strings.TrimSuffix(rawURL, "/") != canonical {
+		return fmt.Sprintf("must be written in canonical form as %q (lower case, without the default port)", canonical)
+	}
+
+	return ""
+}
+
+// canonicalOrigin returns scheme://host[:port] in lower case, without the scheme's default port.
+func canonicalOrigin(u *url.URL) string {
+	scheme := strings.ToLower(u.Scheme)
+	host := strings.ToLower(u.Hostname())
+	port := u.Port()
+	if (scheme == "https" && port == "443") || (scheme == "http" && port == "80") {
+		port = ""
+	}
+
+	if port != "" {
+		host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+
+	return scheme + "://" + host
 }
 
 // ValidateExternalGatewayConfiguration validates spec.ingress.gateway.externalGateway.

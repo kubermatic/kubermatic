@@ -865,6 +865,25 @@ func TestValidateDefaultComponentSettings(t *testing.T) {
 			},
 			wantError: "skipEvictionAfter",
 		},
+		{
+			name: "accepts positive joinClusterTimeout",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{Duration: 15 * time.Minute},
+			},
+		},
+		{
+			name: "accepts zero joinClusterTimeout",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{},
+			},
+		},
+		{
+			name: "rejects negative joinClusterTimeout",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{Duration: -time.Minute},
+			},
+			wantError: "joinClusterTimeout",
+		},
 	}
 
 	for _, tc := range testCases {

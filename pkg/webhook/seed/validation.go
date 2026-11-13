@@ -291,6 +291,10 @@ func validateDefaultComponentSettings(seed *kubermaticv1.Seed) error {
 		return fmt.Errorf("spec.defaultComponentSettings.machineController.skipEvictionAfter must be zero (to disable the eviction timeout) or a positive duration")
 	}
 
+	if mc := seed.Spec.DefaultComponentSettings.MachineController; mc != nil && mc.JoinClusterTimeout != nil && mc.JoinClusterTimeout.Duration < 0 {
+		return fmt.Errorf("spec.defaultComponentSettings.machineController.joinClusterTimeout must be zero (to disable the join timeout) or a positive duration")
+	}
+
 	return nil
 }
 

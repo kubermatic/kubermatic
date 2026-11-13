@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -234,6 +235,10 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 			// keeps older API images, which do not know it, working.
 			if cfg.Spec.Auth.ClientID != cfg.Spec.Auth.IssuerClientID {
 				args = append(args, fmt.Sprintf("-oidc-authenticator-client-secret=%s", cfg.Spec.Auth.ClientSecret))
+			}
+
+			if len(cfg.Spec.Auth.AdditionalIssuerRedirectURLs) > 0 {
+				args = append(args, fmt.Sprintf("-oidc-issuer-additional-redirect-uris=%s", strings.Join(cfg.Spec.Auth.AdditionalIssuerRedirectURLs, ",")))
 			}
 
 			if cfg.Spec.API.DebugLog {
