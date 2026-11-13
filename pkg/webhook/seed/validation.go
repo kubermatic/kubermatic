@@ -213,10 +213,9 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 		return err
 	}
 
-	if !isDelete {
-		if err := v.validateIssuerClientID(ctx, subject, existingSeed); err != nil {
-			return err
-		}
+	// on delete, subject is the existing Seed, so this check is a no-op
+	if err := v.validateIssuerClientID(ctx, subject, existingSeed); err != nil {
+		return err
 	}
 
 	return nil
