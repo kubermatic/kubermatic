@@ -101,6 +101,8 @@ dex:
       # "enableOIDCKubeconfig: true" option is set in KubermaticSetting. Its secret
       # must be set as spec.auth.issuerClientSecret in the KubermaticConfiguration.
       # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
+      # With a single OIDC client (spec.auth.clientID equal to spec.auth.issuerClientID), the dashboard
+      # login uses this client, so keep https://kkp.example.com/api/v2/auth/callback in its RedirectURIs.
       - id: kubermaticIssuer
         name: Kubermatic OIDC Issuer
         # Generate a secure secret key, different from the one above.
