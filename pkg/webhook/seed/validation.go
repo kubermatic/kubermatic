@@ -43,6 +43,7 @@ import (
 type validator struct {
 	seedsGetter      provider.SeedsGetter
 	seedClientGetter provider.SeedClientGetter
+	configGetter     provider.KubermaticConfigurationGetter
 	features         features.FeatureGate
 	lock             *sync.Mutex
 }
@@ -50,11 +51,13 @@ type validator struct {
 func newSeedValidator(
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	features features.FeatureGate,
 ) (*validator, error) {
 	return &validator{
 		seedsGetter:      seedsGetter,
 		seedClientGetter: seedClientGetter,
+		configGetter:     configGetter,
 		features:         features,
 		lock:             &sync.Mutex{},
 	}, nil
@@ -208,6 +211,44 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, is
 
 	if err := validateAuthenticationConfiguration(subject); err != nil {
 		return err
+	}
+
+	if !isDelete {
+		if err := v.validateIssuerClientID(ctx, subject, existingSeed); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateIssuerClientID rejects a Seed whose User Cluster client is the KKP
+// Dashboard login client. The check only runs when the issuerClientID is set or
+// changed, so that unrelated updates of an existing Seed are not blocked.
+func (v *validator) validateIssuerClientID(ctx context.Context, seed, existingSeed *kubermaticv1.Seed) error {
+	oidc := seed.Spec.OIDCProviderConfiguration
+	if oidc == nil || oidc.IssuerClientID == "" {
+		return nil
+	}
+
+	if existingSeed != nil {
+		if old := existingSeed.Spec.OIDCProviderConfiguration; old != nil && old.IssuerClientID == oidc.IssuerClientID {
+			return nil
+		}
+	}
+
+	config, err := v.configGetter(ctx)
+	if err != nil {
+		// without a KubermaticConfiguration there is no login client to compare with
+		if errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
+			return nil
+		}
+		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
+	loginClient := validation.SeparateLoginClientID(&config.Spec)
+	if loginClient != "" && oidc.IssuerClientID == loginClient {
+		return fmt.Errorf("spec.oidcProviderConfiguration.issuerClientID must differ from spec.auth.clientID (%q), the KKP Dashboard login client", loginClient)
 	}
 
 	return nil

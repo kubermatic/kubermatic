@@ -2266,3 +2266,116 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateOIDCClientID(t *testing.T) {
+	const tokenIssuer = "https://kkp.example.com/dex"
+
+	separateClients := kubermaticv1.KubermaticAuthConfiguration{
+		ClientID:       "kubermatic",
+		ClientSecret:   "secret",
+		IssuerClientID: "kubermaticIssuer",
+		TokenIssuer:    tokenIssuer,
+	}
+
+	singleClient := kubermaticv1.KubermaticAuthConfiguration{
+		ClientID:       "kubermaticIssuer",
+		IssuerClientID: "kubermaticIssuer",
+		TokenIssuer:    tokenIssuer,
+	}
+
+	clusterWithOIDC := func(issuerURL, clientID string) *kubermaticv1.Cluster {
+		return &kubermaticv1.Cluster{
+			Spec: kubermaticv1.ClusterSpec{
+				OIDC: kubermaticv1.OIDCSettings{IssuerURL: issuerURL, ClientID: clientID},
+			},
+		}
+	}
+
+	tests := []struct {
+		name       string
+		auth       kubermaticv1.KubermaticAuthConfiguration
+		headless   bool
+		cluster    *kubermaticv1.Cluster
+		oldCluster *kubermaticv1.Cluster
+		wantErr    bool
+	}{
+		{
+			name:    "no OIDC settings",
+			auth:    separateClients,
+			cluster: &kubermaticv1.Cluster{},
+		},
+		{
+			name:    "User Cluster client of the KKP token issuer",
+			auth:    separateClients,
+			cluster: clusterWithOIDC(tokenIssuer, "kubermaticIssuer"),
+		},
+		{
+			name:    "login client of the KKP token issuer",
+			auth:    separateClients,
+			cluster: clusterWithOIDC(tokenIssuer, "kubermatic"),
+			wantErr: true,
+		},
+		{
+			name:    "login client of the KKP token issuer with a trailing slash",
+			auth:    separateClients,
+			cluster: clusterWithOIDC(tokenIssuer+"/", "kubermatic"),
+			wantErr: true,
+		},
+		{
+			name:    "same client name of another issuer",
+			auth:    separateClients,
+			cluster: clusterWithOIDC("https://idp.example.com", "kubermatic"),
+		},
+		{
+			name:    "single-client mode",
+			auth:    singleClient,
+			cluster: clusterWithOIDC(tokenIssuer, "kubermaticIssuer"),
+		},
+		{
+			name:     "headless installation",
+			auth:     separateClients,
+			headless: true,
+			cluster:  clusterWithOIDC(tokenIssuer, "kubermatic"),
+		},
+		{
+			name:       "update changing the client to the login client",
+			auth:       separateClients,
+			cluster:    clusterWithOIDC(tokenIssuer, "kubermatic"),
+			oldCluster: clusterWithOIDC(tokenIssuer, "kubermaticIssuer"),
+			wantErr:    true,
+		},
+		{
+			name:       "update changing the issuer to the KKP token issuer",
+			auth:       separateClients,
+			cluster:    clusterWithOIDC(tokenIssuer, "kubermatic"),
+			oldCluster: clusterWithOIDC("https://idp.example.com", "kubermatic"),
+			wantErr:    true,
+		},
+		{
+			name:       "unrelated update of a Cluster that already uses the login client",
+			auth:       separateClients,
+			cluster:    clusterWithOIDC(tokenIssuer, "kubermatic"),
+			oldCluster: clusterWithOIDC(tokenIssuer+"/", "kubermatic"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{Auth: tt.auth},
+			}
+			if tt.headless {
+				config.Spec.FeatureGates = map[string]bool{features.HeadlessInstallation: true}
+			}
+
+			err := validateOIDCClientID(tt.cluster, tt.oldCluster, config)
+			if tt.wantErr {
+				if err == nil || err.Field != "spec.oidc.clientID" {
+					t.Fatalf("Expected an error on spec.oidc.clientID, got: %v", err)
+				}
+			} else if err != nil {
+				t.Fatalf("Expected no error, got: %v", err)
+			}
+		})
+	}
+}

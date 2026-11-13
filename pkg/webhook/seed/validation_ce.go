@@ -39,9 +39,10 @@ var _ admission.Validator[*kubermaticv1.Seed] = &fixedNameValidator{}
 func NewValidator(
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	features features.FeatureGate,
 ) (*fixedNameValidator, error) {
-	upstream, err := newSeedValidator(seedsGetter, seedClientGetter, features)
+	upstream, err := newSeedValidator(seedsGetter, seedClientGetter, configGetter, features)
 	if err != nil {
 		return nil, err
 	}

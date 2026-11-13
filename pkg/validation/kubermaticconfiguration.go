@@ -85,6 +85,18 @@ func ValidateAuthConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) *
 	return nil
 }
 
+// SeparateLoginClientID returns spec.auth.clientID if the KKP Dashboard login
+// uses its own OIDC client, which User Clusters must not trust. It returns an
+// empty string in single-client mode (clientID equals issuerClientID) and in
+// headless installations. The spec is expected to be defaulted.
+func SeparateLoginClientID(spec *kubermaticv1.KubermaticConfigurationSpec) string {
+	if spec.FeatureGates[features.HeadlessInstallation] || spec.Auth.ClientID == spec.Auth.IssuerClientID {
+		return ""
+	}
+
+	return spec.Auth.ClientID
+}
+
 // ValidateExternalGatewayConfiguration validates spec.ingress.gateway.externalGateway.
 func ValidateExternalGatewayConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}

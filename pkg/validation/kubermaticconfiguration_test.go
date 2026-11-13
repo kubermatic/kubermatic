@@ -713,3 +713,40 @@ func TestValidateAuthConfiguration(t *testing.T) {
 		})
 	}
 }
+
+func TestSeparateLoginClientID(t *testing.T) {
+	testcases := []struct {
+		name     string
+		auth     kubermaticv1.KubermaticAuthConfiguration
+		headless bool
+		want     string
+	}{
+		{
+			name: "separate clients",
+			auth: kubermaticv1.KubermaticAuthConfiguration{ClientID: "kubermatic", IssuerClientID: "kubermaticIssuer"},
+			want: "kubermatic",
+		},
+		{
+			name: "single client",
+			auth: kubermaticv1.KubermaticAuthConfiguration{ClientID: "kubermaticIssuer", IssuerClientID: "kubermaticIssuer"},
+		},
+		{
+			name:     "headless installation",
+			auth:     kubermaticv1.KubermaticAuthConfiguration{ClientID: "kubermatic", IssuerClientID: "kubermaticIssuer"},
+			headless: true,
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := &kubermaticv1.KubermaticConfigurationSpec{Auth: tt.auth}
+			if tt.headless {
+				spec.FeatureGates = map[string]bool{features.HeadlessInstallation: true}
+			}
+
+			if got := SeparateLoginClientID(spec); got != tt.want {
+				t.Errorf("Expected %q, got %q", tt.want, got)
+			}
+		})
+	}
+}
