@@ -1,0 +1,40 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: agentgateway
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
+spec:
+  description: AgentGateway is a Kubernetes-native gateway for exposing AI, MCP, agent-to-agent, and API traffic through Gateway API resources.
+  displayName: AgentGateway
+  defaultNamespace:
+    name: agentgateway-system
+    create: true
+  method: helm
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: agentgateway
+            chartVersion: 1.3.1
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: 1.3.1
+  defaultValuesBlock: |
+    monitoring:
+      enabled: false
+  documentationURL: https://agentgateway.dev/docs/kubernetes/latest/
+  sourceURL: https://github.com/agentgateway/agentgateway
