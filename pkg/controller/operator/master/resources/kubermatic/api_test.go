@@ -17,6 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -81,49 +82,40 @@ func TestAPIDeploymentScheduling(t *testing.T) {
 
 func TestAPIDeploymentOIDCAuthenticatorClientSecret(t *testing.T) {
 	versions := kubermatic.GetFakeVersions()
+	const flag = "-oidc-authenticator-client-secret"
 
 	tests := []struct {
 		name string
 		auth kubermaticv1.KubermaticAuthConfiguration
+		// empty means the flag must not be set at all
 		want string
 	}{
 		{
-			name: "same client, no clientSecret: uses issuerClientSecret",
+			name: "single client: flag is not set",
 			auth: kubermaticv1.KubermaticAuthConfiguration{
 				ClientID:           "kubermaticIssuer",
 				IssuerClientID:     "kubermaticIssuer",
 				IssuerClientSecret: "issuer-secret",
 			},
-			want: "issuer-secret",
 		},
 		{
-			name: "same client: clientSecret is ignored, one client has one secret",
+			name: "single client with leftover clientSecret: flag is not set",
 			auth: kubermaticv1.KubermaticAuthConfiguration{
 				ClientID:           "kubermaticIssuer",
 				ClientSecret:       "<placeholder>",
 				IssuerClientID:     "kubermaticIssuer",
 				IssuerClientSecret: "issuer-secret",
 			},
-			want: "issuer-secret",
 		},
 		{
-			name: "separate clients: uses clientSecret",
+			name: "separate clients: flag is set to clientSecret",
 			auth: kubermaticv1.KubermaticAuthConfiguration{
 				ClientID:           "kubermatic",
 				ClientSecret:       "login-secret",
 				IssuerClientID:     "kubermaticIssuer",
 				IssuerClientSecret: "issuer-secret",
 			},
-			want: "login-secret",
-		},
-		{
-			name: "separate clients, no clientSecret: never reuses issuerClientSecret",
-			auth: kubermaticv1.KubermaticAuthConfiguration{
-				ClientID:           "kubermatic",
-				IssuerClientID:     "kubermaticIssuer",
-				IssuerClientSecret: "issuer-secret",
-			},
-			want: "",
+			want: flag + "=login-secret",
 		},
 	}
 
@@ -139,15 +131,19 @@ func TestAPIDeploymentOIDCAuthenticatorClientSecret(t *testing.T) {
 				t.Fatalf("failed to reconcile deployment: %v", err)
 			}
 
-			want := "-oidc-authenticator-client-secret=" + tt.want
-
+			var got []string
 			for _, arg := range dep.Spec.Template.Spec.Containers[0].Args {
-				if arg == want {
-					return
+				if strings.HasPrefix(arg, flag+"=") {
+					got = append(got, arg)
 				}
 			}
 
-			t.Errorf("expected argument %q, got %v", want, dep.Spec.Template.Spec.Containers[0].Args)
+			switch {
+			case tt.want == "" && len(got) > 0:
+				t.Errorf("expected no %s argument, got %v", flag, got)
+			case tt.want != "" && (len(got) != 1 || got[0] != tt.want):
+				t.Errorf("expected exactly %q, got %v", tt.want, got)
+			}
 		})
 	}
 }
