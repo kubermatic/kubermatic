@@ -239,6 +239,16 @@ func Add(
 		handler.EnqueueRequestsFromMapFunc(reconciler.enqueueClustersForOIDCIssuerLoadBalancerService),
 		builder.WithPredicates(oidcIssuerLoadBalancerServicePredicate()),
 	)
+	bldr.Watches(
+		&kubermaticv1.Seed{},
+		handler.EnqueueRequestsFromMapFunc(reconciler.enqueueAllClustersForSeed),
+		builder.WithPredicates(seedFlatcarUpdateOperatorPredicate()),
+	)
+	bldr.Watches(
+		&kubermaticv1.KubermaticConfiguration{},
+		handler.EnqueueRequestsFromMapFunc(reconciler.enqueueAllClusters),
+		builder.WithPredicates(configFlatcarUpdateOperatorPredicate()),
+	)
 	if reconciler.features.KubeVirtAcceleratorAccounting {
 		bldr.Watches(
 			&kubermaticv1.ResourceQuota{},
@@ -334,6 +344,111 @@ func (r *Reconciler) enqueueKubeVirtClustersForAcceleratorQuotaResourceQuota(ctx
 	})
 
 	return requests
+}
+
+// enqueueAllClustersForSeed enqueues every cluster whose datacenter lives in the changed Seed.
+func (r *Reconciler) enqueueAllClustersForSeed(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+	seed, ok := obj.(*kubermaticv1.Seed)
+	if !ok {
+		return nil
+	}
+
+	clusters := &kubermaticv1.ClusterList{}
+	if err := r.List(ctx, clusters); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list Clusters for Seed %q: %w", seed.Name, err))
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0, len(clusters.Items))
+	for i := range clusters.Items {
+		cluster := &clusters.Items[i]
+		if cluster.DeletionTimestamp != nil ||
+			cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+			continue
+		}
+		if _, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]; !found {
+			continue
+		}
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+	}
+
+	sort.Slice(requests, func(i, j int) bool {
+		return requests[i].Name < requests[j].Name
+	})
+
+	return requests
+}
+
+func (r *Reconciler) enqueueAllClusters(ctx context.Context, _ ctrlruntimeclient.Object) []reconcile.Request {
+	clusters := &kubermaticv1.ClusterList{}
+	if err := r.List(ctx, clusters); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0, len(clusters.Items))
+	for i := range clusters.Items {
+		cluster := &clusters.Items[i]
+		if cluster.DeletionTimestamp != nil ||
+			cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+			continue
+		}
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+	}
+
+	sort.Slice(requests, func(i, j int) bool {
+		return requests[i].Name < requests[j].Name
+	})
+
+	return requests
+}
+
+func seedFlatcarUpdateOperatorPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(event.CreateEvent) bool { return false },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldSeed, oldOK := e.ObjectOld.(*kubermaticv1.Seed)
+			newSeed, newOK := e.ObjectNew.(*kubermaticv1.Seed)
+			if !oldOK || !newOK {
+				return false
+			}
+
+			if !reflect.DeepEqual(oldSeed.Spec.FlatcarUpdateOperator, newSeed.Spec.FlatcarUpdateOperator) {
+				return true
+			}
+
+			for name, newDC := range newSeed.Spec.Datacenters {
+				oldDC, found := oldSeed.Spec.Datacenters[name]
+				if !found || !reflect.DeepEqual(oldDC.Spec.FlatcarUpdateOperator, newDC.Spec.FlatcarUpdateOperator) {
+					return true
+				}
+			}
+
+			return len(oldSeed.Spec.Datacenters) != len(newSeed.Spec.Datacenters)
+		},
+		DeleteFunc:  func(event.DeleteEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return false },
+	}
+}
+
+func configFlatcarUpdateOperatorPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(event.CreateEvent) bool { return false },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldConfig, oldOK := e.ObjectOld.(*kubermaticv1.KubermaticConfiguration)
+			newConfig, newOK := e.ObjectNew.(*kubermaticv1.KubermaticConfiguration)
+			if !oldOK || !newOK {
+				return false
+			}
+
+			return !reflect.DeepEqual(
+				oldConfig.Spec.UserCluster.FlatcarUpdateOperator,
+				newConfig.Spec.UserCluster.FlatcarUpdateOperator,
+			)
+		},
+		DeleteFunc:  func(event.DeleteEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return false },
+	}
 }
 
 // isOIDCIssuerLoadBalancerServiceCandidate only checks cheap Service fields.
