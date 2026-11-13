@@ -89,6 +89,49 @@ func TestGetFlags(t *testing.T) {
 				"-skip-eviction-after", "0s",
 			},
 		},
+		{
+			name:     "join cluster timeout override is passed as duration",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{Duration: 25 * time.Minute},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+				"-join-cluster-timeout", "25m0s",
+			},
+		},
+		{
+			name:     "negative join cluster timeout adds no flag",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{Duration: -time.Minute},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+			},
+		},
+		{
+			name:     "zero join cluster timeout adds no flag",
+			features: map[string]bool{},
+			overrides: &kubermaticv1.MachineControllerSettings{
+				JoinClusterTimeout: &metav1.Duration{},
+			},
+			expected: []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-health-probe-address", "0.0.0.0:8085",
+				"-metrics-address", "0.0.0.0:8080",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-node-csr-approver",
+			},
+		},
 	}
 
 	for _, tc := range testcases {

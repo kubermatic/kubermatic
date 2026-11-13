@@ -1058,6 +1058,18 @@ type MachineControllerSettings struct {
 	// eviction as long as its node is Ready and a schedulable target node exists.
 	// Defaults to the machine-controller binary's built-in 2h when unset.
 	SkipEvictionAfter *metav1.Duration `json:"skipEvictionAfter,omitempty"`
+	// JoinClusterTimeout makes the machine-controller delete machines that are owned by a
+	// MachineSet, whose cloud instance exists but has no matching Node, and that are older
+	// than this duration (counted from the machine's creation), so that the MachineSet
+	// re-creates them. This also applies to a machine whose Node was deleted after it had
+	// joined. Machines whose instance could not be created are not affected.
+	// Setting this to 0 explicitly disables the timeout (e.g. to opt out of a Seed-level
+	// default). When unset or 0, such machines are not replaced.
+	// A new Cluster without its own value gets the value of the Seed's default ClusterTemplate,
+	// or else the Seed's defaultComponentSettings. On later updates only the Seed's
+	// defaultComponentSettings fill an unset value, so changing the default ClusterTemplate
+	// does not affect existing Clusters. Once set, the value is kept.
+	JoinClusterTimeout *metav1.Duration `json:"joinClusterTimeout,omitempty"`
 }
 
 type DeploymentSettings struct {

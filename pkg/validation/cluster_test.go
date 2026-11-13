@@ -1527,6 +1527,39 @@ func TestValidateMachineControllerSettings(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "positive joinClusterTimeout",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						JoinClusterTimeout: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+		},
+		{
+			name:  "zero joinClusterTimeout disables the join timeout",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						JoinClusterTimeout: &metav1.Duration{},
+					},
+				},
+			},
+		},
+		{
+			name:  "negative joinClusterTimeout",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					MachineController: &kubermaticv1.MachineControllerSettings{
+						JoinClusterTimeout: &metav1.Duration{Duration: -time.Minute},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
