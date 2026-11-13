@@ -188,7 +188,7 @@ const (
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
 	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 	// WEBTerminalImage is the name of the image used for the web terminal tool pod.
-	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.13.1"
+	WEBTerminalImage = RegistryQuay + "/kubermatic/web-terminal:0.13.3"
 	// WebTerminalAppLabelValue is the app label value of the web terminal resources.
 	WebTerminalAppLabelValue = "webterminal"
 	// WebTerminalKubeconfigSecretPrefix is the name prefix of the web terminal kubeconfig Secret.
