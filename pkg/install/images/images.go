@@ -25,6 +25,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
@@ -238,14 +240,14 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string) (int, int, error) {
+func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string, platform v1.Platform) (int, int, error) {
 	srcToImage := make(map[string]v1.Image)
 	for _, src := range images {
 		log = log.WithFields(logrus.Fields{
 			"image": src,
 		})
 		log.Info("Fetching image…")
-		img, err := crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
+		img, err := crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx), crane.WithPlatform(&platform))
 		if err != nil {
 			log.WithError(err).Error("Failed to fetch remote image. Skipping...")
 			continue
@@ -264,7 +266,7 @@ func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath stri
 	}
 
 	if dryRun {
-		return len(images), len(images), nil
+		return len(srcToImage), len(images), nil
 	}
 
 	if len(srcToImage) == 0 {
@@ -336,7 +338,9 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 	return nil
 }
 
-func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bool, images []string, registry string, userAgent string) (int, int, error) {
+// CopyImages copies the images into the registry. If platforms are given, only
+// these platforms of multi-platform images are copied.
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bool, images []string, registry string, userAgent string, platforms []v1.Platform) (int, int, error) {
 	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
@@ -349,7 +353,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bo
 	var failedImages []string
 
 	for index, image := range imageList {
-		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent, insecure); err != nil {
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent, insecure, platforms); err != nil {
 			log.Errorf("Failed to copy image: %v", err)
 			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
@@ -363,7 +367,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bo
 	return successCount, len(imageList), nil
 }
 
-func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string, insecure bool) error {
+func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string, insecure bool, platforms []v1.Platform) error {
 	log = log.WithFields(logrus.Fields{
 		"source-image": image.Source,
 		"target-image": image.Destination,
@@ -396,13 +400,87 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	}
 
 	return retry.OnError(backoff, retriable, func() error {
-		err := crane.Copy(image.Source, image.Destination, options...)
+		var err error
+		if len(platforms) == 0 {
+			err = crane.Copy(image.Source, image.Destination, options...)
+		} else {
+			err = copyImagePlatforms(log, image, platforms, options...)
+		}
 		if err != nil {
 			log.Error("Copying image:", err)
 		}
 
 		return err
 	})
+}
+
+// copyImagePlatforms works like crane.Copy, but copies only the given platforms
+// of multi-platform images. Images pinned by digest are copied with all platforms,
+// because removing platforms from an index changes its digest.
+func copyImagePlatforms(log logrus.FieldLogger, image ImageSourceDest, platforms []v1.Platform, options ...crane.Option) error {
+	o := crane.GetOptions(options...)
+
+	srcRef, err := name.ParseReference(image.Source, o.Name...)
+	if err != nil {
+		return fmt.Errorf("parsing reference %q: %w", image.Source, err)
+	}
+
+	dstRef, err := name.ParseReference(image.Destination, o.Name...)
+	if err != nil {
+		return fmt.Errorf("parsing reference %q: %w", image.Destination, err)
+	}
+
+	desc, err := remote.Get(srcRef, o.Remote...)
+	if err != nil {
+		return fmt.Errorf("fetching %q: %w", image.Source, err)
+	}
+
+	if !desc.MediaType.IsIndex() {
+		return remote.Push(dstRef, desc, o.Remote...)
+	}
+
+	if _, ok := srcRef.(name.Digest); ok {
+		log.Info("Image is pinned by digest, copying all platforms…")
+		return remote.Push(dstRef, desc, o.Remote...)
+	}
+
+	index, err := desc.ImageIndex()
+	if err != nil {
+		return err
+	}
+
+	filtered, err := filterPlatforms(index, platforms)
+	if err != nil {
+		return err
+	}
+
+	if filtered == nil {
+		log.Warn("Image has none of the selected platforms, copying all platforms…")
+		return remote.Push(dstRef, desc, o.Remote...)
+	}
+
+	return remote.WriteIndex(dstRef, filtered, o.Remote...)
+}
+
+// filterPlatforms returns the index without the manifests that match none of the
+// platforms (this also drops attestations), or nil if no manifest matches.
+func filterPlatforms(index v1.ImageIndex, platforms []v1.Platform) (v1.ImageIndex, error) {
+	manifest, err := index.IndexManifest()
+	if err != nil {
+		return nil, err
+	}
+
+	matches := func(desc v1.Descriptor) bool {
+		return desc.Platform != nil && slices.ContainsFunc(platforms, desc.Platform.Satisfies)
+	}
+
+	if !slices.ContainsFunc(manifest.Manifests, matches) {
+		return nil, nil
+	}
+
+	return mutate.RemoveManifests(index, func(desc v1.Descriptor) bool {
+		return !matches(desc)
+	}), nil
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {

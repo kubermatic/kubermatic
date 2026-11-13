@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -84,6 +85,7 @@ type MirrorImagesOptions struct {
 	LoadFrom    string
 	DryRun      bool
 	Insecure    bool
+	Platforms   []string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -135,6 +137,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.Insecure, "insecure", false, "Insecure option to bypass HTTPS/TLS certificate verification")
+	cmd.PersistentFlags().StringSliceVar(&opt.Platforms, "platform", nil, "Only mirror these platforms of multi-platform images (e.g. linux/amd64,linux/arm64); images pinned by digest are always mirrored with all platforms. Archives support one platform (defaults to linux/amd64)")
 
 	return cmd
 }
@@ -280,6 +283,35 @@ func parseProviderFilter(providers []string) (sets.Set[string], error) {
 	return providerSet, nil
 }
 
+// parsePlatforms parses the --platform values. Archives hold one platform per
+// image, so archive mode accepts at most one.
+func parsePlatforms(platforms []string, archive bool) ([]v1.Platform, error) {
+	var result []v1.Platform
+
+	for _, p := range platforms {
+		if strings.TrimSpace(p) == "" {
+			continue
+		}
+
+		platform, err := v1.ParsePlatform(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid platform %q: %w", p, err)
+		}
+
+		if platform.OS == "" || platform.Architecture == "" {
+			return nil, fmt.Errorf("invalid platform %q, expected <os>/<arch>[/<variant>]", p)
+		}
+
+		result = append(result, *platform)
+	}
+
+	if archive && len(result) > 1 {
+		return nil, fmt.Errorf("archives support only one platform, got %d", len(result))
+	}
+
+	return result, nil
+}
+
 func allSupportedProviderNames() []string {
 	names := make([]string, 0, len(kubermaticv1.InfrastructureProviders))
 	for _, p := range kubermaticv1.InfrastructureProviders {
@@ -355,6 +387,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 }
 
 func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions, userAgent string) error {
+	platforms, err := parsePlatforms(options.Platforms, options.Archive)
+	if err != nil {
+		return fmt.Errorf("failed to parse platforms: %w", err)
+	}
+
 	kubermaticConfig, err := getKubermaticConfiguration(options)
 	if err != nil {
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
@@ -365,7 +402,7 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 		return err
 	}
 
-	return archiveOrCopyImages(ctx, logger, imageSet, options, userAgent)
+	return archiveOrCopyImages(ctx, logger, imageSet, options, platforms, userAgent)
 }
 
 func collectImages(ctx context.Context, logger *logrus.Logger, versions kubermaticversion.Versions, kubermaticConfig *kubermaticv1.KubermaticConfiguration, options *ImageCollectionOptions) (sets.Set[string], error) {
@@ -552,7 +589,7 @@ func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermati
 	return imageSet, nil
 }
 
-func archiveOrCopyImages(ctx context.Context, logger *logrus.Logger, imageSet sets.Set[string], options *MirrorImagesOptions, userAgent string) error {
+func archiveOrCopyImages(ctx context.Context, logger *logrus.Logger, imageSet sets.Set[string], options *MirrorImagesOptions, platforms []v1.Platform, userAgent string) error {
 	if options.Archive && options.ArchivePath == "" {
 		currentPath, err := os.Getwd()
 		if err != nil {
@@ -566,8 +603,13 @@ func archiveOrCopyImages(ctx context.Context, logger *logrus.Logger, imageSet se
 	var err error
 
 	if options.Archive {
-		logger.WithField("archive-path", options.ArchivePath).Info("🚀 Archiving images…")
-		count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
+		platform := v1.Platform{OS: "linux", Architecture: "amd64"}
+		if len(platforms) > 0 {
+			platform = platforms[0]
+		}
+
+		logger.WithFields(logrus.Fields{"archive-path": options.ArchivePath, "platform": platform.String()}).Info("🚀 Archiving images…")
+		count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet), platform)
 		if err != nil {
 			return fmt.Errorf("failed to export images: %w", err)
 		}
@@ -576,8 +618,13 @@ func archiveOrCopyImages(ctx context.Context, logger *logrus.Logger, imageSet se
 			verb = "archiving (dry-run)"
 		}
 	} else {
-		logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
-		count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, options.Insecure, sets.List(imageSet), options.Registry, userAgent)
+		mirrorLogger := logger.WithField("registry", options.Registry)
+		if len(platforms) > 0 {
+			mirrorLogger = mirrorLogger.WithField("platforms", options.Platforms)
+		}
+
+		mirrorLogger.Info("🚀 Mirroring images…")
+		count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, options.Insecure, sets.List(imageSet), options.Registry, userAgent, platforms)
 		if err != nil {
 			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
 		}
