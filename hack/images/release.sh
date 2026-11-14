@@ -27,6 +27,32 @@ DRY_RUN=${DRY_RUN:-true}
 IMAGE="$DOCKER_REPO/$REPOSITORY:$TAG"
 HEAD="$(git rev-parse HEAD)"
 
+# images that set PLATFORMS in their settings.sh are built for several
+# architectures with buildx; a multi-arch image cannot be loaded into the
+# local docker daemon, so it is pushed straight from the builder
+if [[ -n "${PLATFORMS:-}" ]]; then
+  if ! docker buildx inspect kkp-utility-images > /dev/null 2>&1; then
+    docker buildx create --name kkp-utility-images --driver docker-container > /dev/null
+  fi
+
+  docker buildx build \
+    --builder kkp-utility-images \
+    --no-cache \
+    --pull \
+    --platform "$PLATFORMS" \
+    --tag "$IMAGE" \
+    --label "org.opencontainers.image.version=$TAG" \
+    --label "org.opencontainers.image.revision=$HEAD" \
+    --output "type=image,push=$(if $DRY_RUN; then echo false; else echo true; fi)" \
+    "$REPOSITORY"
+
+  if $DRY_RUN; then
+    echodate "Set \$DRY_RUN=false to push the image."
+  fi
+
+  exit 0
+fi
+
 docker build \
   --no-cache \
   --pull \
