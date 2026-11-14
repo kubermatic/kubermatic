@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -127,10 +128,23 @@ func (c *cli) detectHelmVersion() (*semverlib.Version, error) {
 	return version, nil
 }
 
-func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
+func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) error {
 	chart, err := LoadChart(chartDirectory)
 	if err != nil {
 		return err
+	}
+
+	// Use a private repository config and cache, so that repositories left
+	// over by an interrupted or concurrent run cannot break this one.
+	repoDir, err := os.MkdirTemp("", "kubermatic-installer-helm-")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary directory: %w", err)
+	}
+	defer os.RemoveAll(repoDir)
+
+	repoFlags := []string{
+		"--repository-config", filepath.Join(repoDir, "repositories.yaml"),
+		"--repository-cache", filepath.Join(repoDir, "cache"),
 	}
 
 	for idx, dep := range chart.Dependencies {
@@ -148,25 +162,11 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 			dep.Repository,
 		}
 
-		repoRemoveFlags := []string{
-			"repo",
-			"remove",
-			repoName,
-		}
+		repoAddFlags = append(repoAddFlags, repoFlags...)
 
-		if _, err = c.run("default", repoAddFlags...); err != nil {
+		if _, err := c.run("default", repoAddFlags...); err != nil {
 			return err
 		}
-
-		defer func() {
-			_, removeErr := c.run("default", repoRemoveFlags...)
-			if err != nil && removeErr != nil {
-				err = fmt.Errorf("%w; error: clean up resources failed: cannot remove repository: %w", err, removeErr)
-			}
-			if err == nil && removeErr != nil {
-				err = fmt.Errorf("error: clean up resources failed: cannot remove repository: %w", removeErr)
-			}
-		}()
 	}
 
 	command := []string{
@@ -174,6 +174,7 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 		"build",
 	}
 
+	command = append(command, repoFlags...)
 	command = append(command, chartDirectory)
 
 	_, err = c.run("default", command...)
