@@ -34,7 +34,7 @@ grafana:
   image:
     # -- The Docker registry
     registry: docker.io
-    tag: 13.0.12
+    tag: 13.3.1
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -42,6 +42,10 @@ grafana:
     ##
     pullSecrets: []
     #   - myRegistrKeySecretName
+
+  # KKP never runs `helm test`; this keeps the test pod and its bats image out of the rendered chart
+  testFramework:
+    enabled: false
 
   downloadDashboardsImage:
     # -- The Docker registry
