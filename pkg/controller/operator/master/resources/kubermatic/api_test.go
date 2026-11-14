@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestAPIDeploymentScheduling(t *testing.T) {
@@ -126,6 +127,74 @@ func TestAPIDeploymentAdditionalIssuerRedirectURLs(t *testing.T) {
 
 			if !slices.Equal(gotArgs, tt.wantArgs) {
 				t.Errorf("expected %v, got %v", tt.wantArgs, gotArgs)
+			}
+		})
+	}
+}
+
+func TestAPIDeploymentOIDCAuthenticatorClientSecret(t *testing.T) {
+	versions := kubermatic.GetFakeVersions()
+	const flag = "-oidc-authenticator-client-secret"
+
+	tests := []struct {
+		name string
+		auth kubermaticv1.KubermaticAuthConfiguration
+		// empty means the flag must not be set at all
+		want string
+	}{
+		{
+			name: "single client: flag is not set",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermaticIssuer",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+		},
+		{
+			name: "single client with leftover clientSecret: flag is not set",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermaticIssuer",
+				ClientSecret:       "<placeholder>",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+		},
+		{
+			name: "separate clients: flag is set to clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:           "kubermatic",
+				ClientSecret:       "login-secret",
+				IssuerClientID:     "kubermaticIssuer",
+				IssuerClientSecret: "issuer-secret",
+			},
+			want: flag + "=login-secret",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{}
+			cfg.Spec.Auth = tt.auth
+			cfg.Spec.API.PProfEndpoint = ptr.To(":6600")
+
+			_, creator := APIDeploymentReconciler(cfg, "", versions)()
+			dep, err := creator(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile deployment: %v", err)
+			}
+
+			var got []string
+			for _, arg := range dep.Spec.Template.Spec.Containers[0].Args {
+				if strings.HasPrefix(arg, flag+"=") {
+					got = append(got, arg)
+				}
+			}
+
+			switch {
+			case tt.want == "" && len(got) > 0:
+				t.Errorf("expected no %s argument, got %v", flag, got)
+			case tt.want != "" && (len(got) != 1 || got[0] != tt.want):
+				t.Errorf("expected exactly %q, got %v", tt.want, got)
 			}
 		})
 	}

@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/machine-controller/sdk/providerconfig"
@@ -522,6 +523,35 @@ func TestValidate(t *testing.T) {
 			errExpected: true,
 		},
 		{
+			name: "Adding a seed with a User Cluster client that differs from the login client should succeed",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					OIDCProviderConfiguration: &kubermaticv1.OIDCProviderConfiguration{
+						IssuerURL:      "https://issuer.example.com",
+						IssuerClientID: "kubermaticIssuer",
+					},
+				},
+			},
+		},
+		{
+			name: "Adding a seed with the login client as User Cluster client should fail",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					OIDCProviderConfiguration: &kubermaticv1.OIDCProviderConfiguration{
+						IssuerURL:      "https://issuer.example.com",
+						IssuerClientID: "kubermatic",
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
 			name: "Adding a seed with AuthenticationConfiguration with missing secretKey should fail",
 			seedToValidate: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
@@ -645,9 +675,10 @@ func TestValidate(t *testing.T) {
 				Build()
 
 			sv := &validator{
-				lock:        &sync.Mutex{},
-				features:    tc.features,
-				seedsGetter: test.NewSeedsGetter(tc.existingSeeds...),
+				lock:         &sync.Mutex{},
+				features:     tc.features,
+				seedsGetter:  test.NewSeedsGetter(tc.existingSeeds...),
+				configGetter: test.NewConfigGetter(separateClientsConfig()),
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return client, nil
 				},
@@ -877,6 +908,117 @@ func TestValidateDefaultComponentSettings(t *testing.T) {
 				if !strings.Contains(err.Error(), tc.wantError) {
 					t.Fatalf("expected error to contain %q, got %q", tc.wantError, err.Error())
 				}
+			}
+		})
+	}
+}
+
+// separateClientsConfig returns a KubermaticConfiguration whose dashboard login
+// client "kubermatic" differs from the User Cluster client "kubermaticIssuer".
+func separateClientsConfig() *kubermaticv1.KubermaticConfiguration {
+	return &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermatic",
+				ClientSecret:   "secret",
+				IssuerClientID: "kubermaticIssuer",
+			},
+		},
+	}
+}
+
+func TestValidateIssuerClientID(t *testing.T) {
+	seedWithClient := func(clientID string) *kubermaticv1.Seed {
+		return &kubermaticv1.Seed{
+			Spec: kubermaticv1.SeedSpec{
+				OIDCProviderConfiguration: &kubermaticv1.OIDCProviderConfiguration{
+					IssuerURL:      "https://issuer.example.com",
+					IssuerClientID: clientID,
+				},
+			},
+		}
+	}
+
+	singleClient := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermaticIssuer",
+				IssuerClientID: "kubermaticIssuer",
+			},
+		},
+	}
+
+	headless := separateClientsConfig()
+	headless.Spec.FeatureGates = map[string]bool{features.HeadlessInstallation: true}
+
+	testCases := []struct {
+		name         string
+		configGetter provider.KubermaticConfigurationGetter
+		seed         *kubermaticv1.Seed
+		existingSeed *kubermaticv1.Seed
+		errExpected  bool
+	}{
+		{
+			name:         "no OIDC provider configuration",
+			configGetter: test.NewConfigGetter(separateClientsConfig()),
+			seed:         &kubermaticv1.Seed{},
+		},
+		{
+			name:         "User Cluster client",
+			configGetter: test.NewConfigGetter(separateClientsConfig()),
+			seed:         seedWithClient("kubermaticIssuer"),
+		},
+		{
+			name:         "login client",
+			configGetter: test.NewConfigGetter(separateClientsConfig()),
+			seed:         seedWithClient("kubermatic"),
+			errExpected:  true,
+		},
+		{
+			name:         "login client, defaulted KubermaticConfiguration",
+			configGetter: test.NewConfigGetter(&kubermaticv1.KubermaticConfiguration{}),
+			seed:         seedWithClient("kubermatic"),
+			errExpected:  true,
+		},
+		{
+			name:         "login client in single-client mode",
+			configGetter: test.NewConfigGetter(singleClient),
+			seed:         seedWithClient("kubermaticIssuer"),
+		},
+		{
+			name:         "login client in a headless installation",
+			configGetter: test.NewConfigGetter(headless),
+			seed:         seedWithClient("kubermatic"),
+		},
+		{
+			name: "no KubermaticConfiguration",
+			configGetter: func(context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+				return nil, provider.ErrNoKubermaticConfigurationFound
+			},
+			seed: seedWithClient("kubermatic"),
+		},
+		{
+			name:         "update changing the client to the login client",
+			configGetter: test.NewConfigGetter(separateClientsConfig()),
+			seed:         seedWithClient("kubermatic"),
+			existingSeed: seedWithClient("kubermaticIssuer"),
+			errExpected:  true,
+		},
+		{
+			name:         "unrelated update of a Seed that already uses the login client",
+			configGetter: test.NewConfigGetter(separateClientsConfig()),
+			seed:         seedWithClient("kubermatic"),
+			existingSeed: seedWithClient("kubermatic"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			v := &validator{configGetter: tc.configGetter}
+
+			err := v.validateIssuerClientID(context.Background(), tc.seed, tc.existingSeed)
+			if (err != nil) != tc.errExpected {
+				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}
 		})
 	}
