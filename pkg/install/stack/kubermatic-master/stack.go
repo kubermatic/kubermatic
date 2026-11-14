@@ -143,7 +143,7 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		}
 	}
 
-	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+	if err := DeployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy cert-manager: %w", err)
 	}
 
