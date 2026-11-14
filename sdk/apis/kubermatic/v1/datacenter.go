@@ -701,8 +701,9 @@ type DatacenterSpecHetzner struct {
 	// While machines can be in multiple networks, a single one must be chosen for the
 	// HCloud CCM to work.
 	Network string `json:"network"`
-	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
-	// For informational purposes only.
+	// Optional: Hetzner location code, e.g. "fsn1". It is used for worker nodes and as the
+	// default location of load balancers created by the Hetzner CCM. If empty, the location
+	// is derived from the datacenter name.
 	Location string `json:"location,omitempty"`
 }
 
