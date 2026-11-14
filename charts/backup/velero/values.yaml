@@ -107,6 +107,6 @@ velero:
 
   kubectl:
     image:
-      repository: quay.io/kubermatic-mirror/images/kubectl
-      tag: 1.33.4
+      repository: quay.io/kubermatic/kubectl
+      tag: 1.34.13
 
