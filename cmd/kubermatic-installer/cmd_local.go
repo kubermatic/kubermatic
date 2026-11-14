@@ -43,6 +43,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
@@ -320,12 +321,44 @@ func prepareYAMLFile(dir, basename string, modifier func(*yamled.Document) error
 	return outputFile, nil
 }
 
-func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
+// oidcClientSecrets holds the secrets of the two OIDC clients KKP uses. They
+// are generated once, so that the KubermaticConfiguration and the Dex static
+// clients in the Helm values end up with matching secrets.
+type oidcClientSecrets struct {
+	// login is the secret of the dashboard login client (spec.auth.clientID).
+	login string
+	// issuer is the secret of the user cluster client (spec.auth.issuerClientID).
+	issuer string
+}
+
+func newOIDCClientSecrets() oidcClientSecrets {
+	return oidcClientSecrets{
+		login:  randomString(32),
+		issuer: randomString(32),
+	}
+}
+
+// forDexClient returns the secret for the Dex static client with the given ID.
+// The example Helm values use the default client IDs. Any other client gets its
+// own random secret.
+func (s oidcClientSecrets) forDexClient(id string) string {
+	switch id {
+	case defaulting.DefaultAuthClientID:
+		return s.login
+	case defaulting.DefaultAuthIssuerClientID:
+		return s.issuer
+	default:
+		return randomString(32)
+	}
+}
+
+func prepareKubermaticConfiguration(dir, kkpEndpoint string, secrets oidcClientSecrets) (string, error) {
 	return prepareYAMLFile(dir, "kubermatic", func(doc *yamled.Document) error {
 		doc.Set(yamled.Path{"spec", "ingress", "domain"}, kkpEndpoint)
 		doc.Remove(yamled.Path{"spec", "ingress", "certificateIssuer"})
 		doc.Set(yamled.Path{"spec", "auth", "tokenIssuer"}, fmt.Sprintf("http://%v/dex", kkpEndpoint))
-		doc.Set(yamled.Path{"spec", "auth", "issuerClientSecret"}, randomString(32))
+		doc.Set(yamled.Path{"spec", "auth", "clientSecret"}, secrets.login)
+		doc.Set(yamled.Path{"spec", "auth", "issuerClientSecret"}, secrets.issuer)
 		doc.Set(yamled.Path{"spec", "auth", "issuerCookieKey"}, randomString(32))
 		doc.Set(yamled.Path{"spec", "auth", "serviceAccountKey"}, randomString(32))
 
@@ -333,7 +366,7 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
 	})
 }
 
-func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
+func prepareHelmValues(dir, kkpEndpoint string, secrets oidcClientSecrets) (string, error) {
 	var imagePullSecret string
 
 	kubermaticFile := filepath.Join(dir, "kubermatic.example.yaml")
@@ -399,7 +432,8 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		}
 
 		for i := range clients {
-			doc.Set(yamled.Path{"dex", "config", "staticClients", i, "secret"}, randomString(32))
+			clientID, _ := doc.GetString(yamled.Path{"dex", "config", "staticClients", i, "id"})
+			doc.Set(yamled.Path{"dex", "config", "staticClients", i, "secret"}, secrets.forDexClient(clientID))
 
 			redirectURIs, _ := doc.GetArray(yamled.Path{"dex", "config", "staticClients", i, "RedirectURIs"})
 			for j, redirectURI := range redirectURIs {
@@ -425,12 +459,14 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	kkpEndpoint := getLocalEndpoint(logger, opts)
 	logger.Infof("Installing KKP at %v…", kkpEndpoint) // TODO: prettify
 
-	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint)
+	secrets := newOIDCClientSecrets()
+
+	kubermaticPath, err := prepareKubermaticConfiguration(dir, kkpEndpoint, secrets)
 	if err != nil {
 		logger.Fatalf("failed to prepare Kubermatic configuration: %v", err)
 	}
 
-	valuesPath, err := prepareHelmValues(dir, kkpEndpoint)
+	valuesPath, err := prepareHelmValues(dir, kkpEndpoint, secrets)
 	if err != nil {
 		logger.Fatalf("failed to prepare Helm values: %v", err)
 	}

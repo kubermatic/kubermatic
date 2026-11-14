@@ -136,7 +136,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup Seed webhook
 
-	seedValidator, err := seedwebhook.NewValidator(seedsGetter, seedClientGetter, options.featureGates)
+	seedValidator, err := seedwebhook.NewValidator(seedsGetter, seedClientGetter, configGetter, options.featureGates)
 	if err != nil {
 		log.Fatalw("Failed to create seed validator", zap.Error(err))
 	}
@@ -148,7 +148,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup KubermaticConfiguration webhooks
 
-	configValidator := kubermaticconfigurationvalidation.NewValidator()
+	configValidator := kubermaticconfigurationvalidation.NewValidator(seedsGetter)
 	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.KubermaticConfiguration{}).WithValidator(configValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup KubermaticConfiguration validation webhook", zap.Error(err))
 	}

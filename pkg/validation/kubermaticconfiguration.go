@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -50,6 +51,10 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 		allErrs = append(allErrs, errs...)
 	}
 
+	if err := ValidateAuthConfiguration(spec); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	allErrs = append(allErrs, ValidateExternalGatewayConfiguration(spec)...)
 	allErrs = append(allErrs, validateGatewayTLSConfiguration(spec)...)
 	allErrs = append(allErrs, ValidateKeyConfiguration(spec.UserCluster.KeyConfiguration, field.NewPath("spec", "userCluster", "keyConfiguration"))...)
@@ -57,6 +62,44 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 	allErrs = append(allErrs, ValidateAdditionalIssuerRedirectURLs(spec.Auth.AdditionalIssuerRedirectURLs, field.NewPath("spec", "auth", "additionalIssuerRedirectURLs"))...)
 
 	return allErrs
+}
+
+// ValidateAuthConfiguration validates spec.auth and returns nil if it is valid.
+// The spec is expected to be defaulted already, so that an unset clientID and
+// issuerClientID are compared by their effective values.
+//
+// The dashboard login uses the OIDC authorization code flow, which requires a
+// client secret. If the login client (clientID) is a different client than the
+// issuer client (issuerClientID), issuerClientSecret cannot be used for it and
+// clientSecret must be set explicitly.
+func ValidateAuthConfiguration(spec *kubermaticv1.KubermaticConfigurationSpec) *field.Error {
+	// Without the dashboard/API there is no login and no OIDC client to configure.
+	if spec.FeatureGates[features.HeadlessInstallation] {
+		return nil
+	}
+
+	auth := spec.Auth
+
+	if auth.ClientID != auth.IssuerClientID && auth.ClientSecret == "" {
+		return field.Required(
+			field.NewPath("spec", "auth", "clientSecret"),
+			fmt.Sprintf("spec.auth.clientID (%q) differs from spec.auth.issuerClientID (%q), so the dashboard login needs the secret of its own OIDC client: either set spec.auth.clientSecret, or set spec.auth.clientID to %q to use a single OIDC client for both", auth.ClientID, auth.IssuerClientID, auth.IssuerClientID),
+		)
+	}
+
+	return nil
+}
+
+// SeparateLoginClientID returns spec.auth.clientID if the KKP Dashboard login
+// uses its own OIDC client, which User Clusters must not trust. It returns an
+// empty string in single-client mode (clientID equals issuerClientID) and in
+// headless installations. The spec is expected to be defaulted.
+func SeparateLoginClientID(spec *kubermaticv1.KubermaticConfigurationSpec) string {
+	if spec.FeatureGates[features.HeadlessInstallation] || spec.Auth.ClientID == spec.Auth.IssuerClientID {
+		return ""
+	}
+
+	return spec.Auth.ClientID
 }
 
 // ValidateAdditionalIssuerRedirectURLs validates spec.auth.additionalIssuerRedirectURLs.
