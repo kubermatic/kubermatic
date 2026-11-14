@@ -533,6 +533,24 @@ go_test() {
   fi
 }
 
+# ginkgo_test runs a Ginkgo v2 suite with the ginkgo CLI of the version
+# pinned in go.mod, built from the module cache like the tests themselves.
+# The CLI is needed for flags like --procs. Arguments after "--" are passed to
+# the test binary.
+ginkgo_test() {
+  local junit_name="${1:-}"
+  if [ $# -gt 0 ]; then
+    shift
+  fi
+
+  local report_args=()
+  if [ -n "${ARTIFACTS:-}" ]; then
+    report_args=(--junit-report="junit.${junit_name}.xml" --output-dir="${ARTIFACTS}")
+  fi
+
+  go run github.com/onsi/ginkgo/v2/ginkgo ${report_args[@]+"${report_args[@]}"} "$@"
+}
+
 # safebase64 ensures the given value is base64-encoded.
 # If the given value is already encoded, it will be echoed
 # unchanged.
