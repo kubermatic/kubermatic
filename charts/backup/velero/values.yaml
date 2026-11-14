@@ -102,3 +102,7 @@ velero:
   annotations: {}
   # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
 
+  kubectl:
+    image:
+      repository: quay.io/kubermatic/kubectl
+      tag: 1.34.13

@@ -343,7 +343,7 @@ spec:
       serviceAccountName: release-name-velero-server-upgrade-crds
       initContainers:
         - name: kubectl
-          image: "quay.io/kubermatic-mirror/images/kubectl:1.33.3"
+          image: "quay.io/kubermatic/kubectl:1.34.13"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
