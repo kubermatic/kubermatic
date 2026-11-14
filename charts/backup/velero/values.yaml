@@ -23,7 +23,7 @@ velero:
   # whether to enable volume backups?
   # if you set this as true, you must provide valid configuration for velero.configuration.volumeSnapshotLocation[0]
   snapshotsEnabled: false
-  # see more about config options here: https://github.com/vmware-tanzu/helm-charts/blob/velero-7.1.0/charts/velero/values.yaml#L316C1-L360
+  # see more about config options here: https://github.com/vmware-tanzu/helm-charts/blob/velero-12.2.5/charts/velero/values.yaml
 
   # Whether to deploy the node-agent daemonset.
   deployNodeAgent: false
@@ -108,5 +108,5 @@ velero:
   kubectl:
     image:
       repository: quay.io/kubermatic-mirror/images/kubectl
-      tag: 1.33.4
+      tag: v1.36.6
 
