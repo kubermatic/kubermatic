@@ -32,9 +32,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -210,4 +213,187 @@ func kubeLBFlagValues(args []string) map[string]string {
 		values[name] = value
 	}
 	return values
+}
+
+func TestKubeLBDeploymentResourceOverrides(t *testing.T) {
+	defaults := controllerResourceRequirements[resources.KubeLBDeploymentName]
+	custom := &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("250m"), corev1.ResourceMemory: resource.MustParse("256Mi")},
+		Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1"), corev1.ResourceMemory: resource.MustParse("1Gi")},
+	}
+
+	for _, test := range []struct {
+		name     string
+		override *kubermaticv1.DeploymentSettings
+		want     corev1.ResourceRequirements
+	}{
+		{name: "no override uses defaults", want: *defaults},
+		{name: "override without resources uses defaults", override: &kubermaticv1.DeploymentSettings{}, want: *defaults},
+		{name: "full override", override: &kubermaticv1.DeploymentSettings{Resources: custom}, want: *custom},
+		{
+			name:     "partial override keeps default limits",
+			override: &kubermaticv1.DeploymentSettings{Resources: &corev1.ResourceRequirements{Requests: custom.Requests}},
+			want:     corev1.ResourceRequirements{Requests: custom.Requests, Limits: defaults.Limits},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cluster := &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{KubeLB: test.override},
+			}}
+			data := resources.NewTemplateDataBuilder().WithCluster(cluster).WithDatacenter(&kubermaticv1.Datacenter{}).Build()
+			_, reconcile := DeploymentReconcilerWithoutInitWrapper(data)()
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := deployment.Spec.Template.Spec.Containers[0].Resources
+			if !equality.Semantic.DeepEqual(got, test.want) {
+				t.Errorf("resources = %v, want %v", got, test.want)
+			}
+		})
+	}
+
+	// the package-level defaults must never be mutated by an override
+	if defaults.Limits.Cpu().String() != "500m" {
+		t.Errorf("default requirements were modified: %v", defaults)
+	}
+}
+
+func TestKubeLBDeploymentSchedulingOverrides(t *testing.T) {
+	tolerations := []corev1.Toleration{{Key: "dedicated", Operator: corev1.TolerationOpEqual, Value: "kubelb", Effect: corev1.TaintEffectNoSchedule}}
+
+	for _, test := range []struct {
+		name         string
+		override     *kubermaticv1.DeploymentSettings
+		zoneSupport  bool
+		wantReplicas int32
+		wantAffinity bool
+		wantRequired bool
+		wantZoneTerm bool
+	}{
+		{name: "no override", wantReplicas: 1},
+		{name: "empty override", override: &kubermaticv1.DeploymentSettings{}, wantReplicas: 1},
+		{
+			name:         "single replica gets no anti-affinity",
+			override:     &kubermaticv1.DeploymentSettings{Replicas: ptr.To[int32](1), HostAntiAffinity: kubermaticv1.AntiAffinityTypeRequired},
+			wantReplicas: 1,
+		},
+		{
+			name:         "multiple replicas get preferred host anti-affinity",
+			override:     &kubermaticv1.DeploymentSettings{Replicas: ptr.To[int32](2), Tolerations: tolerations},
+			wantReplicas: 2, wantAffinity: true,
+		},
+		{
+			name:         "required host anti-affinity",
+			override:     &kubermaticv1.DeploymentSettings{Replicas: ptr.To[int32](3), HostAntiAffinity: kubermaticv1.AntiAffinityTypeRequired},
+			wantReplicas: 3, wantAffinity: true, wantRequired: true,
+		},
+		{
+			name:         "zone anti-affinity when supported",
+			override:     &kubermaticv1.DeploymentSettings{Replicas: ptr.To[int32](2), ZoneAntiAffinity: kubermaticv1.AntiAffinityTypeRequired},
+			zoneSupport:  true,
+			wantReplicas: 2, wantAffinity: true, wantZoneTerm: true,
+		},
+		{
+			name:         "zone anti-affinity ignored when unsupported",
+			override:     &kubermaticv1.DeploymentSettings{Replicas: ptr.To[int32](2), ZoneAntiAffinity: kubermaticv1.AntiAffinityTypeRequired},
+			wantReplicas: 2, wantAffinity: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cluster := &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{KubeLB: test.override},
+			}}
+			data := resources.NewTemplateDataBuilder().
+				WithCluster(cluster).
+				WithDatacenter(&kubermaticv1.Datacenter{}).
+				WithFailureDomainZoneAntiaffinity(test.zoneSupport).
+				Build()
+			_, reconcile := DeploymentReconcilerWithoutInitWrapper(data)()
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got := *deployment.Spec.Replicas; got != test.wantReplicas {
+				t.Errorf("replicas = %d, want %d", got, test.wantReplicas)
+			}
+
+			var wantTolerations []corev1.Toleration
+			if test.override != nil {
+				wantTolerations = test.override.Tolerations
+			}
+			if !reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, wantTolerations) {
+				t.Errorf("tolerations = %v, want %v", deployment.Spec.Template.Spec.Tolerations, wantTolerations)
+			}
+
+			affinity := deployment.Spec.Template.Spec.Affinity
+			if !test.wantAffinity {
+				if affinity != nil {
+					t.Errorf("expected no affinity, got %v", affinity)
+				}
+				return
+			}
+			if affinity == nil || affinity.PodAntiAffinity == nil {
+				t.Fatalf("expected pod anti-affinity, got %v", affinity)
+			}
+			anti := affinity.PodAntiAffinity
+			hasHostKey, hasZoneKey := false, false
+			for _, term := range anti.RequiredDuringSchedulingIgnoredDuringExecution {
+				hasHostKey = hasHostKey || term.TopologyKey == resources.TopologyKeyHostname
+				hasZoneKey = hasZoneKey || term.TopologyKey == resources.TopologyKeyZone
+			}
+			for _, term := range anti.PreferredDuringSchedulingIgnoredDuringExecution {
+				hasHostKey = hasHostKey || term.PodAffinityTerm.TopologyKey == resources.TopologyKeyHostname
+				hasZoneKey = hasZoneKey || term.PodAffinityTerm.TopologyKey == resources.TopologyKeyZone
+			}
+			if !hasHostKey {
+				t.Error("expected hostname anti-affinity term")
+			}
+			if hasZoneKey != test.wantZoneTerm {
+				t.Errorf("zone anti-affinity present = %v, want %v", hasZoneKey, test.wantZoneTerm)
+			}
+			if test.wantRequired && len(anti.RequiredDuringSchedulingIgnoredDuringExecution) == 0 {
+				t.Error("expected required anti-affinity")
+			}
+			if !test.wantRequired && !test.wantZoneTerm && len(anti.RequiredDuringSchedulingIgnoredDuringExecution) != 0 {
+				t.Error("expected only preferred anti-affinity")
+			}
+
+			// reconciling an up-to-date deployment must not change it
+			updated, err := reconcile(deployment.DeepCopy())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !equality.Semantic.DeepEqual(deployment, updated) {
+				t.Error("reconciliation changed an up-to-date deployment")
+			}
+		})
+	}
+}
+
+func TestKubeLBDeploymentOverrideRemovalResets(t *testing.T) {
+	build := func(override *kubermaticv1.DeploymentSettings) reconciling.DeploymentReconciler {
+		cluster := &kubermaticv1.Cluster{Spec: kubermaticv1.ClusterSpec{ComponentsOverride: kubermaticv1.ComponentSettings{KubeLB: override}}}
+		data := resources.NewTemplateDataBuilder().WithCluster(cluster).WithDatacenter(&kubermaticv1.Datacenter{}).Build()
+		_, reconcile := DeploymentReconcilerWithoutInitWrapper(data)()
+		return reconcile
+	}
+
+	deployment, err := build(&kubermaticv1.DeploymentSettings{
+		Replicas:    ptr.To[int32](2),
+		Tolerations: []corev1.Toleration{{Key: "dedicated", Operator: corev1.TolerationOpExists}},
+	})(&appsv1.Deployment{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	deployment, err = build(nil)(deployment)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if *deployment.Spec.Replicas != 1 || deployment.Spec.Template.Spec.Affinity != nil || len(deployment.Spec.Template.Spec.Tolerations) != 0 {
+		t.Errorf("removing the override must restore defaults, got replicas=%d affinity=%v tolerations=%v",
+			*deployment.Spec.Replicas, deployment.Spec.Template.Spec.Affinity, deployment.Spec.Template.Spec.Tolerations)
+	}
 }
