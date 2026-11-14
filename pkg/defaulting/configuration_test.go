@@ -133,3 +133,51 @@ func TestDefaultConfigurationPreservesExplicitGatewayClassNameWhenExternalGatewa
 		t.Fatalf("expected explicit ClassName to be preserved so validation can reject the conflict, got %q", defaulted.Spec.Ingress.Gateway.ClassName)
 	}
 }
+
+func TestDefaultConfigurationDefaultsSeparateAuthClients(t *testing.T) {
+	tests := []struct {
+		name         string
+		auth         kubermaticv1.KubermaticAuthConfiguration
+		wantClientID string
+		wantIssuerID string
+	}{
+		{
+			name:         "nothing set: separate login and issuer clients",
+			wantClientID: "kubermatic",
+			wantIssuerID: "kubermaticIssuer",
+		},
+		{
+			name:         "explicit single client",
+			auth:         kubermaticv1.KubermaticAuthConfiguration{ClientID: "kubermaticIssuer"},
+			wantClientID: "kubermaticIssuer",
+			wantIssuerID: "kubermaticIssuer",
+		},
+		{
+			name:         "explicit values are kept",
+			auth:         kubermaticv1.KubermaticAuthConfiguration{ClientID: "login", IssuerClientID: "issuer"},
+			wantClientID: "login",
+			wantIssuerID: "issuer",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{Auth: tt.auth},
+			}
+
+			defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("failed to default configuration: %v", err)
+			}
+
+			if got := defaulted.Spec.Auth.ClientID; got != tt.wantClientID {
+				t.Errorf("clientID: expected %q, got %q", tt.wantClientID, got)
+			}
+
+			if got := defaulted.Spec.Auth.IssuerClientID; got != tt.wantIssuerID {
+				t.Errorf("issuerClientID: expected %q, got %q", tt.wantIssuerID, got)
+			}
+		})
+	}
+}

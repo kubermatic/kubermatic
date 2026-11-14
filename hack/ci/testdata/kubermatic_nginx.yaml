@@ -24,6 +24,10 @@ spec:
     disable: false
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   auth:
+    # Use a single OIDC client for the dashboard login and the user cluster
+    # flows. Without this, clientID defaults to a separate "kubermatic" client,
+    # which would require its own clientSecret and Dex client.
+    clientID: kubermaticIssuer
     issuerClientSecret: 'kubermatic-static-client-secret'
     issuerCookieKey: 'kubermatic-static-cookie-key-1234'
     serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
