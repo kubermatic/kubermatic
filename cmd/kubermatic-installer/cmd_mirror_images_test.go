@@ -124,6 +124,73 @@ func TestParseProviderFilter(t *testing.T) {
 	}
 }
 
+func TestParsePlatforms(t *testing.T) {
+	testCases := []struct {
+		name        string
+		input       []string
+		archive     bool
+		expected    []string
+		expectError bool
+	}{
+		{
+			name:     "no platforms",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "multiple platforms",
+			input:    []string{"linux/amd64", " linux/arm64/v8 "},
+			expected: []string{"linux/amd64", "linux/arm64/v8"},
+		},
+		{
+			name:     "empty strings in slice",
+			input:    []string{"linux/amd64", ""},
+			expected: []string{"linux/amd64"},
+		},
+		{
+			name:        "architecture missing",
+			input:       []string{"amd64"},
+			expectError: true,
+		},
+		{
+			name:        "too many parts",
+			input:       []string{"linux/arm64/v8/x"},
+			expectError: true,
+		},
+		{
+			name:     "one platform for an archive",
+			input:    []string{"linux/arm64"},
+			archive:  true,
+			expected: []string{"linux/arm64"},
+		},
+		{
+			name:        "multiple platforms for an archive",
+			input:       []string{"linux/amd64", "linux/arm64"},
+			archive:     true,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := parsePlatforms(tc.input, tc.archive)
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			var platforms []string
+			for _, p := range result {
+				platforms = append(platforms, p.String())
+			}
+
+			assert.Equal(t, tc.expected, platforms)
+		})
+	}
+}
+
 // TestClearRepositoryOverrides covers the helper behind mirror-images
 // --ignore-repository-overrides. Every DockerRepository override and the three
 // DockerTagSuffix fields (API, UI, Addons) must be blanked so DefaultConfiguration
