@@ -1,4 +1,24 @@
 ---
+# Source: dex/charts/dex/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-dex
+  namespace: default
+  labels:
+    helm.sh/chart: dex-0.24.1
+    app.kubernetes.io/name: dex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.44.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dex
+      app.kubernetes.io/instance: release-name
+
+---
 # Source: dex/charts/dex/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
