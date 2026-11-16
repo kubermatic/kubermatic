@@ -189,7 +189,7 @@ grafana:
   ## dashboards per provider, use provider name as key.
   ##
   dashboards:
-    default:
+    default: {}
   dashboardsConfigMaps:
     kubernetes: grafana-dashboards-mla-kubernetes-overview
     kubermatic: grafana-dashboards-mla-kkp-kubernetes
