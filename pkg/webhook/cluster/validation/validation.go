@@ -103,6 +103,10 @@ func (v *validator) ValidateCreate(ctx context.Context, cluster *kubermaticv1.Cl
 		errs = append(errs, err)
 	}
 
+	if err := validateOIDCClientID(cluster, nil, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
@@ -130,6 +134,10 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldCluster, newCluster *
 	}
 
 	if err := v.validateEventRateLimitEnforcement(newCluster, oldCluster, config); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := validateOIDCClientID(newCluster, oldCluster, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -293,4 +301,41 @@ func (v *validator) validateEventRateLimitEnforcement(
 	}
 
 	return nil
+}
+
+// validateOIDCClientID rejects a Cluster that trusts the KKP Dashboard login
+// client of the KKP token issuer. A Cluster using another issuer may use the
+// same client name, as its tokens come from that issuer. On updates the check
+// only runs when spec.oidc.clientID or spec.oidc.issuerURL changes, so that
+// unrelated updates of an existing Cluster are not blocked.
+func validateOIDCClientID(newCluster, oldCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration) *field.Error {
+	oidc := newCluster.Spec.OIDC //nolint:staticcheck
+	if oidc.ClientID == "" {
+		return nil
+	}
+
+	if oldCluster != nil && oldCluster.Spec.OIDC.ClientID == oidc.ClientID && //nolint:staticcheck
+		normalizeIssuerURL(oldCluster.Spec.OIDC.IssuerURL) == normalizeIssuerURL(oidc.IssuerURL) { //nolint:staticcheck
+		return nil
+	}
+
+	loginClient := validation.SeparateLoginClientID(&config.Spec)
+	if loginClient == "" || oidc.ClientID != loginClient {
+		return nil
+	}
+
+	tokenIssuer := normalizeIssuerURL(config.Spec.Auth.TokenIssuer)
+	if tokenIssuer == "" || normalizeIssuerURL(oidc.IssuerURL) != tokenIssuer {
+		return nil
+	}
+
+	return field.Invalid(
+		field.NewPath("spec", "oidc", "clientID"),
+		oidc.ClientID,
+		"must differ from spec.auth.clientID, the KKP Dashboard login client, when spec.oidc.issuerURL is the KKP token issuer",
+	)
+}
+
+func normalizeIssuerURL(issuerURL string) string {
+	return strings.TrimRight(strings.TrimSpace(issuerURL), "/")
 }

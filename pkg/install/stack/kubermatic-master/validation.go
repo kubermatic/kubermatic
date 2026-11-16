@@ -266,6 +266,16 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, err)
 	}
 
+	// clientID and issuerClientID are defaulted by the operator, so they must be
+	// compared by their effective values.
+	// If defaulting fails, the auth check is skipped here on purpose: the same
+	// error is reported by validateHelmValues, which defaults the config as well.
+	if defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar()); err == nil {
+		if authErr := configvalidation.ValidateAuthConfiguration(&defaulted.Spec); authErr != nil {
+			failures = append(failures, authErr)
+		}
+	}
+
 	// only validate auth-related keys if we are not setting up a headless system
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
@@ -341,6 +351,23 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		common.DefaultMasterHTTPRouteGatewayValues(config, helmValues, logger)
 
 		clientID := defaultedConfig.Spec.Auth.ClientID
+
+		// Both clients must exist in Dex. They are the same client unless
+		// spec.auth.clientID and spec.auth.issuerClientID differ.
+		requiredClients := []struct {
+			id      string
+			purpose string
+		}{
+			{clientID, "to allow logins to the Kubermatic dashboard"},
+		}
+
+		if issuerID := defaultedConfig.Spec.Auth.IssuerClientID; issuerID != clientID {
+			requiredClients = append(requiredClients, struct {
+				id      string
+				purpose string
+			}{issuerID, "for the OIDC kubeconfig flows of user clusters (spec.auth.issuerClientID)"})
+		}
+
 		hasDexIssues := false
 		clients := []dexClient{}
 
@@ -348,18 +375,20 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
 		} else {
-			hasMatchingClient := false
+			for _, required := range requiredClients {
+				hasMatchingClient := false
 
-			for _, client := range clients {
-				if client.ID == clientID {
-					hasMatchingClient = true
-					break
+				for _, client := range clients {
+					if client.ID == required.id {
+						hasMatchingClient = true
+						break
+					}
 				}
-			}
 
-			if !hasMatchingClient {
-				hasDexIssues = true
-				logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client to allow logins to the Kubermatic dashboard.", clientID)
+				if !hasMatchingClient {
+					hasDexIssues = true
+					logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client %s.", required.id, required.purpose)
+				}
 			}
 		}
 

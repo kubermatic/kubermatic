@@ -26,7 +26,8 @@ import (
 func NewValidator(
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	features features.FeatureGate,
 ) (*validator, error) {
-	return newSeedValidator(seedsGetter, seedClientGetter, features)
+	return newSeedValidator(seedsGetter, seedClientGetter, configGetter, features)
 }

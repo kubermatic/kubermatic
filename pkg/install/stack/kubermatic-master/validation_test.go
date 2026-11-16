@@ -703,3 +703,67 @@ func Test_isPublicIp(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateKubermaticConfigurationAuthClientSecret(t *testing.T) {
+	tests := []struct {
+		name           string
+		auth           kubermaticv1.KubermaticAuthConfiguration
+		wantClientFail bool
+	}{
+		{
+			name: "separate login client without clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermatic",
+				IssuerClientID: "kubermaticIssuer",
+			},
+			wantClientFail: true,
+		},
+		{
+			name: "separate login client with clientSecret",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       "kubermatic",
+				ClientSecret:   "secret",
+				IssuerClientID: "kubermaticIssuer",
+			},
+		},
+		{
+			name: "explicit single client",
+			auth: kubermaticv1.KubermaticAuthConfiguration{
+				ClientID:       defaulting.DefaultAuthIssuerClientID,
+				IssuerClientID: defaulting.DefaultAuthIssuerClientID,
+			},
+		},
+		{
+			// unset clientID is defaulted to a client separate from the issuer client
+			name:           "nothing set: defaults to separate clients",
+			auth:           kubermaticv1.KubermaticAuthConfiguration{},
+			wantClientFail: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{Namespace: KubermaticOperatorNamespace},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{Domain: "example.com"},
+					Auth:    tt.auth,
+				},
+			}
+			cfg.Spec.Auth.ServiceAccountKey = "0123456789abcdef0123456789abcdef"
+			cfg.Spec.Auth.IssuerClientSecret = "issuer-secret"
+			cfg.Spec.Auth.IssuerCookieKey = "cookie-key"
+
+			found := false
+			for _, f := range validateKubermaticConfiguration(cfg) {
+				if strings.Contains(f.Error(), "spec.auth.clientSecret") {
+					found = true
+				}
+			}
+
+			if found != tt.wantClientFail {
+				t.Fatalf("expected clientSecret failure: %v, got: %v", tt.wantClientFail, found)
+			}
+		})
+	}
+}

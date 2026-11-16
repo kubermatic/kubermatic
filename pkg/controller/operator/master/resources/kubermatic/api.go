@@ -230,6 +230,13 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
 			}
 
+			// with a single OIDC client the API reuses the issuer secret, so a
+			// leftover clientSecret must not be passed. Leaving the flag out also
+			// keeps older API images, which do not know it, working.
+			if cfg.Spec.Auth.ClientID != cfg.Spec.Auth.IssuerClientID {
+				args = append(args, fmt.Sprintf("-oidc-authenticator-client-secret=%s", cfg.Spec.Auth.ClientSecret))
+			}
+
 			if len(cfg.Spec.Auth.AdditionalIssuerRedirectURLs) > 0 {
 				args = append(args, fmt.Sprintf("-oidc-issuer-additional-redirect-uris=%s", strings.Join(cfg.Spec.Auth.AdditionalIssuerRedirectURLs, ",")))
 			}
