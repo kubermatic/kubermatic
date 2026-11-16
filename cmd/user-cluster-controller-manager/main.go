@@ -47,6 +47,7 @@ import (
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
+	webterminaladmissionpolicy "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/webterminal-admission-policy"
 	webterminalsecretcleanup "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/webterminal-secret-cleanup"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -96,6 +97,7 @@ type controllerRunOptions struct {
 	opaEnableMutation                 bool
 	opaWebhookTimeout                 int
 	kubeLBDisableGatewayAPIProtection bool
+	webTerminalServiceAccount         bool
 	useSSHKeyAgent                    bool
 	networkPolicies                   bool
 	caBundleFile                      string
@@ -160,6 +162,7 @@ func main() {
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
 	flag.BoolVar(&runOp.kubeLBDisableGatewayAPIProtection, "kubelb-disable-gateway-api-protection", false, "Do not deploy the ValidatingAdmissionPolicy protecting the Gateway API CRDs for the kubeLB CCM, and leave the upstream safe-upgrades policy alone (set when an admin disabled it).")
+	flag.BoolVar(&runOp.webTerminalServiceAccount, "web-terminal-serviceaccount", false, "The web terminal runs as a ServiceAccount of the user cluster (set when the WebTerminalServiceAccount feature gate is enabled): keep the ValidatingAdmissionPolicies in place that leave the pod and the ServiceAccount of a session to KKP.")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
@@ -418,6 +421,11 @@ func main() {
 		log.Fatalw("Failed to register webterminal-secret-cleanup controller", zap.Error(err))
 	}
 	log.Info("Registered webterminal-secret-cleanup controller")
+
+	if err := webterminaladmissionpolicy.Add(log, seedMgr, mgr, runOp.clusterName, isPausedChecker, runOp.webTerminalServiceAccount); err != nil {
+		log.Fatalw("Failed to register webterminal-admission-policy controller", zap.Error(err))
+	}
+	log.Info("Registered webterminal-admission-policy controller")
 
 	if runOp.ownerEmail != "" {
 		if err := ownerbindingcreator.Add(log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
