@@ -26,6 +26,7 @@ ADD https://dl.k8s.io/v1.37.2/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.3
 ADD https://dl.k8s.io/v1.36.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.36
 ADD https://dl.k8s.io/v1.35.10/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
 ADD https://dl.k8s.io/v1.34.13/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
+ADD https://dl.k8s.io/v1.33.13/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.33
 
 RUN wget -O- https://get.helm.sh/helm-v3.22.1-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
