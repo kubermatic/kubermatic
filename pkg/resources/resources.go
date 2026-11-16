@@ -195,6 +195,8 @@ const (
 	WebTerminalKubeconfigSecretPrefix = "kubeconfig-"
 	// WebTerminalUserAnnotationKey is the annotation that holds the user's email on the web terminal kubeconfig Secret.
 	WebTerminalUserAnnotationKey = "user"
+	// WebTerminalSessionNamePrefix is the name prefix of the pod and of the ServiceAccount of a web terminal session.
+	WebTerminalSessionNamePrefix = "webterminal-"
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 

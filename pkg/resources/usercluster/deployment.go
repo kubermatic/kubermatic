@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -211,6 +212,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			// so changing it needs no restart.
 			if adminDisabledGatewayAPIProtection(data.KubermaticConfiguration(), data.DC()) {
 				args = append(args, "-kubelb-disable-gateway-api-protection=true")
+			}
+
+			// With the flag, the admission policies of the web terminal are in the user cluster before
+			// the first session is started.
+			if webTerminalServiceAccountEnabled(data.KubermaticConfiguration()) {
+				args = append(args, "-web-terminal-serviceaccount=true")
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -476,6 +483,12 @@ func adminDisabledGatewayAPIProtection(config *kubermaticv1.KubermaticConfigurat
 	}
 
 	return dc != nil && dc.Spec.KubeLB != nil && dc.Spec.KubeLB.DisableGatewayAPIProtection
+}
+
+// webTerminalServiceAccountEnabled reports whether the web terminal runs as a ServiceAccount of
+// the user cluster in this KKP installation.
+func webTerminalServiceAccountEnabled(config *kubermaticv1.KubermaticConfiguration) bool {
+	return config != nil && config.Spec.FeatureGates[features.WebTerminalServiceAccount]
 }
 
 func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
