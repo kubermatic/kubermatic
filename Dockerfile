@@ -22,12 +22,12 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
-ADD https://dl.k8s.io/v1.37.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.37
-ADD https://dl.k8s.io/v1.36.2/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.36
-ADD https://dl.k8s.io/v1.35.4/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
-ADD https://dl.k8s.io/v1.34.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
+ADD https://dl.k8s.io/v1.37.2/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.37
+ADD https://dl.k8s.io/v1.36.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.36
+ADD https://dl.k8s.io/v1.35.10/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
+ADD https://dl.k8s.io/v1.34.13/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
 
-RUN wget -O- https://get.helm.sh/helm-v3.19.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+RUN wget -O- https://get.helm.sh/helm-v3.22.1-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
