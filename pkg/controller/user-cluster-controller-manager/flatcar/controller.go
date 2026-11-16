@@ -51,14 +51,16 @@ type Reconciler struct {
 
 	overwriteRegistry string
 	updateWindow      kubermaticv1.UpdateWindow
+	operatorDisabled  bool
 	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
+func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, operatorDisabled bool, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,
 		updateWindow:      updateWindow,
+		operatorDisabled:  operatorDisabled,
 		clusterIsPaused:   clusterIsPaused,
 	}
 
@@ -76,6 +78,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
 	}
 	if paused {
+		return reconcile.Result{}, nil
+	}
+
+	if r.operatorDisabled {
+		if err := r.cleanupUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to clean up UpdateOperator resources: %w", err)
+		}
+
 		return reconcile.Result{}, nil
 	}
 

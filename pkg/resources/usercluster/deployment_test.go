@@ -29,6 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestAdminDisabledGatewayAPIProtection(t *testing.T) {
@@ -155,6 +156,81 @@ func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
 	}
 }
 
+func TestDisableFlatcarUpdateOperatorArgument(t *testing.T) {
+	const argument = "-disable-flatcar-update-operator=true"
+
+	conf := func(disabled bool) *kubermaticv1.FlatcarUpdateOperatorSettings {
+		return &kubermaticv1.FlatcarUpdateOperatorSettings{Disabled: ptr.To(disabled)}
+	}
+
+	testCases := []struct {
+		name         string
+		cluster      *kubermaticv1.FlatcarUpdateOperatorSettings
+		dc           *kubermaticv1.FlatcarUpdateOperatorSettings
+		seed         *kubermaticv1.FlatcarUpdateOperatorSettings
+		global       *kubermaticv1.FlatcarUpdateOperatorSettings
+		wantArgument bool
+	}{
+		{
+			name: "operator enabled by default",
+		},
+		{
+			name:         "disabled on the cluster",
+			cluster:      conf(true),
+			wantArgument: true,
+		},
+		{
+			name:         "disabled globally, cluster unset",
+			global:       conf(true),
+			wantArgument: true,
+		},
+		{
+			name:         "disabled on the seed, cluster unset",
+			seed:         conf(true),
+			wantArgument: true,
+		},
+		{
+			name:         "disabled on the datacenter, cluster unset",
+			dc:           conf(true),
+			wantArgument: true,
+		},
+		{
+			name:    "cluster opts back in against a global disable",
+			cluster: conf(false),
+			global:  conf(true),
+		},
+		{
+			name: "datacenter opts back in against a seed disable",
+			dc:   conf(false),
+			seed: conf(true),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := newDeploymentTestData(false, false)
+			data.Cluster().Spec.FlatcarUpdateOperator = tc.cluster
+			data.DC().Spec.FlatcarUpdateOperator = tc.dc
+			data.Seed().Spec.FlatcarUpdateOperator = tc.seed
+			if tc.global != nil {
+				data.KubermaticConfiguration().Spec.UserCluster.FlatcarUpdateOperator = tc.global
+			}
+
+			_, reconcile := DeploymentReconciler(data)()
+
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile user-cluster-controller deployment: %v", err)
+			}
+
+			hasArgument := deploymentContainsArgument(deployment, argument)
+			if hasArgument != tc.wantArgument {
+				t.Fatalf("expected %s present=%t, got %t", argument, tc.wantArgument, hasArgument)
+			}
+		})
+	}
+}
+
 func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
 	cloud := kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
 	datacenter := kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}
@@ -191,6 +267,7 @@ func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources
 		WithCluster(cluster).
 		WithDatacenter(&kubermaticv1.Datacenter{Spec: datacenter}).
 		WithSeed(&kubermaticv1.Seed{}).
+		WithKubermaticConfiguration(&kubermaticv1.KubermaticConfiguration{}).
 		WithKubermaticImage("quay.io/kubermatic/kubermatic").
 		WithVersions(kubermatic.GetFakeVersions()).
 		WithKonnectivityEnabled(true).
