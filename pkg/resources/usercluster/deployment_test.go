@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	kkpresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -155,7 +156,65 @@ func TestKubeVirtAcceleratorQuotaArgument(t *testing.T) {
 	}
 }
 
+func TestWebTerminalServiceAccountArgument(t *testing.T) {
+	configWith := func(featureGates map[string]bool) *kubermaticv1.KubermaticConfiguration {
+		return &kubermaticv1.KubermaticConfiguration{
+			Spec: kubermaticv1.KubermaticConfigurationSpec{FeatureGates: featureGates},
+		}
+	}
+
+	testCases := []struct {
+		name         string
+		config       *kubermaticv1.KubermaticConfiguration
+		wantArgument bool
+	}{
+		{
+			name: "no configuration",
+		},
+		{
+			name:   "feature gate not set",
+			config: configWith(nil),
+		},
+		{
+			name:   "feature gate disabled",
+			config: configWith(map[string]bool{features.WebTerminalServiceAccount: false}),
+		},
+		{
+			name:   "another feature gate enabled",
+			config: configWith(map[string]bool{features.OpenIDAuthPlugin: true}),
+		},
+		{
+			name:         "feature gate enabled",
+			config:       configWith(map[string]bool{features.WebTerminalServiceAccount: true}),
+			wantArgument: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := newDeploymentTestDataBuilder(false).WithKubermaticConfiguration(tc.config).Build()
+			_, reconcile := DeploymentReconciler(data)()
+
+			deployment, err := reconcile(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("failed to reconcile user-cluster-controller deployment: %v", err)
+			}
+
+			hasArgument := deploymentContainsArgument(deployment, "-web-terminal-serviceaccount=true")
+			if hasArgument != tc.wantArgument {
+				t.Fatalf("expected web terminal ServiceAccount argument present=%t, got %t", tc.wantArgument, hasArgument)
+			}
+		})
+	}
+}
+
 func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources.TemplateData {
+	return newDeploymentTestDataBuilder(kubeVirt).
+		WithKubeVirtAcceleratorQuota(acceleratorQuotaEnabled).
+		Build()
+}
+
+func newDeploymentTestDataBuilder(kubeVirt bool) *kkpresources.TemplateDataBuilder {
 	cloud := kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
 	datacenter := kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}
 	if kubeVirt {
@@ -193,9 +252,7 @@ func newDeploymentTestData(kubeVirt, acceleratorQuotaEnabled bool) *kkpresources
 		WithSeed(&kubermaticv1.Seed{}).
 		WithKubermaticImage("quay.io/kubermatic/kubermatic").
 		WithVersions(kubermatic.GetFakeVersions()).
-		WithKonnectivityEnabled(true).
-		WithKubeVirtAcceleratorQuota(acceleratorQuotaEnabled).
-		Build()
+		WithKonnectivityEnabled(true)
 }
 
 func deploymentContainsArgument(deployment *appsv1.Deployment, argument string) bool {
