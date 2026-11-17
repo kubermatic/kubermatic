@@ -27,7 +27,9 @@ type Client interface {
 	BuildChartDependencies(chartDirectory string, flags []string) error
 	InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error
 	GetRelease(namespace string, name string) (*Release, error)
-	GetReleaseMetadata(namespace string, name string) (*ReleaseMetadata, error)
+	// GetReleaseMaintainerEmails returns the e-mail addresses of the maintainers listed in the
+	// Chart.yaml of the chart a release was installed from.
+	GetReleaseMaintainerEmails(namespace string, name string) ([]string, error)
 	ListReleases(namespace string) ([]Release, error)
 	UninstallRelease(namespace string, name string) error
 	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) ([]byte, error)

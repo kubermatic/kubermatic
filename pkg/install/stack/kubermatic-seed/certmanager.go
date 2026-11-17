@@ -19,7 +19,6 @@ package kubermaticseed
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"slices"
 
 	"github.com/sirupsen/logrus"
@@ -36,8 +35,15 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// certManagerCRD is a CRD that is installed by every cert-manager installation.
-const certManagerCRD = "certificates.cert-manager.io"
+const (
+	// certManagerCRD is a CRD that is installed by every cert-manager installation.
+	certManagerCRD = "certificates.cert-manager.io"
+
+	// bundledChartMaintainerEmail is the maintainer of the bundled cert-manager chart (see its
+	// Chart.yaml). A release whose chart lists it as maintainer was installed from the bundled
+	// chart, independent of the chart version.
+	bundledChartMaintainerEmail = "support@kubermatic.com"
+)
 
 // deployCertManager deploys the bundled cert-manager chart to a separate seed, but only if the
 // installer can take ownership of cert-manager there: either it already manages the Helm release
@@ -52,12 +58,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return kubermaticmaster.DeployCertManager(ctx, logger, kubeClient, helmClient, opt)
 	}
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, kubermaticmaster.CertManagerChartName))
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %w", err)
-	}
-
-	manage, reason, err := canManageCertManager(ctx, kubeClient, helmClient, chart)
+	manage, reason, err := canManageCertManager(ctx, kubeClient, helmClient)
 	if err != nil {
 		return fmt.Errorf("failed to check for an existing cert-manager installation: %w", err)
 	}
@@ -75,23 +76,21 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	return kubermaticmaster.DeployCertManager(ctx, logger, kubeClient, helmClient, opt)
 }
 
-// canManageCertManager returns true if there is either a Helm release installed from the given
-// (bundled) chart or no cert-manager at all. Otherwise it returns false and the reason why.
-func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, chart *helm.Chart) (bool, string, error) {
+// canManageCertManager returns true if there is either a Helm release installed from the
+// bundled chart or no cert-manager at all. Otherwise it returns false and the reason why.
+func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Client, helmClient helm.Client) (bool, string, error) {
 	release, err := helmClient.GetRelease(kubermaticmaster.CertManagerNamespace, kubermaticmaster.CertManagerReleaseName)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to check Helm release: %w", err)
 	}
 
 	if release != nil {
-		metadata, err := helmClient.GetReleaseMetadata(kubermaticmaster.CertManagerNamespace, kubermaticmaster.CertManagerReleaseName)
+		emails, err := helmClient.GetReleaseMaintainerEmails(kubermaticmaster.CertManagerNamespace, kubermaticmaster.CertManagerReleaseName)
 		if err != nil {
 			return false, "", err
 		}
 
-		// The release is ours if it was installed from a chart with the same dependencies as the
-		// bundled one (the bundled chart wraps the upstream cert-manager chart).
-		if !hasDependencies(metadata.Dependencies, chart.Dependencies) {
+		if !slices.Contains(emails, bundledChartMaintainerEmail) {
 			return false, fmt.Sprintf("Helm release %s in namespace %s was not installed from the bundled chart", release.Name, release.Namespace), nil
 		}
 
@@ -109,23 +108,4 @@ func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Clie
 	}
 
 	return false, fmt.Sprintf("CRD %s exists, but there is no Helm release %s in namespace %s", certManagerCRD, kubermaticmaster.CertManagerReleaseName, kubermaticmaster.CertManagerNamespace), nil
-}
-
-// hasDependencies returns true if every wanted dependency is part of the installed ones,
-// matched by name and repository (the versions change with every release).
-func hasDependencies(installed []helm.Dependency, wanted []helm.Dependency) bool {
-	if len(wanted) == 0 {
-		return false
-	}
-
-	for _, w := range wanted {
-		found := slices.ContainsFunc(installed, func(i helm.Dependency) bool {
-			return i.Name == w.Name && i.Repository == w.Repository
-		})
-		if !found {
-			return false
-		}
-	}
-
-	return true
 }

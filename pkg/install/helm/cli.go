@@ -225,11 +225,20 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 	return nil
 }
 
+// releaseMetadata is the subset of `helm get metadata` output that decides how
+// the next operation on a release will be applied.
+type releaseMetadata struct {
+	Status string `json:"status"`
+	// ApplyMethod is empty when helm never recorded one, which is the case for
+	// every release installed by Helm 3.
+	ApplyMethod string `json:"applyMethod"`
+}
+
 // serverSideApplyActive reports whether the next Helm 4 operation on the given
 // release will apply server-side, and therefore whether --force-conflicts is a
 // legal flag to pass alongside it.
 func (c *cli) serverSideApplyActive(namespace string, releaseName string) bool {
-	metadata, err := c.GetReleaseMetadata(namespace, releaseName)
+	metadata, err := c.releaseMetadata(namespace, releaseName)
 	if err != nil {
 		// The release cannot be read. Tell "not installed yet", where helm applies
 		// server-side, apart from a genuine read failure, where assuming an install
@@ -254,14 +263,14 @@ func (c *cli) serverSideApplyActive(namespace string, releaseName string) bool {
 	return metadata.ApplyMethod == applyMethodServerSide
 }
 
-// GetReleaseMetadata returns helm's record for the newest revision of a release.
-func (c *cli) GetReleaseMetadata(namespace string, releaseName string) (*ReleaseMetadata, error) {
+// releaseMetadata returns helm's record for the newest revision of a release.
+func (c *cli) releaseMetadata(namespace string, releaseName string) (*releaseMetadata, error) {
 	output, err := c.run(namespace, "get", "metadata", releaseName, "-o", "json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get release metadata: %w", err)
 	}
 
-	metadata := ReleaseMetadata{}
+	metadata := releaseMetadata{}
 	if err := json.NewDecoder(bytes.NewReader(output)).Decode(&metadata); err != nil {
 		return nil, fmt.Errorf("failed to parse Helm output: %w", err)
 	}
@@ -286,6 +295,25 @@ func (c *cli) translateFlags(flags []string) []string {
 	}
 
 	return result
+}
+
+// GetReleaseMaintainerEmails reads the maintainers from the chart that is stored in the release.
+// Neither `helm list`, `helm status` nor `helm get metadata` expose them, only the template
+// of `helm get all` has access to the full release.
+func (c *cli) GetReleaseMaintainerEmails(namespace string, releaseName string) ([]string, error) {
+	output, err := c.run(namespace, "get", "all", releaseName, "--template", `{{ range .Release.Chart.Metadata.Maintainers }}{{ .Email }}{{ "\n" }}{{ end }}`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get release maintainers: %w", err)
+	}
+
+	emails := []string{}
+	for _, line := range strings.Split(string(output), "\n") {
+		if email := strings.TrimSpace(line); email != "" {
+			emails = append(emails, email)
+		}
+	}
+
+	return emails, nil
 }
 
 func (c *cli) GetRelease(namespace string, name string) (*Release, error) {

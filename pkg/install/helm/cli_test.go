@@ -497,3 +497,29 @@ func TestInstallChartPropagatesUpgradeFailure(t *testing.T) {
 func containsArg(args []string, want string) bool {
 	return slices.Contains(args, want)
 }
+
+func TestGetReleaseMaintainerEmails(t *testing.T) {
+	originalRunCmd := runCmd
+	t.Cleanup(func() {
+		runCmd = originalRunCmd
+	})
+
+	capturedArgs := []string{}
+	runCmd = func(cmd *exec.Cmd) ([]byte, error) {
+		capturedArgs = append([]string{}, cmd.Args...)
+		return []byte("support@kubermatic.com\n\nother@example.com\n"), nil
+	}
+
+	c := &cli{
+		binary:     "helm",
+		kubeconfig: "test-kubeconfig",
+		timeout:    30 * time.Second,
+		version:    *semverlib.MustParse("4.0.0"),
+		logger:     logrus.New(),
+	}
+
+	emails, err := c.GetReleaseMaintainerEmails("test-namespace", "release")
+	require.NoError(t, err)
+	require.Equal(t, []string{"support@kubermatic.com", "other@example.com"}, emails)
+	require.Equal(t, []string{"helm", "--namespace", "test-namespace", "get", "all", "release", "--template"}, capturedArgs[:7])
+}

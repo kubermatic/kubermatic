@@ -32,10 +32,10 @@ import (
 )
 
 type fakeCertManagerHelmClient struct {
-	release     *helm.Release
-	releaseErr  error
-	metadata    *helm.ReleaseMetadata
-	metadataErr error
+	release        *helm.Release
+	releaseErr     error
+	maintainers    []string
+	maintainersErr error
 }
 
 func (f *fakeCertManagerHelmClient) BuildChartDependencies(string, []string) error { return nil }
@@ -45,8 +45,8 @@ func (f *fakeCertManagerHelmClient) InstallChart(string, string, string, string,
 func (f *fakeCertManagerHelmClient) GetRelease(string, string) (*helm.Release, error) {
 	return f.release, f.releaseErr
 }
-func (f *fakeCertManagerHelmClient) GetReleaseMetadata(string, string) (*helm.ReleaseMetadata, error) {
-	return f.metadata, f.metadataErr
+func (f *fakeCertManagerHelmClient) GetReleaseMaintainerEmails(string, string) ([]string, error) {
+	return f.maintainers, f.maintainersErr
 }
 func (f *fakeCertManagerHelmClient) ListReleases(string) ([]helm.Release, error) { return nil, nil }
 func (f *fakeCertManagerHelmClient) UninstallRelease(string, string) error       { return nil }
@@ -58,12 +58,6 @@ func (f *fakeCertManagerHelmClient) GetValues(string, string) (*yamled.Document,
 }
 
 func TestCanManageCertManager(t *testing.T) {
-	const jetstack = "https://charts.jetstack.io"
-
-	chart := &helm.Chart{
-		Dependencies: []helm.Dependency{{Name: "cert-manager", Version: "1.21.2", Repository: jetstack}},
-	}
-
 	release := &helm.Release{Name: "cert-manager", Namespace: "cert-manager"}
 	crd := &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{Name: certManagerCRD}}
 
@@ -81,19 +75,19 @@ func TestCanManageCertManager(t *testing.T) {
 		},
 		{
 			name:       "release installed from the bundled chart, with an older version",
-			helmClient: &fakeCertManagerHelmClient{release: release, metadata: &helm.ReleaseMetadata{Dependencies: []helm.Dependency{{Name: "cert-manager", Version: "1.17.4", Repository: jetstack}}}},
+			helmClient: &fakeCertManagerHelmClient{release: release, maintainers: []string{"support@kubermatic.com"}},
 			objects:    []ctrlruntimeclient.Object{crd},
 			want:       true,
 		},
 		{
-			name:       "release installed from the upstream chart (no dependencies)",
-			helmClient: &fakeCertManagerHelmClient{release: release, metadata: &helm.ReleaseMetadata{}},
+			name:       "release installed from the upstream chart",
+			helmClient: &fakeCertManagerHelmClient{release: release, maintainers: []string{"cert-manager-maintainers@googlegroups.com"}},
 			objects:    []ctrlruntimeclient.Object{crd},
 			want:       false,
 		},
 		{
-			name:       "release with a different dependency",
-			helmClient: &fakeCertManagerHelmClient{release: release, metadata: &helm.ReleaseMetadata{Dependencies: []helm.Dependency{{Name: "cert-manager", Repository: "https://example.com/charts"}}}},
+			name:       "release from a chart without maintainers",
+			helmClient: &fakeCertManagerHelmClient{release: release, maintainers: nil},
 			want:       false,
 		},
 		{
@@ -108,8 +102,8 @@ func TestCanManageCertManager(t *testing.T) {
 			wantErr:    true,
 		},
 		{
-			name:       "release metadata cannot be read",
-			helmClient: &fakeCertManagerHelmClient{release: release, metadataErr: errors.New("boom")},
+			name:       "release maintainers cannot be read",
+			helmClient: &fakeCertManagerHelmClient{release: release, maintainersErr: errors.New("boom")},
 			wantErr:    true,
 		},
 	}
@@ -122,7 +116,7 @@ func TestCanManageCertManager(t *testing.T) {
 			}
 			kubeClient := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).WithObjects(tc.objects...).Build()
 
-			got, reason, err := canManageCertManager(context.Background(), kubeClient, tc.helmClient, chart)
+			got, reason, err := canManageCertManager(context.Background(), kubeClient, tc.helmClient)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("canManageCertManager() error = %v, wantErr %v", err, tc.wantErr)
 			}
