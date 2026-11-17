@@ -2203,3 +2203,81 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 		})
 	}
 }
+
+func TestEnsureClusterRBACRoleForResourcesRemovesStaleGroupProjectBindingRoles(t *testing.T) {
+	const staleName = "kubermatic:groupprojectbindings:editors"
+
+	gpbResource := []projectResource{{
+		object: &kubermaticv1.GroupProjectBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Kind:       kubermaticv1.GroupProjectBindingKind,
+			},
+		},
+	}}
+
+	staleRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   staleName,
+			Labels: map[string]string{kubermaticv1.AuthZRoleLabel: "editors"},
+		},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+			Resources: []string{"groupprojectbindings"},
+			Verbs:     []string{"create"},
+		}},
+	}
+	clusterRoleRef := func(name string) rbacv1.RoleRef {
+		return rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: name}
+	}
+	// shared binding created by this controller for every project's editors group
+	sharedBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: staleName},
+		Subjects:   []rbacv1.Subject{{APIGroup: rbacv1.GroupName, Kind: "Group", Name: "editors-abc"}},
+		RoleRef:    clusterRoleRef(staleName),
+	}
+	// binding the EE group-project-binding controller creates for an editors GroupProjectBinding
+	gpbBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   staleName + ":abc-xyz",
+			Labels: map[string]string{kubermaticv1.AuthZRoleLabel: "editors"},
+		},
+		Subjects: []rbacv1.Subject{{APIGroup: rbacv1.GroupName, Kind: "Group", Name: "team-abc"}},
+		RoleRef:  clusterRoleRef(staleName),
+	}
+	unrelatedBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: "kubermatic:groupprojectbindings:owners"},
+		Subjects:   []rbacv1.Subject{{APIGroup: rbacv1.GroupName, Kind: "Group", Name: "owners-abc"}},
+		RoleRef:    clusterRoleRef("kubermatic:groupprojectbindings:owners"),
+	}
+
+	ctx := context.Background()
+	client := kubermaticface.NewClientBuilder().WithObjects(staleRole, sharedBinding, gpbBinding, unrelatedBinding).Build()
+	target := projectController{
+		projectResources: gpbResource,
+		client:           client,
+		restMapper:       getFakeRestMapper(t),
+		log:              zap.NewNop().Sugar(),
+	}
+
+	// twice: the second run must be a no-op
+	for range 2 {
+		assert.NoError(t, target.ensureClusterRBACRoleForResources(ctx))
+	}
+
+	var roles rbacv1.ClusterRoleList
+	assert.NoError(t, client.List(ctx, &roles))
+	roleNames := []string{}
+	for _, r := range roles.Items {
+		roleNames = append(roleNames, r.Name)
+	}
+	assert.ElementsMatch(t, []string{"kubermatic:groupprojectbindings:owners"}, roleNames)
+
+	var bindings rbacv1.ClusterRoleBindingList
+	assert.NoError(t, client.List(ctx, &bindings))
+	bindingNames := []string{}
+	for _, b := range bindings.Items {
+		bindingNames = append(bindingNames, b.Name)
+	}
+	assert.ElementsMatch(t, []string{unrelatedBinding.Name}, bindingNames)
+}
