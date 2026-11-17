@@ -36,9 +36,25 @@ import (
 	"k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	admissionv1 "k8s.io/api/admission/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+func requestContext(username string, groups ...string) context.Context {
+	return admission.NewContextWithRequest(context.Background(), admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			UserInfo: authenticationv1.UserInfo{Username: username, Groups: groups},
+		},
+	})
+}
+
+// adminContext is a request from the KKP API's own ServiceAccount, as for KKP admins.
+func adminContext() context.Context {
+	return requestContext("system:serviceaccount:kubermatic:kubermatic-api", "system:serviceaccounts", "system:authenticated")
+}
 
 func TestValidateCreate(t *testing.T) {
 	testCases := []struct {
@@ -101,7 +117,7 @@ func TestValidateCreate(t *testing.T) {
 			}
 			client := fake.NewClientBuilder().WithObjects(objs...).Build()
 
-			err := groupprojectbinding.ValidateCreate(context.Background(), tc.newBinding, client)
+			err := groupprojectbinding.ValidateCreate(adminContext(), tc.newBinding, client)
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("expected error: %v, got: %v", tc.errExpected, err)
 			}
@@ -232,8 +248,201 @@ func TestValidateUpdate(t *testing.T) {
 			objs := append([]ctrlruntimeclient.Object{tc.oldGroupProjectBinding}, tc.otherBindings...)
 			client := fake.NewClientBuilder().WithObjects(objs...).Build()
 
-			err := groupprojectbinding.ValidateUpdate(context.Background(), tc.oldGroupProjectBinding, tc.newGroupProjectBinding, client)
+			err := groupprojectbinding.ValidateUpdate(adminContext(), tc.oldGroupProjectBinding, tc.newGroupProjectBinding, client)
 			assert.Equal(t, tc.expectedError, err)
+		})
+	}
+}
+
+func TestValidateRequesterRole(t *testing.T) {
+	binding := func(role string) *kubermaticv1.GroupProjectBinding {
+		return &kubermaticv1.GroupProjectBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "p1-binding"},
+			Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "team-x", ProjectID: "p1", Role: role},
+		}
+	}
+
+	testCases := []struct {
+		name        string
+		ctx         context.Context
+		role        string
+		errExpected bool
+	}{
+		{
+			name:        "editor cannot grant owners",
+			ctx:         requestContext("editor@example.com", "editors-p1", "team-x-p1", "system:authenticated"),
+			role:        "owners",
+			errExpected: true,
+		},
+		{
+			name: "editor can grant editors",
+			ctx:  requestContext("editor@example.com", "editors-p1", "system:authenticated"),
+			role: "editors",
+		},
+		{
+			name:        "viewer cannot grant editors",
+			ctx:         requestContext("viewer@example.com", "viewers-p1", "system:authenticated"),
+			role:        "editors",
+			errExpected: true,
+		},
+		{
+			name:        "projectmanager cannot grant owners",
+			ctx:         requestContext("pm@example.com", "projectmanagers-p1", "system:authenticated"),
+			role:        "owners",
+			errExpected: true,
+		},
+		{
+			name: "owner can grant owners",
+			ctx:  requestContext("owner@example.com", "owners-p1", "system:authenticated"),
+			role: "owners",
+		},
+		{
+			name: "highest of several roles counts",
+			ctx:  requestContext("both@example.com", "viewers-p1", "owners-p1", "system:authenticated"),
+			role: "owners",
+		},
+		{
+			name:        "owner of another project does not count",
+			ctx:         requestContext("other@example.com", "owners-p2", "editors-p1", "system:authenticated"),
+			role:        "owners",
+			errExpected: true,
+		},
+		{
+			name: "KKP API ServiceAccount (KKP admin) can grant owners",
+			ctx:  adminContext(),
+			role: "owners",
+		},
+		{
+			name:        "no admission request in context",
+			ctx:         context.Background(),
+			role:        "viewers",
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := fake.NewClientBuilder().Build()
+
+			err := groupprojectbinding.ValidateCreate(tc.ctx, binding(tc.role), client)
+			if tc.errExpected != (err != nil) {
+				t.Fatalf("create: expected error = %v, got %v", tc.errExpected, err)
+			}
+
+			old := binding("viewers")
+			old.Spec.Group = "team-y"
+			client = fake.NewClientBuilder().WithObjects(old).Build()
+			updated := old.DeepCopy()
+			updated.Spec.Role = tc.role
+
+			err = groupprojectbinding.ValidateUpdate(tc.ctx, old, updated, client)
+			if tc.role != "viewers" && tc.errExpected != (err != nil) {
+				t.Fatalf("update: expected error = %v, got %v", tc.errExpected, err)
+			}
+		})
+	}
+}
+
+func TestValidateRequesterRoleFromGroupBinding(t *testing.T) {
+	gpb := func(name, group, role string) *kubermaticv1.GroupProjectBinding {
+		return &kubermaticv1.GroupProjectBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec:       kubermaticv1.GroupProjectBindingSpec{Group: group, ProjectID: "p1", Role: role},
+		}
+	}
+
+	// the requester's role comes only from the GroupProjectBinding of its IdP group
+	editorByGroup := gpb("p1-editors", "team-editors", "editors")
+	ownerByGroup := gpb("p1-owners", "team-owners", "owners")
+
+	testCases := []struct {
+		name        string
+		ctx         context.Context
+		role        string
+		errExpected bool
+	}{
+		{
+			name:        "editor through a group binding cannot grant owners",
+			ctx:         requestContext("editor@example.com", "team-editors-p1", "system:authenticated"),
+			role:        "owners",
+			errExpected: true,
+		},
+		{
+			name: "editor through a group binding can grant editors",
+			ctx:  requestContext("editor@example.com", "team-editors-p1", "system:authenticated"),
+			role: "editors",
+		},
+		{
+			name: "owner through a group binding can grant owners",
+			ctx:  requestContext("owner@example.com", "team-owners-p1", "system:authenticated"),
+			role: "owners",
+		},
+		{
+			name:        "group bound in another project does not count",
+			ctx:         requestContext("other@example.com", "team-owners-p2", "team-editors-p1", "system:authenticated"),
+			role:        "owners",
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := fake.NewClientBuilder().WithObjects(editorByGroup, ownerByGroup).Build()
+
+			err := groupprojectbinding.ValidateCreate(tc.ctx, gpb("p1-new", "team-new", tc.role), client)
+			if tc.errExpected != (err != nil) {
+				t.Fatalf("expected error = %v, got %v", tc.errExpected, err)
+			}
+		})
+	}
+}
+
+func TestValidateUpdateGroupChange(t *testing.T) {
+	owners := &kubermaticv1.GroupProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: "p1-owners"},
+		Spec:       kubermaticv1.GroupProjectBindingSpec{Group: "team-owners", ProjectID: "p1", Role: "owners"},
+	}
+
+	testCases := []struct {
+		name        string
+		ctx         context.Context
+		mutate      func(*kubermaticv1.GroupProjectBinding)
+		errExpected bool
+	}{
+		{
+			name:        "projectmanager cannot point an owners binding at another group",
+			ctx:         requestContext("pm@example.com", "projectmanagers-p1", "system:authenticated"),
+			mutate:      func(b *kubermaticv1.GroupProjectBinding) { b.Spec.Group = "team-pm" },
+			errExpected: true,
+		},
+		{
+			name:        "projectmanager cannot lower an owners binding",
+			ctx:         requestContext("pm@example.com", "projectmanagers-p1", "system:authenticated"),
+			mutate:      func(b *kubermaticv1.GroupProjectBinding) { b.Spec.Role = "viewers" },
+			errExpected: true,
+		},
+		{
+			name:   "owner can point an owners binding at another group",
+			ctx:    requestContext("owner@example.com", "owners-p1", "system:authenticated"),
+			mutate: func(b *kubermaticv1.GroupProjectBinding) { b.Spec.Group = "team-other" },
+		},
+		{
+			name:   "projectmanager may update an owners binding without changing group or role",
+			ctx:    requestContext("pm@example.com", "projectmanagers-p1", "system:authenticated"),
+			mutate: func(b *kubermaticv1.GroupProjectBinding) { b.Labels = map[string]string{"a": "b"} },
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := fake.NewClientBuilder().WithObjects(owners).Build()
+			updated := owners.DeepCopy()
+			tc.mutate(updated)
+
+			err := groupprojectbinding.ValidateUpdate(tc.ctx, owners, updated, client)
+			if tc.errExpected != (err != nil) {
+				t.Fatalf("expected error = %v, got %v", tc.errExpected, err)
+			}
 		})
 	}
 }
