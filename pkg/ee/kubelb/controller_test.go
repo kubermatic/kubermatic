@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/workqueue"
@@ -428,6 +429,65 @@ func TestReconcileKubeLBResourcesPreservesDownstreamErrors(t *testing.T) {
 			}
 			f.assertCCMImage(t, "quay.io/kubermatic/kubelb-ccm-ee:v1.4.3")
 			f.assertFailedCondition(t)
+		})
+	}
+}
+
+func TestReconcileKubeLBResourcesZoneAntiAffinity(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		zoneLabel    bool
+		wantZoneTerm bool
+	}{
+		{name: "seed nodes with a zone label", zoneLabel: true, wantZoneTerm: true},
+		{name: "seed nodes without a zone label"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			f := newKubeLBResourceFixture(t, resourceTestTenant(), true, interceptor.Funcs{
+				Apply: func(context.Context, ctrlruntimeclient.WithWatch, runtime.ApplyConfiguration, ...ctrlruntimeclient.ApplyOption) error {
+					return nil
+				},
+				Patch: func(context.Context, ctrlruntimeclient.WithWatch, ctrlruntimeclient.Object, ctrlruntimeclient.Patch, ...ctrlruntimeclient.PatchOption) error {
+					return nil
+				},
+			})
+			node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "seed-node"}}
+			if test.zoneLabel {
+				node.Labels = map[string]string{resources.TopologyKeyZone: "zone-a"}
+			}
+			if err := f.seed.Create(context.Background(), node); err != nil {
+				t.Fatal(err)
+			}
+			f.cluster.Spec.ComponentsOverride.KubeLB = &kubermaticv1.DeploymentSettings{
+				Replicas:         resources.Int32(2),
+				ZoneAntiAffinity: kubermaticv1.AntiAffinityTypeRequired,
+			}
+
+			if _, err := f.reconcile(t, `{}`); err != nil {
+				t.Fatalf("reconciliation failed: %v", err)
+			}
+
+			deployment := &appsv1.Deployment{}
+			if err := f.seed.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: resources.KubeLBDeploymentName, Namespace: f.cluster.Status.NamespaceName}, deployment); err != nil {
+				t.Fatal(err)
+			}
+			affinity := deployment.Spec.Template.Spec.Affinity
+			if affinity == nil || affinity.PodAntiAffinity == nil {
+				t.Fatalf("CCM Deployment has no pod anti-affinity: %v", affinity)
+			}
+			topologyKeys := sets.New[string]()
+			for _, term := range affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+				topologyKeys.Insert(term.TopologyKey)
+			}
+			for _, term := range affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+				topologyKeys.Insert(term.PodAffinityTerm.TopologyKey)
+			}
+			if !topologyKeys.Has(resources.TopologyKeyHostname) {
+				t.Errorf("anti-affinity topology keys = %v, want the hostname term", sets.List(topologyKeys))
+			}
+			if got := topologyKeys.Has(resources.TopologyKeyZone); got != test.wantZoneTerm {
+				t.Errorf("zone anti-affinity term present = %v, want %v (topology keys %v)", got, test.wantZoneTerm, sets.List(topologyKeys))
+			}
 		})
 	}
 }
