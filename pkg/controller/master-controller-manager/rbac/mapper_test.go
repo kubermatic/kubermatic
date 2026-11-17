@@ -205,6 +205,30 @@ func TestGenerateVerbsForResources(t *testing.T) {
 			expectedVerbs: []string{"create"},
 			resourceKind:  "UserProjectBinding",
 		},
+		{
+			name:          "scenario 13: the owners can create GroupProjectBinding resources",
+			groupName:     "owners-projectID",
+			expectedVerbs: []string{"create"},
+			resourceKind:  "GroupProjectBinding",
+		},
+		{
+			name:          "scenario 14: the projectmanagers cannot create GroupProjectBinding resources",
+			groupName:     "projectmanagers-projectID",
+			expectedVerbs: nil,
+			resourceKind:  "GroupProjectBinding",
+		},
+		{
+			name:          "scenario 15: the editors cannot create GroupProjectBinding resources",
+			groupName:     "editors-projectID",
+			expectedVerbs: nil,
+			resourceKind:  "GroupProjectBinding",
+		},
+		{
+			name:          "scenario 16: the viewers cannot create GroupProjectBinding resources",
+			groupName:     "viewers-projectID",
+			expectedVerbs: nil,
+			resourceKind:  "GroupProjectBinding",
+		},
 	}
 
 	for _, test := range tests {
