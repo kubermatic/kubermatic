@@ -606,6 +606,15 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 		return nil, nil
 	}
 
+	// special case - only the owners of a project can bind groups to it
+	//
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.GroupProjectBindingKind:
+		return []string{"create"}, nil
+	case resourceKind == kubermaticv1.GroupProjectBindingKind:
+		return nil, nil
+	}
+
 	// special case - only the owners and project managers of a project can create service account (aka. users)
 	//
 	switch {
