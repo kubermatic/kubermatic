@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19
-	github.com/aws/smithy-go v1.28.8
+	github.com/aws/smithy-go v1.28.9
 	github.com/cert-manager/cert-manager v1.15.5
 	github.com/cilium/cilium v1.16.19
 	github.com/containerd/containerd v1.7.33
