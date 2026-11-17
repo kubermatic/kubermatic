@@ -71,7 +71,27 @@ data:
         path: /var/lib/grafana/dashboards/kubermatic
       org_id: 1
       type: file
+  download_dashboards.sh: |
+    #!/usr/bin/env sh
+    set -euf
+    mkdir -p /var/lib/grafana/dashboards/default
+    mkdir -p /var/lib/grafana/dashboards/kubernetes
+    mkdir -p /var/lib/grafana/dashboards/kubermatic
+  
 
+---
+# Source: grafana/charts/grafana/templates/dashboards-json-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-grafana-dashboards-default
+  namespace: default
+  labels:
+    helm.sh/chart: grafana-12.3.3
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "13.0.12"
+    dashboard-provider: default
 ---
 # Source: grafana/templates/kkp-kubernetes.yaml
 # Copyright 2023 The Kubermatic Kubernetes Platform contributors.
@@ -4991,8 +5011,8 @@ spec:
         app.kubernetes.io/instance: release-name
         app.kubernetes.io/version: "13.0.12"
       annotations:
-        checksum/config: f6f99f271bc8b8a28ddc424e5abfafb2d5a85eb1a43bfa910b8fa844372c76ee
-        checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/config: ac40fee44cd9b8e4af4985e8cbef0f73edb56f94d123c9efe40757d8289df598
+        checksum/dashboards-json-config: 6064b622459041da966240eefa23ed0402cc5b6b723899e5207957215b00858a
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         kubectl.kubernetes.io/default-container: grafana
     spec:
@@ -5026,6 +5046,25 @@ spec:
             - 472:472
             - /var/lib/grafana
           volumeMounts:
+            - name: storage
+              mountPath: "/var/lib/grafana"
+        - name: download-dashboards
+          image: "docker.io/curlimages/curl:8.20.0"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: [ "-c", "mkdir -p /var/lib/grafana/dashboards/default && /bin/sh -x /etc/grafana/download_dashboards.sh" ]
+          env:
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config
+              mountPath: "/etc/grafana/download_dashboards.sh"
+              subPath: download_dashboards.sh
             - name: storage
               mountPath: "/var/lib/grafana"
       enableServiceLinks: true
@@ -5109,6 +5148,9 @@ spec:
         - name: config
           configMap:
             name: release-name-grafana
+        - name: dashboards-default
+          configMap:
+            name: release-name-grafana-dashboards-default
         - name: dashboards-kubermatic
           configMap:
             name: grafana-dashboards-mla-kkp-kubernetes
