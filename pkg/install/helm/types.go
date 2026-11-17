@@ -93,3 +93,13 @@ type Dependency struct {
 	ImportValues []interface{} `json:"import-values,omitempty"`
 	Alias        string        `yaml:"alias,omitempty"`
 }
+
+// ReleaseMetadata is the subset of `helm get metadata` output that is used by the installer.
+type ReleaseMetadata struct {
+	Status string `json:"status"`
+	// ApplyMethod is empty when helm never recorded one, which is the case for
+	// every release installed by Helm 3.
+	ApplyMethod string `json:"applyMethod"`
+	// Dependencies are the dependencies of the chart the release was installed from.
+	Dependencies []Dependency `json:"dependencies"`
+}

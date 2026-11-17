@@ -225,20 +225,11 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 	return nil
 }
 
-// releaseMetadata is the subset of `helm get metadata` output that decides how
-// the next operation on a release will be applied.
-type releaseMetadata struct {
-	Status string `json:"status"`
-	// ApplyMethod is empty when helm never recorded one, which is the case for
-	// every release installed by Helm 3.
-	ApplyMethod string `json:"applyMethod"`
-}
-
 // serverSideApplyActive reports whether the next Helm 4 operation on the given
 // release will apply server-side, and therefore whether --force-conflicts is a
 // legal flag to pass alongside it.
 func (c *cli) serverSideApplyActive(namespace string, releaseName string) bool {
-	metadata, err := c.releaseMetadata(namespace, releaseName)
+	metadata, err := c.GetReleaseMetadata(namespace, releaseName)
 	if err != nil {
 		// The release cannot be read. Tell "not installed yet", where helm applies
 		// server-side, apart from a genuine read failure, where assuming an install
@@ -263,14 +254,14 @@ func (c *cli) serverSideApplyActive(namespace string, releaseName string) bool {
 	return metadata.ApplyMethod == applyMethodServerSide
 }
 
-// releaseMetadata returns helm's record for the newest revision of a release.
-func (c *cli) releaseMetadata(namespace string, releaseName string) (*releaseMetadata, error) {
+// GetReleaseMetadata returns helm's record for the newest revision of a release.
+func (c *cli) GetReleaseMetadata(namespace string, releaseName string) (*ReleaseMetadata, error) {
 	output, err := c.run(namespace, "get", "metadata", releaseName, "-o", "json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get release metadata: %w", err)
 	}
 
-	metadata := releaseMetadata{}
+	metadata := ReleaseMetadata{}
 	if err := json.NewDecoder(bytes.NewReader(output)).Decode(&metadata); err != nil {
 		return nil, fmt.Errorf("failed to parse Helm output: %w", err)
 	}

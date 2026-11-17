@@ -27,6 +27,7 @@ type Client interface {
 	BuildChartDependencies(chartDirectory string, flags []string) error
 	InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error
 	GetRelease(namespace string, name string) (*Release, error)
+	GetReleaseMetadata(namespace string, name string) (*ReleaseMetadata, error)
 	ListReleases(namespace string) ([]Release, error)
 	UninstallRelease(namespace string, name string) error
 	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) ([]byte, error)

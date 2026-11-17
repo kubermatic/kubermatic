@@ -53,6 +53,9 @@ func (f *fakeHelmClient) GetRelease(namespace, name string) (*helm.Release, erro
 	}
 	return &helm.Release{Name: name, Namespace: namespace, Status: "deployed"}, nil
 }
+func (f *fakeHelmClient) GetReleaseMetadata(string, string) (*helm.ReleaseMetadata, error) {
+	return nil, nil
+}
 func (f *fakeHelmClient) ListReleases(string) ([]helm.Release, error) { return nil, nil }
 func (f *fakeHelmClient) UninstallRelease(namespace, name string) error {
 	f.uninstallCalls = append(f.uninstallCalls, struct{ namespace, name string }{namespace, name})
