@@ -30,6 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -118,12 +119,18 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		for _, groupPrefix := range AllGroupsPrefixes {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
+					if err := removeStaleClusterRBACForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, resource); err != nil {
+						return fmt.Errorf("failed to remove stale RBAC for resource on seed: %w", err)
+					}
 					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, resource, gvk.Kind)
 					if err != nil {
 						return fmt.Errorf("failed to ensure ClusterRole for resource on seed: %w", err)
 					}
 				}
 			} else {
+				if err := removeStaleClusterRBACForResource(ctx, c.log, c.client, groupPrefix, resource); err != nil {
+					return fmt.Errorf("failed to remove stale RBAC for resource on master: %w", err)
+				}
 				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, resource, gvk.Kind)
 				if err != nil {
 					return fmt.Errorf("failed to ensure ClusterRole for resource on master: %w", err)
@@ -621,4 +628,58 @@ func shouldSkipRBACRoleBindingFor(log *zap.SugaredLogger, groupName, policyResou
 		return true, nil
 	}
 	return false, nil
+}
+
+// staleResourceClusterRoles names the shared ClusterRoles, keyed by resource and group
+// prefix, that older KKP versions created and the mapper no longer generates. Removing a
+// verb from the mapper is not enough, because ensureClusterRBACRoleForResource only skips
+// roles it does not generate and never deletes them.
+var staleResourceClusterRoles = map[string]sets.Set[string]{
+	// only owners create GroupProjectBindings
+	kubermaticv1.GroupProjectBindingResourceName: sets.New(EditorGroupNamePrefix),
+}
+
+// removeStaleClusterRBACForResource deletes a stale shared ClusterRole, the shared
+// ClusterRoleBinding of the same name and the per-GroupProjectBinding ClusterRoleBindings
+// that point to it. It is a no-op once the ClusterRole is gone.
+func removeStaleClusterRBACForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupPrefix, resource string) error {
+	if !staleResourceClusterRoles[resource].Has(groupPrefix) {
+		return nil
+	}
+
+	name := generateRBACRoleNameForResources(resource, groupPrefix)
+
+	role := &rbacv1.ClusterRole{}
+	if err := c.Get(ctx, types.NamespacedName{Name: name}, role); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get ClusterRole %s: %w", name, err)
+	}
+
+	// delete the bindings first, so a failure part way never leaves a binding whose
+	// ClusterRole could be recreated under the same name
+	bindings := &rbacv1.ClusterRoleBindingList{}
+	if err := c.List(ctx, bindings); err != nil {
+		return fmt.Errorf("failed to list ClusterRoleBindings: %w", err)
+	}
+
+	for i := range bindings.Items {
+		binding := &bindings.Items[i]
+		if binding.RoleRef.Kind != "ClusterRole" || binding.RoleRef.Name != name {
+			continue
+		}
+
+		if err := c.Delete(ctx, binding); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to delete ClusterRoleBinding %s: %w", binding.Name, err)
+		}
+		log.Infow("deleted stale ClusterRoleBinding", "name", binding.Name, "clusterrole", name)
+	}
+
+	if err := c.Delete(ctx, role); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to delete ClusterRole %s: %w", name, err)
+	}
+	log.Infow("deleted stale ClusterRole", "name", name)
+
+	return nil
 }
