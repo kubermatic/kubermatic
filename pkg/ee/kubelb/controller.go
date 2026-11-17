@@ -403,13 +403,18 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
+	supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine if failure domain zone anti-affinity is supported: %w", err)
+	}
+
 	// Create/update kubeLB deployment.
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),
 		modifier.ControlplaneComponent(cluster),
 	}
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc, cfg.Spec.UserCluster.KubeLB)),
+		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc, cfg.Spec.UserCluster.KubeLB, supportsFailureDomainZoneAntiAffinity)),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client, modifiers...); err != nil {
 		return nil, fmt.Errorf("failed to reconcile the Deployments: %w", err)
