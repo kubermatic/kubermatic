@@ -46,7 +46,7 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	case "1.32":
 		binary = kubectl133
 	case "1.33":
-		binary = kubectl133
+		binary = kubectl134
 	case "1.34":
 		binary = kubectl134
 	case "1.35":
