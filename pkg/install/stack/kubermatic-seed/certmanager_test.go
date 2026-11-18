@@ -21,6 +21,8 @@ import (
 	"errors"
 	"testing"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
@@ -58,7 +60,10 @@ func (f *fakeCertManagerHelmClient) GetValues(string, string) (*yamled.Document,
 }
 
 func TestCanManageCertManager(t *testing.T) {
-	release := &helm.Release{Name: "cert-manager", Namespace: "cert-manager"}
+	releaseWithVersion := func(version string) *helm.Release {
+		return &helm.Release{Name: "cert-manager", Namespace: "cert-manager", Version: semverlib.MustParse(version)}
+	}
+	release := releaseWithVersion("2.31.3")
 	crd := &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{Name: certManagerCRD}}
 
 	testCases := []struct {
@@ -74,10 +79,30 @@ func TestCanManageCertManager(t *testing.T) {
 			want:       true,
 		},
 		{
-			name:       "release installed from the bundled chart, with an older version",
+			name:       "release installed from the bundled chart",
 			helmClient: &fakeCertManagerHelmClient{release: release, maintainers: []string{"support@kubermatic.com"}},
 			objects:    []ctrlruntimeclient.Object{crd},
 			want:       true,
+		},
+		{
+			name:       "release installed from the bundled chart, oldest managed version",
+			helmClient: &fakeCertManagerHelmClient{release: releaseWithVersion("2.1.0"), maintainers: []string{"support@kubermatic.com"}},
+			want:       true,
+		},
+		{
+			name:       "release installed from the bundled chart, too old (cert-manager 1.x pre-upstream chart)",
+			helmClient: &fakeCertManagerHelmClient{release: releaseWithVersion("2.0.5"), maintainers: []string{"support@kubermatic.com"}},
+			wantErr:    true,
+		},
+		{
+			name:       "release installed from the bundled chart, too old (cert-manager 0.x)",
+			helmClient: &fakeCertManagerHelmClient{release: releaseWithVersion("1.2.0"), maintainers: []string{"support@kubermatic.com"}},
+			wantErr:    true,
+		},
+		{
+			name:       "foreign release with an old version is skipped, not rejected",
+			helmClient: &fakeCertManagerHelmClient{release: releaseWithVersion("1.17.4"), maintainers: []string{"cert-manager-maintainers@googlegroups.com"}},
+			want:       false,
 		},
 		{
 			name:       "release installed from the upstream chart",

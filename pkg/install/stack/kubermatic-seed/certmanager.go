@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"slices"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -44,6 +45,12 @@ const (
 	// chart, independent of the chart version.
 	bundledChartMaintainerEmail = "support@kubermatic.com"
 )
+
+// minManagedChartVersion is the oldest chart version of an existing release that the installer
+// upgrades on a separate seed. DeployCertManager migrates older releases (before 2.1.0: cert-manager
+// 0.x and the pre-upstream chart) by removing and recreating Certificates and Issuers, which must
+// never happen implicitly on a seed.
+var minManagedChartVersion = semverlib.MustParse("2.1.0")
 
 // deployCertManager deploys the bundled cert-manager chart to a separate seed, but only if the
 // installer can take ownership of cert-manager there: either it already manages the Helm release
@@ -92,6 +99,10 @@ func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Clie
 
 		if !slices.Contains(emails, bundledChartMaintainerEmail) {
 			return false, fmt.Sprintf("Helm release %s in namespace %s was not installed from the bundled chart", release.Name, release.Namespace), nil
+		}
+
+		if release.Version.LessThan(minManagedChartVersion) {
+			return false, "", fmt.Errorf("cert-manager release %s in namespace %s uses chart version %s, which is older than %s and cannot be upgraded automatically on a separate seed; upgrade it manually or use --skip-charts %s", release.Name, release.Namespace, release.Version, minManagedChartVersion, kubermaticmaster.CertManagerChartName)
 		}
 
 		return true, "", nil
