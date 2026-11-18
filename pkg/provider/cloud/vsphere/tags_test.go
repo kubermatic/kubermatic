@@ -25,8 +25,10 @@ import (
 	_ "github.com/vmware/govmomi/vapi/simulator" // registers the REST endpoints (tagging) in vcsim
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25/types"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -35,6 +37,7 @@ import (
 type tagTestEnv struct {
 	t          *testing.T
 	ctx        context.Context
+	dc         *kubermaticv1.DatacenterSpecVSphere
 	rest       *RESTSession
 	manager    *vapitags.Manager
 	categoryID string
@@ -75,7 +78,7 @@ func newTagTestEnv(t *testing.T) *tagTestEnv {
 		t.Fatalf("failed to create category: %v", err)
 	}
 
-	return &tagTestEnv{t: t, ctx: ctx, rest: rest, manager: manager, categoryID: categoryID, target: datacenter.Reference()}
+	return &tagTestEnv{t: t, ctx: ctx, dc: dc, rest: rest, manager: manager, categoryID: categoryID, target: datacenter.Reference()}
 }
 
 func (e *tagTestEnv) cluster(name string, tags ...string) *kubermaticv1.Cluster {
@@ -220,7 +223,10 @@ func TestReconcileTagsRecoversFromMissingStatus(t *testing.T) {
 	}
 
 	// a tag that was deleted manually in vSphere is dropped from the status
-	tags, _ := env.manager.GetTagsForCategory(env.ctx, env.categoryID)
+	tags, err := env.manager.GetTagsForCategory(env.ctx, env.categoryID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for i := range tags {
 		if tags[i].Name == "A" {
 			if err := env.manager.DeleteTag(env.ctx, &tags[i]); err != nil {
@@ -271,4 +277,81 @@ func TestCleanupClusterTags(t *testing.T) {
 
 		env.assertTags("C")
 	})
+}
+
+func (e *tagTestEnv) vsphere() *VSphere {
+	return &VSphere{dc: e.dc, log: zap.NewNop().Sugar()}
+}
+
+// inMemoryUpdater applies the modification to the cluster like the cloud controller does for the stored cluster.
+func inMemoryUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
+	return func(_ context.Context, _ string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
+		modify(cluster)
+
+		return cluster, nil
+	}
+}
+
+// The tags are managed through the exported provider functions the cloud controller calls.
+func TestReconcileAndCleanUpCloudProvider(t *testing.T) {
+	env := newTagTestEnv(t)
+	vsphere := env.vsphere()
+
+	first := env.cluster("first", "A", "B")
+	second := env.cluster("second", "C", "D")
+
+	// A folder that was not created by KKP is not reconciled or deleted. This keeps the tags free of
+	// attachments: vcsim, unlike vCenter, keeps the tag associations of a deleted folder.
+	first.Spec.Cloud.VSphere.Folder = "/DC0/vm/custom-first"
+	second.Spec.Cloud.VSphere.Folder = "/DC0/vm/custom-second"
+
+	for _, cluster := range []*kubermaticv1.Cluster{first, second} {
+		reconciled, err := vsphere.ReconcileCluster(env.ctx, cluster, inMemoryUpdater(cluster))
+		if err != nil {
+			t.Fatalf("ReconcileCluster of %s failed: %v", cluster.Name, err)
+		}
+
+		// the cloud controller persists this status after the reconciliation
+		if got := reconciled.Status.CloudProvider.VSphere.ManagedTags[env.categoryID]; len(got) != 2 {
+			t.Errorf("expected 2 managed tags in the status of %s, got %v", cluster.Name, got)
+		}
+	}
+	env.assertTags("A", "B", "C", "D")
+
+	// reconciling the first cluster again must not touch the tags of the second one
+	if _, err := vsphere.ReconcileCluster(env.ctx, first, inMemoryUpdater(first)); err != nil {
+		t.Fatalf("ReconcileCluster failed: %v", err)
+	}
+	env.assertTags("A", "B", "C", "D")
+
+	// deleting the first cluster removes its tags and finalizers, but nothing of the second one
+	now := metav1.NewTime(time.Now())
+	first.DeletionTimestamp = &now
+	if _, err := vsphere.CleanUpCloudProvider(env.ctx, first, inMemoryUpdater(first)); err != nil {
+		t.Fatalf("CleanUpCloudProvider failed: %v", err)
+	}
+
+	env.assertTags("C", "D")
+	if len(first.Finalizers) != 0 {
+		t.Errorf("expected all finalizers to be removed, got %v", first.Finalizers)
+	}
+	if len(second.Finalizers) == 0 {
+		t.Error("expected the finalizers of the second cluster to stay")
+	}
+}
+
+func TestSetManagedTagsDoesNotAddAnEmptyStatus(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{Tags: &kubermaticv1.VSphereTag{CategoryID: "category"}},
+			},
+		},
+	}
+
+	setManagedTags(cluster, sets.New[string]())
+
+	if cluster.Status.CloudProvider != nil {
+		t.Errorf("expected no provider status without managed tags, got %+v", cluster.Status.CloudProvider)
+	}
 }
