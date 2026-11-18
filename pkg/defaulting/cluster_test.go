@@ -1065,3 +1065,94 @@ func TestDefaultJoinClusterTimeout(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultKonnectivityProxyArgs(t *testing.T) {
+	const dcName = "konnectivity-args-test-dc"
+
+	testCases := []struct {
+		name               string
+		cluster            kubermaticv1.KonnectivityProxySettings
+		seed               kubermaticv1.KonnectivityProxySettings
+		template           *kubermaticv1.KonnectivityProxySettings
+		expectedArgs       []string
+		expectedServerArgs []string
+	}{
+		{
+			name: "seed server args are not copied into the cluster",
+			seed: kubermaticv1.KonnectivityProxySettings{ServerArgs: []string{"--seed-server-arg=value"}},
+		},
+		{
+			name:     "template server args are not copied into the cluster",
+			template: &kubermaticv1.KonnectivityProxySettings{ServerArgs: []string{"--template-server-arg=value"}},
+		},
+		{
+			name:               "cluster server args are kept",
+			cluster:            kubermaticv1.KonnectivityProxySettings{ServerArgs: []string{"--cluster-server-arg=value"}},
+			seed:               kubermaticv1.KonnectivityProxySettings{ServerArgs: []string{"--seed-server-arg=value"}},
+			template:           &kubermaticv1.KonnectivityProxySettings{ServerArgs: []string{"--template-server-arg=value"}},
+			expectedServerArgs: []string{"--cluster-server-arg=value"},
+		},
+		{
+			name: "seed args are still defaulted into the cluster args",
+			seed: kubermaticv1.KonnectivityProxySettings{
+				Args:       []string{"--seed-arg=value"},
+				ServerArgs: []string{"--seed-server-arg=value"},
+			},
+			expectedArgs: []string{"--seed-arg=value"},
+		},
+		{
+			name: "template args are still defaulted into the cluster args",
+			template: &kubermaticv1.KonnectivityProxySettings{
+				Args:       []string{"--template-arg=value"},
+				ServerArgs: []string{"--template-server-arg=value"},
+			},
+			expectedArgs: []string{"--template-arg=value"},
+		},
+		{
+			name:         "cluster args are kept",
+			cluster:      kubermaticv1.KonnectivityProxySettings{Args: []string{"--cluster-arg=value"}},
+			seed:         kubermaticv1.KonnectivityProxySettings{Args: []string{"--seed-arg=value"}},
+			expectedArgs: []string{"--cluster-arg=value"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+			if err != nil {
+				t.Fatalf("DefaultConfiguration returned error: %v", err)
+			}
+
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						dcName: {Spec: kubermaticv1.DatacenterSpec{Fake: &kubermaticv1.DatacenterSpecFake{}}},
+					},
+				},
+			}
+			seed.Spec.DefaultComponentSettings.KonnectivityProxy = tc.seed
+
+			spec := &kubermaticv1.ClusterSpec{
+				Cloud: kubermaticv1.CloudSpec{
+					DatacenterName: dcName,
+					ProviderName:   string(kubermaticv1.FakeCloudProvider),
+					Fake:           &kubermaticv1.FakeCloudSpec{Token: "test"},
+				},
+			}
+			spec.ComponentsOverride.KonnectivityProxy = tc.cluster
+
+			var template *kubermaticv1.ClusterTemplate
+			if tc.template != nil {
+				template = &kubermaticv1.ClusterTemplate{}
+				template.Spec.ComponentsOverride.KonnectivityProxy = *tc.template
+			}
+
+			if err := DefaultClusterSpec(context.Background(), spec, nil, template, seed, config, nil); err != nil {
+				t.Fatalf("DefaultClusterSpec returned error: %v", err)
+			}
+
+			assert.Equal(t, tc.expectedArgs, spec.ComponentsOverride.KonnectivityProxy.Args)
+			assert.Equal(t, tc.expectedServerArgs, spec.ComponentsOverride.KonnectivityProxy.ServerArgs)
+		})
+	}
+}
