@@ -1046,8 +1046,17 @@ type KonnectivityProxySettings struct {
 	// The option is propagated to agents and server.
 	// Defaults to 1m.
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
-	// Args configures arguments (flags) for the Konnectivity deployments.
+	// Args configures arguments (flags) for the Konnectivity agents of a cluster.
+	// When set on a Seed or its default ClusterTemplate, the arguments are passed
+	// to the Konnectivity servers of all clusters on that Seed and are also
+	// defaulted into the agent arguments of these clusters.
 	Args []string `json:"args,omitempty"`
+	// ServerArgs configures arguments (flags) for the Konnectivity server only. Use
+	// this for flags that the agent or other Konnectivity versions do not know.
+	// When set on a cluster, they replace all server arguments configured on the
+	// Seed or its default ClusterTemplate. When set there, they take precedence
+	// over Args for the server and are not copied into the clusters.
+	ServerArgs []string `json:"serverArgs,omitempty"`
 	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
 	// Options are "preferred" (default) and "required". Please note that
 	// enforcing anti-affinity via "required" can mean that Pods are never scheduled.

@@ -1003,14 +1003,23 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
+// GetKonnectivityServerArgs returns the additional arguments for the Konnectivity
+// server. The most specific source wins: the Cluster's serverArgs, then the Seed's
+// defaultComponentSettings, then the Seed's default ClusterTemplate.
 func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 	if d.Seed() == nil {
 		return nil, fmt.Errorf("invalid cluster template, seed cluster template is nil")
 	}
 
+	if cluster := d.Cluster(); cluster != nil {
+		if args := cluster.Spec.ComponentsOverride.KonnectivityProxy.ServerArgs; len(args) > 0 {
+			return args, nil
+		}
+	}
+
 	seed := d.Seed()
 
-	r := seed.Spec.DefaultComponentSettings.KonnectivityProxy.Args
+	r := seedLevelKonnectivityServerArgs(seed.Spec.DefaultComponentSettings.KonnectivityProxy)
 	if r != nil {
 		return r, nil
 	}
@@ -1029,7 +1038,18 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
 	}
 
-	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+	return seedLevelKonnectivityServerArgs(tpl.Spec.ComponentsOverride.KonnectivityProxy), nil
+}
+
+// seedLevelKonnectivityServerArgs returns the server arguments from settings of
+// a Seed or its default ClusterTemplate. There, args are used for the server as
+// well, unless dedicated serverArgs are set.
+func seedLevelKonnectivityServerArgs(settings kubermaticv1.KonnectivityProxySettings) []string {
+	if len(settings.ServerArgs) > 0 {
+		return settings.ServerArgs
+	}
+
+	return settings.Args
 }
 
 func (d *TemplateData) IsSSHKeysDisabled() bool {
