@@ -30,21 +30,25 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/log"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
+	appsv1 "k8s.io/api/apps/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	// certManagerCRD is a CRD that is installed by every cert-manager installation.
-	certManagerCRD = "certificates.cert-manager.io"
-
 	// bundledChartMaintainerEmail is the maintainer of the bundled cert-manager chart (see its
 	// Chart.yaml). A release whose chart lists it as maintainer was installed from the bundled
 	// chart, independent of the chart version.
 	bundledChartMaintainerEmail = "support@kubermatic.com"
+
+	// certManagerInstanceLabel and certManagerNameLabel are set on the Deployments of every
+	// cert-manager installation, no matter if it was installed with Helm, the static manifests or
+	// an operator; the instance label is "cert-manager" unless the Helm release is named differently.
+	certManagerInstanceLabel = "app.kubernetes.io/instance"
+	certManagerNameLabel     = "app.kubernetes.io/name"
 )
+
+// certManagerComponentNames are the values of the name label of the three cert-manager Deployments.
+var certManagerComponentNames = []string{"cert-manager", "cainjector", "webhook"}
 
 // minManagedChartVersion is the oldest chart version of an existing release that the installer
 // upgrades on a separate seed. DeployCertManager migrates older releases (before 2.1.0: cert-manager
@@ -56,6 +60,7 @@ var minManagedChartVersion = semverlib.MustParse("2.1.0")
 // installer can take ownership of cert-manager there: either it already manages the Helm release
 // or cert-manager is not installed at all. An existing cert-manager installation that was not
 // created from the bundled chart (other Helm chart, kubectl, an operator, ...) is left untouched.
+// Leftover CRDs alone do not count as an installation, e.g. after a rolled back first installation.
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	// kubermaticmaster.DeployCertManager skips in these cases on its own; do not probe the
 	// cluster for them.
@@ -83,8 +88,9 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	return kubermaticmaster.DeployCertManager(ctx, logger, kubeClient, helmClient, opt)
 }
 
-// canManageCertManager returns true if there is either a Helm release installed from the
-// bundled chart or no cert-manager at all. Otherwise it returns false and the reason why.
+// canManageCertManager returns true if there is either a Helm release installed from the bundled
+// chart or no cert-manager at all (no release and no cert-manager Deployment). Otherwise it returns
+// false and the reason why.
 func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Client, helmClient helm.Client) (bool, string, error) {
 	release, err := helmClient.GetRelease(kubermaticmaster.CertManagerNamespace, kubermaticmaster.CertManagerReleaseName)
 	if err != nil {
@@ -108,15 +114,18 @@ func canManageCertManager(ctx context.Context, kubeClient ctrlruntimeclient.Clie
 		return true, "", nil
 	}
 
-	// No release with our name, so cert-manager must not be installed in any other way either.
-	crd := &apiextensionsv1.CustomResourceDefinition{}
-	if err := kubeClient.Get(ctx, types.NamespacedName{Name: certManagerCRD}, crd); err != nil {
-		if apierrors.IsNotFound(err) {
-			return true, "", nil
-		}
-
-		return false, "", fmt.Errorf("failed to check for CRD %s: %w", certManagerCRD, err)
+	// No release with our name: it is only installed some other way if its Deployments exist.
+	// CRDs are no indicator, they remain when a first (atomic) installation was rolled back.
+	deployments := &appsv1.DeploymentList{}
+	if err := kubeClient.List(ctx, deployments, ctrlruntimeclient.MatchingLabels{certManagerInstanceLabel: kubermaticmaster.CertManagerReleaseName}); err != nil {
+		return false, "", fmt.Errorf("failed to list cert-manager Deployments: %w", err)
 	}
 
-	return false, fmt.Sprintf("CRD %s exists, but there is no Helm release %s in namespace %s", certManagerCRD, kubermaticmaster.CertManagerReleaseName, kubermaticmaster.CertManagerNamespace), nil
+	for _, deployment := range deployments.Items {
+		if slices.Contains(certManagerComponentNames, deployment.Labels[certManagerNameLabel]) {
+			return false, fmt.Sprintf("cert-manager Deployment %s/%s exists, but there is no Helm release %s in namespace %s", deployment.Namespace, deployment.Name, kubermaticmaster.CertManagerReleaseName, kubermaticmaster.CertManagerNamespace), nil
+		}
+	}
+
+	return true, "", nil
 }

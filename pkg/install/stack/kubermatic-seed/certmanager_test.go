@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
+	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,7 +65,21 @@ func TestCanManageCertManager(t *testing.T) {
 		return &helm.Release{Name: "cert-manager", Namespace: "cert-manager", Version: semverlib.MustParse(version)}
 	}
 	release := releaseWithVersion("2.31.3")
-	crd := &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{Name: certManagerCRD}}
+	// CRDs remain after a rolled back first installation, they must not count as an installation.
+	crd := &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{Name: "certificates.cert-manager.io"}}
+	deployment := func(namespace, name, component string, replicas int32) *appsv1.Deployment {
+		return &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      name,
+				Labels: map[string]string{
+					"app.kubernetes.io/instance": "cert-manager",
+					"app.kubernetes.io/name":     component,
+				},
+			},
+			Spec: appsv1.DeploymentSpec{Replicas: &replicas},
+		}
+	}
 
 	testCases := []struct {
 		name       string
@@ -116,10 +131,34 @@ func TestCanManageCertManager(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "CRDs without a Helm release (kubectl, operator, other release name)",
+			name:       "leftover CRDs without a Helm release (rolled back first installation)",
 			helmClient: &fakeCertManagerHelmClient{},
 			objects:    []ctrlruntimeclient.Object{crd},
+			want:       true,
+		},
+		{
+			name:       "cert-manager Deployments without a Helm release (kubectl, operator)",
+			helmClient: &fakeCertManagerHelmClient{},
+			objects:    []ctrlruntimeclient.Object{crd, deployment("cert-manager", "cert-manager", "cert-manager", 1)},
 			want:       false,
+		},
+		{
+			name:       "cainjector Deployment in another namespace without a Helm release",
+			helmClient: &fakeCertManagerHelmClient{},
+			objects:    []ctrlruntimeclient.Object{deployment("platform", "cert-manager-cainjector", "cainjector", 1)},
+			want:       false,
+		},
+		{
+			name:       "webhook Deployment scaled to zero without a Helm release",
+			helmClient: &fakeCertManagerHelmClient{},
+			objects:    []ctrlruntimeclient.Object{deployment("cert-manager", "cert-manager-webhook", "webhook", 0)},
+			want:       false,
+		},
+		{
+			name:       "other Deployment with the instance label without a Helm release",
+			helmClient: &fakeCertManagerHelmClient{},
+			objects:    []ctrlruntimeclient.Object{deployment("cert-manager", "something-else", "something-else", 1)},
+			want:       true,
 		},
 		{
 			name:       "Helm release cannot be checked",
@@ -137,6 +176,9 @@ func TestCanManageCertManager(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
 			if err := apiextensionsv1.AddToScheme(scheme); err != nil {
+				t.Fatal(err)
+			}
+			if err := appsv1.AddToScheme(scheme); err != nil {
 				t.Fatal(err)
 			}
 			kubeClient := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme).WithObjects(tc.objects...).Build()
