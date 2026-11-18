@@ -1051,11 +1051,15 @@ type KonnectivityProxySettings struct {
 	// to the Konnectivity servers of all clusters on that Seed and are also
 	// defaulted into the agent arguments of these clusters.
 	Args []string `json:"args,omitempty"`
-	// ServerArgs configures arguments (flags) for the Konnectivity server only. Use
-	// this for flags that the agent or other Konnectivity versions do not know.
+	// ServerArgs configures arguments (flags) for the Konnectivity server only.
 	// When set on a cluster, they replace all server arguments configured on the
-	// Seed or its default ClusterTemplate. When set there, they take precedence
-	// over Args for the server and are not copied into the clusters.
+	// Seed or its default ClusterTemplate. Flags that only some Konnectivity
+	// versions know should be set per cluster. When set on a Seed or its default
+	// ClusterTemplate, they are used for the server instead of the Args of the same
+	// object and are not copied into the clusters. There they apply to every cluster
+	// that does not set its own ServerArgs, so they should only contain flags that
+	// all Konnectivity versions on the Seed know. The settings of the Seed take
+	// precedence over the ones of its default ClusterTemplate.
 	ServerArgs []string `json:"serverArgs,omitempty"`
 	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on Pods.
 	// Options are "preferred" (default) and "required". Please note that
