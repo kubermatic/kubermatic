@@ -103,14 +103,13 @@ func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, clust
 	clusterIsDeleting := cluster.DeletionTimestamp != nil
 	remaining := managedTags.Clone()
 
+	tagsByID := make(map[string]*vapitags.Tag, len(categoryTags))
+	for i := range categoryTags {
+		tagsByID[categoryTags[i].ID] = &categoryTags[i]
+	}
+
 	for tagID := range managedTags {
-		var tag *vapitags.Tag
-		for i := range categoryTags {
-			if categoryTags[i].ID == tagID {
-				tag = &categoryTags[i]
-				break
-			}
-		}
+		tag := tagsByID[tagID]
 
 		// The tag does not exist anymore (e.g. removed manually), nothing left to manage.
 		if tag == nil {
@@ -128,7 +127,9 @@ func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, clust
 		}
 
 		// if there are still objects attached to the tag, we can't delete it; it stays
-		// managed so that we retry on the next reconciliation.
+		// managed so that we retry on the next reconciliation. This also protects a tag that
+		// several clusters list in their spec and therefore all manage: it stays while an
+		// object of another cluster, for example its folder, is still tagged with it.
 		if len(attachedObjs) > 0 {
 			continue
 		}
@@ -179,6 +180,14 @@ func getManagedTags(cluster *kubermaticv1.Cluster) sets.Set[string] {
 func setManagedTags(cluster *kubermaticv1.Cluster, managedTags sets.Set[string]) {
 	categoryID := cluster.Spec.Cloud.VSphere.Tags.CategoryID
 
+	// Do not add an empty provider status to clusters that never managed a tag.
+	if managedTags.Len() == 0 {
+		if cluster.Status.CloudProvider != nil && cluster.Status.CloudProvider.VSphere != nil {
+			delete(cluster.Status.CloudProvider.VSphere.ManagedTags, categoryID)
+		}
+		return
+	}
+
 	if cluster.Status.CloudProvider == nil {
 		cluster.Status.CloudProvider = &kubermaticv1.CloudProviderStatus{}
 	}
@@ -187,11 +196,6 @@ func setManagedTags(cluster *kubermaticv1.Cluster, managedTags sets.Set[string])
 	}
 
 	status := cluster.Status.CloudProvider.VSphere
-	if managedTags.Len() == 0 {
-		delete(status.ManagedTags, categoryID)
-		return
-	}
-
 	if status.ManagedTags == nil {
 		status.ManagedTags = map[string][]string{}
 	}
