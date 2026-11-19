@@ -513,9 +513,41 @@ func TestGetKonnectivityAgentArgs(t *testing.T) {
 }
 
 func TestGetKonnectivityServerArgs(t *testing.T) {
+	clusterWithServerArgs := func(args ...string) *kubermaticv1.Cluster {
+		return &kubermaticv1.Cluster{
+			Spec: kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+						// agent args must never end up on the server
+						Args:       []string{"--agent-arg=value"},
+						ServerArgs: args,
+					},
+				},
+			},
+		}
+	}
+
+	seedTemplate := func(settings kubermaticv1.KonnectivityProxySettings) *kubermaticv1.ClusterTemplate {
+		return &kubermaticv1.ClusterTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-template",
+				Namespace: "test-namespace",
+				Labels: map[string]string{
+					"scope": kubermaticv1.SeedTemplateScope,
+				},
+			},
+			Spec: kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					KonnectivityProxy: settings,
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		name           string
 		seed           *kubermaticv1.Seed
+		cluster        *kubermaticv1.Cluster
 		objects        []ctrlruntimeclient.Object
 		expectedArgs   []string
 		expectedErrMsg string
@@ -706,6 +738,173 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 			},
 			expectedArgs: nil,
 		},
+		{
+			name:           "nil seed returns error even if the cluster has server args",
+			seed:           nil,
+			cluster:        clusterWithServerArgs("--cluster-arg=value"),
+			expectedErrMsg: "invalid cluster template, seed cluster template is nil",
+		},
+		{
+			name:         "cluster server args without any seed args",
+			seed:         &kubermaticv1.Seed{},
+			cluster:      clusterWithServerArgs("--cluster-arg=value"),
+			expectedArgs: []string{"--cluster-arg=value"},
+		},
+		{
+			name: "cluster server args replace the seed args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args:       []string{"--seed-arg=value"},
+							ServerArgs: []string{"--seed-server-arg=value"},
+						},
+					},
+				},
+			},
+			cluster:      clusterWithServerArgs("--cluster-arg=value"),
+			expectedArgs: []string{"--cluster-arg=value"},
+		},
+		{
+			name: "cluster server args win without fetching the template",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultClusterTemplate: "missing-template",
+				},
+			},
+			cluster:      clusterWithServerArgs("--cluster-arg=value"),
+			expectedArgs: []string{"--cluster-arg=value"},
+		},
+		{
+			name: "cluster without server args falls back to the seed args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--seed-arg=value"},
+						},
+					},
+				},
+			},
+			cluster:      clusterWithServerArgs(),
+			expectedArgs: []string{"--seed-arg=value"},
+		},
+		{
+			// an empty list cannot be told apart from an unset one once the
+			// Cluster went through the API, so it must not hide the seed args
+			name: "empty cluster server args fall back to the seed server args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							ServerArgs: []string{"--seed-server-arg=value"},
+						},
+					},
+				},
+			},
+			cluster:      clusterWithServerArgs([]string{}...),
+			expectedArgs: []string{"--seed-server-arg=value"},
+		},
+		{
+			name: "seed server args win over the seed args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args:       []string{"--seed-arg=value"},
+							ServerArgs: []string{"--seed-server-arg=value"},
+						},
+					},
+				},
+			},
+			cluster:      clusterWithServerArgs(),
+			expectedArgs: []string{"--seed-server-arg=value"},
+		},
+		{
+			name: "seed server args win over the template",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							ServerArgs: []string{"--seed-server-arg=value"},
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				seedTemplate(kubermaticv1.KonnectivityProxySettings{
+					Args:       []string{"--template-arg=value"},
+					ServerArgs: []string{"--template-server-arg=value"},
+				}),
+			},
+			expectedArgs: []string{"--seed-server-arg=value"},
+		},
+		{
+			name: "seed args win over the template server args",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--seed-arg=value"},
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				seedTemplate(kubermaticv1.KonnectivityProxySettings{
+					ServerArgs: []string{"--template-server-arg=value"},
+				}),
+			},
+			expectedArgs: []string{"--seed-arg=value"},
+		},
+		{
+			name: "template server args win over the template args",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				seedTemplate(kubermaticv1.KonnectivityProxySettings{
+					Args:       []string{"--template-arg=value"},
+					ServerArgs: []string{"--template-server-arg=value"},
+				}),
+			},
+			expectedArgs: []string{"--template-server-arg=value"},
+		},
+		{
+			name: "cluster server args replace the template args",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			cluster: clusterWithServerArgs("--cluster-arg=value"),
+			objects: []ctrlruntimeclient.Object{
+				seedTemplate(kubermaticv1.KonnectivityProxySettings{
+					Args:       []string{"--template-arg=value"},
+					ServerArgs: []string{"--template-server-arg=value"},
+				}),
+			},
+			expectedArgs: []string{"--cluster-arg=value"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -722,9 +921,10 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 				Build()
 
 			templateData := &TemplateData{
-				ctx:    context.Background(),
-				client: cl,
-				seed:   tt.seed,
+				ctx:     context.Background(),
+				client:  cl,
+				seed:    tt.seed,
+				cluster: tt.cluster,
 			}
 
 			args, err := templateData.GetKonnectivityServerArgs()

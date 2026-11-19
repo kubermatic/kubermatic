@@ -78,6 +78,34 @@ func TestGetArgs(t *testing.T) {
 			},
 		},
 		{
+			name: "server args are not passed to the agent",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args:       []string{"--agent-arg=value"},
+							ServerArgs: []string{"--backend-dial-timeout=10s"},
+						},
+					},
+				},
+			},
+			keepaliveTime: "1m",
+			expectedArgs: []string{
+				"--logtostderr=true",
+				"-v=3",
+				"--sync-forever=true",
+				"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+				"--proxy-server-host=test",
+				"--proxy-server-port=8132",
+				"--admin-server-port=8133",
+				"--health-server-port=8134",
+				fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
+				"--keepalive-time=1m",
+				"--xfr-channel-size=150",
+				"--agent-arg=value",
+			},
+		},
+		{
 			name:          "custom keepalive time is used",
 			cluster:       &kubermaticv1.Cluster{},
 			keepaliveTime: "30s",

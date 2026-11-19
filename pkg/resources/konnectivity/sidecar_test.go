@@ -315,6 +315,34 @@ func TestKnpServerArgs(t *testing.T) {
 				return baseArgs
 			}(),
 		},
+		{
+			name: "cluster server args replace the seed args and leave out the agent args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--seed-arg=value"},
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args:       []string{"--agent-arg=value"},
+							ServerArgs: []string{"--backend-dial-timeout=10s"},
+						},
+					},
+				},
+			},
+			serverCount:       3,
+			expectedKeepAlive: kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			expectedArgs: append(
+				getDefaultArgs(3, kubermaticv1.DefaultKonnectivityKeepaliveTime),
+				"--backend-dial-timeout=10s",
+			),
+		},
 	}
 
 	for _, tt := range tests {

@@ -47,6 +47,11 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 	explicitSkipEvictionAfter := copySkipEvictionAfter(spec)
 	explicitJoinClusterTimeout := copyJoinClusterTimeout(spec)
 
+	// Konnectivity server args of the template and the Seed are resolved whenever
+	// the server is reconciled. Copying them into the Cluster would pin them there,
+	// and a later change or removal on the Seed would not reach the Cluster anymore.
+	ownKonnectivityServerArgs := spec.ComponentsOverride.KonnectivityProxy.ServerArgs
+
 	// If a ClusterTemplate was configured for the Seed, the caller
 	// retrieved it for us already and we can use it as the primary
 	// source for defaults.
@@ -72,6 +77,8 @@ func applyTemplateAndSeedDefaults(spec *kubermaticv1.ClusterSpec, template *kube
 	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
 		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
 	}
+
+	spec.ComponentsOverride.KonnectivityProxy.ServerArgs = ownKonnectivityServerArgs
 
 	if explicitSkipEvictionAfter != nil && spec.ComponentsOverride.MachineController != nil {
 		spec.ComponentsOverride.MachineController.SkipEvictionAfter = explicitSkipEvictionAfter
