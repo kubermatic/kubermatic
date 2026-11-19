@@ -55,7 +55,9 @@ var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 }
 
 const (
-	Tag = "v1.10.10"
+	// v1.10.11, updated by kkp-bump:
+	// https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.11
+	Tag = "v1.10.11"
 )
 
 type operatingSystemManagerData interface {
