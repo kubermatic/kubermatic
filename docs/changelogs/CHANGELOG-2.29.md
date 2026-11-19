@@ -14,6 +14,54 @@
 - [v2.29.11](#v22911)
 - [v2.29.13](#v22913)
 - [v2.29.14](#v22914)
+- [v2.29.15](#v22915)
+
+## v2.29.15
+
+**GitHub release: [v2.29.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.15)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch release v1.34.13 ([#16838](https://github.com/kubermatic/kubermatic/pull/16838))
+
+#### Supported Versions
+
+- v1.34.13
+
+### Bugfixes
+
+- Only project owners and admins can create GroupProjectBindings, and a GroupProjectBinding cannot grant a role higher than the requester's own project role ([#16926](https://github.com/kubermatic/kubermatic/pull/16926))
+- Leftover web terminal `kubeconfig-*` Secrets are now removed from `kube-system` in user clusters ([#16883](https://github.com/kubermatic/kubermatic/pull/16883))
+- The seed alert KubeletTooManyPods fires again ([#16829](https://github.com/kubermatic/kubermatic/pull/16829))
+- The seed alerts PromBadConfig, PromRuleFailures, PromRemoteStorageFailures, PromAlertmanagerBadConfig and PromAlertsFailed fire again, so seeds with a failing Alertmanager receiver now get a PromAlertsFailed alert ([#16824](https://github.com/kubermatic/kubermatic/pull/16824))
+
+### Updates
+
+- Update the machine-controller image to [v1.64.6](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.6) and the operating-system-manager image to [v1.8.2](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.8.2) ([#16935](https://github.com/kubermatic/kubermatic/pull/16935))
+- Update Go version to 1.25.14 ([#16915](https://github.com/kubermatic/kubermatic/pull/16915))
+- Update the kubectl binaries in the KKP image to v1.34.13 and v1.32.13, and helm to v3.22.1 ([#16908](https://github.com/kubermatic/kubermatic/pull/16908))
+- Update the utility container image to 2.11.0 across all charts and controllers ([#16840](https://github.com/kubermatic/kubermatic/pull/16840))
+- Update the Envoy Gateway proxy to v1.36.12, and the nodeport-proxy and MLA alertmanager-proxy Envoy to v1.37.8 ([#16796](https://github.com/kubermatic/kubermatic/pull/16796), [#16799](https://github.com/kubermatic/kubermatic/pull/16799))
+
+### Dashboard and API
+
+#### New Features
+
+- Add an "OIDC group" option to user cluster group bindings that adds the cluster's OIDC groups prefix (e.g. `oidc:`) to the group name, so bindings for OIDC groups take effect ([#8522](https://github.com/kubermatic/dashboard/pull/8522))
+
+#### Bugfixes
+
+- Only admins and project owners can create group bindings of a project through the API ([#8519](https://github.com/kubermatic/dashboard/pull/8519))
+- The web terminal websocket now answers refused requests with an HTTP error status. `GET /api/v2/kubeconfig/secret` is rejected when the web terminal is disabled, and when the OIDC login does not belong to the user the terminal was opened for ([#8478](https://github.com/kubermatic/dashboard/pull/8478))
+- The web terminal cleanup Job now also deletes the kubeconfig Secret when the session expires, and the Secret gets the `app=webterminal` label like the other web terminal resources ([#8470](https://github.com/kubermatic/dashboard/pull/8470))
+- Fix project and cluster pages staying empty when loading the project list takes longer than the refresh interval ([#8517](https://github.com/kubermatic/dashboard/pull/8517))
+- Fix applications selected during cluster creation or from a cluster template ignoring the ApplicationInstallation namespace configured in `KubermaticConfiguration.spec.userCluster.applications.namespace` ([#8421](https://github.com/kubermatic/dashboard/pull/8421))
+- Align the icon box and the version field of the Control Plane and CNI Plugin boxes on the cluster details page ([#8460](https://github.com/kubermatic/dashboard/pull/8460))
+
+#### Updates
+
+- Update Go version to 1.25.14 ([#8501](https://github.com/kubermatic/dashboard/pull/8501))
+- Update web dependencies to fix known security vulnerabilities ([#8473](https://github.com/kubermatic/dashboard/pull/8473))
 
 ## v2.29.14
 
