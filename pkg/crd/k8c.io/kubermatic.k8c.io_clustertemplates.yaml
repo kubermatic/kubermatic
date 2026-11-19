@@ -2644,7 +2644,11 @@ spec:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
                       properties:
                         args:
-                          description: Args configures arguments (flags) for the Konnectivity deployments.
+                          description: |-
+                            Args configures arguments (flags) for the Konnectivity agents of a cluster.
+                            When set on a Seed or its default ClusterTemplate, the arguments are passed
+                            to the Konnectivity servers of all clusters on that Seed and are also
+                            defaulted into the agent arguments of these clusters.
                           items:
                             type: string
                           type: array
@@ -2723,6 +2727,20 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                               type: object
                           type: object
+                        serverArgs:
+                          description: |-
+                            ServerArgs configures arguments (flags) for the Konnectivity server only.
+                            When set on a cluster, they replace all server arguments configured on the
+                            Seed or its default ClusterTemplate. Flags that only some Konnectivity
+                            versions know should be set per cluster. When set on a Seed or its default
+                            ClusterTemplate, they are used for the server instead of the Args of the same
+                            object and are not copied into the clusters. There they apply to every cluster
+                            that does not set its own ServerArgs, so they should only contain flags that
+                            all Konnectivity versions on the Seed know. The settings of the Seed take
+                            precedence over the ones of its default ClusterTemplate.
+                          items:
+                            type: string
+                          type: array
                         zoneAntiAffinity:
                           description: |-
                             ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on Pods.
