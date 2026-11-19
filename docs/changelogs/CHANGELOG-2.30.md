@@ -10,6 +10,62 @@
 - [v2.30.7](#v2307)
 - [v2.30.8](#v2308)
 - [v2.30.9](#v2309)
+- [v2.30.10](#v23010)
+
+## v2.30.10
+
+**GitHub release: [v2.30.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.30.10)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.35.10/v1.34.13 and set the default version to v1.34.13 ([#16837](https://github.com/kubermatic/kubermatic/pull/16837))
+
+#### Supported Versions
+
+- v1.35.10
+- v1.34.13
+
+### Bugfixes
+
+- Only project owners and admins can create GroupProjectBindings, and a GroupProjectBinding cannot grant a role higher than the requester's own project role ([#16927](https://github.com/kubermatic/kubermatic/pull/16927))
+- Leftover web terminal `kubeconfig-*` Secrets are now removed from `kube-system` in user clusters ([#16882](https://github.com/kubermatic/kubermatic/pull/16882))
+- User cluster MLA logs alerts are delivered to Alertmanager again ([#16856](https://github.com/kubermatic/kubermatic/pull/16856))
+- The seed alert KubeletTooManyPods fires again ([#16828](https://github.com/kubermatic/kubermatic/pull/16828))
+- The seed alerts PromBadConfig, PromRuleFailures, PromRemoteStorageFailures, PromAlertmanagerBadConfig and PromAlertsFailed fire again, so seeds with a failing Alertmanager receiver now get a PromAlertsFailed alert ([#16826](https://github.com/kubermatic/kubermatic/pull/16826))
+- The seed alert HelmReleaseNotDeployed fires again for Helm releases that are not deployed ([#16818](https://github.com/kubermatic/kubermatic/pull/16818))
+
+### Updates
+
+- Update machine-controller to [v1.65.9](https://github.com/kubermatic/machine-controller/releases/tag/v1.65.9) and operating-system-manager to [v1.10.11](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.10.11) ([#16934](https://github.com/kubermatic/kubermatic/pull/16934))
+- Update the kubectl binaries in the KKP image to v1.35.10, v1.34.13 and v1.33.13, and helm to v3.22.1. Addons of Kubernetes 1.32 and 1.33 clusters are now applied with kubectl 1.33 and 1.34 ([#16907](https://github.com/kubermatic/kubermatic/pull/16907))
+- Update the utility container image to 2.11.0 across all charts and controllers ([#16841](https://github.com/kubermatic/kubermatic/pull/16841))
+- Update the Envoy Gateway proxy to v1.36.12, and the nodeport-proxy and MLA alertmanager-proxy Envoy to v1.37.8 ([#16795](https://github.com/kubermatic/kubermatic/pull/16795), [#16801](https://github.com/kubermatic/kubermatic/pull/16801))
+
+### Dashboard and API
+
+#### Cloud Providers
+
+##### vSphere
+
+- Fix the vSphere cluster wizard: the "Next" button is no longer disabled when more than one cluster tag is entered ([#8406](https://github.com/kubermatic/dashboard/pull/8406))
+
+#### New Features
+
+- Add an "OIDC group" option to user cluster group bindings that adds the cluster's OIDC groups prefix (e.g. `oidc:`) to the group name, so bindings for OIDC groups take effect ([#8514](https://github.com/kubermatic/dashboard/pull/8514))
+
+#### Bugfixes
+
+- Only admins and project owners can create group bindings of a project through the API ([#8521](https://github.com/kubermatic/dashboard/pull/8521))
+- The web terminal websocket now answers refused requests with an HTTP error status. `GET /api/v2/kubeconfig/secret` is rejected when the web terminal is disabled, and when the OIDC login does not belong to the user the terminal was opened for ([#8477](https://github.com/kubermatic/dashboard/pull/8477))
+- The web terminal cleanup Job now also deletes the kubeconfig Secret when the session expires, and the Secret gets the `app=webterminal` label like the other web terminal resources ([#8464](https://github.com/kubermatic/dashboard/pull/8464))
+- Fix project and cluster pages staying empty when loading the project list takes longer than the refresh interval ([#8518](https://github.com/kubermatic/dashboard/pull/8518))
+- The Owners column on the projects overview no longer cuts owner names in the middle of a word, and the count of hidden owners now matches the owners listed in its tooltip ([#8498](https://github.com/kubermatic/dashboard/pull/8498))
+- Fix applications selected during cluster creation or from a cluster template ignoring the ApplicationInstallation namespace configured in `KubermaticConfiguration.spec.userCluster.applications.namespace` ([#8420](https://github.com/kubermatic/dashboard/pull/8420))
+- Align the icon box and the version field of the Control Plane and CNI Plugin boxes on the cluster details page ([#8459](https://github.com/kubermatic/dashboard/pull/8459))
+
+#### Updates
+
+- Update web dependencies to fix known security vulnerabilities ([#8472](https://github.com/kubermatic/dashboard/pull/8472))
 
 ## v2.30.9
 
