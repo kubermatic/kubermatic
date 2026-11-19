@@ -81,9 +81,9 @@ spec:
     # dex clients in values.yaml. The dashboard login uses the OIDC authorization
     # code flow, which requires a client secret.
     #
-    # To keep a single client for both purposes instead, set clientID to the same
-    # value as issuerClientID (kubermaticIssuer). It is then the same OIDC client,
-    # so clientSecret is ignored and issuerClientSecret is used for the login.
+    # Using a single client for both purposes (clientID set to the same value as
+    # issuerClientID) is deprecated and will not be supported in an upcoming KKP
+    # release. Use two separate clients as shown here.
     clientSecret: <dex-kubermatic-oauth-secret-here>
 
     # issuerClientID is the client used for the OIDC flows of user clusters.
