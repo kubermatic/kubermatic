@@ -1,9 +1,98 @@
 # Kubermatic 2.31
 
+- [v2.31.4](#v2314)
 - [v2.31.3](#v2313)
 - [v2.31.2](#v2312)
 - [v2.31.1](#v2311)
 - [v2.31.0](#v2310)
+
+## v2.31.4
+
+**GitHub release: [v2.31.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.4)**
+
+### Breaking Changes
+
+This release contains changes that require additional attention, please read the following items carefully.
+
+- The dashboard login now uses its own OIDC client (`spec.auth.clientID`, default `kubermatic`), separate from the client that User Clusters accept (`spec.auth.issuerClientID`, default `kubermaticIssuer`). Before upgrading, add a `kubermatic` client to Dex (or to your identity provider) with its own secret and the redirect URL `https://<KKP domain>/api/v2/auth/callback`, and set the same secret in `spec.auth.clientSecret`. To keep a single client instead, set `spec.auth.clientID` to the value of `spec.auth.issuerClientID` and keep `/api/v2/auth/callback` on that client; the KKP API then logs a warning at startup and still accepts tokens issued for User Clusters. See the upgrade guide for details ([#16895](https://github.com/kubermatic/kubermatic/pull/16895), [#8493](https://github.com/kubermatic/dashboard/pull/8493))
+
+### API Changes
+
+- Add `spec.auth.additionalIssuerRedirectURLs` to KubermaticConfiguration to allow dashboard login through additional hostnames (e.g. reverse proxies) ([#16889](https://github.com/kubermatic/kubermatic/pull/16889), [#8440](https://github.com/kubermatic/dashboard/pull/8440))
+- Add `joinClusterTimeout` to the machine-controller settings of Clusters, ClusterTemplates and Seeds. When set, machine-controller replaces Machines that still have no Node after this duration; unset or `0` keeps the current behavior ([#16886](https://github.com/kubermatic/kubermatic/pull/16886))
+- Add `serverArgs` to the Konnectivity proxy settings of Clusters, ClusterTemplates and Seeds to configure arguments for the Konnectivity server only. `serverArgs` of a Cluster replace all server arguments from the Seed, they are not merged with them ([#16937](https://github.com/kubermatic/kubermatic/pull/16937))
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.37.2/v1.36.6/v1.35.10/v1.34.13 and set the default version to v1.36.6 ([#16836](https://github.com/kubermatic/kubermatic/pull/16836))
+
+#### Supported Versions
+
+- v1.37.2
+- v1.36.6
+- v1.35.10
+- v1.34.13
+
+### New Features
+
+- EE only: Customize the resources, replicas and zone affinity of the kubelb-ccm Deployment in Seed, Cluster and ClusterTemplate specs ([#16924](https://github.com/kubermatic/kubermatic/pull/16924))
+- With the `WebTerminalServiceAccount` feature gate, KKP manages ValidatingAdmissionPolicies in the user cluster that allow only KKP to open a session in a web terminal pod to request tokens or create token Secrets for its ServiceAccount, to create pods that use that ServiceAccount, and to change the images of the pod. This also applies to the admin kubeconfig. Enabling or disabling the feature gate restarts the user cluster controller manager of every user cluster ([#16920](https://github.com/kubermatic/kubermatic/pull/16920))
+
+### Bugfixes
+
+- Only project owners and admins can create GroupProjectBindings, and a GroupProjectBinding cannot grant a role higher than the requester's own project role ([#16928](https://github.com/kubermatic/kubermatic/pull/16928))
+- Leftover web terminal `kubeconfig-*` Secrets are now removed from `kube-system` in user clusters ([#16879](https://github.com/kubermatic/kubermatic/pull/16879))
+- User cluster MLA logs alerts are delivered to Alertmanager again ([#16855](https://github.com/kubermatic/kubermatic/pull/16855))
+- Seed Loki accepts log streams with up to 40 labels again, so the logs of user cluster apiserver, audit logging, konnectivity, etcd and controller-manager pods are no longer dropped ([#16806](https://github.com/kubermatic/kubermatic/pull/16806))
+- The seed alert KubeletTooManyPods fires again ([#16827](https://github.com/kubermatic/kubermatic/pull/16827))
+- The seed alerts PromBadConfig, PromRuleFailures, PromRemoteStorageFailures, PromAlertmanagerBadConfig and PromAlertsFailed fire again, so seeds with a failing Alertmanager receiver now get a PromAlertsFailed alert ([#16825](https://github.com/kubermatic/kubermatic/pull/16825))
+- The seed alert HelmReleaseNotDeployed fires again for Helm releases that are not deployed ([#16817](https://github.com/kubermatic/kubermatic/pull/16817))
+
+### Updates
+
+- Update machine-controller to [v1.66.7](https://github.com/kubermatic/machine-controller/releases/tag/v1.66.7) and operating-system-manager to [v1.11.9](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.11.9) ([#16933](https://github.com/kubermatic/kubermatic/pull/16933))
+- Update Go version to 1.26.11 ([#16918](https://github.com/kubermatic/kubermatic/pull/16918))
+- Update the kubectl binaries in the KKP image to v1.37.2, v1.36.6, v1.35.10 and v1.34.13, and helm to v3.22.1. Update kubectl 1.33 to v1.33.13. Addons of Kubernetes 1.33 clusters are now applied with kubectl 1.34 ([#16906](https://github.com/kubermatic/kubermatic/pull/16906))
+- Update web-terminal image to 0.13.5 ([#16888](https://github.com/kubermatic/kubermatic/pull/16888), [#16910](https://github.com/kubermatic/kubermatic/pull/16910), [#16930](https://github.com/kubermatic/kubermatic/pull/16930))
+- Update cert-manager to v1.21.3 ([#16849](https://github.com/kubermatic/kubermatic/pull/16849))
+- Update Envoy Gateway to v1.8.6 with Envoy proxy v1.38.8, and the nodeport-proxy and MLA alertmanager-proxy Envoy to v1.37.8 ([#16794](https://github.com/kubermatic/kubermatic/pull/16794), [#16800](https://github.com/kubermatic/kubermatic/pull/16800))
+- Update the MLA Grafana image to 13.0.12 ([#16844](https://github.com/kubermatic/kubermatic/pull/16844))
+- Update the kube-ovn chart used by `kubermatic-installer local` to v1.15.33 ([#16854](https://github.com/kubermatic/kubermatic/pull/16854))
+- Update the utility container image to 2.11.0 across all charts and controllers ([#16839](https://github.com/kubermatic/kubermatic/pull/16839))
+
+### Deprecations
+
+- The single OIDC client setup (`spec.auth.clientID` equal to `spec.auth.issuerClientID`) is deprecated and will not be supported in an upcoming KKP release; use a separate login client ([#16940](https://github.com/kubermatic/kubermatic/pull/16940))
+
+### Dashboard and API
+
+#### Cloud Providers
+
+##### vSphere
+
+- Fix the vSphere cluster wizard: the "Next" button is no longer disabled when more than one cluster tag is entered ([#8405](https://github.com/kubermatic/dashboard/pull/8405))
+
+#### New Features
+
+- Add the `WebTerminalServiceAccount` feature gate. If enabled, the web terminal runs as a per-session ServiceAccount that impersonates the logged-in user, and the user's OIDC tokens and the client secret are no longer stored in the user cluster. The mode requires the `OpenIDAuthPlugin` feature gate and is not available for clusters with a custom authentication configuration. In the terminal, `kubectl --as` only works for the user's own identity, and the audit log of the user cluster shows the ServiceAccount of the session with the user as impersonated user. The websocket endpoints of the dashboard API now refuse tokens of users who have logged out ([#8502](https://github.com/kubermatic/dashboard/pull/8502))
+- Add an "OIDC group" option to user cluster group bindings that adds the cluster's OIDC groups prefix (e.g. `oidc:`) to the group name, so bindings for OIDC groups take effect ([#8515](https://github.com/kubermatic/dashboard/pull/8515))
+
+#### Bugfixes
+
+- Only admins and project owners can create group bindings of a project through the API ([#8520](https://github.com/kubermatic/dashboard/pull/8520))
+- Get kubeconfig, share-cluster links, the web terminal and the Kubernetes Dashboard now work on hostnames listed in `additionalIssuerRedirectURLs`, once `/api/v1/kubeconfig`, `/api/v2/kubeconfig/secret` and `/api/v2/dashboard/login` are registered for each of them on the issuer OIDC client (`spec.auth.issuerClientID`); the new `mla_links_domain` key in `spec.ui.config` sets the domain of the MLA Grafana and Alertmanager links ([#8503](https://github.com/kubermatic/dashboard/pull/8503))
+- The web terminal websocket now answers refused requests with an HTTP error status. `GET /api/v2/kubeconfig/secret` is rejected when the web terminal is disabled, and when the OIDC login does not belong to the user the terminal was opened for ([#8466](https://github.com/kubermatic/dashboard/pull/8466))
+- The web terminal cleanup Job now also deletes the kubeconfig Secret when the session expires, and the Secret gets the `app=webterminal` label like the other web terminal resources ([#8465](https://github.com/kubermatic/dashboard/pull/8465))
+- Fix project and cluster pages staying empty when loading the project list takes longer than the refresh interval ([#8516](https://github.com/kubermatic/dashboard/pull/8516))
+- The Owners column on the projects overview no longer cuts owner names in the middle of a word, and the count of hidden owners now matches the owners listed in its tooltip ([#8499](https://github.com/kubermatic/dashboard/pull/8499))
+- Fix applications selected during cluster creation or from a cluster template ignoring the ApplicationInstallation namespace configured in `KubermaticConfiguration.spec.userCluster.applications.namespace` ([#8416](https://github.com/kubermatic/dashboard/pull/8416))
+- Align the icon box and the version field of the Control Plane and CNI Plugin boxes on the cluster details page ([#8458](https://github.com/kubermatic/dashboard/pull/8458))
+
+#### Updates
+
+- Update Go version to 1.26.11 ([#8505](https://github.com/kubermatic/dashboard/pull/8505))
+- Update web dependencies to fix known security vulnerabilities ([#8471](https://github.com/kubermatic/dashboard/pull/8471))
+- Published dashboard and web-terminal container images now have SPDX SBOMs attached as OCI referrers, retrievable with `oras discover` / `oras pull` ([#8524](https://github.com/kubermatic/dashboard/pull/8524))
 
 ## v2.31.3
 
