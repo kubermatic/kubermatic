@@ -50,13 +50,13 @@ fi
 
 # Install gchl if not installed
 if ! [ -x "$(command -v gchl)" ]; then
-  echo "Installing k8c.io/gchl…"
+  echo "Installing k8c.io/gchl..."
   go install k8c.io/gchl@latest
 fi
 
 FILENAME="$VERSION-$(date +%s).md"
 
-echo "Generating changelog in $FILENAME…"
+echo "Generating changelog in ${FILENAME}..."
 gchl \
   --organization kubermatic \
   --repository kubermatic \
