@@ -42,7 +42,7 @@ groups:
       - record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
         expr: |
           sum by (namespace, label_app) (
-              sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="memory"}) by (namespace, pod)
+              sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="memory"} and on(namespace, pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Pending|Running"} == 1)) by (namespace, pod)
             * on (namespace, pod) group_left (label_app)
               sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
@@ -50,7 +50,7 @@ groups:
       - record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
         expr: |
           sum by (namespace, label_app) (
-              sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="cpu"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
+              sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="cpu"} and on(namespace, pod) kube_pod_status_scheduled{condition="true"} and on(namespace, pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Pending|Running"} == 1)) by (namespace, pod)
             * on (namespace, pod) group_left (label_app)
               sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
