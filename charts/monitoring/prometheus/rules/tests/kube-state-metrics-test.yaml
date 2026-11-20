@@ -1,0 +1,100 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+rule_files:
+  - ../general-kube-state-metrics.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # Completed pods (phase Succeeded, e.g. finished CronJob pods) keep their
+  # requests in kube-state-metrics, but do not consume node capacity. They must
+  # not be counted by the requests recording rules, otherwise
+  # KubeCPUOvercommit/KubeMemOvercommit fire although the cluster is not
+  # overcommitted.
+  - interval: 1m
+    input_series:
+      - series: 'kube_pod_labels{job="kube-state-metrics",namespace="ns1",pod="running-0",label_app="app-a"}'
+        values: '1x10'
+      - series: 'kube_pod_labels{job="kube-state-metrics",namespace="ns1",pod="starting-0",label_app="app-a"}'
+        values: '1x10'
+      - series: 'kube_pod_labels{job="kube-state-metrics",namespace="ns1",pod="done-0",label_app="app-a"}'
+        values: '1x10'
+      # same pod name in another namespace: the join must not cross namespaces
+      - series: 'kube_pod_labels{job="kube-state-metrics",namespace="ns2",pod="running-0",label_app="app-b"}'
+        values: '1x10'
+
+      # kube-state-metrics exports this for every pod
+      - series: 'kube_pod_status_scheduled{job="kube-state-metrics",namespace="ns1",pod="running-0",condition="true"}'
+        values: '1x10'
+      - series: 'kube_pod_status_scheduled{job="kube-state-metrics",namespace="ns1",pod="starting-0",condition="true"}'
+        values: '1x10'
+      - series: 'kube_pod_status_scheduled{job="kube-state-metrics",namespace="ns1",pod="done-0",condition="true"}'
+        values: '1x10'
+      - series: 'kube_pod_status_scheduled{job="kube-state-metrics",namespace="ns2",pod="running-0",condition="true"}'
+        values: '1x10'
+
+      - series: 'kube_pod_status_phase{job="kube-state-metrics",namespace="ns1",pod="running-0",phase="Running"}'
+        values: '1x10'
+      - series: 'kube_pod_status_phase{job="kube-state-metrics",namespace="ns1",pod="starting-0",phase="Pending"}'
+        values: '1x10'
+      - series: 'kube_pod_status_phase{job="kube-state-metrics",namespace="ns1",pod="done-0",phase="Succeeded"}'
+        values: '1x10'
+      # kube-state-metrics also exports the phases a pod is not in, with value 0
+      - series: 'kube_pod_status_phase{job="kube-state-metrics",namespace="ns1",pod="done-0",phase="Running"}'
+        values: '0x10'
+      - series: 'kube_pod_status_phase{job="kube-state-metrics",namespace="ns2",pod="running-0",phase="Running"}'
+        values: '1x10'
+
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="running-0",container="c",resource="cpu"}'
+        values: '0.5x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="starting-0",container="c",resource="cpu"}'
+        values: '0.25x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="done-0",container="c",resource="cpu"}'
+        values: '1.5x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns2",pod="running-0",container="c",resource="cpu"}'
+        values: '2x10'
+
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="running-0",container="c",resource="memory"}'
+        values: '100x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="starting-0",container="c",resource="memory"}'
+        values: '50x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns1",pod="done-0",container="c",resource="memory"}'
+        values: '1000x10'
+      - series: 'kube_pod_container_resource_requests{job="kube-state-metrics",namespace="ns2",pod="running-0",container="c",resource="memory"}'
+        values: '400x10'
+
+    promql_expr_test:
+      # running (0.5) + pending (0.25); the succeeded pod (1.5) is not counted
+      - expr: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum{namespace="ns1"}
+        eval_time: 5m
+        exp_samples:
+          - labels: 'namespace_name:kube_pod_container_resource_requests_cpu_cores:sum{namespace="ns1",label_app="app-a"}'
+            value: 0.75
+      - expr: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum{namespace="ns2"}
+        eval_time: 5m
+        exp_samples:
+          - labels: 'namespace_name:kube_pod_container_resource_requests_cpu_cores:sum{namespace="ns2",label_app="app-b"}'
+            value: 2
+      # running (100) + pending (50); the succeeded pod (1000) is not counted
+      - expr: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum{namespace="ns1"}
+        eval_time: 5m
+        exp_samples:
+          - labels: 'namespace_name:kube_pod_container_resource_requests_memory_bytes:sum{namespace="ns1",label_app="app-a"}'
+            value: 150
+      - expr: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum{namespace="ns2"}
+        eval_time: 5m
+        exp_samples:
+          - labels: 'namespace_name:kube_pod_container_resource_requests_memory_bytes:sum{namespace="ns2",label_app="app-b"}'
+            value: 400
