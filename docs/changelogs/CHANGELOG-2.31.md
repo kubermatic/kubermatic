@@ -10,15 +10,17 @@
 
 **GitHub release: [v2.31.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.31.4)**
 
+Before upgrading, read the [upgrade guide](https://docs.kubermatic.com/kubermatic/v2.31/installation/upgrading/upgrade-from-2.30-to-2.31/). We recommend a [separate OIDC client for the dashboard login](https://docs.kubermatic.com/kubermatic/v2.31/installation/upgrading/upgrade-from-2.30-to-2.31/#dashboard-login-uses-the-oauth-authorization-code-flow) and the [web terminal ServiceAccount mode](https://docs.kubermatic.com/kubermatic/v2.31/tutorials-howtos/project-and-cluster-management/web-terminal/#serviceaccount-mode).
+
 ### Breaking Changes
 
 This release contains changes that require additional attention, please read the following items carefully.
 
-- The dashboard login now uses its own OIDC client (`spec.auth.clientID`, default `kubermatic`), separate from the client that User Clusters accept (`spec.auth.issuerClientID`, default `kubermaticIssuer`). Before upgrading, add a `kubermatic` client to Dex (or to your identity provider) with its own secret and the redirect URL `https://<KKP domain>/api/v2/auth/callback`, and set the same secret in `spec.auth.clientSecret`. To keep a single client instead, set `spec.auth.clientID` to the value of `spec.auth.issuerClientID` and keep `/api/v2/auth/callback` on that client; the KKP API then logs a warning at startup and still accepts tokens issued for User Clusters. See the upgrade guide for details ([#16895](https://github.com/kubermatic/kubermatic/pull/16895), [#8493](https://github.com/kubermatic/dashboard/pull/8493))
+- The dashboard login now uses its own OIDC client (`spec.auth.clientID`, default `kubermatic`), separate from the client that User Clusters accept (`spec.auth.issuerClientID`, default `kubermaticIssuer`). Before upgrading, add a `kubermatic` client to Dex (or to your identity provider) with its own secret and the redirect URL `https://<KKP domain>/api/v2/auth/callback`, and set the same secret in `spec.auth.clientSecret`. To keep a single client instead, set `spec.auth.clientID` to the value of `spec.auth.issuerClientID` and keep `/api/v2/auth/callback` on that client; the KKP API then logs a warning at startup and still accepts tokens issued for User Clusters. See the upgrade guide for details, [from KKP 2.31.0 to 2.31.3](https://docs.kubermatic.com/kubermatic/v2.31/installation/upgrading/upgrade-from-2.30-to-2.31/#upgrading-from-kkp-2310-2311-2312-or-2313) or [from KKP 2.30](https://docs.kubermatic.com/kubermatic/v2.31/installation/upgrading/upgrade-from-2.30-to-2.31/#dashboard-login-uses-the-oauth-authorization-code-flow) ([#16895](https://github.com/kubermatic/kubermatic/pull/16895), [#8493](https://github.com/kubermatic/dashboard/pull/8493))
 
 ### API Changes
 
-- Add `spec.auth.additionalIssuerRedirectURLs` to KubermaticConfiguration to allow dashboard login through additional hostnames (e.g. reverse proxies) ([#16889](https://github.com/kubermatic/kubermatic/pull/16889), [#8440](https://github.com/kubermatic/dashboard/pull/8440))
+- Add `spec.auth.additionalIssuerRedirectURLs` to KubermaticConfiguration to allow dashboard login through additional hostnames (e.g. reverse proxies), see [Additional Hostnames](https://docs.kubermatic.com/kubermatic/v2.31/tutorials-howtos/oidc-provider-configuration/#additional-hostnames) ([#16889](https://github.com/kubermatic/kubermatic/pull/16889), [#8440](https://github.com/kubermatic/dashboard/pull/8440))
 - Add `joinClusterTimeout` to the machine-controller settings of Clusters, ClusterTemplates and Seeds. When set, machine-controller replaces Machines that still have no Node after this duration; unset or `0` keeps the current behavior ([#16886](https://github.com/kubermatic/kubermatic/pull/16886))
 - Add `serverArgs` to the Konnectivity proxy settings of Clusters, ClusterTemplates and Seeds to configure arguments for the Konnectivity server only. `serverArgs` of a Cluster replace all server arguments from the Seed, they are not merged with them ([#16937](https://github.com/kubermatic/kubermatic/pull/16937))
 
@@ -36,7 +38,7 @@ This release contains changes that require additional attention, please read the
 ### New Features
 
 - EE only: Customize the resources, replicas and zone affinity of the kubelb-ccm Deployment in Seed, Cluster and ClusterTemplate specs ([#16924](https://github.com/kubermatic/kubermatic/pull/16924))
-- With the `WebTerminalServiceAccount` feature gate, KKP manages ValidatingAdmissionPolicies in the user cluster that allow only KKP to open a session in a web terminal pod to request tokens or create token Secrets for its ServiceAccount, to create pods that use that ServiceAccount, and to change the images of the pod. This also applies to the admin kubeconfig. Enabling or disabling the feature gate restarts the user cluster controller manager of every user cluster ([#16920](https://github.com/kubermatic/kubermatic/pull/16920))
+- With the `WebTerminalServiceAccount` feature gate, KKP manages ValidatingAdmissionPolicies in the user cluster that allow only KKP to open a session in a web terminal pod to request tokens or create token Secrets for its ServiceAccount, to create pods that use that ServiceAccount, and to change the images of the pod. This also applies to the admin kubeconfig. Enabling or disabling the feature gate restarts the user cluster controller manager of every user cluster, see [Admission Policies](https://docs.kubermatic.com/kubermatic/v2.31/tutorials-howtos/project-and-cluster-management/web-terminal/#admission-policies) ([#16920](https://github.com/kubermatic/kubermatic/pull/16920))
 
 ### Bugfixes
 
@@ -62,7 +64,7 @@ This release contains changes that require additional attention, please read the
 
 ### Deprecations
 
-- The single OIDC client setup (`spec.auth.clientID` equal to `spec.auth.issuerClientID`) is deprecated and will not be supported in an upcoming KKP release; use a separate login client ([#16940](https://github.com/kubermatic/kubermatic/pull/16940))
+- The single OIDC client setup (`spec.auth.clientID` equal to `spec.auth.issuerClientID`) is deprecated and will not be supported in an upcoming KKP release; we recommend a separate login client, see the [upgrade guide](https://docs.kubermatic.com/kubermatic/v2.31/installation/upgrading/upgrade-from-2.30-to-2.31/#upgrading-from-kkp-2310-2311-2312-or-2313) ([#16940](https://github.com/kubermatic/kubermatic/pull/16940))
 
 ### Dashboard and API
 
@@ -74,7 +76,7 @@ This release contains changes that require additional attention, please read the
 
 #### New Features
 
-- Add the `WebTerminalServiceAccount` feature gate. If enabled, the web terminal runs as a per-session ServiceAccount that impersonates the logged-in user, and the user's OIDC tokens and the client secret are no longer stored in the user cluster. The mode requires the `OpenIDAuthPlugin` feature gate and is not available for clusters with a custom authentication configuration. In the terminal, `kubectl --as` only works for the user's own identity, and the audit log of the user cluster shows the ServiceAccount of the session with the user as impersonated user. The websocket endpoints of the dashboard API now refuse tokens of users who have logged out ([#8502](https://github.com/kubermatic/dashboard/pull/8502))
+- Add the `WebTerminalServiceAccount` feature gate. If enabled, the web terminal runs as a per-session ServiceAccount that impersonates the logged-in user, and the user's OIDC tokens and the client secret are no longer stored in the user cluster. The mode requires the `OpenIDAuthPlugin` feature gate and is not available for clusters with a custom authentication configuration. In the terminal, `kubectl --as` only works for the user's own identity, and the audit log of the user cluster shows the ServiceAccount of the session with the user as impersonated user. The websocket endpoints of the dashboard API now refuse tokens of users who have logged out. We recommend enabling the feature gate, see [ServiceAccount Mode](https://docs.kubermatic.com/kubermatic/v2.31/tutorials-howtos/project-and-cluster-management/web-terminal/#serviceaccount-mode) ([#8502](https://github.com/kubermatic/dashboard/pull/8502))
 - Add an "OIDC group" option to user cluster group bindings that adds the cluster's OIDC groups prefix (e.g. `oidc:`) to the group name, so bindings for OIDC groups take effect ([#8515](https://github.com/kubermatic/dashboard/pull/8515))
 
 #### Bugfixes
