@@ -767,6 +767,11 @@ type ClusterStatus struct {
 	// ResourceUsage shows the current usage of resources for the cluster.
 	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
 
+	// CloudProvider holds state that the cloud provider reconciliation needs to remember between
+	// reconciliations, for example which cloud resources were created by KKP for this cluster.
+	// +optional
+	CloudProvider *CloudProviderStatus `json:"cloudProvider,omitempty"`
+
 	// AcceleratorAccounting contains this cluster's accelerator footprint usage and
 	// readiness attestation. It is set only for relevant KubeVirt clusters in projects
 	// with accelerator accounting activated.
@@ -856,6 +861,20 @@ const (
 	UnsupportedChangeClusterError    ClusterStatusError = "UnsupportedChange"
 	ReconcileClusterError            ClusterStatusError = "ReconcileError"
 )
+
+// CloudProviderStatus holds provider-specific status information of a cluster.
+type CloudProviderStatus struct {
+	// VSphere holds the status information of vSphere clusters.
+	VSphere *VSphereCloudProviderStatus `json:"vsphere,omitempty"`
+}
+
+// VSphereCloudProviderStatus holds the status information of vSphere clusters.
+type VSphereCloudProviderStatus struct {
+	// ManagedTags maps a vSphere tag category ID to the IDs of the tags in that category that
+	// are managed (created or adopted) by KKP for this cluster. KKP only ever deletes tags that
+	// are listed here, so tags of other clusters or tags managed by other means are never touched.
+	ManagedTags map[string][]string `json:"managedTags,omitempty"`
+}
 
 // ClusterEncryptionStatus holds status information about the encryption-at-rest feature on the user cluster.
 type ClusterEncryptionStatus struct {
