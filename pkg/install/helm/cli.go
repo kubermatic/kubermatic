@@ -297,6 +297,25 @@ func (c *cli) translateFlags(flags []string) []string {
 	return result
 }
 
+// GetReleaseMaintainerEmails reads the maintainers from the chart that is stored in the release.
+// Neither `helm list`, `helm status` nor `helm get metadata` expose them, only the template
+// of `helm get all` has access to the full release.
+func (c *cli) GetReleaseMaintainerEmails(namespace string, releaseName string) ([]string, error) {
+	output, err := c.run(namespace, "get", "all", releaseName, "--template", `{{ range .Release.Chart.Metadata.Maintainers }}{{ .Email }}{{ "\n" }}{{ end }}`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get release maintainers: %w", err)
+	}
+
+	emails := []string{}
+	for _, line := range strings.Split(string(output), "\n") {
+		if email := strings.TrimSpace(line); email != "" {
+			emails = append(emails, email)
+		}
+	}
+
+	return emails, nil
+}
+
 func (c *cli) GetRelease(namespace string, name string) (*Release, error) {
 	releases, err := c.ListReleases(namespace)
 	if err != nil {
