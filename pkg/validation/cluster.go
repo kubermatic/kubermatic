@@ -1432,6 +1432,8 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 // past the threshold, force-deleting nodes while ignoring PodDisruptionBudgets.
 // machine-controller only rejects negatives on the per-Machine annotation, not on the
 // -skip-eviction-after flag this field renders into, so the guard has to live here.
+// workerCount must be at least 1, as machine-controller would not reconcile any
+// Machines without a worker.
 func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 
@@ -1441,6 +1443,10 @@ func validateMachineControllerSettings(spec *kubermaticv1.ClusterSpec, fldPath *
 
 	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.JoinClusterTimeout != nil && mc.JoinClusterTimeout.Duration < 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "joinClusterTimeout"), mc.JoinClusterTimeout.Duration, "must be zero (to disable the join timeout) or a positive duration"))
+	}
+
+	if mc := spec.ComponentsOverride.MachineController; mc != nil && mc.WorkerCount != nil && *mc.WorkerCount < 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("componentsOverride", "machineController", "workerCount"), *mc.WorkerCount, "must be at least 1"))
 	}
 
 	return allErrs

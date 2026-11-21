@@ -33,6 +33,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -883,6 +884,19 @@ func TestValidateDefaultComponentSettings(t *testing.T) {
 				JoinClusterTimeout: &metav1.Duration{Duration: -time.Minute},
 			},
 			wantError: "joinClusterTimeout",
+		},
+		{
+			name: "accepts positive workerCount",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				WorkerCount: ptr.To[int32](4),
+			},
+		},
+		{
+			name: "rejects zero workerCount",
+			machineController: &kubermaticv1.MachineControllerSettings{
+				WorkerCount: ptr.To[int32](0),
+			},
+			wantError: "workerCount",
 		},
 	}
 
