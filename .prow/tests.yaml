@@ -119,8 +119,26 @@ presubmits:
               memory: 3Gi
               cpu: 2
 
+  - name: pre-kubermatic-verify-mla-chart-configs
+    run_if_changed: "(charts/(mla|monitoring|logging)/|hack/ci/verify-mla-chart-configs.sh)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.27-node-24-kind-0.32-4
+          command:
+            - "./hack/ci/verify-mla-chart-configs.sh"
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 2
+            limits:
+              memory: 2Gi
+
   - name: pre-kubermatic-test-helm-charts
-    run_if_changed: "charts/"
+    run_if_changed: "(charts/|hack/ci/test-helm-charts.sh|hack/ci/check-chart-immutable-fields.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:

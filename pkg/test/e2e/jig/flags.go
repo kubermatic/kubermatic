@@ -49,11 +49,11 @@ var (
 )
 
 func AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&buildID, "build-id", buildID, "unique identifier for this test (defaults to $BUILD_ID)")
-	flag.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
-	flag.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
-	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
-	flag.StringVar(&sshPubKey, "ssh-pub-key", sshPubKey, "Optional SSH public key to assign to the Machine objects (requires user-ssh-key-agent to be disabled)")
+	fs.StringVar(&buildID, "build-id", buildID, "unique identifier for this test (defaults to $BUILD_ID)")
+	fs.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
+	fs.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
+	fs.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
+	fs.StringVar(&sshPubKey, "ssh-pub-key", sshPubKey, "Optional SSH public key to assign to the Machine objects (requires user-ssh-key-agent to be disabled)")
 }
 
 func SSHPublicKey() string {

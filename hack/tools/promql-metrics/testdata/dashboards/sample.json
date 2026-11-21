@@ -1,0 +1,66 @@
+{
+  "panels": [
+    {
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "targets": [
+        {"expr": "sum(rate(node_cpu_seconds_total{instance=~\"$node\", mode!=\"idle\"}[$__rate_interval]))"},
+        {"expr": "rate(node_network_receive_bytes_total{device=$device}[$interval]) > $threshold"}
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {"expr": "kube_pod_info{namespace=\"[[namespace]]\"}"},
+            {"expr": "{__name__=\"process_cpu_seconds_total\"}"}
+          ]
+        },
+        {
+          "type": "logs",
+          "datasource": {"uid": "$logs"},
+          "targets": [
+            {"expr": "{namespace=\"$namespace\"} |= \"error\""}
+          ]
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "datasource": "Loki",
+      "targets": [
+        {"expr": "count_over_time({app=\"x\"}[5m])"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "datasource": "$datasource",
+      "targets": [
+        {"expr": "sum(rate(broken_metric_total[5m])"},
+        {"expr": "{__name__=~\"apiserver_.+_total\"}"}
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "panels": [
+        {"targets": [{"expr": "legacy_row_metric"}]}
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {"type": "datasource", "name": "datasource", "query": "prometheus"},
+      {"type": "datasource", "name": "logs", "query": "loki"},
+      {"type": "query", "name": "node", "datasource": {"type": "loki", "uid": "$datasource"}, "query": {"query": "label_values(node_uname_info{job=\"node-exporter\"}, nodename)"}},
+      {"type": "query", "name": "namespace", "datasource": "$datasource", "query": "label_values(namespace)"},
+      {"type": "query", "name": "pod", "datasource": "$datasource", "query": "query_result(topk(5, container_memory_working_set_bytes))"},
+      {"type": "query", "name": "app", "datasource": {"uid": "$logs"}, "query": "label_values({job=\"x\"}, app)"},
+      {"type": "custom", "name": "threshold", "query": "1,2,3"}
+    ]
+  }
+}
