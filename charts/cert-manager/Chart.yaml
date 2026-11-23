@@ -25,6 +25,9 @@ keywords:
 home: https://github.com/cert-manager/cert-manager
 sources:
   - https://github.com/cert-manager/cert-manager/tree/master/deploy/charts/cert-manager
+# The maintainer e-mail is significant for backward compatibility: kubermatic-installer uses it to
+# recognize a cert-manager release as installed from this chart (bundledChartMaintainerEmail in
+# pkg/install/stack/kubermatic-seed/certmanager.go). Do not change it.
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
