@@ -18,7 +18,10 @@ package cloudcontroller
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -107,6 +110,15 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 				},
 			}
 
+			// the CCM refuses to create a load balancer without a location or network zone,
+			// so default it to the datacenter location; a service annotation still wins.
+			if location := hetznerLoadBalancerLocation(data.DC().Spec.Hetzner); location != "" {
+				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+					Name:  "HCLOUD_LOAD_BALANCERS_LOCATION",
+					Value: location,
+				})
+			}
+
 			if data.Cluster().IsDualStack() {
 				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 					Name:  "HCLOUD_INSTANCES_ADDRESS_FAMILY",
@@ -126,4 +138,22 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 			return dep, nil
 		}
 	}
+}
+
+// hetznerLoadBalancerLocation returns the Hetzner location code of the datacenter.
+// Without an explicit location, it is derived from the datacenter name ("fsn1-dc8"
+// becomes "fsn1"), the same way machine-controller migrates the deprecated field.
+func hetznerLoadBalancerLocation(dc *kubermaticv1.DatacenterSpecHetzner) string {
+	if dc == nil {
+		return ""
+	}
+	if dc.Location != "" {
+		return dc.Location
+	}
+	// numeric datacenter IDs cannot be mapped to a location.
+	if _, err := strconv.Atoi(dc.Datacenter); err == nil {
+		return ""
+	}
+	location, _, _ := strings.Cut(dc.Datacenter, "-")
+	return location
 }
