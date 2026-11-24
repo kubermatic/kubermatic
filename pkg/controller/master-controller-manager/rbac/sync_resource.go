@@ -372,7 +372,7 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 				}
 				continue
 			}
-			return nil
+			return err
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
