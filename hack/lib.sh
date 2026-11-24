@@ -118,6 +118,56 @@ is_containerized() {
   [ -n "${KUBERNETES_SERVICE_HOST:-}" ] || [ -n "${CONTAINERIZED:-}" ]
 }
 
+# Mints an OIDC identity token for Sigstore keyless signing using a Google service account. The JSON key is expected at $GOOGLE_APPLICATION_CREDENTIALS
+# or is otherwise fetched from Vault (requires the preset-vault label on the job). Fails if no token can be obtained, as signing is a mandatory part of
+# the release process. Tokens expire after 1 hour, so calling this again after 45 minutes re-mints; call it before every signing operation in long-running jobs.
+ensure_sigstore_token() {
+  local now
+  now="$(date +%s)"
+
+  if [ -n "${SIGSTORE_ID_TOKEN:-}" ]; then
+    # a token we did not mint ourselves is assumed to be managed externally
+    if [ "${SIGSTORE_TOKEN_MINTED_AT:-0}" -eq 0 ] || [ $((now - SIGSTORE_TOKEN_MINTED_AT)) -lt 2700 ]; then
+      return 0
+    fi
+  fi
+
+  if [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] || [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    echodate "Fetching Sigstore signing service account from Vault..."
+    retry 5 vault_ci_login
+
+    # gcloud requires the key as a file, so it cannot be kept in an env var only
+    GOOGLE_APPLICATION_CREDENTIALS="$(mktemp)"
+    # the key is stored base64-encoded in Vault
+    vault kv get -field=serviceAccount dev/kubermatic-cosign-credentials | base64 -d > "$GOOGLE_APPLICATION_CREDENTIALS"
+    export GOOGLE_APPLICATION_CREDENTIALS
+  fi
+
+  if [ ! -s "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    echodate "Error: no Google service account key available for Sigstore signing."
+    return 1
+  fi
+
+  if [ -z "${SIGSTORE_SA_ACTIVATED:-}" ]; then
+    echodate "Activating Google service account for Sigstore signing..."
+    gcloud auth activate-service-account --key-file "$GOOGLE_APPLICATION_CREDENTIALS"
+    SIGSTORE_SA_ACTIVATED=true
+  fi
+
+  echodate "Minting Sigstore identity token..."
+  local token
+  # the audience must be exactly "sigstore", Fulcio rejects anything else
+  token="$(gcloud auth print-identity-token --audiences=sigstore)"
+
+  if [ -z "$token" ]; then
+    echodate "Error: could not obtain a Sigstore identity token via gcloud."
+    return 1
+  fi
+
+  export SIGSTORE_ID_TOKEN="$token"
+  SIGSTORE_TOKEN_MINTED_AT="$now"
+}
+
 containerize() {
   local cmd="$1"
   local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.10.0}"
