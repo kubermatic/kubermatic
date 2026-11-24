@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -36,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -1629,6 +1631,51 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestSyncProjectResourcesNamespacedRoleGetError(t *testing.T) {
+	getErr := errors.New("transient get error")
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sa-token-abcd",
+			Namespace: "kubermatic",
+			UID:       types.UID("abcdID"),
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: "thunderball",
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().
+		WithObjects(secret).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(ctx context.Context, c ctrlruntimeclient.WithWatch, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.GetOption) error {
+				if _, ok := obj.(*rbacv1.Role); ok {
+					return getErr
+				}
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}).
+		Build()
+
+	target := resourcesController{
+		client:     client,
+		restMapper: getFakeRestMapper(t),
+		objectType: &corev1.Secret{},
+		log:        zap.NewNop().Sugar(),
+	}
+
+	_, err := target.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
+		Namespace: secret.Namespace,
+		Name:      secret.Name,
+	}})
+	if !errors.Is(err, getErr) {
+		t.Fatalf("expected reconcile to return the Role get error, got %v", err)
 	}
 }
 
