@@ -97,14 +97,17 @@ func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.
 
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
-// * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
-// * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
-// * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
-// * rule group controller - manager rule groups that will be used to generate alerts.
-// * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
-// * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
-// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
+//   - org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
+//   - user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
+//   - datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
+//   - alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
+//   - rule group controller - manage rule groups that will be used to generate alerts (syncs RuleGroup CRs to Cortex/Loki HTTP API).
+//   - rule group sync controller - fan out operator-managed RuleGroup templates from the MLA namespace into every enabled cluster namespace.
+//   - default rule group controller - seed a predefined RuleGroup into a cluster namespace the first time user-cluster monitoring is enabled;
+//     the object is created once and then left entirely under user control (never overwritten or deleted by this controller).
+//   - dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
+//   - ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
+//   - cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -137,6 +140,7 @@ func Add(
 	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
 	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
 	ruleGroupSyncController := newRuleGroupSyncController(mgr.GetClient(), log, mlaNamespace)
+	defaultRuleGroupController := newDefaultRuleGroupController(mgr.GetClient(), log)
 	if mlaEnabled {
 		// ratelimit cortex controller update 1 configmap, so we better to have only one worker
 		if err := newRatelimitCortexReconciler(mgr, log, 1, workerName, versions, ratelimitCortexController); err != nil {
@@ -163,6 +167,9 @@ func Add(
 		if err := newRuleGroupSyncReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupSyncController); err != nil {
 			return fmt.Errorf("failed to create rule group controller %w", err)
 		}
+		if err := newDefaultRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, defaultRuleGroupController); err != nil {
+			return fmt.Errorf("failed to create default rule group controller: %w", err)
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
@@ -175,6 +182,7 @@ func Add(
 			ruleGroupController,
 			ratelimitCortexController,
 			ruleGroupSyncController,
+			defaultRuleGroupController,
 		)
 		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
 			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
