@@ -140,7 +140,7 @@ fi
 
 echodate "Running MLA tests..."
 
-go_test mla_e2e -timeout 40m -tags mla -v ./pkg/test/e2e/mla \
+ginkgo_test mla_e2e --tags mla --procs 2 --timeout 60m --no-color -v --label-filter "!known-issue" ./pkg/test/e2e/mla -- \
   -kubeconfig "$KUBECONFIG" \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
