@@ -26,6 +26,7 @@ package kubelbcontroller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -320,6 +321,83 @@ func TestReconcileKubeLBResourcesMaintainsCCMOnTenantError(t *testing.T) {
 			}
 			if !reflect.DeepEqual(unchanged.Object["spec"], tenant.Object["spec"]) {
 				t.Fatal("Tenant spec changed despite the failed defaults update")
+			}
+		})
+	}
+}
+
+func TestTenantApplyWithoutDataPlaneSchema(t *testing.T) {
+	// the API server returns this as an internal error without a reason.
+	unsupported := apierrors.FromObject(&metav1.Status{
+		Status: metav1.StatusFailure, Code: 500,
+		Message: "failed to create typed patch object (/active; kubelb.k8c.io/v1alpha1, Kind=Tenant): .spec.dataPlane: field not declared in schema",
+	})
+	unknownSetting := apierrors.FromObject(&metav1.Status{
+		Status: metav1.StatusFailure, Code: 500,
+		Message: "failed to create typed patch object (/active; kubelb.k8c.io/v1alpha1, Kind=Tenant): .spec.unknownSetting: field not declared in schema",
+	})
+	for _, test := range []struct {
+		name      string
+		defaults  string
+		errs      []error
+		wantSpecs []any
+		wantError error
+	}{
+		{
+			name:      "retry keeps other defaults",
+			defaults:  `{"gatewayAPI":{"class":"eg"}}`,
+			errs:      []error{unsupported},
+			wantSpecs: []any{map[string]any{"dataPlane": "Managed", "gatewayAPI": map[string]any{"class": "eg"}}, map[string]any{"gatewayAPI": map[string]any{"class": "eg"}}},
+		},
+		{
+			name:      "retry drops empty spec",
+			defaults:  `{}`,
+			errs:      []error{unsupported},
+			wantSpecs: []any{map[string]any{"dataPlane": "Managed"}, nil},
+		},
+		{
+			name:      "failed retry is returned",
+			defaults:  `{"unknownSetting":true}`,
+			errs:      []error{unsupported, unknownSetting},
+			wantSpecs: []any{map[string]any{"dataPlane": "Managed", "unknownSetting": true}, map[string]any{"unknownSetting": true}},
+			wantError: unknownSetting,
+		},
+		{
+			name:      "other errors are not retried",
+			defaults:  `{"unknownSetting":true}`,
+			errs:      []error{unknownSetting},
+			wantSpecs: []any{map[string]any{"dataPlane": "Managed", "unknownSetting": true}},
+			wantError: unknownSetting,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var specs []any
+			f := newKubeLBResourceFixture(t, resourceTestTenant(), true, interceptor.Funcs{
+				Apply: func(ctx context.Context, c ctrlruntimeclient.WithWatch, obj runtime.ApplyConfiguration, opts ...ctrlruntimeclient.ApplyOption) error {
+					raw, err := json.Marshal(obj)
+					if err != nil {
+						return err
+					}
+					applied := map[string]any{}
+					if err := json.Unmarshal(raw, &applied); err != nil {
+						return err
+					}
+					specs = append(specs, applied["spec"])
+					if len(specs) <= len(test.errs) {
+						return test.errs[len(specs)-1]
+					}
+					return c.Apply(ctx, obj, opts...)
+				},
+			})
+			_, err := f.r.createOrUpdateKubeLBManagementClusterResources(context.Background(), f.management, f.cluster, &runtime.RawExtension{Raw: []byte(test.defaults)})
+			if test.wantError == nil && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if test.wantError != nil && !errors.Is(err, test.wantError) {
+				t.Fatalf("error = %v, want %v", err, test.wantError)
+			}
+			if !reflect.DeepEqual(specs, test.wantSpecs) {
+				t.Errorf("applied specs = %#v, want %#v", specs, test.wantSpecs)
 			}
 		})
 	}

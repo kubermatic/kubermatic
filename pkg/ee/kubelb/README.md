@@ -21,6 +21,18 @@ adopted, subsequent removal from the project defaults works normally.
 Custom management-cluster credentials must allow `patch` on
 `tenants.kubelb.k8c.io`.
 
+## Data plane classification
+
+KKP always sets `spec.dataPlane: Managed` on the Tenants it creates. A
+`dataPlane` value in `Project.spec.defaultTenantSpec` is ignored. If another
+manager changes the field, KKP takes ownership of it and sets it back to
+`Managed` the next time it reconciles the cluster. The kubelb-manager chart can
+reject such changes; see `kkpintegration.tenantProtection` in KubeLB.
+
+Upgrade the KubeLB CRDs before KKP. With a Tenant CRD older than KubeLB v1.6,
+KKP leaves the field out and the Tenant stays `External` until the CRDs are
+upgraded and the cluster is reconciled again.
+
 ## Images
 
 The xDS writer uses the configured CCM image. Envoy and shutdown-manager image

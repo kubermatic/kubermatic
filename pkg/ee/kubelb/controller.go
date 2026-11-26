@@ -27,6 +27,7 @@ package kubelbcontroller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -72,6 +73,7 @@ import (
 
 const (
 	ControllerName                = "kkp-kubelb-controller"
+	dataPlaneFieldManager         = ControllerName + "-data-plane"
 	CleanupFinalizer              = "kubermatic.k8c.io/cleanup-kubelb-ccm"
 	kubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
 	kubeconfigSecretKey           = "kubelb"
@@ -298,15 +300,72 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 		}
 	}
 
+	if existingUsable {
+		if err := enforceManagedDataPlane(ctx, client, existing); err != nil {
+			return true, err
+		}
+	}
+
 	// Standard Create/Update reconcilers do not detect field ownership conflicts.
 	// Apply only project defaults and KKP labels. Omitted fields owned only
 	// by this apply manager are removed; other managers' fields remain. A
 	// conflicting administrator edit is reported through the reconciliation
 	// condition instead of being overwritten with ForceOwnership.
-	if err := client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(tenant), ctrlruntimeclient.FieldOwner(ControllerName)); err != nil {
+	err = client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(tenant), ctrlruntimeclient.FieldOwner(ControllerName))
+	if isTenantDataPlaneUnsupported(err) {
+		r.log.Infow("KubeLB Tenant CRD has no spec.dataPlane; upgrade the KubeLB CRDs", "tenant", tenant.GetName())
+		removeTenantDataPlane(tenant)
+		err = client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(tenant), ctrlruntimeclient.FieldOwner(ControllerName))
+	}
+	if err != nil {
 		return existingUsable, fmt.Errorf("failed to apply project defaults to tenant %q: %w", tenant.GetName(), err)
 	}
 	return existingUsable, nil
+}
+
+// isTenantDataPlaneUnsupported reports whether an apply failed because the
+// management cluster has a Tenant CRD from before KubeLB v1.6. Server-side
+// apply rejects unknown fields instead of pruning them. The error has no typed
+// reason and KKP cannot read CRDs in the management cluster, so only the
+// message identifies this case.
+func isTenantDataPlaneUnsupported(err error) bool {
+	return err != nil && strings.Contains(err.Error(), ".spec.dataPlane: field not declared in schema")
+}
+
+// removeTenantDataPlane turns the desired Tenant back into the request that
+// KKP sent before spec.dataPlane existed.
+func removeTenantDataPlane(tenant *unstructured.Unstructured) {
+	unstructured.RemoveNestedField(tenant.Object, "spec", "dataPlane")
+	if spec, ok := tenant.Object["spec"].(map[string]any); ok && len(spec) == 0 {
+		delete(tenant.Object, "spec")
+	}
+}
+
+// enforceManagedDataPlane takes spec.dataPlane over from any other field
+// manager when an existing Tenant has a value other than Managed. Unlike the
+// other Tenant fields, KKP always decides the data plane class. The forced
+// apply carries only this field, so administrator settings elsewhere in the
+// Tenant keep the no-force conflict behaviour of the main apply.
+func enforceManagedDataPlane(ctx context.Context, client ctrlruntimeclient.Client, existing *unstructured.Unstructured) error {
+	current, found, err := unstructured.NestedString(existing.Object, "spec", "dataPlane")
+	if err != nil {
+		return fmt.Errorf("failed to read data plane of tenant %q: %w", existing.GetName(), err)
+	}
+	// an unset field never conflicts, and the main apply sets it.
+	if !found || current == kubelbclusterresources.TenantDataPlaneManaged {
+		return nil
+	}
+
+	dataPlane := &unstructured.Unstructured{}
+	dataPlane.SetGroupVersionKind(kubelbclusterresources.KubelbTenantGVK)
+	dataPlane.SetName(existing.GetName())
+	if err := unstructured.SetNestedField(dataPlane.Object, kubelbclusterresources.TenantDataPlaneManaged, "spec", "dataPlane"); err != nil {
+		return err
+	}
+	if err := client.Apply(ctx, ctrlruntimeclient.ApplyConfigurationFromUnstructured(dataPlane), ctrlruntimeclient.FieldOwner(dataPlaneFieldManager), ctrlruntimeclient.ForceOwnership); err != nil {
+		return fmt.Errorf("failed to set data plane of tenant %q to %s: %w", existing.GetName(), kubelbclusterresources.TenantDataPlaneManaged, err)
+	}
+	return nil
 }
 
 func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, dc kubermaticv1.Datacenter) error {
