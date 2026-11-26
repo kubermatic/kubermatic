@@ -30,6 +30,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -41,6 +42,18 @@ type resourcesController struct {
 	restMapper       meta.RESTMapper
 	providerName     string
 	objectType       ctrlruntimeclient.Object
+}
+
+// resourcePredicates returns the watch predicates for a project resource.
+func resourcePredicates(resource projectResource) []predicate.Predicate {
+	predicates := []predicate.Predicate{predicateutil.Factory(resource.predicate)}
+
+	// without this, a namespaced resource is watched cluster-wide
+	if resource.namespace != "" {
+		predicates = append(predicates, predicateutil.ByNamespace(resource.namespace))
+	}
+
+	return predicates
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project.
@@ -69,7 +82,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		// Create a new controller
 		_, err := builder.ControllerManagedBy(mgr).
 			Named("rbac_generator_resources").
-			For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+			For(clonedObject, builder.WithPredicates(resourcePredicates(resource)...)).
 			Build(mc)
 		if err != nil {
 			return nil, err
@@ -103,7 +116,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			// Create a new controller
 			_, err := builder.ControllerManagedBy(seedManager).
 				Named(fmt.Sprintf("rbac_generator_resources_%s", seedName)).
-				For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+				For(clonedObject, builder.WithPredicates(resourcePredicates(resource)...)).
 				Build(c)
 			if err != nil {
 				return nil, err
