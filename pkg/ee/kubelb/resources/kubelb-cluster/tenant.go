@@ -45,19 +45,23 @@ func Tenant(cluster *kubermaticv1.Cluster, defaultTenantSpec *runtime.RawExtensi
 		TenantProjectIDLabelKey:           cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 	})
 
+	var spec map[string]any
 	if defaultTenantSpec != nil {
 		raw, err := json.Marshal(defaultTenantSpec)
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode project default tenant spec: %w", err)
 		}
-		var spec map[string]any
 		if err := json.Unmarshal(raw, &spec); err != nil {
 			return nil, fmt.Errorf("failed to decode project default tenant spec: %w", err)
 		}
-		if len(spec) > 0 {
-			tenant.Object["spec"] = spec
-		}
 	}
+	if spec == nil {
+		spec = map[string]any{}
+	}
+	// a KKP user cluster is always a Managed data plane, so project defaults
+	// cannot change the class.
+	spec["dataPlane"] = TenantDataPlaneManaged
+	tenant.Object["spec"] = spec
 
 	return tenant, nil
 }

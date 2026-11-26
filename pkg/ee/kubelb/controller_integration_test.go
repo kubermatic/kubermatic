@@ -29,8 +29,11 @@ import (
 	encodingjson "encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubelbclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
@@ -89,7 +92,7 @@ func TestProjectWatchPropagatesTenantDefaultsIntegration(t *testing.T) {
 
 	// The target controller has no Cluster watch or periodic requeue. Every
 	// reconciliation must originate from the production Project mapper and predicate.
-	tenantReconciler := &reconciler{Client: mgr.GetClient()}
+	tenantReconciler := &reconciler{Client: mgr.GetClient(), log: zap.NewNop().Sugar()}
 	_, err = builder.ControllerManagedBy(mgr).
 		Named("tenant-project-watch-test").
 		Watches(&kubermaticv1.Project{}, tenantReconciler.enqueueClustersForProject(), builder.WithPredicates(projectDefaultsChangedPredicate())).
@@ -218,6 +221,31 @@ func TestTenantProjectDefaultsIntegration(t *testing.T) {
 	t.Run("invalid defaults leave existing Tenant unchanged", fixture.invalidDefaults)
 	t.Run("Tenant pending deletion is not updated", fixture.deletingTenant)
 	t.Run("legacy API defaults survive changed and removed schema defaults", fixture.legacyDefaultProvenance)
+	t.Run("Tenant CRD without spec.dataPlane", fixture.dataPlaneNotInSchema)
+}
+
+// These cases use the KubeLB v1.6 Tenant schema, which adds spec.dataPlane to
+// the v1.5 subset used by TestTenantProjectDefaultsIntegration.
+func TestTenantDataPlaneIntegration(t *testing.T) {
+	fixture := newTenantIntegrationFixture(t)
+	crd := fixture.tenantCRD(t)
+	spec := crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+	spec.Properties["dataPlane"] = apiextensionsv1.JSONSchemaProps{
+		Type: "string",
+		Enum: []apiextensionsv1.JSON{{Raw: []byte(`"Managed"`)}, {Raw: []byte(`"External"`)}},
+	}
+	crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"] = spec
+	if err := fixture.client.Update(fixture.ctx, crd); err != nil {
+		t.Fatalf("add spec.dataPlane to Tenant schema: %v", err)
+	}
+	fixture.waitForTenantSchema(t, `{"dataPlane":"External"}`, `{"allowedDomains":["**"],"dataPlane":"External"}`)
+
+	t.Run("new Tenant is Managed", fixture.dataPlaneNewTenant)
+	t.Run("existing Tenant without data plane becomes Managed", fixture.dataPlaneExistingUnset)
+	t.Run("External from an update is overridden", func(t *testing.T) { fixture.dataPlaneOverride(t, false) })
+	t.Run("External from an apply is overridden", func(t *testing.T) { fixture.dataPlaneOverride(t, true) })
+	t.Run("External in project defaults is ignored", fixture.dataPlaneInDefaults)
+	t.Run("administrator override conflicts without partially applying defaults", fixture.administratorConflict)
 }
 
 type tenantIntegrationFixture struct {
@@ -250,7 +278,7 @@ func newTenantIntegrationFixture(t *testing.T) *tenantIntegrationFixture {
 	if err != nil {
 		t.Fatalf("create client: %v", err)
 	}
-	return &tenantIntegrationFixture{ctx: context.Background(), client: client, reconciler: &reconciler{}}
+	return &tenantIntegrationFixture{ctx: context.Background(), client: client, reconciler: &reconciler{log: zap.NewNop().Sugar()}}
 }
 
 func (f *tenantIntegrationFixture) newCluster() *kubermaticv1.Cluster {
@@ -697,6 +725,84 @@ func (f *tenantIntegrationFixture) deletingTenant(t *testing.T) {
 	if !reflect.DeepEqual(before.Object, f.get(t, cluster).Object) {
 		t.Error("reconciliation changed a Tenant pending deletion")
 	}
+}
+
+func (f *tenantIntegrationFixture) dataPlaneNotInSchema(t *testing.T) {
+	cluster := f.newCluster()
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-project"}}`)
+	tenant := f.get(t, cluster)
+	assertIntegrationTenantSpec(t, tenant, `{"allowedDomains":["**"],"gatewayAPI":{"class":"eg-project"}}`)
+	assertIntegrationTenantFieldOwner(t, tenant, ControllerName, false, "f:spec", "f:dataPlane")
+
+	_, err := f.reconciler.createOrUpdateKubeLBManagementClusterResources(f.ctx, f.client, cluster, &runtime.RawExtension{Raw: []byte(`{"unknownSetting":true}`)})
+	if err == nil || !strings.Contains(err.Error(), ".spec.unknownSetting") {
+		t.Fatalf("expected the unknown default to be rejected, got %v", err)
+	}
+	if !reflect.DeepEqual(tenant.Object, f.get(t, cluster).Object) {
+		t.Error("rejected defaults changed the Tenant")
+	}
+}
+
+func (f *tenantIntegrationFixture) dataPlaneNewTenant(t *testing.T) {
+	cluster := f.newCluster()
+	f.reconcile(t, cluster, `{}`)
+	tenant := f.get(t, cluster)
+	assertIntegrationTenantSpec(t, tenant, `{"allowedDomains":["**"],"dataPlane":"Managed"}`)
+	assertIntegrationTenantFieldOwner(t, tenant, ControllerName, true, "f:spec", "f:dataPlane")
+	assertIntegrationTenantFieldOwner(t, tenant, dataPlaneFieldManager, false, "f:spec", "f:dataPlane")
+}
+
+func (f *tenantIntegrationFixture) dataPlaneExistingUnset(t *testing.T) {
+	cluster := f.newCluster()
+	tenant := integrationTenant(cluster.Name, integrationTenantSpec(t, `{"gatewayAPI":{"class":"eg-old"}}`))
+	if err := f.client.Create(f.ctx, tenant, ctrlruntimeclient.FieldOwner("seed-controller-manager")); err != nil {
+		t.Fatalf("create legacy Tenant: %v", err)
+	}
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-new"}}`)
+	tenant = f.get(t, cluster)
+	assertIntegrationTenantSpec(t, tenant, `{"allowedDomains":["**"],"dataPlane":"Managed","gatewayAPI":{"class":"eg-new"}}`)
+	assertIntegrationTenantFieldOwner(t, tenant, ControllerName, true, "f:spec", "f:dataPlane")
+}
+
+func (f *tenantIntegrationFixture) dataPlaneOverride(t *testing.T, apply bool) {
+	cluster := f.newCluster()
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-project"}}`)
+	f.setManagerMetadata(t, cluster)
+	adminSpec := `{"dataPlane":"External","timeouts":{"idleConnection":"1h"},"defaultAnnotations":{"service":{"admin":"keep"}}}`
+	if apply {
+		f.applyAdmin(t, cluster, adminSpec, true)
+	} else {
+		tenant := f.get(t, cluster)
+		patch := fmt.Appendf(nil, `{"spec":%s}`, adminSpec)
+		if err := f.client.Patch(f.ctx, tenant, ctrlruntimeclient.RawPatch(types.MergePatchType, patch), ctrlruntimeclient.FieldOwner("tenant-admin")); err != nil {
+			t.Fatalf("edit Tenant: %v", err)
+		}
+	}
+	if dataPlane, _, _ := unstructured.NestedString(f.get(t, cluster).Object, "spec", "dataPlane"); dataPlane != "External" {
+		t.Fatalf("administrator edit did not set External, got %q", dataPlane)
+	}
+
+	f.reconcile(t, cluster, `{"gatewayAPI":{"class":"eg-project"},"loadBalancer":{"limit":3}}`)
+	tenant := f.get(t, cluster)
+	assertIntegrationTenantSpec(t, tenant, `{
+		"allowedDomains":["**"],
+		"dataPlane":"Managed",
+		"gatewayAPI":{"class":"eg-project"},
+		"loadBalancer":{"limit":3},
+		"timeouts":{"idleConnection":"1h"},
+		"defaultAnnotations":{"service":{"admin":"keep"}}
+	}`)
+	assertIntegrationManagerMetadata(t, tenant)
+	assertIntegrationTenantFieldOwner(t, tenant, "tenant-admin", false, "f:spec", "f:dataPlane")
+	assertIntegrationTenantFieldOwner(t, tenant, "tenant-admin", true, "f:spec", "f:timeouts", "f:idleConnection")
+	assertIntegrationTenantFieldOwner(t, tenant, dataPlaneFieldManager, true, "f:spec", "f:dataPlane")
+	assertIntegrationTenantFieldOwner(t, tenant, ControllerName, true, "f:spec", "f:dataPlane")
+}
+
+func (f *tenantIntegrationFixture) dataPlaneInDefaults(t *testing.T) {
+	cluster := f.newCluster()
+	f.reconcile(t, cluster, `{"dataPlane":"External","gatewayAPI":{"class":"eg-project"}}`)
+	assertIntegrationTenantSpec(t, f.get(t, cluster), `{"allowedDomains":["**"],"dataPlane":"Managed","gatewayAPI":{"class":"eg-project"}}`)
 }
 
 func integrationTenant(name string, spec map[string]interface{}) *unstructured.Unstructured {

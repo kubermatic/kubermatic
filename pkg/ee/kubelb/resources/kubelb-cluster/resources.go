@@ -33,6 +33,10 @@ const (
 	TenantProjectIDLabelKey           = "kubermatic.k8c.io/cluster-project-id"
 )
 
+// TenantDataPlaneManaged is the KubeLB data plane class of every Tenant KKP
+// creates. KubeLB reports unset Tenants as External.
+const TenantDataPlaneManaged = "Managed"
+
 // KubelbTenantGVK identifies the kubelb Tenant CR. We use the unstructured
 // client to avoid a compile-time dep on k8c.io/kubelb.
 var KubelbTenantGVK = schema.GroupVersionKind{

@@ -58,3 +58,37 @@ func TestTenantDefaultSpecRepresentations(t *testing.T) {
 		t.Errorf("raw and decoded defaults produce different Tenants:\ndecoded: %#v\nraw: %#v", tenant.Object, fromRaw.Object)
 	}
 }
+
+func TestTenantDataPlaneManaged(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}
+	for _, test := range []struct {
+		name     string
+		defaults *runtime.RawExtension
+		wantSpec map[string]any
+	}{
+		{name: "no defaults", wantSpec: map[string]any{"dataPlane": "Managed"}},
+		{name: "empty extension", defaults: &runtime.RawExtension{}, wantSpec: map[string]any{"dataPlane": "Managed"}},
+		{name: "empty object", defaults: &runtime.RawExtension{Raw: []byte(`{}`)}, wantSpec: map[string]any{"dataPlane": "Managed"}},
+		{name: "null", defaults: &runtime.RawExtension{Raw: []byte(`null`)}, wantSpec: map[string]any{"dataPlane": "Managed"}},
+		{
+			name:     "other defaults",
+			defaults: &runtime.RawExtension{Raw: []byte(`{"gatewayAPI":{"class":"eg"}}`)},
+			wantSpec: map[string]any{"dataPlane": "Managed", "gatewayAPI": map[string]any{"class": "eg"}},
+		},
+		{
+			name:     "External in defaults",
+			defaults: &runtime.RawExtension{Raw: []byte(`{"dataPlane":"External","gatewayAPI":{"class":"eg"}}`)},
+			wantSpec: map[string]any{"dataPlane": "Managed", "gatewayAPI": map[string]any{"class": "eg"}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			tenant, err := Tenant(cluster, test.defaults)
+			if err != nil {
+				t.Fatalf("build Tenant: %v", err)
+			}
+			if !reflect.DeepEqual(tenant.Object["spec"], test.wantSpec) {
+				t.Errorf("Tenant spec = %#v, want %#v", tenant.Object["spec"], test.wantSpec)
+			}
+		})
+	}
+}
