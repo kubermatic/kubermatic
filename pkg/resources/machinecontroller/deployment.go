@@ -52,9 +52,9 @@ var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 
 const (
 	Name = "machine-controller"
-	// v1.64.6, updated by kkp-bump:
-	// https://github.com/kubermatic/machine-controller/releases/tag/v1.64.6
-	Tag = "v1.64.6"
+	// v1.64.6-1-g38845f278144 (1 commit after v1.64.6), updated by kkp-bump:
+	// https://github.com/kubermatic/machine-controller/compare/v1.64.6...38845f278144cf91606f6b27c360af6dad46592a
+	Tag = "38845f278144cf91606f6b27c360af6dad46592a"
 )
 
 type machinecontrollerData interface {
