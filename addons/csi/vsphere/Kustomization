@@ -47,6 +47,32 @@ patches:
               seccompProfile:
                 type: RuntimeDefault
 
+  # upstream runs 3 replicas with a required pod anti-affinity, so on user clusters
+  # with fewer than 3 nodes some replicas can never be scheduled; only prefer
+  # spreading them across nodes instead
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: vsphere-csi-controller
+        namespace: vmware-system-csi
+      spec:
+        template:
+          spec:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution: ~
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: app
+                            operator: In
+                            values:
+                              - vsphere-csi-controller
+                      topologyKey: kubernetes.io/hostname
+
   # mount KKP CA bundle
   - patch: |-
       apiVersion: apps/v1
