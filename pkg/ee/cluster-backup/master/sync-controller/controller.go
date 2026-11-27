@@ -38,6 +38,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -168,6 +169,20 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		// The credential Secret copied to the seed has no owner reference (unlike the
+		// one on the master), so it has to be removed explicitly.
+		if cbsl.Spec.Credential != nil {
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cbsl.Spec.Credential.Name,
+					Namespace: cbsl.Namespace,
+				},
+			}
+			if err := seedClient.Delete(ctx, secret); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+				return fmt.Errorf("failed to delete credential secret on seed cluster: %w", err)
+			}
+		}
+
 		return ctrlruntimeclient.IgnoreNotFound(seedClient.Delete(ctx, cbsl))
 	})
 	if err != nil {
