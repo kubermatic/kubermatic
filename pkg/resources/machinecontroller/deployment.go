@@ -53,9 +53,9 @@ var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 const (
 	// Name is the alias for `resources.MachineControllerContainerName` for backward compatibility.
 	Name = resources.MachineControllerContainerName
-	// v1.65.9, updated by kkp-bump:
-	// https://github.com/kubermatic/machine-controller/releases/tag/v1.65.9
-	Tag = "v1.65.9"
+	// v1.65.9-1-gdc7d8383026a (1 commit after v1.65.9), updated by kkp-bump:
+	// https://github.com/kubermatic/machine-controller/compare/v1.65.9...dc7d8383026a4931be40437f577700d5f5327484
+	Tag = "dc7d8383026a4931be40437f577700d5f5327484"
 )
 
 type machinecontrollerData interface {
