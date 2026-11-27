@@ -41,7 +41,7 @@ spec:
         env:
         - name: KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/operating-system-manager:v1.11.9
+        image: quay.io/kubermatic/operating-system-manager:46497174b615c33f0746d0a4f9e470ea55a0b340
         livenessProbe:
           failureThreshold: 8
           httpGet:
